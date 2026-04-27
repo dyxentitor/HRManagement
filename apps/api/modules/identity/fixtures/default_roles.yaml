@@ -64,6 +64,17 @@
     - "attendance:read:team"
     - "attendance:read:org"
     - "attendance:override:org"
+    - "claim:create:self"
+    - "claim:read:self"
+    - "claim:read:team"
+    - "claim:read:finance"
+    - "claim:read:org"
+    - "claim:approve:team"
+    - "claim:approve:finance"
+    - "claim:reimburse:finance"
+    - "claim:cancel:self"
+    - "claim:category:write"
+    - "claim:policy:write"
 
 - code: hr_manager
   name: HR Manager
@@ -124,6 +135,17 @@
     - "attendance:read:team"
     - "attendance:read:org"
     - "attendance:override:org"
+    - "claim:create:self"
+    - "claim:read:self"
+    - "claim:read:team"
+    - "claim:read:finance"
+    - "claim:read:org"
+    - "claim:approve:team"
+    - "claim:approve:finance"
+    - "claim:reimburse:finance"
+    - "claim:cancel:self"
+    - "claim:category:write"
+    - "claim:policy:write"
 
 - code: finance
   name: Finance
@@ -145,6 +167,12 @@
     - "leave:delegation:write:self"
     - "schedule:holiday:read"
     - "attendance:read:self"
+    - "claim:create:self"
+    - "claim:read:self"
+    - "claim:read:finance"
+    - "claim:approve:finance"
+    - "claim:reimburse:finance"
+    - "claim:cancel:self"
 
 - code: manager
   name: Manager
@@ -174,6 +202,11 @@
     - "attendance:clock:self"
     - "attendance:read:self"
     - "attendance:read:team"
+    - "claim:create:self"
+    - "claim:read:self"
+    - "claim:read:team"
+    - "claim:approve:team"
+    - "claim:cancel:self"
 
 - code: team_lead
   name: Team Lead
@@ -203,6 +236,11 @@
     - "attendance:clock:self"
     - "attendance:read:self"
     - "attendance:read:team"
+    - "claim:create:self"
+    - "claim:read:self"
+    - "claim:read:team"
+    - "claim:approve:team"
+    - "claim:cancel:self"
 
 - code: employee
   name: Employee
@@ -224,6 +262,9 @@
     - "schedule:holiday:read"
     - "attendance:clock:self"
     - "attendance:read:self"
+    - "claim:create:self"
+    - "claim:read:self"
+    - "claim:cancel:self"
 
 - code: auditor
   name: Auditor
@@ -259,3 +300,7 @@
     - "attendance:read:self"
     - "attendance:read:team"
     - "attendance:read:org"
+    - "claim:read:self"
+    - "claim:read:team"
+    - "claim:read:org"
+    - "claim:read:finance"

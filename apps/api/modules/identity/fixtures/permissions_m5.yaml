@@ -1,0 +1,13 @@
+# Permission codes added in M5 (claims module).
+
+- { code: "claim:create:self",       description: Submit a claim for self }
+- { code: "claim:read:self",         description: Read own claims }
+- { code: "claim:read:team",         description: Read direct reports' claims }
+- { code: "claim:read:finance",      description: Finance reimbursement queue }
+- { code: "claim:read:org",          description: Read all claims in org }
+- { code: "claim:approve:team",      description: Manager-level claim approval }
+- { code: "claim:approve:finance",   description: Finance-level claim approval }
+- { code: "claim:reimburse:finance", description: Mark claim reimbursed }
+- { code: "claim:cancel:self",       description: Cancel own claim }
+- { code: "claim:category:write",    description: Create/edit claim categories }
+- { code: "claim:policy:write",      description: Create/edit claim policies }
