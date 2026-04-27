@@ -75,6 +75,12 @@
     - "claim:cancel:self"
     - "claim:category:write"
     - "claim:policy:write"
+    - "payslip:read:self"
+    - "payslip:read:org"
+    - "payroll:run:create"
+    - "payroll:run:publish"
+    - "payroll:component:write"
+    - "payroll:period:write"
 
 - code: hr_manager
   name: HR Manager
@@ -146,6 +152,12 @@
     - "claim:cancel:self"
     - "claim:category:write"
     - "claim:policy:write"
+    - "payslip:read:self"
+    - "payslip:read:org"
+    - "payroll:run:create"
+    - "payroll:run:publish"
+    - "payroll:component:write"
+    - "payroll:period:write"
 
 - code: finance
   name: Finance
@@ -173,6 +185,12 @@
     - "claim:approve:finance"
     - "claim:reimburse:finance"
     - "claim:cancel:self"
+    - "payslip:read:self"
+    - "payslip:read:org"
+    - "payroll:run:create"
+    - "payroll:run:publish"
+    - "payroll:component:write"
+    - "payroll:period:write"
 
 - code: manager
   name: Manager
@@ -207,6 +225,7 @@
     - "claim:read:team"
     - "claim:approve:team"
     - "claim:cancel:self"
+    - "payslip:read:self"
 
 - code: team_lead
   name: Team Lead
@@ -241,6 +260,7 @@
     - "claim:read:team"
     - "claim:approve:team"
     - "claim:cancel:self"
+    - "payslip:read:self"
 
 - code: employee
   name: Employee
@@ -265,6 +285,7 @@
     - "claim:create:self"
     - "claim:read:self"
     - "claim:cancel:self"
+    - "payslip:read:self"
 
 - code: auditor
   name: Auditor
@@ -304,3 +325,5 @@
     - "claim:read:team"
     - "claim:read:org"
     - "claim:read:finance"
+    - "payslip:read:self"
+    - "payslip:read:org"

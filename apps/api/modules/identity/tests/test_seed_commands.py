@@ -122,3 +122,16 @@ def test_seed_permission_catalogue_loads_m5_codes() -> None:
     assert "claim:reimburse:finance" in codes
     assert "claim:category:write" in codes
     assert len(codes) >= 69  # 58 from M1b-M4 + 11 from M5
+
+
+@pytest.mark.django_db
+def test_seed_permission_catalogue_loads_m6_codes() -> None:
+    call_command("seed_permission_catalogue")
+    codes = set(Permission.objects.values_list("code", flat=True))
+    assert "payslip:read:self" in codes
+    assert "payslip:read:org" in codes
+    assert "payroll:run:create" in codes
+    assert "payroll:run:publish" in codes
+    assert "payroll:component:write" in codes
+    assert "payroll:period:write" in codes
+    assert len(codes) >= 75  # 69 from M1b-M5 + 6 from M6

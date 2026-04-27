@@ -1,0 +1,6 @@
+- { code: "payslip:read:self",        description: Read own payslips }
+- { code: "payslip:read:org",         description: Read all payslips in the org (HR/finance) }
+- { code: "payroll:run:create",       description: Upload a payroll CSV }
+- { code: "payroll:run:publish",      description: Publish a validated run }
+- { code: "payroll:component:write",  description: Create/edit payroll components }
+- { code: "payroll:period:write",     description: Create/lock/edit payroll periods }

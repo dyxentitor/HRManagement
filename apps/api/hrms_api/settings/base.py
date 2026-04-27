@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "modules.schedule",
     "modules.attendance",
     "modules.claims",
+    "modules.payslip",
 ]
 
 AUTH_USER_MODEL = "identity.User"
