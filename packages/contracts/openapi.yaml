@@ -1,6 +1,41 @@
-# Auto-generated. Do not edit by hand. Run `make contracts` to regenerate.
 openapi: 3.0.3
 info:
   title: HRMS API
   version: 0.1.0
-paths: {}
+  description: HR Management System — Phase 1
+paths:
+  /health:
+    get:
+      operationId: health_retrieve
+      description: Liveness check — process is up.
+      tags:
+      - health
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /health/ready:
+    get:
+      operationId: health_ready_retrieve
+      description: Readiness check — dependencies (DB) reachable.
+      tags:
+      - health
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

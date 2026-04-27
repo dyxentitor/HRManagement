@@ -1,4 +1,5 @@
 """Celery app — autodiscovers tasks from each module."""
+
 import os
 
 from celery import Celery

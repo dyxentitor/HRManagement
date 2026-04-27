@@ -1,4 +1,5 @@
 """Tests for the health endpoints."""
+
 import pytest
 from rest_framework.test import APIClient
 

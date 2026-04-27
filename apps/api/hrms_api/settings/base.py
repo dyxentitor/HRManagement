@@ -1,4 +1,5 @@
 """Base Django settings — shared across dev/test/prod."""
+
 from pathlib import Path
 
 import environ
