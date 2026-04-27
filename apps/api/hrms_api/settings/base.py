@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     # Local
     "common",
     "common.audit",
+    "common.workflow",
     "modules.health",
     "modules.organization",
     "modules.identity",
