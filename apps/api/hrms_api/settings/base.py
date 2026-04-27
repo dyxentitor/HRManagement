@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     # Local
     "common",
+    "common.audit",
     "modules.health",
     "modules.organization",
     "modules.identity",
@@ -59,6 +60,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "modules.identity.middleware.TenantContextMiddleware",
+    "common.audit.middleware.AuditContextMiddleware",
 ]
 
 ROOT_URLCONF = "hrms_api.urls"
