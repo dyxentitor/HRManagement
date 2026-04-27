@@ -10,6 +10,8 @@ export function TopBar() {
 	const canApprovals = useCan("leave:request:approve:team");
 	const canSchedule = useCan("attendance:clock:self");
 	const canRoster = useCan("schedule:assignment:write:team");
+	const canClaims = useCan("claim:create:self");
+	const canFinance = useCan("claim:reimburse:finance");
 
 	return (
 		<header className="border-b bg-white">
@@ -52,6 +54,22 @@ export function TopBar() {
 							className="text-slate-600 hover:text-slate-900"
 						>
 							Roster
+						</Link>
+					)}
+					{canClaims && (
+						<Link
+							to="/claims/me"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Claims
+						</Link>
+					)}
+					{canFinance && (
+						<Link
+							to="/claims/finance"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Finance
 						</Link>
 					)}
 					<span aria-label="user-email">{user?.email}</span>
