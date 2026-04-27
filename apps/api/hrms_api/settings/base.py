@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_celery_beat",
     # Local
+    "common",
     "modules.health",
 ]
 
@@ -114,6 +115,7 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.MultiPartParser",
     ],
+    "EXCEPTION_HANDLER": "common.exception_handler.hrms_exception_handler",
 }
 
 SPECTACULAR_SETTINGS = {
