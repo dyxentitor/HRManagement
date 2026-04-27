@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "modules.health",
     "modules.organization",
     "modules.identity",
+    "modules.employee",
 ]
 
 AUTH_USER_MODEL = "identity.User"
