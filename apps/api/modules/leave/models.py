@@ -1,0 +1,146 @@
+"""Leave data layer: types, policies, balances, ledger."""
+
+from __future__ import annotations
+
+from decimal import Decimal
+from typing import ClassVar
+
+from django.db import models
+
+from common.models import TenantBaseModel
+
+ACCRUAL_TYPES: ClassVar[tuple] = (
+    ("annual", "Annual"),
+    ("monthly", "Monthly"),
+    ("event_based", "Event-based"),
+    ("none", "No accrual"),
+)
+GENDER_RESTRICTION_CHOICES: ClassVar[tuple] = (
+    ("any", "Any"),
+    ("male", "Male only"),
+    ("female", "Female only"),
+)
+LEDGER_REASONS: ClassVar[tuple] = (
+    ("accrual", "Accrual"),
+    ("request_approved", "Request approved"),
+    ("request_cancelled", "Request cancelled"),
+    ("carry_forward", "Carry forward"),
+    ("holiday_replacement", "Holiday replacement"),
+    ("manual_adjustment", "Manual adjustment"),
+)
+
+
+class LeaveType(TenantBaseModel):
+    code = models.CharField(max_length=32)
+    name = models.CharField(max_length=64)
+    accrual_type = models.CharField(max_length=16, choices=ACCRUAL_TYPES)
+    default_days = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0"))
+    is_paid = models.BooleanField(default=True)
+    requires_attachment = models.BooleanField(default=False)
+    max_consecutive_days = models.IntegerField(null=True, blank=True)
+    min_advance_notice_days = models.IntegerField(default=0)
+    carry_forward_max = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0"))
+    is_statutory = models.BooleanField(default=False)
+    gender_restriction = models.CharField(
+        max_length=8, choices=GENDER_RESTRICTION_CHOICES, default="any"
+    )
+
+    class Meta:
+        db_table = "leave_type"
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(
+                fields=["org_id", "code"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="leave_type_unique_code_per_org",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.code} ({self.name})"
+
+
+class LeavePolicy(TenantBaseModel):
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.PROTECT, related_name="policies")
+    applies_to_role_id = models.UUIDField(null=True, blank=True)
+    applies_to_department_id = models.UUIDField(null=True, blank=True)
+    days_per_year = models.DecimalField(max_digits=5, decimal_places=2)
+    tenure_brackets = models.JSONField(default=list, blank=True)
+    effective_from = models.DateField()
+    effective_to = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = "leave_policy"
+        indexes: ClassVar[list] = [
+            models.Index(fields=["leave_type", "effective_from"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Policy({self.leave_type.code}, {self.days_per_year}d/y)"
+
+
+class LeaveBalance(TenantBaseModel):
+    employee_id = models.UUIDField()
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.PROTECT, related_name="balances")
+    year = models.IntegerField()
+    entitled = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
+    accrued = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
+    taken = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
+    pending = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
+    carried_forward = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
+
+    class Meta:
+        db_table = "leave_balance"
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(
+                fields=["employee_id", "leave_type", "year"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="leave_balance_unique_emp_type_year",
+            ),
+        ]
+        indexes: ClassVar[list] = [
+            models.Index(fields=["employee_id", "year"]),
+        ]
+
+    @property
+    def available(self) -> Decimal:
+        return self.accrued + self.carried_forward - self.taken - self.pending
+
+    def __str__(self) -> str:
+        return f"{self.employee_id}/{self.leave_type.code}/{self.year}"
+
+
+class LeaveBalanceLedger(models.Model):
+    """Append-only ledger of every change to a leave balance.
+
+    Idempotency: (reference_type, reference_id, reason) is unique. Re-running
+    an event-driven grant (e.g., HolidayWorkConfirmed) is a no-op.
+    """
+
+    id = models.BigAutoField(primary_key=True)
+    org_id = models.UUIDField(db_index=True)
+    employee_id = models.UUIDField()
+    leave_type = models.ForeignKey(
+        LeaveType, on_delete=models.PROTECT, related_name="ledger_entries"
+    )
+    delta = models.DecimalField(max_digits=6, decimal_places=2)
+    reason = models.CharField(max_length=32, choices=LEDGER_REASONS)
+    reference_type = models.CharField(max_length=64, null=True, blank=True)  # noqa: DJ001
+    reference_id = models.UUIDField(null=True, blank=True)
+    actor_id = models.UUIDField(null=True, blank=True)
+    ts = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "leave_balance_ledger"
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(
+                fields=["reference_type", "reference_id", "reason"],
+                condition=(~models.Q(reference_type=None) & ~models.Q(reference_id=None)),
+                name="leave_ledger_unique_per_reference",
+            ),
+        ]
+        indexes: ClassVar[list] = [
+            models.Index(fields=["employee_id", "leave_type", "-ts"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.employee_id}/{self.leave_type.code}/{self.delta}/{self.reason}"

@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "modules.organization",
     "modules.identity",
     "modules.employee",
+    "modules.leave",
 ]
 
 AUTH_USER_MODEL = "identity.User"
