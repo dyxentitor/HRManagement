@@ -61,4 +61,3 @@ ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "hrms_api.settings.test"
-
