@@ -1,0 +1,104 @@
+# System roles seeded for every org. Permission code lists are M1b-scoped only;
+# later milestones add to these as their modules ship.
+
+- code: org_admin
+  name: Organization Admin
+  description: Full org configuration; user/role management
+  is_system: true
+  permissions:
+    - auth:mfa:manage:self
+    - user:invite
+    - user:edit
+    - user:disable
+    - user:delete
+    - user:read:self
+    - user:read:team
+    - user:read:org
+    - role:read
+    - role:write
+    - permission:read
+    - department:read
+    - department:write
+    - org:settings:read
+    - org:settings:write
+    - audit:read:org
+    - audit:payroll-ledger:read:org
+    - audit:payroll-ledger:verify:org
+
+- code: hr_manager
+  name: HR Manager
+  description: HR module access; user invites and edits; org settings read
+  is_system: true
+  permissions:
+    - auth:mfa:manage:self
+    - user:invite
+    - user:edit
+    - user:disable
+    - user:read:self
+    - user:read:team
+    - user:read:org
+    - role:read
+    - permission:read
+    - department:read
+    - department:write
+    - org:settings:read
+    - audit:read:org
+    - "audit:payroll-ledger:read:org"
+
+- code: finance
+  name: Finance
+  description: Final claims approval; payroll publish; financial reports
+  is_system: true
+  permissions:
+    - auth:mfa:manage:self
+    - user:read:self
+    - user:read:team
+    - role:read
+    - permission:read
+    - department:read
+
+- code: manager
+  name: Manager
+  description: Approve leave & claims for direct reports; team views
+  is_system: true
+  permissions:
+    - auth:mfa:manage:self
+    - user:read:self
+    - user:read:team
+    - role:read
+    - department:read
+
+- code: team_lead
+  name: Team Lead
+  description: Like manager, but cannot approve claims (only leave)
+  is_system: true
+  permissions:
+    - auth:mfa:manage:self
+    - user:read:self
+    - user:read:team
+    - role:read
+    - department:read
+
+- code: employee
+  name: Employee
+  description: Self-service portal access
+  is_system: true
+  permissions:
+    - auth:mfa:manage:self
+    - user:read:self
+
+- code: auditor
+  name: Auditor
+  description: Read-only across modules including audit log
+  is_system: true
+  permissions:
+    - auth:mfa:manage:self
+    - user:read:self
+    - user:read:team
+    - user:read:org
+    - role:read
+    - permission:read
+    - department:read
+    - org:settings:read
+    - audit:read:org
+    - "audit:payroll-ledger:read:org"

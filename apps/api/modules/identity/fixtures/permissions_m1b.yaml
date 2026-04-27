@@ -1,0 +1,32 @@
+# Permission codes used in M1b (identity, RBAC, audit, departments, org settings).
+# Subsequent milestones APPEND their own codes via additional fixtures.
+
+# auth (self-managed)
+- { code: auth:mfa:manage:self, description: Manage own MFA device }
+
+# user
+- { code: user:invite,    description: Invite a new user to the org }
+- { code: user:edit,      description: Edit user records (admin) }
+- { code: user:disable,   description: Disable a user account }
+- { code: user:delete,    description: Soft-delete a user }
+- { code: user:read:self, description: Read own user record }
+- { code: user:read:team, description: Read direct-reports user records }
+- { code: user:read:org,  description: Read any user record in the org }
+
+# role / permission
+- { code: role:read,        description: Read roles in the org }
+- { code: role:write,       description: Create/edit/delete roles in the org }
+- { code: permission:read,  description: Read the global permission catalogue }
+
+# department
+- { code: department:read,  description: Read departments in the org }
+- { code: department:write, description: Create/edit/delete departments in the org }
+
+# org settings
+- { code: org:settings:read,  description: Read organization settings }
+- { code: org:settings:write, description: Edit organization settings }
+
+# audit
+- { code: audit:read:org,                description: Read the audit log }
+- { code: "audit:payroll-ledger:read:org",   description: Read the payroll-ledger entries }
+- { code: "audit:payroll-ledger:verify:org", description: Run payroll-ledger hash-chain verification }

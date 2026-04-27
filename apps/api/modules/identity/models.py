@@ -124,3 +124,101 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.deleted_at = timezone.now()
         self.is_active = False
         self.save(update_fields=["deleted_at", "is_active", "updated_at"])
+
+    @property
+    def roles(self):
+        """Return the Roles assigned to this user (via UserRole join)."""
+        return Role.objects.filter(user_links__user=self)
+
+
+class Permission(models.Model):
+    """Global permission catalogue. Codes follow `<module>:<resource>:<action>[:<scope>]`."""
+
+    id = models.BigAutoField(primary_key=True)
+    code = models.CharField(max_length=128, unique=True)
+    description = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "identity_permission"
+        ordering = ("code",)
+
+    def __str__(self) -> str:
+        return self.code
+
+
+class Role(models.Model):
+    """Org-scoped role bundle. `code` is unique within an org."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    org_id = models.UUIDField(db_index=True)
+    code = models.CharField(max_length=64)
+    name = models.CharField(max_length=128)
+    description = models.CharField(max_length=255, blank=True)
+    is_system = models.BooleanField(default=False)
+
+    permissions = models.ManyToManyField(
+        Permission,
+        through="RolePermission",
+        related_name="roles",
+    )
+
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "identity_role"
+        constraints: ClassVar = [
+            models.UniqueConstraint(fields=["org_id", "code"], name="role_unique_code_per_org"),
+        ]
+        indexes: ClassVar = [models.Index(fields=["org_id"])]
+
+    def __str__(self) -> str:
+        return f"{self.code}@{self.org_id}"
+
+
+class RolePermission(models.Model):
+    """Through-table for Role.permissions."""
+
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name="role_permissions")
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE, related_name="role_links")
+
+    class Meta:
+        db_table = "identity_role_permission"
+        constraints: ClassVar = [
+            models.UniqueConstraint(fields=["role", "permission"], name="role_permission_unique"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.role} -> {self.permission}"
+
+
+class UserRole(models.Model):
+    """Assigns Roles to Users.
+
+    ``granted_by`` is the user that performed the grant (nullable for system seeds).
+    """
+
+    user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.CASCADE,
+        related_name="user_roles",
+    )
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name="user_links")
+    granted_by = models.ForeignKey(
+        "identity.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="grants_made",
+    )
+    granted_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "identity_user_role"
+        constraints: ClassVar = [
+            models.UniqueConstraint(fields=["user", "role"], name="user_role_unique"),
+        ]
+        indexes: ClassVar = [models.Index(fields=["user"]), models.Index(fields=["role"])]
+
+    def __str__(self) -> str:
+        return f"{self.user} -> {self.role}"

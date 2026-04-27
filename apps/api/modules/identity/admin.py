@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from .models import User
+from .models import Permission, Role, RolePermission, User, UserRole
 
 
 @admin.register(User)
@@ -37,3 +37,29 @@ class UserAdmin(DjangoUserAdmin):
             },
         ),
     )
+
+
+@admin.register(Permission)
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ("code", "description")
+    search_fields = ("code",)
+
+
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "org_id", "is_system")
+    list_filter = ("org_id", "is_system")
+    search_fields = ("code", "name")
+
+
+@admin.register(RolePermission)
+class RolePermissionAdmin(admin.ModelAdmin):
+    list_display = ("role", "permission")
+    list_filter = ("role__org_id",)
+    search_fields = ("role__code", "permission__code")
+
+
+@admin.register(UserRole)
+class UserRoleAdmin(admin.ModelAdmin):
+    list_display = ("user", "role", "granted_by", "granted_at")
+    search_fields = ("user__email", "role__code")
