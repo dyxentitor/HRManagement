@@ -387,6 +387,75 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/employees/{id}/direct-reports/:
+    get:
+      operationId: employees_direct_reports_retrieve
+      description: HR-facing employee CRUD.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/v1/employees/{id}/probation-status/:
+    get:
+      operationId: employees_probation_status_retrieve
+      description: HR-facing employee CRUD.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/v1/employees/{id}/reporting-chain/:
+    get:
+      operationId: employees_reporting_chain_retrieve
+      description: HR-facing employee CRUD.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
   /api/v1/employees/me/:
     get:
       operationId: employees_me_retrieve
