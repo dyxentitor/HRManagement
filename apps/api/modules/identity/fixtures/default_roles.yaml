@@ -49,6 +49,21 @@
     - "leave:type:write"
     - "leave:policy:write"
     - "leave:delegation:write:self"
+    - "schedule:work-schedule:read"
+    - "schedule:work-schedule:write"
+    - "schedule:shift:read"
+    - "schedule:shift:write"
+    - "schedule:assignment:read:self"
+    - "schedule:assignment:read:team"
+    - "schedule:assignment:write:team"
+    - "schedule:assignment:publish:team"
+    - "schedule:holiday:read"
+    - "schedule:holiday:write"
+    - "attendance:clock:self"
+    - "attendance:read:self"
+    - "attendance:read:team"
+    - "attendance:read:org"
+    - "attendance:override:org"
 
 - code: hr_manager
   name: HR Manager
@@ -94,6 +109,21 @@
     - "leave:type:write"
     - "leave:policy:write"
     - "leave:delegation:write:self"
+    - "schedule:work-schedule:read"
+    - "schedule:work-schedule:write"
+    - "schedule:shift:read"
+    - "schedule:shift:write"
+    - "schedule:assignment:read:self"
+    - "schedule:assignment:read:team"
+    - "schedule:assignment:write:team"
+    - "schedule:assignment:publish:team"
+    - "schedule:holiday:read"
+    - "schedule:holiday:write"
+    - "attendance:clock:self"
+    - "attendance:read:self"
+    - "attendance:read:team"
+    - "attendance:read:org"
+    - "attendance:override:org"
 
 - code: finance
   name: Finance
@@ -113,6 +143,8 @@
     - "leave:request:read:self"
     - "leave:balance:read:self"
     - "leave:delegation:write:self"
+    - "schedule:holiday:read"
+    - "attendance:read:self"
 
 - code: manager
   name: Manager
@@ -132,6 +164,16 @@
     - "leave:balance:read:self"
     - "leave:balance:read:team"
     - "leave:delegation:write:self"
+    - "schedule:work-schedule:read"
+    - "schedule:shift:read"
+    - "schedule:assignment:read:self"
+    - "schedule:assignment:read:team"
+    - "schedule:assignment:write:team"
+    - "schedule:assignment:publish:team"
+    - "schedule:holiday:read"
+    - "attendance:clock:self"
+    - "attendance:read:self"
+    - "attendance:read:team"
 
 - code: team_lead
   name: Team Lead
@@ -151,6 +193,16 @@
     - "leave:balance:read:self"
     - "leave:balance:read:team"
     - "leave:delegation:write:self"
+    - "schedule:work-schedule:read"
+    - "schedule:shift:read"
+    - "schedule:assignment:read:self"
+    - "schedule:assignment:read:team"
+    - "schedule:assignment:write:team"
+    - "schedule:assignment:publish:team"
+    - "schedule:holiday:read"
+    - "attendance:clock:self"
+    - "attendance:read:self"
+    - "attendance:read:team"
 
 - code: employee
   name: Employee
@@ -166,6 +218,12 @@
     - "leave:request:cancel:self"
     - "leave:balance:read:self"
     - "leave:delegation:write:self"
+    - "schedule:work-schedule:read"
+    - "schedule:shift:read"
+    - "schedule:assignment:read:self"
+    - "schedule:holiday:read"
+    - "attendance:clock:self"
+    - "attendance:read:self"
 
 - code: auditor
   name: Auditor
@@ -193,3 +251,11 @@
     - "leave:balance:read:self"
     - "leave:balance:read:team"
     - "leave:balance:read:org"
+    - "schedule:work-schedule:read"
+    - "schedule:shift:read"
+    - "schedule:assignment:read:self"
+    - "schedule:assignment:read:team"
+    - "schedule:holiday:read"
+    - "attendance:read:self"
+    - "attendance:read:team"
+    - "attendance:read:org"

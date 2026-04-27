@@ -101,3 +101,13 @@ def test_seed_permission_catalogue_loads_m3_codes() -> None:
     assert "leave:type:write" in codes
     assert "leave:delegation:write:self" in codes
     assert len(codes) >= 43
+
+
+@pytest.mark.django_db
+def test_seed_permission_catalogue_loads_m4_codes() -> None:
+    call_command("seed_permission_catalogue")
+    codes = set(Permission.objects.values_list("code", flat=True))
+    assert "schedule:assignment:write:team" in codes
+    assert "attendance:clock:self" in codes
+    assert "schedule:holiday:write" in codes
+    assert len(codes) >= 58  # 43 from M1b/M2/M3 + 15 from M4

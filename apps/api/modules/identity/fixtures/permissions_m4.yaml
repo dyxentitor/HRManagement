@@ -1,0 +1,20 @@
+# Permission codes added in M4 (schedule + attendance modules).
+
+# schedule
+- { code: "schedule:work-schedule:read",          description: Read work schedules }
+- { code: "schedule:work-schedule:write",         description: Create/edit work schedules }
+- { code: "schedule:shift:read",                   description: Read shifts }
+- { code: "schedule:shift:write",                  description: Create/edit shifts }
+- { code: "schedule:assignment:read:self",         description: Read own shift assignments }
+- { code: "schedule:assignment:read:team",         description: Read team shift assignments }
+- { code: "schedule:assignment:write:team",        description: Assign shifts for direct reports }
+- { code: "schedule:assignment:publish:team",      description: Publish a roster (notifies employees) }
+- { code: "schedule:holiday:read",                 description: Read org holidays }
+- { code: "schedule:holiday:write",                description: Create/edit org holidays }
+
+# attendance — defined here so M4b just consumes them
+- { code: "attendance:clock:self",                 description: Clock in/out for self }
+- { code: "attendance:read:self",                  description: Read own attendance }
+- { code: "attendance:read:team",                  description: Read team attendance }
+- { code: "attendance:read:org",                   description: Read all attendance in the org }
+- { code: "attendance:override:org",               description: HR-only correction of attendance records }
