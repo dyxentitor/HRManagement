@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Payslip — {{ period.period_start }} to {{ period.period_end }}</title>
+    <style>
+      body { font-family: sans-serif; font-size: 11pt; color: #111; }
+      h1 { font-size: 18pt; margin: 0 0 1em; }
+      table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+      th, td { padding: 6px 8px; border-bottom: 1px solid #ddd; text-align: left; }
+      .right { text-align: right; }
+      .bold { font-weight: bold; }
+      .net { font-size: 14pt; }
+    </style>
+  </head>
+  <body>
+    <h1>Payslip</h1>
+    <p><strong>{{ employee.first_name }} {{ employee.last_name }}</strong>
+       ({{ employee.employee_code }}) &mdash; {{ org.name }}</p>
+    <p>Period: {{ period.period_start }} to {{ period.period_end }}<br>
+       Pay date: {{ period.pay_date }}</p>
+
+    <table>
+      <thead><tr><th>Earnings</th><th class="right">Amount ({{ currency }})</th></tr></thead>
+      <tbody>
+        {% for code, amount in components.items %}
+          <tr><td>{{ code }}</td><td class="right">{{ amount }}</td></tr>
+        {% endfor %}
+        <tr class="bold"><td>Gross</td><td class="right">{{ gross }}</td></tr>
+      </tbody>
+    </table>
+
+    <table>
+      <thead><tr><th>Deductions</th><th class="right">Amount ({{ currency }})</th></tr></thead>
+      <tbody>
+        {% for code, amount in deductions.items %}
+          <tr><td>{{ code }}</td><td class="right">{{ amount }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <table>
+      <tr class="bold net"><td>Net pay</td><td class="right">{{ net }}</td></tr>
+    </table>
+  </body>
+</html>
