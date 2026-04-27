@@ -90,6 +90,16 @@
     - "kpi:assignment:write:team"
     - "kpi:review:write:self"
     - "kpi:review:write:team"
+    - "cert:read:self"
+    - "cert:read:team"
+    - "cert:read:org"
+    - "cert:write:self"
+    - "cert:write:org"
+    - "training:plan:read"
+    - "training:plan:write"
+    - "training:assignment:read:self"
+    - "training:assignment:write:team"
+    - "training:progress:write:self"
 
 - code: hr_manager
   name: HR Manager
@@ -176,6 +186,16 @@
     - "kpi:assignment:write:team"
     - "kpi:review:write:self"
     - "kpi:review:write:team"
+    - "cert:read:self"
+    - "cert:read:team"
+    - "cert:read:org"
+    - "cert:write:self"
+    - "cert:write:org"
+    - "training:plan:read"
+    - "training:plan:write"
+    - "training:assignment:read:self"
+    - "training:assignment:write:team"
+    - "training:progress:write:self"
 
 - code: finance
   name: Finance
@@ -251,6 +271,12 @@
     - "kpi:assignment:write:team"
     - "kpi:review:write:self"
     - "kpi:review:write:team"
+    - "cert:read:self"
+    - "cert:read:team"
+    - "training:plan:read"
+    - "training:assignment:read:self"
+    - "training:assignment:write:team"
+    - "training:progress:write:self"
 
 - code: team_lead
   name: Team Lead
@@ -293,6 +319,12 @@
     - "kpi:assignment:write:team"
     - "kpi:review:write:self"
     - "kpi:review:write:team"
+    - "cert:read:self"
+    - "cert:read:team"
+    - "training:plan:read"
+    - "training:assignment:read:self"
+    - "training:assignment:write:team"
+    - "training:progress:write:self"
 
 - code: employee
   name: Employee
@@ -320,6 +352,11 @@
     - "payslip:read:self"
     - "kpi:assignment:read:self"
     - "kpi:review:write:self"
+    - "cert:read:self"
+    - "cert:write:self"
+    - "training:plan:read"
+    - "training:assignment:read:self"
+    - "training:progress:write:self"
 
 - code: auditor
   name: Auditor
@@ -365,3 +402,8 @@
     - "kpi:template:read"
     - "kpi:assignment:read:self"
     - "kpi:assignment:read:team"
+    - "cert:read:self"
+    - "cert:read:team"
+    - "cert:read:org"
+    - "training:plan:read"
+    - "training:assignment:read:self"

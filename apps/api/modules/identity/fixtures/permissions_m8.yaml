@@ -1,0 +1,10 @@
+- { code: "cert:read:self",                    description: Read own certifications }
+- { code: "cert:read:team",                    description: Read team certifications }
+- { code: "cert:read:org",                     description: Read all certifications }
+- { code: "cert:write:self",                   description: Add/edit own certifications }
+- { code: "cert:write:org",                    description: Edit any certification (HR) }
+- { code: "training:plan:read",                description: Read training plans }
+- { code: "training:plan:write",               description: Create/edit training plans }
+- { code: "training:assignment:read:self",     description: Read own training assignments }
+- { code: "training:assignment:write:team",    description: Assign training to team }
+- { code: "training:progress:write:self",      description: Update own training progress }

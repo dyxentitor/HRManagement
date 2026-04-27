@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "modules.claims",
     "modules.payslip",
     "modules.kpi",
+    "modules.certification",
 ]
 
 AUTH_USER_MODEL = "identity.User"
