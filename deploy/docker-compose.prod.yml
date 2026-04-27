@@ -1,0 +1,34 @@
+name: hrms-prod
+
+services:
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: hrms_api.settings.prod
+      DJANGO_DEBUG: "0"
+    volumes: []
+    command: uv run gunicorn hrms_api.wsgi:application --bind 0.0.0.0:8000 --workers 4
+
+  worker:
+    volumes: []
+    command: uv run celery -A hrms_api worker -l warning --concurrency 4
+
+  beat:
+    volumes: []
+    command: uv run celery -A hrms_api beat -l warning -S django
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    command: ["nginx", "-g", "daemon off;"]
+    volumes: []
+    ports: ["80:80"]
+
+  mailhog:
+    profiles: ["dev-only"]
+
+  minio:
+    profiles: ["dev-only"]

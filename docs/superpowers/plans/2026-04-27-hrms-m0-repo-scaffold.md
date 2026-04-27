@@ -1846,7 +1846,7 @@ services:
       - ../apps/api:/app
     command: uv run celery -A hrms_api worker -l info
     depends_on:
-      api: { condition: service_started }
+      postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
 
   beat:
@@ -1858,17 +1858,20 @@ services:
       - ../apps/api:/app
     command: uv run celery -A hrms_api beat -l info -S django
     depends_on:
-      api: { condition: service_started }
+      postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
 
   web:
     image: node:20-alpine
-    working_dir: /app
+    working_dir: /repo/apps/web
     volumes:
-      - ../apps/web:/app
-      - ../pnpm-workspace.yaml:/pnpm-workspace.yaml:ro
-      - ../packages:/packages:ro
-    command: sh -c "corepack enable && corepack prepare pnpm@9 --activate && pnpm install && pnpm dev --host 0.0.0.0"
+      - ..:/repo                           # entire repo
+      - /repo/apps/web/node_modules         # named volume — keep node_modules in-container
+      - /repo/node_modules
+    command: >
+      sh -c "corepack enable && corepack prepare pnpm@9 --activate &&
+             cd /repo && pnpm install --filter @hrms/web... &&
+             cd /repo/apps/web && pnpm dev --host 0.0.0.0"
     environment:
       VITE_API_BASE_URL: http://localhost:8000
     ports: ["5173:5173"]
@@ -1903,11 +1906,10 @@ services:
     command: uv run celery -A hrms_api beat -l warning -S django
 
   web:
-    image: ""   # disable dev image
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
-    command: nginx -g 'daemon off;'
+    command: ["nginx", "-g", "daemon off;"]
     volumes: []
     ports: ["80:80"]
 
@@ -1923,15 +1925,15 @@ services:
 Run:
 ```bash
 cp .env.example .env
-docker compose -f deploy/docker-compose.yml up -d --build
+sg docker -c 'docker compose -f deploy/docker-compose.yml up -d --build'
 ```
-Expected: all services start. Wait ~30 seconds for healthchecks.
+Expected: all services start. Wait ~60 seconds for healthchecks and pnpm install.
 
 - [ ] **Step 4: Verify all services are healthy**
 
 Run:
 ```bash
-docker compose -f deploy/docker-compose.yml ps
+sg docker -c 'docker compose -f deploy/docker-compose.yml ps'
 ```
 Expected: every service shows `running` (and `healthy` for the ones with healthchecks).
 
@@ -1956,13 +1958,13 @@ Expected: HTML containing `<div id="root"></div>` and the Vite client script.
 
 Run:
 ```bash
-docker compose -f deploy/docker-compose.yml down
+sg docker -c 'docker compose -f deploy/docker-compose.yml down'
 ```
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add deploy/docker-compose.yml deploy/docker-compose.prod.yml
+git add deploy/docker-compose.yml deploy/docker-compose.prod.yml docs/superpowers/plans/2026-04-27-hrms-m0-repo-scaffold.md
 git -c user.email=cyberlab@provintell.com -c user.name="cyberlab" commit -m "build: add docker-compose for dev + prod overrides"
 ```
 
