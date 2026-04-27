@@ -1,6 +1,9 @@
 from .base import *  # noqa: F403
 
 DEBUG = False
+# Use UTC in tests so freeze_time("YYYY-MM-DD HH:MM:SS") naive strings map
+# directly to Django's timezone.localdate() without cross-midnight surprises.
+TIME_ZONE = "UTC"
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 DEFAULT_FROM_EMAIL = "test@hrms.local"
 DATABASES = {

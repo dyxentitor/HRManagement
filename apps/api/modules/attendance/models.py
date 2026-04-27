@@ -66,11 +66,12 @@ class AttendanceRecord(TenantBaseModel):
         """Set the status from clock_in/out + flags. Called by service after writes."""
         if self.clock_in is None and self.clock_out is None:
             self.status = "absent"
-        elif self.clock_in is not None and self.clock_out is None:
-            self.status = "partial"
-        else:
+        elif self.clock_in is not None and self.clock_out is not None:
             # Both present → present (late detection requires schedule lookup; M5+ feature)
             self.status = "present"
+        else:
+            # Only one of clock_in / clock_out is set
+            self.status = "partial"
 
     def __str__(self) -> str:
         return f"{self.employee.employee_code}/{self.work_date}/{self.status}"
