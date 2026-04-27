@@ -4,6 +4,14 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.1.0-m6] - 2026-04-28
+
+### Added
+- **M6 — Payslip + Payroll CSV import:** `PayrollPeriod`, `PayrollComponent`, `PayslipRecord`, `PayrollRun` models. CSV import service with fail-soft per-row validation, gross/deductions/net balance check, and re-import support. PDF rendering via ReportLab (WeasyPrint guard kept for container environments). Publish service writes one `audit_log` row + one `payroll_audit_ledger` row per payslip — **first active writes to the chained ledger (M1b-4 milestone achieved)**. Re-publishing the same period is rejected. Hash chain verifies after publish.
+- Endpoints: `GET/POST /api/v1/payroll/periods/`, `POST /api/v1/payroll/runs/` (multipart CSV upload), `POST /api/v1/payroll/runs/{id}/preview`, `POST /api/v1/payroll/runs/{id}/publish`, `GET /api/v1/payroll/runs/{id}/errors`, `GET /api/v1/payslips/me/`, `GET /api/v1/payslips/{id}/` (with presigned S3 PDF URL).
+- Frontend: `MyPayslipsPage` (list + View PDF button), `PayrollAdminPage` (upload CSV, period selector, recent runs with Publish button). TopBar nav: "Payslips" (everyone with `payslip:read:self`) + "Payroll" (HR/finance with `payroll:run:create`).
+- 6 new permission codes (M6): `payslip:read:self`, `payslip:read:org`, `payroll:run:create`, `payroll:run:publish`, `payroll:component:write`, `payroll:period:write`. Catalogue grew from 69 to 75.
+
 ## [0.1.0-m5] - 2026-04-28
 
 ### Added
