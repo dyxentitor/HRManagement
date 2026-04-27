@@ -1624,6 +1624,14 @@ README.md
 
 - [ ] **Step 2: Create `apps/web/Dockerfile`** (multi-stage: build with Node, serve with nginx)
 
+> **Note:** Build context must be the **repo root** (`.`), not `apps/web/`, because
+> `pnpm-lock.yaml` and `pnpm-workspace.yaml` live at the repo root and the COPY
+> instructions need to reach them. See the corrected build command in Step 4.
+>
+> Also create `apps/web/nginx-default.conf` — the minimal SPA-fallback config that
+> is COPYed into the image. (`deploy/nginx/default.conf` is the richer config with
+> API reverse-proxy, mounted at runtime by docker-compose.prod.yml.)
+
 ```dockerfile
 # syntax=docker/dockerfile:1.7
 FROM node:20-alpine AS build
@@ -1632,18 +1640,31 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm fetch
+# Copy workspace metadata first for better caching
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/contracts/package.json ./packages/contracts/
 
-COPY . .
-RUN pnpm install --frozen-lockfile --offline
+# Fetch and install for the web app only (workspace-aware)
+RUN pnpm install --frozen-lockfile --filter @hrms/web
+
+# Copy the rest of the web app and the contracts package (web depends on contracts in M1+)
+COPY apps/web/ ./apps/web/
+COPY packages/contracts/ ./packages/contracts/
+
+WORKDIR /app/apps/web
 RUN pnpm build
 
 # --- Runtime ---
 FROM nginx:1.27-alpine AS runtime
 
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY --from=build /app/nginx.conf /etc/nginx/conf.d/default.conf 2>/dev/null || true
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+
+# Embedded SPA-fallback config (copied from apps/web/nginx-default.conf in the
+# build context). Override at runtime by mounting deploy/nginx/default.conf onto
+# /etc/nginx/conf.d/default.conf if you need the richer config with API
+# reverse-proxy (used by docker-compose.prod.yml).
+COPY apps/web/nginx-default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
@@ -1685,17 +1706,37 @@ server {
 
 - [ ] **Step 4: Verify the web image builds**
 
+> **Build context is the repo root** (`.`), not `apps/web/`, so the COPY instructions
+> can reach `pnpm-lock.yaml` and `pnpm-workspace.yaml`.
+
 Run:
 ```bash
-docker build -t hrms-web:m0 -f apps/web/Dockerfile apps/web/
+sg docker -c 'docker build -t hrms-web:m0 -f apps/web/Dockerfile .'
 ```
 Expected: build succeeds.
+
+Smoke-run to verify nginx serves the SPA:
+```bash
+sg docker -c 'docker run --rm -d --name hrms-web-smoke -p 18080:80 hrms-web:m0'
+sleep 3
+curl -sf http://localhost:18080/ | head -5          # index.html
+curl -sf http://localhost:18080/healthz             # ok
+curl -sf http://localhost:18080/some/spa/route | head -3  # SPA fallback → index.html
+sg docker -c 'docker stop hrms-web-smoke'
+```
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/web/Dockerfile apps/web/.dockerignore deploy/nginx/default.conf
-git -c user.email=cyberlab@provintell.com -c user.name="cyberlab" commit -m "build(web): add Dockerfile and nginx config"
+git add apps/web/Dockerfile apps/web/.dockerignore apps/web/nginx-default.conf deploy/nginx/default.conf docs/superpowers/plans/2026-04-27-hrms-m0-repo-scaffold.md
+git -c user.email=cyberlab@provintell.com -c user.name="cyberlab" commit -m "build(web): add Dockerfile + nginx config
+
+Embeds SPA-fallback nginx config inline; deploy/nginx/default.conf
+provides the richer reverse-proxy config for docker-compose.prod.yml
+to mount at runtime. Build context is the repo root because the pnpm
+workspace lockfile lives there.
+
+Plan updated to match the corrected Dockerfile and build command."
 ```
 
 ---
