@@ -4,6 +4,15 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.1.0-m7] - 2026-04-28
+
+### Added
+- **M7 — KPI review cycles:** `KpiTemplate`, `KpiDefinition`, `KpiCycle`, `KpiAssignment`, `KpiReview`, `KpiReviewIteration` models. Cycle state machine: `upcoming → self_review → manager_review → closed` (HR-driven). **Snapshot invariant:** at bulk-assign time, template definitions are deep-copied into `assignment.kpis` JSONB — editing the template later never shifts historical reviews. Decimal values serialized to strings for JSON safety. Iteration pattern: `KpiReview.iteration` auto-increments via `max(iteration)+1` query so multiple review rounds are tracked.
+- `CycleService`: `VALID_TRANSITIONS` dict + `transition()` raising `InvalidTransition` for illegal moves. `AssignmentService`: `bulk_assign()` + `_snapshot_definitions()`. `ReviewService`: `submit_self()` (guarded: cycle must be `self_review`), `submit_manager()` (guarded: cycle must be `manager_review` AND assignment must be `self_done`), `submit_evidence()` (S3 presigned PUT), `register_evidence()`. All submits write an `audit_log` row via `common.audit.append`.
+- Endpoints: `GET/POST /api/v1/kpi/templates/`, `GET/POST /api/v1/kpi/cycles/` + cycle state-transition actions (`open-self-review`, `open-manager-review`, `close`), `GET/POST /api/v1/kpi/assignments/` + `me` action, `POST /api/v1/kpi/reviews/{id}/self|manager|evidence`, `GET /api/v1/kpi/team-summary`.
+- Frontend: `MyKpiPage` (list own assignments + self-review form per-KPI), `KpiManagerPage` (team assignments awaiting manager review), `KpiAdminPage` (template list + cycle CRUD with transition buttons). TopBar nav: "KPI" (`kpi:assignment:read:self`) + "KPI Admin" (`kpi:cycle:write`).
+- 9 new permission codes (M7): `kpi:cycle:{read,write}`, `kpi:template:{read,write}`, `kpi:assignment:{read:self,read:team,write:team}`, `kpi:review:{write:self,write:team}`. Catalogue grew from 75 to 84.
+
 ## [0.1.0-m6] - 2026-04-28
 
 ### Added
