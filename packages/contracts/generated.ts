@@ -196,6 +196,62 @@ export interface paths {
         patch: operations["departments_partial_update"];
         trace?: never;
     };
+    "/api/v1/employees/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description HR-facing employee CRUD. */
+        get: operations["employees_list"];
+        put?: never;
+        /** @description HR-facing employee CRUD. */
+        post: operations["employees_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description HR-facing employee CRUD. */
+        get: operations["employees_retrieve"];
+        /** @description HR-facing employee CRUD. */
+        put: operations["employees_update"];
+        post?: never;
+        /** @description HR-facing employee CRUD. */
+        delete: operations["employees_destroy"];
+        options?: never;
+        head?: never;
+        /** @description HR-facing employee CRUD. */
+        patch: operations["employees_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/employees/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description HR-facing employee CRUD. */
+        get: operations["employees_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description HR-facing employee CRUD. */
+        patch: operations["employees_me_partial_update"];
+        trace?: never;
+    };
     "/api/v1/org/settings": {
         parameters: {
             query?: never;
@@ -306,6 +362,156 @@ export interface components {
             /** Format: uuid */
             head_employee_id?: string | null;
         };
+        /** @description Full HR view — all fields readable; encrypted fields write-through. */
+        Employee: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly org_id: string;
+            /** Format: uuid */
+            user?: string | null;
+            employee_code: string;
+            first_name: string;
+            last_name: string;
+            preferred_name?: string;
+            readonly full_name: string;
+            /** Format: email */
+            email: string;
+            phone: string;
+            alt_phone?: string;
+            readonly ic_last4: string;
+            /** Format: date */
+            date_of_birth: string;
+            gender: components["schemas"]["GenderEnum"];
+            nationality: string;
+            marital_status: components["schemas"]["MaritalStatusEnum"];
+            religion?: string;
+            address_line1: string;
+            address_line2?: string;
+            city: string;
+            state: string;
+            postcode: string;
+            country_code: string;
+            /** Format: uuid */
+            department: string;
+            /** Format: uuid */
+            manager?: string | null;
+            role_title: string;
+            employment_type: components["schemas"]["EmploymentTypeEnum"];
+            schedule_type?: components["schemas"]["ScheduleTypeEnum"];
+            /** Format: date */
+            hire_date: string;
+            /** Format: date */
+            probation_end_date?: string | null;
+            /** Format: date */
+            contract_end_date?: string | null;
+            /** Format: date-time */
+            confirmed_at?: string | null;
+            bank_name: string;
+            readonly bank_account_last4: string;
+            emergency_contact_name: string;
+            emergency_contact_relationship: string;
+            emergency_contact_phone: string;
+            status?: components["schemas"]["EmployeeStatusEnum"];
+            timezone?: string;
+            locale?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /** @description Full HR view — all fields readable; encrypted fields write-through. */
+        EmployeeRequest: {
+            /** Format: uuid */
+            user?: string | null;
+            employee_code: string;
+            first_name: string;
+            last_name: string;
+            preferred_name?: string;
+            /** Format: email */
+            email: string;
+            phone: string;
+            alt_phone?: string;
+            /** Format: byte */
+            ic_number?: string | null;
+            /** Format: date */
+            date_of_birth: string;
+            gender: components["schemas"]["GenderEnum"];
+            nationality: string;
+            marital_status: components["schemas"]["MaritalStatusEnum"];
+            religion?: string;
+            address_line1: string;
+            address_line2?: string;
+            city: string;
+            state: string;
+            postcode: string;
+            country_code: string;
+            /** Format: uuid */
+            department: string;
+            /** Format: uuid */
+            manager?: string | null;
+            role_title: string;
+            employment_type: components["schemas"]["EmploymentTypeEnum"];
+            schedule_type?: components["schemas"]["ScheduleTypeEnum"];
+            /** Format: date */
+            hire_date: string;
+            /** Format: date */
+            probation_end_date?: string | null;
+            /** Format: date */
+            contract_end_date?: string | null;
+            /** Format: date-time */
+            confirmed_at?: string | null;
+            bank_name: string;
+            /** Format: byte */
+            bank_account_number?: string | null;
+            /** Format: byte */
+            lhdn_tax_no?: string | null;
+            /** Format: byte */
+            epf_no?: string | null;
+            /** Format: byte */
+            socso_no?: string | null;
+            /** Format: byte */
+            eis_no?: string | null;
+            emergency_contact_name: string;
+            emergency_contact_relationship: string;
+            emergency_contact_phone: string;
+            status?: components["schemas"]["EmployeeStatusEnum"];
+            timezone?: string;
+            locale?: string;
+        };
+        /**
+         * @description * `active` - Active
+         *     * `probation` - Probation
+         *     * `on_leave` - On leave
+         *     * `terminated` - Terminated
+         *     * `resigned` - Resigned
+         * @enum {string}
+         */
+        EmployeeStatusEnum: "active" | "probation" | "on_leave" | "terminated" | "resigned";
+        /**
+         * @description * `fulltime` - Full-time
+         *     * `parttime` - Part-time
+         *     * `contract` - Contract
+         *     * `intern` - Intern
+         * @enum {string}
+         */
+        EmploymentTypeEnum: "fulltime" | "parttime" | "contract" | "intern";
+        /**
+         * @description * `male` - Male
+         *     * `female` - Female
+         *     * `other` - Other
+         *     * `undisclosed` - Undisclosed
+         * @enum {string}
+         */
+        GenderEnum: "male" | "female" | "other" | "undisclosed";
+        /**
+         * @description * `single` - Single
+         *     * `married` - Married
+         *     * `divorced` - Divorced
+         *     * `widowed` - Widowed
+         * @enum {string}
+         */
+        MaritalStatusEnum: "single" | "married" | "divorced" | "widowed";
         OrgSettings: {
             /** Format: uuid */
             readonly id: string;
@@ -316,7 +522,7 @@ export interface components {
             default_timezone: string;
             default_locale: string;
             settings?: unknown;
-            readonly status: components["schemas"]["StatusEnum"];
+            readonly status: components["schemas"]["StatusEe8Enum"];
         };
         Organization: {
             /** Format: uuid */
@@ -328,7 +534,7 @@ export interface components {
             default_timezone: string;
             default_locale: string;
             settings?: unknown;
-            status?: components["schemas"]["StatusEnum"];
+            status?: components["schemas"]["StatusEe8Enum"];
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -341,6 +547,65 @@ export interface components {
             /** Format: uuid */
             head_employee_id?: string | null;
         };
+        /** @description Full HR view — all fields readable; encrypted fields write-through. */
+        PatchedEmployeeRequest: {
+            /** Format: uuid */
+            user?: string | null;
+            employee_code?: string;
+            first_name?: string;
+            last_name?: string;
+            preferred_name?: string;
+            /** Format: email */
+            email?: string;
+            phone?: string;
+            alt_phone?: string;
+            /** Format: byte */
+            ic_number?: string | null;
+            /** Format: date */
+            date_of_birth?: string;
+            gender?: components["schemas"]["GenderEnum"];
+            nationality?: string;
+            marital_status?: components["schemas"]["MaritalStatusEnum"];
+            religion?: string;
+            address_line1?: string;
+            address_line2?: string;
+            city?: string;
+            state?: string;
+            postcode?: string;
+            country_code?: string;
+            /** Format: uuid */
+            department?: string;
+            /** Format: uuid */
+            manager?: string | null;
+            role_title?: string;
+            employment_type?: components["schemas"]["EmploymentTypeEnum"];
+            schedule_type?: components["schemas"]["ScheduleTypeEnum"];
+            /** Format: date */
+            hire_date?: string;
+            /** Format: date */
+            probation_end_date?: string | null;
+            /** Format: date */
+            contract_end_date?: string | null;
+            /** Format: date-time */
+            confirmed_at?: string | null;
+            bank_name?: string;
+            /** Format: byte */
+            bank_account_number?: string | null;
+            /** Format: byte */
+            lhdn_tax_no?: string | null;
+            /** Format: byte */
+            epf_no?: string | null;
+            /** Format: byte */
+            socso_no?: string | null;
+            /** Format: byte */
+            eis_no?: string | null;
+            emergency_contact_name?: string;
+            emergency_contact_relationship?: string;
+            emergency_contact_phone?: string;
+            status?: components["schemas"]["EmployeeStatusEnum"];
+            timezone?: string;
+            locale?: string;
+        };
         PatchedOrgSettingsRequest: {
             name?: string;
             country_code?: string;
@@ -350,12 +615,18 @@ export interface components {
             settings?: unknown;
         };
         /**
+         * @description * `fixed` - Fixed
+         *     * `shift` - Shift
+         * @enum {string}
+         */
+        ScheduleTypeEnum: "fixed" | "shift";
+        /**
          * @description * `active` - Active
          *     * `suspended` - Suspended
          *     * `archived` - Archived
          * @enum {string}
          */
-        StatusEnum: "active" | "suspended" | "archived";
+        StatusEe8Enum: "active" | "suspended" | "archived";
     };
     responses: never;
     parameters: never;
@@ -681,6 +952,189 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Department"];
+                };
+            };
+        };
+    };
+    employees_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"][];
+                };
+            };
+        };
+    };
+    employees_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employees_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeRequest"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_me_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeRequest"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
                 };
             };
         };

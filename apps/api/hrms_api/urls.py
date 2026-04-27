@@ -12,6 +12,7 @@ api_v1_patterns = [
     ),
     path("", include("modules.identity.urls")),
     path("", include("modules.organization.urls")),
+    path("", include("modules.employee.urls")),
 ]
 
 

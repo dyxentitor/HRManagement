@@ -245,6 +245,185 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/employees/:
+    get:
+      operationId: employees_list
+      description: HR-facing employee CRUD.
+      tags:
+      - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+          description: ''
+    post:
+      operationId: employees_create
+      description: HR-facing employee CRUD.
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/v1/employees/{id}/:
+    get:
+      operationId: employees_retrieve
+      description: HR-facing employee CRUD.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    put:
+      operationId: employees_update
+      description: HR-facing employee CRUD.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    patch:
+      operationId: employees_partial_update
+      description: HR-facing employee CRUD.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    delete:
+      operationId: employees_destroy
+      description: HR-facing employee CRUD.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/employees/me/:
+    get:
+      operationId: employees_me_retrieve
+      description: HR-facing employee CRUD.
+      tags:
+      - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    patch:
+      operationId: employees_me_partial_update
+      description: HR-facing employee CRUD.
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployeeRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
   /api/v1/org/settings:
     get:
       operationId: org_settings_retrieve
@@ -394,6 +573,400 @@ components:
           nullable: true
       required:
       - name
+    Employee:
+      type: object
+      description: Full HR view — all fields readable; encrypted fields write-through.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        org_id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          type: string
+          format: uuid
+          nullable: true
+        employee_code:
+          type: string
+          maxLength: 32
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        preferred_name:
+          type: string
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 32
+        alt_phone:
+          type: string
+          maxLength: 32
+        ic_last4:
+          type: string
+          readOnly: true
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        nationality:
+          type: string
+          maxLength: 2
+        marital_status:
+          $ref: '#/components/schemas/MaritalStatusEnum'
+        religion:
+          type: string
+          maxLength: 32
+        address_line1:
+          type: string
+          maxLength: 200
+        address_line2:
+          type: string
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        postcode:
+          type: string
+          maxLength: 20
+        country_code:
+          type: string
+          maxLength: 2
+        department:
+          type: string
+          format: uuid
+        manager:
+          type: string
+          format: uuid
+          nullable: true
+        role_title:
+          type: string
+          maxLength: 100
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        schedule_type:
+          $ref: '#/components/schemas/ScheduleTypeEnum'
+        hire_date:
+          type: string
+          format: date
+        probation_end_date:
+          type: string
+          format: date
+          nullable: true
+        contract_end_date:
+          type: string
+          format: date
+          nullable: true
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+        bank_name:
+          type: string
+          maxLength: 100
+        bank_account_last4:
+          type: string
+          readOnly: true
+        emergency_contact_name:
+          type: string
+          maxLength: 100
+        emergency_contact_relationship:
+          type: string
+          maxLength: 50
+        emergency_contact_phone:
+          type: string
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/EmployeeStatusEnum'
+        timezone:
+          type: string
+          maxLength: 64
+        locale:
+          type: string
+          maxLength: 10
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - address_line1
+      - bank_account_last4
+      - bank_name
+      - city
+      - country_code
+      - created_at
+      - date_of_birth
+      - department
+      - email
+      - emergency_contact_name
+      - emergency_contact_phone
+      - emergency_contact_relationship
+      - employee_code
+      - employment_type
+      - first_name
+      - full_name
+      - gender
+      - hire_date
+      - ic_last4
+      - id
+      - last_name
+      - marital_status
+      - nationality
+      - org_id
+      - phone
+      - postcode
+      - role_title
+      - state
+      - updated_at
+    EmployeeRequest:
+      type: object
+      description: Full HR view — all fields readable; encrypted fields write-through.
+      properties:
+        user:
+          type: string
+          format: uuid
+          nullable: true
+        employee_code:
+          type: string
+          minLength: 1
+          maxLength: 32
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        preferred_name:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+        alt_phone:
+          type: string
+          maxLength: 32
+        ic_number:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        nationality:
+          type: string
+          minLength: 1
+          maxLength: 2
+        marital_status:
+          $ref: '#/components/schemas/MaritalStatusEnum'
+        religion:
+          type: string
+          maxLength: 32
+        address_line1:
+          type: string
+          minLength: 1
+          maxLength: 200
+        address_line2:
+          type: string
+          maxLength: 200
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state:
+          type: string
+          minLength: 1
+          maxLength: 100
+        postcode:
+          type: string
+          minLength: 1
+          maxLength: 20
+        country_code:
+          type: string
+          minLength: 1
+          maxLength: 2
+        department:
+          type: string
+          format: uuid
+        manager:
+          type: string
+          format: uuid
+          nullable: true
+        role_title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        schedule_type:
+          $ref: '#/components/schemas/ScheduleTypeEnum'
+        hire_date:
+          type: string
+          format: date
+        probation_end_date:
+          type: string
+          format: date
+          nullable: true
+        contract_end_date:
+          type: string
+          format: date
+          nullable: true
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+        bank_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        bank_account_number:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        lhdn_tax_no:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        epf_no:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        socso_no:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        eis_no:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        emergency_contact_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        emergency_contact_relationship:
+          type: string
+          minLength: 1
+          maxLength: 50
+        emergency_contact_phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/EmployeeStatusEnum'
+        timezone:
+          type: string
+          maxLength: 64
+        locale:
+          type: string
+          maxLength: 10
+      required:
+      - address_line1
+      - bank_name
+      - city
+      - country_code
+      - date_of_birth
+      - department
+      - email
+      - emergency_contact_name
+      - emergency_contact_phone
+      - emergency_contact_relationship
+      - employee_code
+      - employment_type
+      - first_name
+      - gender
+      - hire_date
+      - last_name
+      - marital_status
+      - nationality
+      - phone
+      - postcode
+      - role_title
+      - state
+    EmployeeStatusEnum:
+      enum:
+      - active
+      - probation
+      - on_leave
+      - terminated
+      - resigned
+      type: string
+      description: |-
+        * `active` - Active
+        * `probation` - Probation
+        * `on_leave` - On leave
+        * `terminated` - Terminated
+        * `resigned` - Resigned
+    EmploymentTypeEnum:
+      enum:
+      - fulltime
+      - parttime
+      - contract
+      - intern
+      type: string
+      description: |-
+        * `fulltime` - Full-time
+        * `parttime` - Part-time
+        * `contract` - Contract
+        * `intern` - Intern
+    GenderEnum:
+      enum:
+      - male
+      - female
+      - other
+      - undisclosed
+      type: string
+      description: |-
+        * `male` - Male
+        * `female` - Female
+        * `other` - Other
+        * `undisclosed` - Undisclosed
+    MaritalStatusEnum:
+      enum:
+      - single
+      - married
+      - divorced
+      - widowed
+      type: string
+      description: |-
+        * `single` - Single
+        * `married` - Married
+        * `divorced` - Divorced
+        * `widowed` - Widowed
     OrgSettings:
       type: object
       properties:
@@ -423,7 +996,7 @@ components:
         settings: {}
         status:
           allOf:
-          - $ref: '#/components/schemas/StatusEnum'
+          - $ref: '#/components/schemas/StatusEe8Enum'
           readOnly: true
       required:
       - country_code
@@ -462,7 +1035,7 @@ components:
           maxLength: 10
         settings: {}
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/StatusEe8Enum'
         created_at:
           type: string
           format: date-time
@@ -496,6 +1069,162 @@ components:
           type: string
           format: uuid
           nullable: true
+    PatchedEmployeeRequest:
+      type: object
+      description: Full HR view — all fields readable; encrypted fields write-through.
+      properties:
+        user:
+          type: string
+          format: uuid
+          nullable: true
+        employee_code:
+          type: string
+          minLength: 1
+          maxLength: 32
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        preferred_name:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+        alt_phone:
+          type: string
+          maxLength: 32
+        ic_number:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        nationality:
+          type: string
+          minLength: 1
+          maxLength: 2
+        marital_status:
+          $ref: '#/components/schemas/MaritalStatusEnum'
+        religion:
+          type: string
+          maxLength: 32
+        address_line1:
+          type: string
+          minLength: 1
+          maxLength: 200
+        address_line2:
+          type: string
+          maxLength: 200
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state:
+          type: string
+          minLength: 1
+          maxLength: 100
+        postcode:
+          type: string
+          minLength: 1
+          maxLength: 20
+        country_code:
+          type: string
+          minLength: 1
+          maxLength: 2
+        department:
+          type: string
+          format: uuid
+        manager:
+          type: string
+          format: uuid
+          nullable: true
+        role_title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        employment_type:
+          $ref: '#/components/schemas/EmploymentTypeEnum'
+        schedule_type:
+          $ref: '#/components/schemas/ScheduleTypeEnum'
+        hire_date:
+          type: string
+          format: date
+        probation_end_date:
+          type: string
+          format: date
+          nullable: true
+        contract_end_date:
+          type: string
+          format: date
+          nullable: true
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+        bank_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        bank_account_number:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        lhdn_tax_no:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        epf_no:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        socso_no:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        eis_no:
+          type: string
+          format: byte
+          writeOnly: true
+          nullable: true
+        emergency_contact_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        emergency_contact_relationship:
+          type: string
+          minLength: 1
+          maxLength: 50
+        emergency_contact_phone:
+          type: string
+          minLength: 1
+          maxLength: 32
+        status:
+          $ref: '#/components/schemas/EmployeeStatusEnum'
+        timezone:
+          type: string
+          maxLength: 64
+        locale:
+          type: string
+          maxLength: 10
     PatchedOrgSettingsRequest:
       type: object
       properties:
@@ -520,7 +1249,15 @@ components:
           minLength: 1
           maxLength: 10
         settings: {}
-    StatusEnum:
+    ScheduleTypeEnum:
+      enum:
+      - fixed
+      - shift
+      type: string
+      description: |-
+        * `fixed` - Fixed
+        * `shift` - Shift
+    StatusEe8Enum:
       enum:
       - active
       - suspended
