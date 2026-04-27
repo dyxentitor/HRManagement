@@ -5,6 +5,7 @@ import { AppShell } from "./components/shell/AppShell";
 import { AuthProvider } from "./lib/auth";
 import { authRoutes } from "./modules/auth/routes";
 import { employeeRoutes } from "./modules/employee/routes";
+import { leaveRoutes } from "./modules/leave/routes";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
 
@@ -23,6 +24,11 @@ const router = createBrowserRouter([
 				),
 			},
 			...employeeRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...leaveRoutes.map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,

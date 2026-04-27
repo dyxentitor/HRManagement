@@ -1,10 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/lib/auth";
+import { useCan } from "@/lib/perm";
 
 export function TopBar() {
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
+	const canLeave = useCan("leave:request:create:self");
+	const canApprovals = useCan("leave:request:approve:team");
 
 	return (
 		<header className="border-b bg-white">
@@ -17,6 +20,22 @@ export function TopBar() {
 					>
 						My Profile
 					</Link>
+					{canLeave && (
+						<Link
+							to="/leave/me"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Leave
+						</Link>
+					)}
+					{canApprovals && (
+						<Link
+							to="/leave/approvals"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Approvals
+						</Link>
+					)}
 					<span aria-label="user-email">{user?.email}</span>
 					<button
 						type="button"
