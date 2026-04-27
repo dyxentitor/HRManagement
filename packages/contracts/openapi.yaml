@@ -245,6 +245,43 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/org/settings:
+    get:
+      operationId: org_settings_retrieve
+      description: GET/PATCH the current user's organization settings.
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgSettings'
+          description: ''
+    patch:
+      operationId: org_settings_partial_update
+      description: GET/PATCH the current user's organization settings.
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrgSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrgSettingsRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgSettings'
+          description: ''
   /api/v1/organizations/:
     get:
       operationId: organizations_list
@@ -357,6 +394,46 @@ components:
           nullable: true
       required:
       - name
+    OrgSettings:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        country_code:
+          type: string
+          maxLength: 2
+        default_currency:
+          type: string
+          maxLength: 3
+        default_timezone:
+          type: string
+          maxLength: 64
+        default_locale:
+          type: string
+          maxLength: 10
+        settings: {}
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+      required:
+      - country_code
+      - default_currency
+      - default_locale
+      - default_timezone
+      - id
+      - name
+      - slug
+      - status
     Organization:
       type: object
       properties:
@@ -419,6 +496,30 @@ components:
           type: string
           format: uuid
           nullable: true
+    PatchedOrgSettingsRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        country_code:
+          type: string
+          minLength: 1
+          maxLength: 2
+        default_currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        default_timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+        default_locale:
+          type: string
+          minLength: 1
+          maxLength: 10
+        settings: {}
     StatusEnum:
       enum:
       - active

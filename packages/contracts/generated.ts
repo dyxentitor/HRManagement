@@ -196,6 +196,24 @@ export interface paths {
         patch: operations["departments_partial_update"];
         trace?: never;
     };
+    "/api/v1/org/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET/PATCH the current user's organization settings. */
+        get: operations["org_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description GET/PATCH the current user's organization settings. */
+        patch: operations["org_settings_partial_update"];
+        trace?: never;
+    };
     "/api/v1/organizations/": {
         parameters: {
             query?: never;
@@ -288,6 +306,18 @@ export interface components {
             /** Format: uuid */
             head_employee_id?: string | null;
         };
+        OrgSettings: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            readonly slug: string;
+            country_code: string;
+            default_currency: string;
+            default_timezone: string;
+            default_locale: string;
+            settings?: unknown;
+            readonly status: components["schemas"]["StatusEnum"];
+        };
         Organization: {
             /** Format: uuid */
             readonly id: string;
@@ -310,6 +340,14 @@ export interface components {
             parent?: string | null;
             /** Format: uuid */
             head_employee_id?: string | null;
+        };
+        PatchedOrgSettingsRequest: {
+            name?: string;
+            country_code?: string;
+            default_currency?: string;
+            default_timezone?: string;
+            default_locale?: string;
+            settings?: unknown;
         };
         /**
          * @description * `active` - Active
@@ -643,6 +681,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Department"];
+                };
+            };
+        };
+    };
+    org_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgSettings"];
+                };
+            };
+        };
+    };
+    org_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedOrgSettingsRequest"];
+                "multipart/form-data": components["schemas"]["PatchedOrgSettingsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgSettings"];
                 };
             };
         };
