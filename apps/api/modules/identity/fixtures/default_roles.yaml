@@ -24,6 +24,17 @@
     - audit:read:org
     - audit:payroll-ledger:read:org
     - audit:payroll-ledger:verify:org
+    - employee:read:self
+    - employee:read:team
+    - employee:read:org
+    - employee:write:self
+    - employee:write:org
+    - employee:create
+    - employee:archive
+    - "employee:bank:read"
+    - "employee:bank:write"
+    - employee:salary:read
+    - employee:salary:write
 
 - code: hr_manager
   name: HR Manager
@@ -44,6 +55,17 @@
     - org:settings:read
     - audit:read:org
     - "audit:payroll-ledger:read:org"
+    - employee:read:self
+    - employee:read:team
+    - employee:read:org
+    - employee:write:self
+    - employee:write:org
+    - employee:create
+    - employee:archive
+    - "employee:bank:read"
+    - "employee:bank:write"
+    - employee:salary:read
+    - employee:salary:write
 
 - code: finance
   name: Finance
@@ -56,6 +78,10 @@
     - role:read
     - permission:read
     - department:read
+    - employee:read:self
+    - employee:read:team
+    - "employee:bank:read"
+    - employee:salary:read
 
 - code: manager
   name: Manager
@@ -67,6 +93,8 @@
     - user:read:team
     - role:read
     - department:read
+    - employee:read:self
+    - employee:read:team
 
 - code: team_lead
   name: Team Lead
@@ -78,6 +106,8 @@
     - user:read:team
     - role:read
     - department:read
+    - employee:read:self
+    - employee:read:team
 
 - code: employee
   name: Employee
@@ -86,6 +116,8 @@
   permissions:
     - auth:mfa:manage:self
     - user:read:self
+    - employee:read:self
+    - employee:write:self
 
 - code: auditor
   name: Auditor
@@ -102,3 +134,8 @@
     - org:settings:read
     - audit:read:org
     - "audit:payroll-ledger:read:org"
+    - employee:read:self
+    - employee:read:team
+    - employee:read:org
+    - "employee:bank:read"
+    - employee:salary:read

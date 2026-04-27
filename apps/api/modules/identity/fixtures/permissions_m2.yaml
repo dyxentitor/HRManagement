@@ -1,0 +1,13 @@
+# Permission codes added in M2 (employee module).
+
+- { code: "employee:read:self", description: Read own employee record }
+- { code: "employee:read:team", description: Read direct-reports' employee records }
+- { code: "employee:read:org", description: Read any employee record in the org }
+- { code: "employee:write:self", description: Edit own profile (whitelisted fields) }
+- { code: "employee:write:org", description: Edit any employee record (HR) }
+- { code: "employee:create", description: Create new employee records }
+- { code: "employee:archive", description: Soft-delete (archive) employee records }
+- { code: "employee:bank:read", description: Read employee bank account details }
+- { code: "employee:bank:write", description: Edit employee bank account details (HR) }
+- { code: "employee:salary:read", description: Read employee salary fields }
+- { code: "employee:salary:write", description: Edit employee salary fields }

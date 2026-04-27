@@ -77,3 +77,15 @@ def test_seed_default_roles_requires_existing_permissions() -> None:
     org_id = uuid.uuid4()
     with pytest.raises(CommandError):
         call_command("seed_default_roles", "--org-id", str(org_id))
+
+
+@pytest.mark.django_db
+def test_seed_permission_catalogue_loads_m2_codes() -> None:
+    call_command("seed_permission_catalogue")
+    codes = set(Permission.objects.values_list("code", flat=True))
+    # Spot-check M2 codes
+    assert "employee:read:org" in codes
+    assert "employee:write:self" in codes
+    assert "employee:bank:read" in codes
+    assert "employee:salary:write" in codes
+    assert len(codes) >= 29
