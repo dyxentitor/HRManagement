@@ -7,7 +7,7 @@ api_v1_patterns = [
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "docs/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
+        SpectacularSwaggerView.as_view(url_name="v1:schema"),
         name="swagger-ui",
     ),
 ]
