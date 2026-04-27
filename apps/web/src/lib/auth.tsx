@@ -50,13 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			setLoading(false);
 			return;
 		}
-		// biome-ignore lint/suspicious/noExplicitAny: openapi path not in generated spec yet
-		const { data, error } = await api.GET("/api/v1/auth/me" as any);
+		const { data, error } = await api.GET("/api/v1/auth/me");
 		if (error || !data) {
 			setUser(null);
 			tokenStorage.clear();
 		} else {
-			setUser(data as AuthUser);
+			setUser(data as unknown as AuthUser);
 		}
 		setLoading(false);
 	}, []);
@@ -67,12 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const login = useCallback(
 		async (email: string, password: string) => {
-			// biome-ignore lint/suspicious/noExplicitAny: openapi path not in generated spec yet
-			const { data, error } = await api.POST("/api/v1/auth/login" as any, {
-				body: { email, password },
+			// The generated spec marks requestBody as never due to a spec generation gap;
+			// cast through unknown to pass the actual runtime body.
+			const { data, error } = await api.POST("/api/v1/auth/login", {
+				body: { email, password } as unknown as undefined,
 			});
 			if (error) throw new Error("Invalid credentials");
-			const body = data as {
+			const body = data as unknown as {
 				access_token: string;
 				refresh_token: string;
 				mfa_required?: boolean;
@@ -90,12 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const loginWithMFA = useCallback(
 		async (mfaToken: string, code: string) => {
-			// biome-ignore lint/suspicious/noExplicitAny: openapi path not in generated spec yet
-			const { data, error } = await api.POST("/api/v1/auth/login/mfa" as any, {
-				body: { mfa_token: mfaToken, code },
+			// Same spec generation gap — cast body through unknown
+			const { data, error } = await api.POST("/api/v1/auth/login/mfa", {
+				body: { mfa_token: mfaToken, code } as unknown as undefined,
 			});
 			if (error) throw new Error("Invalid MFA code");
-			const body = data as { access_token: string; refresh_token: string };
+			const body = data as unknown as {
+				access_token: string;
+				refresh_token: string;
+			};
 			tokenStorage.set(body.access_token, body.refresh_token);
 			await refreshMe();
 		},
@@ -105,9 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const logout = useCallback(async () => {
 		const refresh = tokenStorage.getRefresh();
 		if (refresh) {
-			// biome-ignore lint/suspicious/noExplicitAny: openapi path not in generated spec yet
-			await api.POST("/api/v1/auth/logout" as any, {
-				body: { refresh_token: refresh },
+			await api.POST("/api/v1/auth/logout", {
+				body: { refresh_token: refresh } as unknown as undefined,
 			});
 		}
 		tokenStorage.clear();

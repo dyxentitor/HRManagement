@@ -1,6 +1,6 @@
 import createClient from "openapi-fetch";
 
-import type { paths } from "../../../packages/contracts/generated";
+import type { paths } from "@hrms/contracts/generated";
 import { tokenStorage } from "./token-storage";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";

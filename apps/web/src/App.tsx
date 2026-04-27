@@ -1,10 +1,34 @@
+import { Suspense, lazy } from "react";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+
+import { AppShell } from "./components/shell/AppShell";
+import { AuthProvider } from "./lib/auth";
+import { authRoutes } from "./modules/auth/routes";
+
+const HomePage = lazy(() => import("./pages/HomePage"));
+
+const router = createBrowserRouter([
+	...authRoutes,
+	{
+		path: "/",
+		element: <AppShell />,
+		children: [
+			{
+				index: true,
+				element: (
+					<Suspense fallback={null}>
+						<HomePage />
+					</Suspense>
+				),
+			},
+		],
+	},
+]);
+
 export function App() {
 	return (
-		<main className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-900">
-			<div className="text-center space-y-2">
-				<h1 className="text-4xl font-bold">HRMS</h1>
-				<p className="text-sm text-slate-600">M0 — Repo Scaffold</p>
-			</div>
-		</main>
+		<AuthProvider>
+			<RouterProvider router={router} />
+		</AuthProvider>
 	);
 }

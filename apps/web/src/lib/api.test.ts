@@ -26,8 +26,7 @@ describe("api client", () => {
 				headers: { "Content-Type": "application/json" },
 			}),
 		);
-		// biome-ignore lint/suspicious/noExplicitAny: test-only path override
-		await api.GET("/api/v1/auth/me" as any);
+		await api.GET("/api/v1/auth/me");
 		const headers = (mockFetch.mock.calls[0][0] as Request).headers;
 		expect(headers.get("Authorization")).toBe("Bearer test-access");
 	});
@@ -39,8 +38,7 @@ describe("api client", () => {
 				headers: { "Content-Type": "application/json" },
 			}),
 		);
-		// biome-ignore lint/suspicious/noExplicitAny: test-only path override
-		await api.GET("/api/v1/auth/me" as any);
+		await api.GET("/api/v1/auth/me");
 		const headers = (mockFetch.mock.calls[0][0] as Request).headers;
 		expect(headers.get("Authorization")).toBeNull();
 	});
