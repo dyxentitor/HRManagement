@@ -4,6 +4,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "./components/shell/AppShell";
 import { AuthProvider } from "./lib/auth";
 import { authRoutes } from "./modules/auth/routes";
+import { employeeRoutes } from "./modules/employee/routes";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
 
@@ -21,6 +22,11 @@ const router = createBrowserRouter([
 					</Suspense>
 				),
 			},
+			...employeeRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
 		],
 	},
 ]);

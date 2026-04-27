@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/lib/auth";
 
@@ -11,6 +11,12 @@ export function TopBar() {
 			<div className="px-4 py-3 flex items-center justify-between">
 				<div className="font-semibold">HRMS</div>
 				<div className="flex items-center gap-3 text-sm">
+					<Link
+						to="/me/profile"
+						className="text-slate-600 hover:text-slate-900"
+					>
+						My Profile
+					</Link>
 					<span aria-label="user-email">{user?.email}</span>
 					<button
 						type="button"
