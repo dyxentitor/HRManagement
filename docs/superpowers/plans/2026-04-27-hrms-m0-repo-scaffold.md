@@ -475,11 +475,6 @@ ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "hrms_api.settings.test"
-
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "hrms_api.settings.test"
-python_files = ["test_*.py", "*_test.py"]
-addopts = "-ra --strict-markers --strict-config"
 ```
 
 - [ ] **Step 4: Install dependencies**
@@ -627,7 +622,16 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -647,9 +651,10 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v1",
 }
 
-CORS_ALLOWED_ORIGINS = env(
-    "CORS_ALLOWED_ORIGINS", default="http://localhost:5173,http://127.0.0.1:5173"
-).split(",")
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=["http://localhost:5173", "http://127.0.0.1:5173"],
+)
 
 # Argon2id for passwords
 PASSWORD_HASHERS = [
@@ -684,14 +689,20 @@ CELERY_TASK_EAGER_PROPAGATES = True
 
 Create `apps/api/hrms_api/settings/prod.py`:
 ```python
-from .base import *  # noqa: F401,F403
-
-DEBUG = False
-
-# Hard fail if DEBUG is somehow truthy in prod
+"""Production Django settings — fail-fast on misconfiguration."""
 import sys
+
+from .base import *  # noqa: F401,F403
+from .base import DEBUG, SECRET_KEY  # for the guards below to reference imported values
+
+# base.py reads DJANGO_DEBUG from env; if anyone sets DJANGO_DEBUG=1 in prod, we abort.
 if DEBUG:
-    sys.stderr.write("FATAL: DEBUG must be False in production\n")
+    sys.stderr.write("FATAL: DJANGO_DEBUG must be unset or 0 in production\n")
+    sys.exit(1)
+
+# Critical 2: refuse to start with the insecure default secret key.
+if SECRET_KEY == "dev-insecure-replace-me":
+    sys.stderr.write("FATAL: DJANGO_SECRET_KEY must be set in production\n")
     sys.exit(1)
 
 SECURE_HSTS_SECONDS = 31536000

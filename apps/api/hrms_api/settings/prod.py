@@ -1,11 +1,17 @@
-from .base import *  # noqa: F401,F403
-
-DEBUG = False
-
-# Hard fail if DEBUG is somehow truthy in prod
+"""Production Django settings — fail-fast on misconfiguration."""
 import sys
+
+from .base import *  # noqa: F401,F403
+from .base import DEBUG, SECRET_KEY  # for the guards below to reference imported values
+
+# base.py reads DJANGO_DEBUG from env; if anyone sets DJANGO_DEBUG=1 in prod, we abort.
 if DEBUG:
-    sys.stderr.write("FATAL: DEBUG must be False in production\n")
+    sys.stderr.write("FATAL: DJANGO_DEBUG must be unset or 0 in production\n")
+    sys.exit(1)
+
+# Critical 2: refuse to start with the insecure default secret key.
+if SECRET_KEY == "dev-insecure-replace-me":
+    sys.stderr.write("FATAL: DJANGO_SECRET_KEY must be set in production\n")
     sys.exit(1)
 
 SECURE_HSTS_SECONDS = 31536000

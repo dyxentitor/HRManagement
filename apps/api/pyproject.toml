@@ -62,7 +62,3 @@ ignore_missing_imports = true
 [tool.django-stubs]
 django_settings_module = "hrms_api.settings.test"
 
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "hrms_api.settings.test"
-python_files = ["test_*.py", "*_test.py"]
-addopts = "-ra --strict-markers --strict-config"
