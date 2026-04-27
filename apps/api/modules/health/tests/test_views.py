@@ -8,7 +8,6 @@ def client() -> APIClient:
     return APIClient()
 
 
-@pytest.mark.django_db
 def test_health_returns_200_and_ok(client: APIClient) -> None:
     response = client.get("/health")
     assert response.status_code == 200
