@@ -12,6 +12,8 @@ export function TopBar() {
 	const canRoster = useCan("schedule:assignment:write:team");
 	const canClaims = useCan("claim:create:self");
 	const canFinance = useCan("claim:reimburse:finance");
+	const canPayslips = useCan("payslip:read:self");
+	const canPayroll = useCan("payroll:run:create");
 
 	return (
 		<header className="border-b bg-white">
@@ -70,6 +72,22 @@ export function TopBar() {
 							className="text-slate-600 hover:text-slate-900"
 						>
 							Finance
+						</Link>
+					)}
+					{canPayslips && (
+						<Link
+							to="/payslips/me"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Payslips
+						</Link>
+					)}
+					{canPayroll && (
+						<Link
+							to="/payroll/admin"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Payroll
 						</Link>
 					)}
 					<span aria-label="user-email">{user?.email}</span>
