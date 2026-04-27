@@ -249,6 +249,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/claims/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["claims_list"];
+        put?: never;
+        post: operations["claims_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["claims_retrieve"];
+        put: operations["claims_update"];
+        post?: never;
+        delete: operations["claims_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["claims_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/claims/{id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claims_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/{id}/attachments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["claims_attachments_retrieve"];
+        put?: never;
+        post: operations["claims_attachments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/{id}/attachments/presigned-upload/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claims_attachments_presigned_upload_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claims_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/{id}/mark-reimbursed/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claims_mark_reimbursed_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claims_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/{id}/submit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claims_submit_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/categories/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["claims_categories_list"];
+        put?: never;
+        post: operations["claims_categories_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/categories/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["claims_categories_retrieve"];
+        put: operations["claims_categories_update"];
+        post?: never;
+        delete: operations["claims_categories_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["claims_categories_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/claims/policies/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["claims_policies_list"];
+        put?: never;
+        post: operations["claims_policies_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/policies/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["claims_policies_retrieve"];
+        put: operations["claims_policies_update"];
+        post?: never;
+        delete: operations["claims_policies_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["claims_policies_partial_update"];
+        trace?: never;
+    };
     "/api/v1/departments/": {
         parameters: {
             query?: never;
@@ -913,6 +1121,147 @@ export interface components {
         AttendanceRecordStatusEnum: "present" | "late" | "absent" | "holiday" | "on_leave" | "partial";
         /** @enum {unknown} */
         BlankEnum: "";
+        ClaimApproval: {
+            readonly id: number;
+            level: number;
+            /** Format: uuid */
+            approver_id: string;
+            status?: components["schemas"]["Status872Enum"];
+            comment?: string;
+            /** Format: date-time */
+            acted_at?: string | null;
+            /** Format: uuid */
+            delegated_to?: string | null;
+        };
+        ClaimApprovalRequest: {
+            level: number;
+            /** Format: uuid */
+            approver_id: string;
+            status?: components["schemas"]["Status872Enum"];
+            comment?: string;
+            /** Format: date-time */
+            acted_at?: string | null;
+            /** Format: uuid */
+            delegated_to?: string | null;
+        };
+        ClaimAttachment: {
+            readonly id: number;
+            filename: string;
+            content_type: string;
+            /** Format: int64 */
+            size_bytes: number;
+            s3_key: string;
+            /** Format: uuid */
+            readonly uploaded_by: string;
+            /** Format: date-time */
+            readonly uploaded_at: string;
+        };
+        ClaimAttachmentRequest: {
+            filename: string;
+            content_type: string;
+            /** Format: int64 */
+            size_bytes: number;
+            s3_key: string;
+        };
+        ClaimCategory: {
+            /** Format: uuid */
+            readonly id: string;
+            code: string;
+            name: string;
+            requires_attachment?: boolean;
+            /** Format: decimal */
+            max_amount_per_claim?: string | null;
+            currency_code?: string;
+        };
+        ClaimCategoryRequest: {
+            code: string;
+            name: string;
+            requires_attachment?: boolean;
+            /** Format: decimal */
+            max_amount_per_claim?: string | null;
+            currency_code?: string;
+        };
+        ClaimPolicy: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            category: string;
+            /** Format: uuid */
+            role_id?: string | null;
+            /** Format: uuid */
+            dept_id?: string | null;
+            /** Format: decimal */
+            annual_limit: string;
+            /** Format: decimal */
+            monthly_limit: string;
+            approval_chain_code?: string;
+        };
+        ClaimPolicyRequest: {
+            /** Format: uuid */
+            category: string;
+            /** Format: uuid */
+            role_id?: string | null;
+            /** Format: uuid */
+            dept_id?: string | null;
+            /** Format: decimal */
+            annual_limit: string;
+            /** Format: decimal */
+            monthly_limit: string;
+            approval_chain_code?: string;
+        };
+        ClaimRequest: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly org_id: string;
+            /** Format: uuid */
+            readonly employee: string;
+            /** Format: uuid */
+            category: string;
+            readonly category_code: string;
+            /** Format: decimal */
+            amount: string;
+            currency_code?: string;
+            /** Format: date */
+            expense_date: string;
+            description?: string;
+            merchant?: string;
+            readonly status: components["schemas"]["ClaimStatusEnum"];
+            readonly current_level: number;
+            /** Format: date-time */
+            readonly submitted_at: string | null;
+            /** Format: date-time */
+            readonly reimbursed_at: string | null;
+            readonly reimbursement_reference: string;
+            readonly approvals: components["schemas"]["ClaimApproval"][];
+            readonly attachments: components["schemas"]["ClaimAttachment"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        ClaimRequestRequest: {
+            /** Format: uuid */
+            category: string;
+            /** Format: decimal */
+            amount: string;
+            currency_code?: string;
+            /** Format: date */
+            expense_date: string;
+            description?: string;
+            merchant?: string;
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `submitted` - Submitted
+         *     * `manager_approved` - Manager approved
+         *     * `finance_approved` - Finance approved
+         *     * `reimbursed` - Reimbursed
+         *     * `rejected` - Rejected
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        ClaimStatusEnum: "draft" | "submitted" | "manager_approved" | "finance_approved" | "reimbursed" | "rejected" | "cancelled";
         Department: {
             /** Format: uuid */
             readonly id: string;
@@ -1111,7 +1460,7 @@ export interface components {
             level: number;
             /** Format: uuid */
             approver_id: string;
-            status?: components["schemas"]["LeaveApprovalStatusEnum"];
+            status?: components["schemas"]["Status872Enum"];
             comment?: string;
             /** Format: date-time */
             acted_at?: string | null;
@@ -1122,22 +1471,13 @@ export interface components {
             level: number;
             /** Format: uuid */
             approver_id: string;
-            status?: components["schemas"]["LeaveApprovalStatusEnum"];
+            status?: components["schemas"]["Status872Enum"];
             comment?: string;
             /** Format: date-time */
             acted_at?: string | null;
             /** Format: uuid */
             delegated_to?: string | null;
         };
-        /**
-         * @description * `pending` - Pending
-         *     * `approved` - Approved
-         *     * `rejected` - Rejected
-         *     * `delegated` - Delegated
-         *     * `skipped` - Skipped
-         * @enum {string}
-         */
-        LeaveApprovalStatusEnum: "pending" | "approved" | "rejected" | "delegated" | "skipped";
         LeaveBalance: {
             /** Format: uuid */
             readonly id: string;
@@ -1270,6 +1610,38 @@ export interface components {
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        PatchedClaimCategoryRequest: {
+            code?: string;
+            name?: string;
+            requires_attachment?: boolean;
+            /** Format: decimal */
+            max_amount_per_claim?: string | null;
+            currency_code?: string;
+        };
+        PatchedClaimPolicyRequest: {
+            /** Format: uuid */
+            category?: string;
+            /** Format: uuid */
+            role_id?: string | null;
+            /** Format: uuid */
+            dept_id?: string | null;
+            /** Format: decimal */
+            annual_limit?: string;
+            /** Format: decimal */
+            monthly_limit?: string;
+            approval_chain_code?: string;
+        };
+        PatchedClaimRequestRequest: {
+            /** Format: uuid */
+            category?: string;
+            /** Format: decimal */
+            amount?: string;
+            currency_code?: string;
+            /** Format: date */
+            expense_date?: string;
+            description?: string;
+            merchant?: string;
         };
         PatchedDepartmentRequest: {
             name?: string;
@@ -1472,6 +1844,15 @@ export interface components {
          * @enum {string}
          */
         SourceEnum: "web" | "kiosk" | "mobile" | "admin";
+        /**
+         * @description * `pending` - Pending
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         *     * `delegated` - Delegated
+         *     * `skipped` - Skipped
+         * @enum {string}
+         */
+        Status872Enum: "pending" | "approved" | "rejected" | "delegated" | "skipped";
         /**
          * @description * `active` - Active
          *     * `suspended` - Suspended
@@ -1799,6 +2180,617 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    claims_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"][];
+                };
+            };
+        };
+    };
+    claims_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    claims_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["PatchedClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_attachments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_attachments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_attachments_presigned_upload_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_mark_reimbursed_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_submit_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequestRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_categories_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimCategory"][];
+                };
+            };
+        };
+    };
+    claims_categories_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimCategoryRequest"];
+                "multipart/form-data": components["schemas"]["ClaimCategoryRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimCategory"];
+                };
+            };
+        };
+    };
+    claims_categories_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimCategory"];
+                };
+            };
+        };
+    };
+    claims_categories_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimCategoryRequest"];
+                "multipart/form-data": components["schemas"]["ClaimCategoryRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimCategory"];
+                };
+            };
+        };
+    };
+    claims_categories_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    claims_categories_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedClaimCategoryRequest"];
+                "multipart/form-data": components["schemas"]["PatchedClaimCategoryRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimCategory"];
+                };
+            };
+        };
+    };
+    claims_policies_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimPolicy"][];
+                };
+            };
+        };
+    };
+    claims_policies_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimPolicyRequest"];
+                "multipart/form-data": components["schemas"]["ClaimPolicyRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimPolicy"];
+                };
+            };
+        };
+    };
+    claims_policies_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimPolicy"];
+                };
+            };
+        };
+    };
+    claims_policies_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimPolicyRequest"];
+                "multipart/form-data": components["schemas"]["ClaimPolicyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimPolicy"];
+                };
+            };
+        };
+    };
+    claims_policies_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    claims_policies_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedClaimPolicyRequest"];
+                "multipart/form-data": components["schemas"]["PatchedClaimPolicyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimPolicy"];
+                };
             };
         };
     };

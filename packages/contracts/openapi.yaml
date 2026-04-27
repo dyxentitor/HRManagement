@@ -203,6 +203,612 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/claims/:
+    get:
+      operationId: claims_list
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+    post:
+      operationId: claims_create
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/{id}/:
+    get:
+      operationId: claims_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+    put:
+      operationId: claims_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+    patch:
+      operationId: claims_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClaimRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+    delete:
+      operationId: claims_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/claims/{id}/approve/:
+    post:
+      operationId: claims_approve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/{id}/attachments/:
+    get:
+      operationId: claims_attachments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+    post:
+      operationId: claims_attachments_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/{id}/attachments/presigned-upload/:
+    post:
+      operationId: claims_attachments_presigned_upload_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/{id}/cancel/:
+    post:
+      operationId: claims_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/{id}/mark-reimbursed/:
+    post:
+      operationId: claims_mark_reimbursed_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/{id}/reject/:
+    post:
+      operationId: claims_reject_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/{id}/submit/:
+    post:
+      operationId: claims_submit_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/categories/:
+    get:
+      operationId: claims_categories_list
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClaimCategory'
+          description: ''
+    post:
+      operationId: claims_categories_create
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimCategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimCategory'
+          description: ''
+  /api/v1/claims/categories/{id}/:
+    get:
+      operationId: claims_categories_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimCategory'
+          description: ''
+    put:
+      operationId: claims_categories_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimCategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimCategory'
+          description: ''
+    patch:
+      operationId: claims_categories_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClaimCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClaimCategoryRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimCategory'
+          description: ''
+    delete:
+      operationId: claims_categories_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/claims/policies/:
+    get:
+      operationId: claims_policies_list
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClaimPolicy'
+          description: ''
+    post:
+      operationId: claims_policies_create
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimPolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimPolicyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimPolicy'
+          description: ''
+  /api/v1/claims/policies/{id}/:
+    get:
+      operationId: claims_policies_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimPolicy'
+          description: ''
+    put:
+      operationId: claims_policies_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimPolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimPolicyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimPolicy'
+          description: ''
+    patch:
+      operationId: claims_policies_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClaimPolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClaimPolicyRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimPolicy'
+          description: ''
+    delete:
+      operationId: claims_policies_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/departments/:
     get:
       operationId: departments_list
@@ -1763,6 +2369,371 @@ components:
     BlankEnum:
       enum:
       - ''
+    ClaimApproval:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        level:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        approver_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/Status872Enum'
+        comment:
+          type: string
+        acted_at:
+          type: string
+          format: date-time
+          nullable: true
+        delegated_to:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - approver_id
+      - id
+      - level
+    ClaimApprovalRequest:
+      type: object
+      properties:
+        level:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        approver_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/Status872Enum'
+        comment:
+          type: string
+        acted_at:
+          type: string
+          format: date-time
+          nullable: true
+        delegated_to:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - approver_id
+      - level
+    ClaimAttachment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        filename:
+          type: string
+          maxLength: 255
+        content_type:
+          type: string
+          maxLength: 100
+        size_bytes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        s3_key:
+          type: string
+          maxLength: 500
+        uploaded_by:
+          type: string
+          format: uuid
+          readOnly: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content_type
+      - filename
+      - id
+      - s3_key
+      - size_bytes
+      - uploaded_at
+      - uploaded_by
+    ClaimAttachmentRequest:
+      type: object
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+        size_bytes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        s3_key:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - content_type
+      - filename
+      - s3_key
+      - size_bytes
+    ClaimCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 100
+        requires_attachment:
+          type: boolean
+        max_amount_per_claim:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        currency_code:
+          type: string
+          maxLength: 3
+      required:
+      - code
+      - id
+      - name
+    ClaimCategoryRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        requires_attachment:
+          type: boolean
+        max_amount_per_claim:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        currency_code:
+          type: string
+          minLength: 1
+          maxLength: 3
+      required:
+      - code
+      - name
+    ClaimPolicy:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          type: string
+          format: uuid
+        role_id:
+          type: string
+          format: uuid
+          nullable: true
+        dept_id:
+          type: string
+          format: uuid
+          nullable: true
+        annual_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        monthly_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        approval_chain_code:
+          type: string
+          maxLength: 32
+      required:
+      - annual_limit
+      - category
+      - id
+      - monthly_limit
+    ClaimPolicyRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          format: uuid
+        role_id:
+          type: string
+          format: uuid
+          nullable: true
+        dept_id:
+          type: string
+          format: uuid
+          nullable: true
+        annual_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        monthly_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        approval_chain_code:
+          type: string
+          maxLength: 32
+      required:
+      - annual_limit
+      - category
+      - monthly_limit
+    ClaimRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        org_id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          type: string
+          format: uuid
+        category_code:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency_code:
+          type: string
+          maxLength: 3
+        expense_date:
+          type: string
+          format: date
+        description:
+          type: string
+        merchant:
+          type: string
+          maxLength: 200
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ClaimStatusEnum'
+          readOnly: true
+        current_level:
+          type: integer
+          readOnly: true
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reimbursed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reimbursement_reference:
+          type: string
+          readOnly: true
+        approvals:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimApproval'
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimAttachment'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - approvals
+      - attachments
+      - category
+      - category_code
+      - created_at
+      - current_level
+      - employee
+      - expense_date
+      - id
+      - org_id
+      - reimbursed_at
+      - reimbursement_reference
+      - status
+      - submitted_at
+      - updated_at
+    ClaimRequestRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency_code:
+          type: string
+          minLength: 1
+          maxLength: 3
+        expense_date:
+          type: string
+          format: date
+        description:
+          type: string
+        merchant:
+          type: string
+          maxLength: 200
+      required:
+      - amount
+      - category
+      - expense_date
+    ClaimStatusEnum:
+      enum:
+      - draft
+      - submitted
+      - manager_approved
+      - finance_approved
+      - reimbursed
+      - rejected
+      - cancelled
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `submitted` - Submitted
+        * `manager_approved` - Manager approved
+        * `finance_approved` - Finance approved
+        * `reimbursed` - Reimbursed
+        * `rejected` - Rejected
+        * `cancelled` - Cancelled
     Department:
       type: object
       properties:
@@ -2273,7 +3244,7 @@ components:
           type: string
           format: uuid
         status:
-          $ref: '#/components/schemas/LeaveApprovalStatusEnum'
+          $ref: '#/components/schemas/Status872Enum'
         comment:
           type: string
         acted_at:
@@ -2299,7 +3270,7 @@ components:
           type: string
           format: uuid
         status:
-          $ref: '#/components/schemas/LeaveApprovalStatusEnum'
+          $ref: '#/components/schemas/Status872Enum'
         comment:
           type: string
         acted_at:
@@ -2313,20 +3284,6 @@ components:
       required:
       - approver_id
       - level
-    LeaveApprovalStatusEnum:
-      enum:
-      - pending
-      - approved
-      - rejected
-      - delegated
-      - skipped
-      type: string
-      description: |-
-        * `pending` - Pending
-        * `approved` - Approved
-        * `rejected` - Rejected
-        * `delegated` - Delegated
-        * `skipped` - Skipped
     LeaveBalance:
       type: object
       properties:
@@ -2674,6 +3631,75 @@ components:
       - name
       - slug
       - updated_at
+    PatchedClaimCategoryRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        requires_attachment:
+          type: boolean
+        max_amount_per_claim:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        currency_code:
+          type: string
+          minLength: 1
+          maxLength: 3
+    PatchedClaimPolicyRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          format: uuid
+        role_id:
+          type: string
+          format: uuid
+          nullable: true
+        dept_id:
+          type: string
+          format: uuid
+          nullable: true
+        annual_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        monthly_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        approval_chain_code:
+          type: string
+          maxLength: 32
+    PatchedClaimRequestRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        currency_code:
+          type: string
+          minLength: 1
+          maxLength: 3
+        expense_date:
+          type: string
+          format: date
+        description:
+          type: string
+        merchant:
+          type: string
+          maxLength: 200
     PatchedDepartmentRequest:
       type: object
       properties:
@@ -3123,6 +4149,20 @@ components:
         * `kiosk` - Kiosk
         * `mobile` - Mobile
         * `admin` - Admin
+    Status872Enum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      - delegated
+      - skipped
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `delegated` - Delegated
+        * `skipped` - Skipped
     StatusEe8Enum:
       enum:
       - active

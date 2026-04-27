@@ -16,6 +16,7 @@ api_v1_patterns = [
     path("", include("modules.leave.urls")),
     path("", include("modules.schedule.urls")),
     path("", include("modules.attendance.urls")),
+    path("", include("modules.claims.urls")),
 ]
 
 
