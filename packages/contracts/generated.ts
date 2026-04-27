@@ -303,6 +303,198 @@ export interface paths {
         patch: operations["employees_me_partial_update"];
         trace?: never;
     };
+    "/api/v1/leave/balances/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_balances_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/balances/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_balances_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/balances/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_balances_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/requests/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_requests_list"];
+        put?: never;
+        post: operations["leave_requests_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/requests/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_requests_retrieve"];
+        put: operations["leave_requests_update"];
+        post?: never;
+        delete: operations["leave_requests_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["leave_requests_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/leave/requests/{id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["leave_requests_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/requests/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["leave_requests_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/requests/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["leave_requests_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/requests/{id}/submit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["leave_requests_submit_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/requests/{id}/withdraw/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["leave_requests_withdraw_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/types/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_types_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/types/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_types_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/settings": {
         parameters: {
             query?: never;
@@ -393,6 +585,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description * `annual` - Annual
+         *     * `monthly` - Monthly
+         *     * `event_based` - Event-based
+         *     * `none` - No accrual
+         * @enum {string}
+         */
+        AccrualTypeEnum: "annual" | "monthly" | "event_based" | "none";
+        /** @enum {unknown} */
+        BlankEnum: "";
         Department: {
             /** Format: uuid */
             readonly id: string;
@@ -556,6 +758,148 @@ export interface components {
          */
         GenderEnum: "male" | "female" | "other" | "undisclosed";
         /**
+         * @description * `any` - Any
+         *     * `male` - Male only
+         *     * `female` - Female only
+         * @enum {string}
+         */
+        GenderRestrictionEnum: "any" | "male" | "female";
+        /**
+         * @description * `am` - AM
+         *     * `pm` - PM
+         * @enum {string}
+         */
+        HalfDayPeriodEnum: "am" | "pm";
+        LeaveApproval: {
+            readonly id: number;
+            level: number;
+            /** Format: uuid */
+            approver_id: string;
+            status?: components["schemas"]["LeaveApprovalStatusEnum"];
+            comment?: string;
+            /** Format: date-time */
+            acted_at?: string | null;
+            /** Format: uuid */
+            delegated_to?: string | null;
+        };
+        LeaveApprovalRequest: {
+            level: number;
+            /** Format: uuid */
+            approver_id: string;
+            status?: components["schemas"]["LeaveApprovalStatusEnum"];
+            comment?: string;
+            /** Format: date-time */
+            acted_at?: string | null;
+            /** Format: uuid */
+            delegated_to?: string | null;
+        };
+        /**
+         * @description * `pending` - Pending
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         *     * `delegated` - Delegated
+         *     * `skipped` - Skipped
+         * @enum {string}
+         */
+        LeaveApprovalStatusEnum: "pending" | "approved" | "rejected" | "delegated" | "skipped";
+        LeaveBalance: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly employee_id: string;
+            /** Format: uuid */
+            readonly leave_type: string;
+            readonly leave_type_code: string;
+            readonly year: number;
+            /** Format: decimal */
+            readonly entitled: string;
+            /** Format: decimal */
+            readonly accrued: string;
+            /** Format: decimal */
+            readonly taken: string;
+            /** Format: decimal */
+            readonly pending: string;
+            /** Format: decimal */
+            readonly carried_forward: string;
+            /** Format: decimal */
+            readonly available: string;
+        };
+        LeaveRequest: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly org_id: string;
+            /** Format: uuid */
+            readonly employee_id: string;
+            /** Format: uuid */
+            leave_type: string;
+            readonly leave_type_code: string;
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            /** Format: decimal */
+            total_days: string;
+            is_half_day?: boolean;
+            half_day_period?: components["schemas"]["HalfDayPeriodEnum"] | components["schemas"]["BlankEnum"];
+            reason?: string;
+            /** Format: uri */
+            attachment_url?: string;
+            readonly status: components["schemas"]["LeaveStatusEnum"];
+            readonly current_level: number;
+            /** Format: date-time */
+            readonly submitted_at: string | null;
+            /** Format: date-time */
+            readonly decided_at: string | null;
+            /** Format: uuid */
+            readonly decided_by: string | null;
+            readonly approvals: components["schemas"]["LeaveApproval"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        LeaveRequestRequest: {
+            /** Format: uuid */
+            leave_type: string;
+            /** Format: date */
+            start_date: string;
+            /** Format: date */
+            end_date: string;
+            /** Format: decimal */
+            total_days: string;
+            is_half_day?: boolean;
+            half_day_period?: components["schemas"]["HalfDayPeriodEnum"] | components["schemas"]["BlankEnum"];
+            reason?: string;
+            /** Format: uri */
+            attachment_url?: string;
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `submitted` - Submitted
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         *     * `cancelled` - Cancelled
+         *     * `withdrawn` - Withdrawn
+         * @enum {string}
+         */
+        LeaveStatusEnum: "draft" | "submitted" | "approved" | "rejected" | "cancelled" | "withdrawn";
+        LeaveType: {
+            /** Format: uuid */
+            readonly id: string;
+            code: string;
+            name: string;
+            accrual_type: components["schemas"]["AccrualTypeEnum"];
+            /** Format: decimal */
+            default_days?: string;
+            is_paid?: boolean;
+            requires_attachment?: boolean;
+            max_consecutive_days?: number | null;
+            min_advance_notice_days?: number;
+            is_statutory?: boolean;
+            gender_restriction?: components["schemas"]["GenderRestrictionEnum"];
+        };
+        /**
          * @description * `single` - Single
          *     * `married` - Married
          *     * `divorced` - Divorced
@@ -656,6 +1000,21 @@ export interface components {
             status?: components["schemas"]["EmployeeStatusEnum"];
             timezone?: string;
             locale?: string;
+        };
+        PatchedLeaveRequestRequest: {
+            /** Format: uuid */
+            leave_type?: string;
+            /** Format: date */
+            start_date?: string;
+            /** Format: date */
+            end_date?: string;
+            /** Format: decimal */
+            total_days?: string;
+            is_half_day?: boolean;
+            half_day_period?: components["schemas"]["HalfDayPeriodEnum"] | components["schemas"]["BlankEnum"];
+            reason?: string;
+            /** Format: uri */
+            attachment_url?: string;
         };
         PatchedOrgSettingsRequest: {
             name?: string;
@@ -1252,6 +1611,371 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    leave_balances_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveBalance"][];
+                };
+            };
+        };
+    };
+    leave_balances_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveBalance"];
+                };
+            };
+        };
+    };
+    leave_balances_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveBalance"];
+                };
+            };
+        };
+    };
+    leave_requests_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"][];
+                };
+            };
+        };
+    };
+    leave_requests_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["LeaveRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_requests_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_requests_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["LeaveRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_requests_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    leave_requests_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["PatchedLeaveRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_requests_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["LeaveRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_requests_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["LeaveRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_requests_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["LeaveRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_requests_submit_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["LeaveRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_requests_withdraw_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveRequestRequest"];
+                "multipart/form-data": components["schemas"]["LeaveRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequest"];
+                };
+            };
+        };
+    };
+    leave_types_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveType"][];
+                };
+            };
+        };
+    };
+    leave_types_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveType"];
                 };
             };
         };
