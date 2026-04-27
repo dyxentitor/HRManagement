@@ -547,6 +547,182 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/schedule/holidays/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_holidays_list"];
+        put?: never;
+        post: operations["schedule_holidays_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/holidays/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_holidays_retrieve"];
+        put: operations["schedule_holidays_update"];
+        post?: never;
+        delete: operations["schedule_holidays_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["schedule_holidays_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/schedule/shift-assignments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_shift_assignments_list"];
+        put?: never;
+        post: operations["schedule_shift_assignments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/shift-assignments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_shift_assignments_retrieve"];
+        put: operations["schedule_shift_assignments_update"];
+        post?: never;
+        delete: operations["schedule_shift_assignments_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["schedule_shift_assignments_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/schedule/shift-assignments/bulk-pattern/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["schedule_shift_assignments_bulk_pattern_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/shift-assignments/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_shift_assignments_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/shift-assignments/publish/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["schedule_shift_assignments_publish_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/shifts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_shifts_list"];
+        put?: never;
+        post: operations["schedule_shifts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/shifts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_shifts_retrieve"];
+        put: operations["schedule_shifts_update"];
+        post?: never;
+        delete: operations["schedule_shifts_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["schedule_shifts_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/schedule/work-schedules/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_work_schedules_list"];
+        put?: never;
+        post: operations["schedule_work_schedules_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/work-schedules/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_work_schedules_retrieve"];
+        put: operations["schedule_work_schedules_update"];
+        post?: never;
+        delete: operations["schedule_work_schedules_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["schedule_work_schedules_partial_update"];
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -770,6 +946,24 @@ export interface components {
          * @enum {string}
          */
         HalfDayPeriodEnum: "am" | "pm";
+        Holiday: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date */
+            date: string;
+            name: string;
+            type: components["schemas"]["TypeEnum"];
+            applies_to_country_code?: string;
+            applies_to_state_code?: string;
+        };
+        HolidayRequest: {
+            /** Format: date */
+            date: string;
+            name: string;
+            type: components["schemas"]["TypeEnum"];
+            applies_to_country_code?: string;
+            applies_to_state_code?: string;
+        };
         LeaveApproval: {
             readonly id: number;
             level: number;
@@ -1001,6 +1195,14 @@ export interface components {
             timezone?: string;
             locale?: string;
         };
+        PatchedHolidayRequest: {
+            /** Format: date */
+            date?: string;
+            name?: string;
+            type?: components["schemas"]["TypeEnum"];
+            applies_to_country_code?: string;
+            applies_to_state_code?: string;
+        };
         PatchedLeaveRequestRequest: {
             /** Format: uuid */
             leave_type?: string;
@@ -1024,12 +1226,102 @@ export interface components {
             default_locale?: string;
             settings?: unknown;
         };
+        PatchedShiftAssignmentRequest: {
+            /** Format: uuid */
+            employee?: string;
+            /** Format: uuid */
+            shift?: string;
+            /** Format: date */
+            work_date?: string;
+            status?: components["schemas"]["ShiftAssignmentStatusEnum"];
+            /** Format: uuid */
+            assigned_by?: string;
+            notes?: string;
+        };
+        PatchedShiftRequest: {
+            name?: string;
+            /** Format: time */
+            start_time?: string;
+            /** Format: time */
+            end_time?: string;
+            crosses_midnight?: boolean;
+            color?: string;
+        };
+        PatchedWorkScheduleRequest: {
+            /** Format: uuid */
+            employee?: string;
+            name?: string;
+            pattern?: unknown;
+            /** Format: date */
+            effective_from?: string;
+            /** Format: date */
+            effective_to?: string | null;
+        };
         /**
          * @description * `fixed` - Fixed
          *     * `shift` - Shift
          * @enum {string}
          */
         ScheduleTypeEnum: "fixed" | "shift";
+        Shift: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            /** Format: time */
+            start_time: string;
+            /** Format: time */
+            end_time: string;
+            crosses_midnight?: boolean;
+            color?: string;
+        };
+        ShiftAssignment: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            employee: string;
+            readonly employee_code: string;
+            /** Format: uuid */
+            shift: string;
+            readonly shift_name: string;
+            /** Format: date */
+            work_date: string;
+            status?: components["schemas"]["ShiftAssignmentStatusEnum"];
+            /** Format: uuid */
+            assigned_by: string;
+            /** Format: date-time */
+            readonly published_at: string | null;
+            readonly is_published: boolean;
+            notes?: string;
+        };
+        ShiftAssignmentRequest: {
+            /** Format: uuid */
+            employee: string;
+            /** Format: uuid */
+            shift: string;
+            /** Format: date */
+            work_date: string;
+            status?: components["schemas"]["ShiftAssignmentStatusEnum"];
+            /** Format: uuid */
+            assigned_by: string;
+            notes?: string;
+        };
+        /**
+         * @description * `scheduled` - Scheduled
+         *     * `completed` - Completed
+         *     * `absent` - Absent
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        ShiftAssignmentStatusEnum: "scheduled" | "completed" | "absent" | "cancelled";
+        ShiftRequest: {
+            name: string;
+            /** Format: time */
+            start_time: string;
+            /** Format: time */
+            end_time: string;
+            crosses_midnight?: boolean;
+            color?: string;
+        };
         /**
          * @description * `active` - Active
          *     * `suspended` - Suspended
@@ -1037,6 +1329,35 @@ export interface components {
          * @enum {string}
          */
         StatusEe8Enum: "active" | "suspended" | "archived";
+        /**
+         * @description * `federal` - Federal
+         *     * `state` - State
+         *     * `company` - Company
+         * @enum {string}
+         */
+        TypeEnum: "federal" | "state" | "company";
+        WorkSchedule: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            employee: string;
+            name?: string;
+            pattern?: unknown;
+            /** Format: date */
+            effective_from: string;
+            /** Format: date */
+            effective_to?: string | null;
+        };
+        WorkScheduleRequest: {
+            /** Format: uuid */
+            employee: string;
+            name?: string;
+            pattern?: unknown;
+            /** Format: date */
+            effective_from: string;
+            /** Format: date */
+            effective_to?: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -2059,6 +2380,617 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Organization"];
+                };
+            };
+        };
+    };
+    schedule_holidays_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Holiday"][];
+                };
+            };
+        };
+    };
+    schedule_holidays_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HolidayRequest"];
+                "multipart/form-data": components["schemas"]["HolidayRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Holiday"];
+                };
+            };
+        };
+    };
+    schedule_holidays_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Holiday"];
+                };
+            };
+        };
+    };
+    schedule_holidays_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HolidayRequest"];
+                "multipart/form-data": components["schemas"]["HolidayRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Holiday"];
+                };
+            };
+        };
+    };
+    schedule_holidays_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    schedule_holidays_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedHolidayRequest"];
+                "multipart/form-data": components["schemas"]["PatchedHolidayRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Holiday"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"][];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["ShiftAssignmentRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["ShiftAssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    schedule_shift_assignments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedShiftAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["PatchedShiftAssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_bulk_pattern_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["ShiftAssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_publish_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["ShiftAssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shifts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shift"][];
+                };
+            };
+        };
+    };
+    schedule_shifts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftRequest"];
+                "multipart/form-data": components["schemas"]["ShiftRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shift"];
+                };
+            };
+        };
+    };
+    schedule_shifts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shift"];
+                };
+            };
+        };
+    };
+    schedule_shifts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftRequest"];
+                "multipart/form-data": components["schemas"]["ShiftRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shift"];
+                };
+            };
+        };
+    };
+    schedule_shifts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    schedule_shifts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedShiftRequest"];
+                "multipart/form-data": components["schemas"]["PatchedShiftRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shift"];
+                };
+            };
+        };
+    };
+    schedule_work_schedules_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkSchedule"][];
+                };
+            };
+        };
+    };
+    schedule_work_schedules_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkScheduleRequest"];
+                "multipart/form-data": components["schemas"]["WorkScheduleRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkSchedule"];
+                };
+            };
+        };
+    };
+    schedule_work_schedules_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkSchedule"];
+                };
+            };
+        };
+    };
+    schedule_work_schedules_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkScheduleRequest"];
+                "multipart/form-data": components["schemas"]["WorkScheduleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkSchedule"];
+                };
+            };
+        };
+    };
+    schedule_work_schedules_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    schedule_work_schedules_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedWorkScheduleRequest"];
+                "multipart/form-data": components["schemas"]["PatchedWorkScheduleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkSchedule"];
                 };
             };
         };

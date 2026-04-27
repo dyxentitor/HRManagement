@@ -927,6 +927,578 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: ''
+  /api/v1/schedule/holidays/:
+    get:
+      operationId: schedule_holidays_list
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Holiday'
+          description: ''
+    post:
+      operationId: schedule_holidays_create
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HolidayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HolidayRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+          description: ''
+  /api/v1/schedule/holidays/{id}/:
+    get:
+      operationId: schedule_holidays_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+          description: ''
+    put:
+      operationId: schedule_holidays_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HolidayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HolidayRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+          description: ''
+    patch:
+      operationId: schedule_holidays_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHolidayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHolidayRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+          description: ''
+    delete:
+      operationId: schedule_holidays_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/schedule/shift-assignments/:
+    get:
+      operationId: schedule_shift_assignments_list
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+    post:
+      operationId: schedule_shift_assignments_create
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+  /api/v1/schedule/shift-assignments/{id}/:
+    get:
+      operationId: schedule_shift_assignments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+    put:
+      operationId: schedule_shift_assignments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+    patch:
+      operationId: schedule_shift_assignments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShiftAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShiftAssignmentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+    delete:
+      operationId: schedule_shift_assignments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/schedule/shift-assignments/bulk-pattern/:
+    post:
+      operationId: schedule_shift_assignments_bulk_pattern_create
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+  /api/v1/schedule/shift-assignments/me/:
+    get:
+      operationId: schedule_shift_assignments_me_retrieve
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+  /api/v1/schedule/shift-assignments/publish/:
+    post:
+      operationId: schedule_shift_assignments_publish_create
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+  /api/v1/schedule/shifts/:
+    get:
+      operationId: schedule_shifts_list
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shift'
+          description: ''
+    post:
+      operationId: schedule_shifts_create
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShiftRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          description: ''
+  /api/v1/schedule/shifts/{id}/:
+    get:
+      operationId: schedule_shifts_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          description: ''
+    put:
+      operationId: schedule_shifts_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShiftRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          description: ''
+    patch:
+      operationId: schedule_shifts_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShiftRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShiftRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          description: ''
+    delete:
+      operationId: schedule_shifts_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/schedule/work-schedules/:
+    get:
+      operationId: schedule_work_schedules_list
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkSchedule'
+          description: ''
+    post:
+      operationId: schedule_work_schedules_create
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkScheduleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSchedule'
+          description: ''
+  /api/v1/schedule/work-schedules/{id}/:
+    get:
+      operationId: schedule_work_schedules_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSchedule'
+          description: ''
+    put:
+      operationId: schedule_work_schedules_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkScheduleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSchedule'
+          description: ''
+    patch:
+      operationId: schedule_work_schedules_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkScheduleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkScheduleRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSchedule'
+          description: ''
+    delete:
+      operationId: schedule_work_schedules_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /health:
     get:
       operationId: health_retrieve
@@ -1416,6 +1988,54 @@ components:
       description: |-
         * `am` - AM
         * `pm` - PM
+    Holiday:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+          maxLength: 128
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        applies_to_country_code:
+          type: string
+          maxLength: 2
+        applies_to_state_code:
+          type: string
+          maxLength: 8
+      required:
+      - date
+      - id
+      - name
+      - type
+    HolidayRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        applies_to_country_code:
+          type: string
+          maxLength: 2
+        applies_to_state_code:
+          type: string
+          maxLength: 8
+      required:
+      - date
+      - name
+      - type
     LeaveApproval:
       type: object
       properties:
@@ -2002,6 +2622,24 @@ components:
         locale:
           type: string
           maxLength: 10
+    PatchedHolidayRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        applies_to_country_code:
+          type: string
+          maxLength: 2
+        applies_to_state_code:
+          type: string
+          maxLength: 8
     PatchedLeaveRequestRequest:
       type: object
       properties:
@@ -2054,6 +2692,62 @@ components:
           minLength: 1
           maxLength: 10
         settings: {}
+    PatchedShiftAssignmentRequest:
+      type: object
+      properties:
+        employee:
+          type: string
+          format: uuid
+        shift:
+          type: string
+          format: uuid
+        work_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/ShiftAssignmentStatusEnum'
+        assigned_by:
+          type: string
+          format: uuid
+        notes:
+          type: string
+    PatchedShiftRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        crosses_midnight:
+          type: boolean
+        color:
+          type: string
+          minLength: 1
+          maxLength: 7
+    PatchedWorkScheduleRequest:
+      type: object
+      properties:
+        employee:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        pattern: {}
+        effective_from:
+          type: string
+          format: date
+        effective_to:
+          type: string
+          format: date
+          nullable: true
     ScheduleTypeEnum:
       enum:
       - fixed
@@ -2062,6 +2756,138 @@ components:
       description: |-
         * `fixed` - Fixed
         * `shift` - Shift
+    Shift:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        crosses_midnight:
+          type: boolean
+        color:
+          type: string
+          maxLength: 7
+      required:
+      - end_time
+      - id
+      - name
+      - start_time
+    ShiftAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee:
+          type: string
+          format: uuid
+        employee_code:
+          type: string
+          readOnly: true
+        shift:
+          type: string
+          format: uuid
+        shift_name:
+          type: string
+          readOnly: true
+        work_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/ShiftAssignmentStatusEnum'
+        assigned_by:
+          type: string
+          format: uuid
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_published:
+          type: boolean
+          readOnly: true
+        notes:
+          type: string
+      required:
+      - assigned_by
+      - employee
+      - employee_code
+      - id
+      - is_published
+      - published_at
+      - shift
+      - shift_name
+      - work_date
+    ShiftAssignmentRequest:
+      type: object
+      properties:
+        employee:
+          type: string
+          format: uuid
+        shift:
+          type: string
+          format: uuid
+        work_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/ShiftAssignmentStatusEnum'
+        assigned_by:
+          type: string
+          format: uuid
+        notes:
+          type: string
+      required:
+      - assigned_by
+      - employee
+      - shift
+      - work_date
+    ShiftAssignmentStatusEnum:
+      enum:
+      - scheduled
+      - completed
+      - absent
+      - cancelled
+      type: string
+      description: |-
+        * `scheduled` - Scheduled
+        * `completed` - Completed
+        * `absent` - Absent
+        * `cancelled` - Cancelled
+    ShiftRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        crosses_midnight:
+          type: boolean
+        color:
+          type: string
+          minLength: 1
+          maxLength: 7
+      required:
+      - end_time
+      - name
+      - start_time
     StatusEe8Enum:
       enum:
       - active
@@ -2072,6 +2898,62 @@ components:
         * `active` - Active
         * `suspended` - Suspended
         * `archived` - Archived
+    TypeEnum:
+      enum:
+      - federal
+      - state
+      - company
+      type: string
+      description: |-
+        * `federal` - Federal
+        * `state` - State
+        * `company` - Company
+    WorkSchedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 64
+        pattern: {}
+        effective_from:
+          type: string
+          format: date
+        effective_to:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - effective_from
+      - employee
+      - id
+    WorkScheduleRequest:
+      type: object
+      properties:
+        employee:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        pattern: {}
+        effective_from:
+          type: string
+          format: date
+        effective_to:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - effective_from
+      - employee
   securitySchemes:
     jwtAuth:
       type: http
