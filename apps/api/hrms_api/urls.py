@@ -18,6 +18,7 @@ api_v1_patterns = [
     path("", include("modules.attendance.urls")),
     path("", include("modules.claims.urls")),
     path("", include("modules.payslip.urls")),
+    path("", include("modules.kpi.urls")),
 ]
 
 

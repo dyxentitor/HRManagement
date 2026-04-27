@@ -596,6 +596,220 @@ export interface paths {
         patch: operations["employees_me_partial_update"];
         trace?: never;
     };
+    "/api/v1/kpi/assignments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/kpi/assignments — team view. */
+        get: operations["kpi_assignments_list"];
+        put?: never;
+        /** @description POST /api/v1/kpi/assignments — bulk-assign. */
+        post: operations["kpi_assignments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/assignments/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/kpi/assignments/me — own assignments. */
+        get: operations["kpi_assignments_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/cycles/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["kpi_cycles_list"];
+        put?: never;
+        post: operations["kpi_cycles_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/cycles/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["kpi_cycles_retrieve"];
+        put: operations["kpi_cycles_update"];
+        post?: never;
+        delete: operations["kpi_cycles_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["kpi_cycles_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/kpi/cycles/{id}/close/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["kpi_cycles_close_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/cycles/{id}/open-manager-review/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["kpi_cycles_open_manager_review_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/cycles/{id}/open-self-review/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["kpi_cycles_open_self_review_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/reviews/{id}/evidence/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Review actions on assignments: self, manager, evidence. */
+        post: operations["kpi_reviews_evidence_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/reviews/{id}/manager/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Review actions on assignments: self, manager, evidence. */
+        post: operations["kpi_reviews_manager_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/reviews/{id}/self/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Review actions on assignments: self, manager, evidence. */
+        post: operations["kpi_reviews_self_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/team-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["kpi_team_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/templates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["kpi_templates_list"];
+        put?: never;
+        post: operations["kpi_templates_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/kpi/templates/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["kpi_templates_retrieve"];
+        put: operations["kpi_templates_update"];
+        post?: never;
+        delete: operations["kpi_templates_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["kpi_templates_partial_update"];
+        trace?: never;
+    };
     "/api/v1/leave/balances/": {
         parameters: {
             query?: never;
@@ -832,6 +1046,209 @@ export interface paths {
         };
         /** @description Phase 1: read-only org view at /api/v1/organizations/. */
         get: operations["organizations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/periods/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Payroll periods — list/create/update for HR/finance. */
+        get: operations["payroll_periods_list"];
+        put?: never;
+        /** @description Payroll periods — list/create/update for HR/finance. */
+        post: operations["payroll_periods_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/periods/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Payroll periods — list/create/update for HR/finance. */
+        get: operations["payroll_periods_retrieve"];
+        /** @description Payroll periods — list/create/update for HR/finance. */
+        put: operations["payroll_periods_update"];
+        post?: never;
+        /** @description Payroll periods — list/create/update for HR/finance. */
+        delete: operations["payroll_periods_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Payroll periods — list/create/update for HR/finance. */
+        patch: operations["payroll_periods_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/payroll/runs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Payroll run management.
+         *
+         *     POST /api/v1/payroll/runs/              — upload CSV + auto-import
+         *     GET  /api/v1/payroll/runs/              — list runs
+         *     GET  /api/v1/payroll/runs/{id}/         — retrieve a run
+         *     POST /api/v1/payroll/runs/{id}/preview  — {row_count, errors, first_5_payslips}
+         *     POST /api/v1/payroll/runs/{id}/publish  — publish the run
+         *     GET  /api/v1/payroll/runs/{id}/errors   — row-level errors
+         */
+        get: operations["payroll_runs_list"];
+        put?: never;
+        /** @description Multipart upload: { period (UUID), csv (file) }. */
+        post: operations["payroll_runs_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/runs/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Payroll run management.
+         *
+         *     POST /api/v1/payroll/runs/              — upload CSV + auto-import
+         *     GET  /api/v1/payroll/runs/              — list runs
+         *     GET  /api/v1/payroll/runs/{id}/         — retrieve a run
+         *     POST /api/v1/payroll/runs/{id}/preview  — {row_count, errors, first_5_payslips}
+         *     POST /api/v1/payroll/runs/{id}/publish  — publish the run
+         *     GET  /api/v1/payroll/runs/{id}/errors   — row-level errors
+         */
+        get: operations["payroll_runs_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/runs/{id}/errors/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return row-level validation errors for this run. */
+        get: operations["payroll_runs_errors_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/runs/{id}/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Return {row_count, errors, first_5_payslips} for a run. */
+        post: operations["payroll_runs_preview_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/runs/{id}/publish/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Publish the run — generate PDFs + write ledger. */
+        post: operations["payroll_runs_publish_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payslips/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Employee payslips.
+         *
+         *     GET /api/v1/payslips/me       — own payslips
+         *     GET /api/v1/payslips/{id}/    — single payslip + presigned PDF URL
+         */
+        get: operations["payslips_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payslips/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Employee payslips.
+         *
+         *     GET /api/v1/payslips/me       — own payslips
+         *     GET /api/v1/payslips/{id}/    — single payslip + presigned PDF URL
+         */
+        get: operations["payslips_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payslips/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List payslips for the authenticated employee. */
+        get: operations["payslips_me_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1078,7 +1495,7 @@ export interface components {
             clock_out?: string | null;
             /** Format: double */
             readonly computed_hours: number;
-            source?: components["schemas"]["SourceEnum"];
+            source?: components["schemas"]["AttendanceRecordSourceEnum"];
             readonly is_holiday_work: boolean;
             /** Format: uuid */
             readonly holiday_id: string | null;
@@ -1102,13 +1519,21 @@ export interface components {
             clock_in?: string | null;
             /** Format: date-time */
             clock_out?: string | null;
-            source?: components["schemas"]["SourceEnum"];
+            source?: components["schemas"]["AttendanceRecordSourceEnum"];
             /** Format: uuid */
             shift_assignment_id?: string | null;
             ip?: string | null;
             user_agent?: string;
             notes?: string;
         };
+        /**
+         * @description * `web` - Web
+         *     * `kiosk` - Kiosk
+         *     * `mobile` - Mobile
+         *     * `admin` - Admin
+         * @enum {string}
+         */
+        AttendanceRecordSourceEnum: "web" | "kiosk" | "mobile" | "admin";
         /**
          * @description * `present` - Present
          *     * `late` - Late
@@ -1443,7 +1868,7 @@ export interface components {
             /** Format: date */
             date: string;
             name: string;
-            type: components["schemas"]["TypeEnum"];
+            type: components["schemas"]["HolidayTypeEnum"];
             applies_to_country_code?: string;
             applies_to_state_code?: string;
         };
@@ -1451,9 +1876,127 @@ export interface components {
             /** Format: date */
             date: string;
             name: string;
-            type: components["schemas"]["TypeEnum"];
+            type: components["schemas"]["HolidayTypeEnum"];
             applies_to_country_code?: string;
             applies_to_state_code?: string;
+        };
+        /**
+         * @description * `federal` - Federal
+         *     * `state` - State
+         *     * `company` - Company
+         * @enum {string}
+         */
+        HolidayTypeEnum: "federal" | "state" | "company";
+        KpiAssignment: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            cycle: string;
+            /** Format: uuid */
+            employee_id: string;
+            /** Format: uuid */
+            template: string;
+            readonly kpis: unknown;
+            readonly status: components["schemas"]["KpiAssignmentStatusEnum"];
+        };
+        KpiAssignmentRequest: {
+            /** Format: uuid */
+            cycle: string;
+            /** Format: uuid */
+            employee_id: string;
+            /** Format: uuid */
+            template: string;
+        };
+        /**
+         * @description * `pending` - Pending
+         *     * `self_done` - Self done
+         *     * `manager_done` - Manager done
+         *     * `closed` - Closed
+         * @enum {string}
+         */
+        KpiAssignmentStatusEnum: "pending" | "self_done" | "manager_done" | "closed";
+        KpiCycle: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            type: components["schemas"]["KpiCycleTypeEnum"];
+            /** Format: date */
+            starts_on: string;
+            /** Format: date */
+            ends_on: string;
+            /** Format: date */
+            review_opens_on: string;
+            /** Format: date */
+            review_closes_on: string;
+            readonly status: components["schemas"]["KpiCycleStatusEnum"];
+        };
+        KpiCycleRequest: {
+            name: string;
+            type: components["schemas"]["KpiCycleTypeEnum"];
+            /** Format: date */
+            starts_on: string;
+            /** Format: date */
+            ends_on: string;
+            /** Format: date */
+            review_opens_on: string;
+            /** Format: date */
+            review_closes_on: string;
+        };
+        /**
+         * @description * `upcoming` - Upcoming
+         *     * `self_review` - Self review
+         *     * `manager_review` - Manager review
+         *     * `closed` - Closed
+         * @enum {string}
+         */
+        KpiCycleStatusEnum: "upcoming" | "self_review" | "manager_review" | "closed";
+        /**
+         * @description * `quarterly` - Quarterly
+         *     * `semi_annual` - Semi-annual
+         *     * `annual` - Annual
+         * @enum {string}
+         */
+        KpiCycleTypeEnum: "quarterly" | "semi_annual" | "annual";
+        KpiDefinition: {
+            readonly id: number;
+            code: string;
+            name: string;
+            description?: string;
+            metric_type: components["schemas"]["MetricTypeEnum"];
+            /** Format: decimal */
+            target?: string | null;
+            unit?: string;
+            /** Format: decimal */
+            weight?: string;
+            evidence_required?: boolean;
+            sort_order?: number;
+        };
+        KpiTemplate: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            applies_to_role_id?: string | null;
+            /** Format: uuid */
+            applies_to_dept_id?: string | null;
+            readonly definitions: components["schemas"]["KpiDefinition"][];
+        };
+        KpiTemplateWrite: {
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            applies_to_role_id?: string | null;
+            /** Format: uuid */
+            applies_to_dept_id?: string | null;
+        };
+        KpiTemplateWriteRequest: {
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            applies_to_role_id?: string | null;
+            /** Format: uuid */
+            applies_to_dept_id?: string | null;
         };
         LeaveApproval: {
             readonly id: number;
@@ -1583,6 +2126,14 @@ export interface components {
          * @enum {string}
          */
         MaritalStatusEnum: "single" | "married" | "divorced" | "widowed";
+        /**
+         * @description * `numeric` - Numeric
+         *     * `percentage` - Percentage
+         *     * `rating` - Rating
+         *     * `boolean` - Boolean
+         * @enum {string}
+         */
+        MetricTypeEnum: "numeric" | "percentage" | "rating" | "boolean";
         OrgSettings: {
             /** Format: uuid */
             readonly id: string;
@@ -1713,9 +2264,29 @@ export interface components {
             /** Format: date */
             date?: string;
             name?: string;
-            type?: components["schemas"]["TypeEnum"];
+            type?: components["schemas"]["HolidayTypeEnum"];
             applies_to_country_code?: string;
             applies_to_state_code?: string;
+        };
+        PatchedKpiCycleRequest: {
+            name?: string;
+            type?: components["schemas"]["KpiCycleTypeEnum"];
+            /** Format: date */
+            starts_on?: string;
+            /** Format: date */
+            ends_on?: string;
+            /** Format: date */
+            review_opens_on?: string;
+            /** Format: date */
+            review_closes_on?: string;
+        };
+        PatchedKpiTemplateWriteRequest: {
+            name?: string;
+            description?: string;
+            /** Format: uuid */
+            applies_to_role_id?: string | null;
+            /** Format: uuid */
+            applies_to_dept_id?: string | null;
         };
         PatchedLeaveRequestRequest: {
             /** Format: uuid */
@@ -1739,6 +2310,16 @@ export interface components {
             default_timezone?: string;
             default_locale?: string;
             settings?: unknown;
+        };
+        PatchedPayrollPeriodRequest: {
+            /** Format: date */
+            period_start?: string;
+            /** Format: date */
+            period_end?: string;
+            period_type?: components["schemas"]["PeriodTypeEnum"];
+            /** Format: date */
+            pay_date?: string;
+            status?: components["schemas"]["PayrollPeriodStatusEnum"];
         };
         PatchedShiftAssignmentRequest: {
             /** Format: uuid */
@@ -1771,6 +2352,110 @@ export interface components {
             /** Format: date */
             effective_to?: string | null;
         };
+        PayrollPeriod: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            period_type: components["schemas"]["PeriodTypeEnum"];
+            /** Format: date */
+            pay_date: string;
+            status?: components["schemas"]["PayrollPeriodStatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        PayrollPeriodRequest: {
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            period_type: components["schemas"]["PeriodTypeEnum"];
+            /** Format: date */
+            pay_date: string;
+            status?: components["schemas"]["PayrollPeriodStatusEnum"];
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `locked` - Locked
+         *     * `published` - Published
+         * @enum {string}
+         */
+        PayrollPeriodStatusEnum: "draft" | "locked" | "published";
+        PayrollRun: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly period: string;
+            /** Format: uuid */
+            readonly uploaded_by: string;
+            readonly status: components["schemas"]["PayrollRunStatusEnum"];
+            readonly row_count: number;
+            readonly errors: unknown;
+            readonly csv_s3_key: string;
+            /** Format: date-time */
+            readonly published_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `validated` - Validated
+         *     * `published` - Published
+         *     * `failed` - Failed
+         * @enum {string}
+         */
+        PayrollRunStatusEnum: "draft" | "validated" | "published" | "failed";
+        PayslipRecord: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly employee_id: string;
+            /** Format: uuid */
+            readonly period: string;
+            /** Format: decimal */
+            readonly gross: string;
+            /** Format: decimal */
+            readonly net: string;
+            readonly currency_code: string;
+            readonly components: unknown;
+            readonly deductions: unknown;
+            readonly pdf_s3_key: string;
+            /** @description Return a presigned S3 GET URL for the PDF (valid 1 hour). */
+            readonly pdf_url: string | null;
+            /** Format: date-time */
+            readonly pdf_generated_at: string | null;
+            readonly status: components["schemas"]["PayslipRecordStatusEnum"];
+            /** Format: date-time */
+            readonly published_at: string | null;
+            readonly source: components["schemas"]["PayslipRecordSourceEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `csv_import` - CSV import
+         *     * `manual` - Manual
+         * @enum {string}
+         */
+        PayslipRecordSourceEnum: "csv_import" | "manual";
+        /**
+         * @description * `draft` - Draft
+         *     * `published` - Published
+         *     * `sent` - Sent
+         * @enum {string}
+         */
+        PayslipRecordStatusEnum: "draft" | "published" | "sent";
+        /**
+         * @description * `monthly` - Monthly
+         *     * `bi_weekly` - Bi-weekly
+         * @enum {string}
+         */
+        PeriodTypeEnum: "monthly" | "bi_weekly";
         /**
          * @description * `fixed` - Fixed
          *     * `shift` - Shift
@@ -1837,14 +2522,6 @@ export interface components {
             color?: string;
         };
         /**
-         * @description * `web` - Web
-         *     * `kiosk` - Kiosk
-         *     * `mobile` - Mobile
-         *     * `admin` - Admin
-         * @enum {string}
-         */
-        SourceEnum: "web" | "kiosk" | "mobile" | "admin";
-        /**
          * @description * `pending` - Pending
          *     * `approved` - Approved
          *     * `rejected` - Rejected
@@ -1860,13 +2537,6 @@ export interface components {
          * @enum {string}
          */
         StatusEe8Enum: "active" | "suspended" | "archived";
-        /**
-         * @description * `federal` - Federal
-         *     * `state` - State
-         *     * `company` - Company
-         * @enum {string}
-         */
-        TypeEnum: "federal" | "state" | "company";
         WorkSchedule: {
             /** Format: uuid */
             readonly id: string;
@@ -3183,6 +3853,496 @@ export interface operations {
             };
         };
     };
+    kpi_assignments_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiAssignment"][];
+                };
+            };
+        };
+    };
+    kpi_assignments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["KpiAssignmentRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiAssignment"];
+                };
+            };
+        };
+    };
+    kpi_assignments_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiAssignment"];
+                };
+            };
+        };
+    };
+    kpi_cycles_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiCycle"][];
+                };
+            };
+        };
+    };
+    kpi_cycles_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiCycleRequest"];
+                "multipart/form-data": components["schemas"]["KpiCycleRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiCycle"];
+                };
+            };
+        };
+    };
+    kpi_cycles_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiCycle"];
+                };
+            };
+        };
+    };
+    kpi_cycles_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiCycleRequest"];
+                "multipart/form-data": components["schemas"]["KpiCycleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiCycle"];
+                };
+            };
+        };
+    };
+    kpi_cycles_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    kpi_cycles_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedKpiCycleRequest"];
+                "multipart/form-data": components["schemas"]["PatchedKpiCycleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiCycle"];
+                };
+            };
+        };
+    };
+    kpi_cycles_close_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiCycleRequest"];
+                "multipart/form-data": components["schemas"]["KpiCycleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiCycle"];
+                };
+            };
+        };
+    };
+    kpi_cycles_open_manager_review_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiCycleRequest"];
+                "multipart/form-data": components["schemas"]["KpiCycleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiCycle"];
+                };
+            };
+        };
+    };
+    kpi_cycles_open_self_review_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiCycleRequest"];
+                "multipart/form-data": components["schemas"]["KpiCycleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiCycle"];
+                };
+            };
+        };
+    };
+    kpi_reviews_evidence_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    kpi_reviews_manager_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    kpi_reviews_self_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    kpi_team_summary_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    kpi_templates_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiTemplate"][];
+                };
+            };
+        };
+    };
+    kpi_templates_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiTemplateWriteRequest"];
+                "multipart/form-data": components["schemas"]["KpiTemplateWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiTemplateWrite"];
+                };
+            };
+        };
+    };
+    kpi_templates_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiTemplate"];
+                };
+            };
+        };
+    };
+    kpi_templates_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KpiTemplateWriteRequest"];
+                "multipart/form-data": components["schemas"]["KpiTemplateWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiTemplateWrite"];
+                };
+            };
+        };
+    };
+    kpi_templates_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    kpi_templates_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedKpiTemplateWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedKpiTemplateWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiTemplateWrite"];
+                };
+            };
+        };
+    };
     leave_balances_list: {
         parameters: {
             query?: never;
@@ -3627,6 +4787,323 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Organization"];
+                };
+            };
+        };
+    };
+    payroll_periods_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollPeriod"][];
+                };
+            };
+        };
+    };
+    payroll_periods_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayrollPeriodRequest"];
+                "multipart/form-data": components["schemas"]["PayrollPeriodRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollPeriod"];
+                };
+            };
+        };
+    };
+    payroll_periods_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollPeriod"];
+                };
+            };
+        };
+    };
+    payroll_periods_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayrollPeriodRequest"];
+                "multipart/form-data": components["schemas"]["PayrollPeriodRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollPeriod"];
+                };
+            };
+        };
+    };
+    payroll_periods_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payroll_periods_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedPayrollPeriodRequest"];
+                "multipart/form-data": components["schemas"]["PatchedPayrollPeriodRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollPeriod"];
+                };
+            };
+        };
+    };
+    payroll_runs_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"][];
+                };
+            };
+        };
+    };
+    payroll_runs_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+        };
+    };
+    payroll_runs_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+        };
+    };
+    payroll_runs_errors_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+        };
+    };
+    payroll_runs_preview_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+        };
+    };
+    payroll_runs_publish_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollRun"];
+                };
+            };
+        };
+    };
+    payslips_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayslipRecord"][];
+                };
+            };
+        };
+    };
+    payslips_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayslipRecord"];
+                };
+            };
+        };
+    };
+    payslips_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayslipRecord"];
                 };
             };
         };

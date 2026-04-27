@@ -1193,6 +1193,465 @@ paths:
               schema:
                 $ref: '#/components/schemas/Employee'
           description: ''
+  /api/v1/kpi/assignments/:
+    get:
+      operationId: kpi_assignments_list
+      description: GET /api/v1/kpi/assignments — team view.
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KpiAssignment'
+          description: ''
+    post:
+      operationId: kpi_assignments_create
+      description: POST /api/v1/kpi/assignments — bulk-assign.
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KpiAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiAssignment'
+          description: ''
+  /api/v1/kpi/assignments/me/:
+    get:
+      operationId: kpi_assignments_me_retrieve
+      description: GET /api/v1/kpi/assignments/me — own assignments.
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiAssignment'
+          description: ''
+  /api/v1/kpi/cycles/:
+    get:
+      operationId: kpi_cycles_list
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KpiCycle'
+          description: ''
+    post:
+      operationId: kpi_cycles_create
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiCycle'
+          description: ''
+  /api/v1/kpi/cycles/{id}/:
+    get:
+      operationId: kpi_cycles_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiCycle'
+          description: ''
+    put:
+      operationId: kpi_cycles_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiCycle'
+          description: ''
+    patch:
+      operationId: kpi_cycles_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedKpiCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedKpiCycleRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiCycle'
+          description: ''
+    delete:
+      operationId: kpi_cycles_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/kpi/cycles/{id}/close/:
+    post:
+      operationId: kpi_cycles_close_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiCycle'
+          description: ''
+  /api/v1/kpi/cycles/{id}/open-manager-review/:
+    post:
+      operationId: kpi_cycles_open_manager_review_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiCycle'
+          description: ''
+  /api/v1/kpi/cycles/{id}/open-self-review/:
+    post:
+      operationId: kpi_cycles_open_self_review_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KpiCycleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiCycle'
+          description: ''
+  /api/v1/kpi/reviews/{id}/evidence/:
+    post:
+      operationId: kpi_reviews_evidence_create
+      description: 'Review actions on assignments: self, manager, evidence.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/kpi/reviews/{id}/manager/:
+    post:
+      operationId: kpi_reviews_manager_create
+      description: 'Review actions on assignments: self, manager, evidence.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/kpi/reviews/{id}/self/:
+    post:
+      operationId: kpi_reviews_self_create
+      description: 'Review actions on assignments: self, manager, evidence.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/kpi/team-summary:
+    get:
+      operationId: kpi_team_summary_retrieve
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/kpi/templates/:
+    get:
+      operationId: kpi_templates_list
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KpiTemplate'
+          description: ''
+    post:
+      operationId: kpi_templates_create
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiTemplateWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KpiTemplateWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiTemplateWrite'
+          description: ''
+  /api/v1/kpi/templates/{id}/:
+    get:
+      operationId: kpi_templates_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiTemplate'
+          description: ''
+    put:
+      operationId: kpi_templates_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KpiTemplateWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KpiTemplateWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiTemplateWrite'
+          description: ''
+    patch:
+      operationId: kpi_templates_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedKpiTemplateWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedKpiTemplateWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiTemplateWrite'
+          description: ''
+    delete:
+      operationId: kpi_templates_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - kpi
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/leave/balances/:
     get:
       operationId: leave_balances_list
@@ -1626,6 +2085,332 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organization'
+          description: ''
+  /api/v1/payroll/periods/:
+    get:
+      operationId: payroll_periods_list
+      description: Payroll periods — list/create/update for HR/finance.
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PayrollPeriod'
+          description: ''
+    post:
+      operationId: payroll_periods_create
+      description: Payroll periods — list/create/update for HR/finance.
+      tags:
+      - payroll
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollPeriodRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollPeriodRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPeriod'
+          description: ''
+  /api/v1/payroll/periods/{id}/:
+    get:
+      operationId: payroll_periods_retrieve
+      description: Payroll periods — list/create/update for HR/finance.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPeriod'
+          description: ''
+    put:
+      operationId: payroll_periods_update
+      description: Payroll periods — list/create/update for HR/finance.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollPeriodRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollPeriodRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPeriod'
+          description: ''
+    patch:
+      operationId: payroll_periods_partial_update
+      description: Payroll periods — list/create/update for HR/finance.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollPeriodRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollPeriodRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPeriod'
+          description: ''
+    delete:
+      operationId: payroll_periods_destroy
+      description: Payroll periods — list/create/update for HR/finance.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/payroll/runs/:
+    get:
+      operationId: payroll_runs_list
+      description: |-
+        Payroll run management.
+
+        POST /api/v1/payroll/runs/              — upload CSV + auto-import
+        GET  /api/v1/payroll/runs/              — list runs
+        GET  /api/v1/payroll/runs/{id}/         — retrieve a run
+        POST /api/v1/payroll/runs/{id}/preview  — {row_count, errors, first_5_payslips}
+        POST /api/v1/payroll/runs/{id}/publish  — publish the run
+        GET  /api/v1/payroll/runs/{id}/errors   — row-level errors
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PayrollRun'
+          description: ''
+    post:
+      operationId: payroll_runs_create
+      description: 'Multipart upload: { period (UUID), csv (file) }.'
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+          description: ''
+  /api/v1/payroll/runs/{id}/:
+    get:
+      operationId: payroll_runs_retrieve
+      description: |-
+        Payroll run management.
+
+        POST /api/v1/payroll/runs/              — upload CSV + auto-import
+        GET  /api/v1/payroll/runs/              — list runs
+        GET  /api/v1/payroll/runs/{id}/         — retrieve a run
+        POST /api/v1/payroll/runs/{id}/preview  — {row_count, errors, first_5_payslips}
+        POST /api/v1/payroll/runs/{id}/publish  — publish the run
+        GET  /api/v1/payroll/runs/{id}/errors   — row-level errors
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+          description: ''
+  /api/v1/payroll/runs/{id}/errors/:
+    get:
+      operationId: payroll_runs_errors_retrieve
+      description: Return row-level validation errors for this run.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+          description: ''
+  /api/v1/payroll/runs/{id}/preview/:
+    post:
+      operationId: payroll_runs_preview_create
+      description: Return {row_count, errors, first_5_payslips} for a run.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+          description: ''
+  /api/v1/payroll/runs/{id}/publish/:
+    post:
+      operationId: payroll_runs_publish_create
+      description: Publish the run — generate PDFs + write ledger.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRun'
+          description: ''
+  /api/v1/payslips/:
+    get:
+      operationId: payslips_list
+      description: |-
+        Employee payslips.
+
+        GET /api/v1/payslips/me       — own payslips
+        GET /api/v1/payslips/{id}/    — single payslip + presigned PDF URL
+      tags:
+      - payslips
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PayslipRecord'
+          description: ''
+  /api/v1/payslips/{id}/:
+    get:
+      operationId: payslips_retrieve
+      description: |-
+        Employee payslips.
+
+        GET /api/v1/payslips/me       — own payslips
+        GET /api/v1/payslips/{id}/    — single payslip + presigned PDF URL
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payslips
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayslipRecord'
+          description: ''
+  /api/v1/payslips/me/:
+    get:
+      operationId: payslips_me_retrieve
+      description: List payslips for the authenticated employee.
+      tags:
+      - payslips
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayslipRecord'
           description: ''
   /api/v1/schedule/holidays/:
     get:
@@ -2270,7 +3055,7 @@ components:
           format: double
           readOnly: true
         source:
-          $ref: '#/components/schemas/SourceEnum'
+          $ref: '#/components/schemas/AttendanceRecordSourceEnum'
         is_holiday_work:
           type: boolean
           readOnly: true
@@ -2333,7 +3118,7 @@ components:
           format: date-time
           nullable: true
         source:
-          $ref: '#/components/schemas/SourceEnum'
+          $ref: '#/components/schemas/AttendanceRecordSourceEnum'
         shift_assignment_id:
           type: string
           format: uuid
@@ -2350,6 +3135,18 @@ components:
       required:
       - employee
       - work_date
+    AttendanceRecordSourceEnum:
+      enum:
+      - web
+      - kiosk
+      - mobile
+      - admin
+      type: string
+      description: |-
+        * `web` - Web
+        * `kiosk` - Kiosk
+        * `mobile` - Mobile
+        * `admin` - Admin
     AttendanceRecordStatusEnum:
       enum:
       - present
@@ -3196,7 +3993,7 @@ components:
           type: string
           maxLength: 128
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/HolidayTypeEnum'
         applies_to_country_code:
           type: string
           maxLength: 2
@@ -3219,7 +4016,7 @@ components:
           minLength: 1
           maxLength: 128
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/HolidayTypeEnum'
         applies_to_country_code:
           type: string
           maxLength: 2
@@ -3230,6 +4027,265 @@ components:
       - date
       - name
       - type
+    HolidayTypeEnum:
+      enum:
+      - federal
+      - state
+      - company
+      type: string
+      description: |-
+        * `federal` - Federal
+        * `state` - State
+        * `company` - Company
+    KpiAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        cycle:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        template:
+          type: string
+          format: uuid
+        kpis:
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/KpiAssignmentStatusEnum'
+          readOnly: true
+      required:
+      - cycle
+      - employee_id
+      - id
+      - kpis
+      - status
+      - template
+    KpiAssignmentRequest:
+      type: object
+      properties:
+        cycle:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        template:
+          type: string
+          format: uuid
+      required:
+      - cycle
+      - employee_id
+      - template
+    KpiAssignmentStatusEnum:
+      enum:
+      - pending
+      - self_done
+      - manager_done
+      - closed
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `self_done` - Self done
+        * `manager_done` - Manager done
+        * `closed` - Closed
+    KpiCycle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 128
+        type:
+          $ref: '#/components/schemas/KpiCycleTypeEnum'
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+        review_opens_on:
+          type: string
+          format: date
+        review_closes_on:
+          type: string
+          format: date
+        status:
+          allOf:
+          - $ref: '#/components/schemas/KpiCycleStatusEnum'
+          readOnly: true
+      required:
+      - ends_on
+      - id
+      - name
+      - review_closes_on
+      - review_opens_on
+      - starts_on
+      - status
+      - type
+    KpiCycleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        type:
+          $ref: '#/components/schemas/KpiCycleTypeEnum'
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+        review_opens_on:
+          type: string
+          format: date
+        review_closes_on:
+          type: string
+          format: date
+      required:
+      - ends_on
+      - name
+      - review_closes_on
+      - review_opens_on
+      - starts_on
+      - type
+    KpiCycleStatusEnum:
+      enum:
+      - upcoming
+      - self_review
+      - manager_review
+      - closed
+      type: string
+      description: |-
+        * `upcoming` - Upcoming
+        * `self_review` - Self review
+        * `manager_review` - Manager review
+        * `closed` - Closed
+    KpiCycleTypeEnum:
+      enum:
+      - quarterly
+      - semi_annual
+      - annual
+      type: string
+      description: |-
+        * `quarterly` - Quarterly
+        * `semi_annual` - Semi-annual
+        * `annual` - Annual
+    KpiDefinition:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+        metric_type:
+          $ref: '#/components/schemas/MetricTypeEnum'
+        target:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        unit:
+          type: string
+          maxLength: 32
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        evidence_required:
+          type: boolean
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - code
+      - id
+      - metric_type
+      - name
+    KpiTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+        applies_to_role_id:
+          type: string
+          format: uuid
+          nullable: true
+        applies_to_dept_id:
+          type: string
+          format: uuid
+          nullable: true
+        definitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/KpiDefinition'
+          readOnly: true
+      required:
+      - definitions
+      - id
+      - name
+    KpiTemplateWrite:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+        applies_to_role_id:
+          type: string
+          format: uuid
+          nullable: true
+        applies_to_dept_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - name
+    KpiTemplateWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        description:
+          type: string
+        applies_to_role_id:
+          type: string
+          format: uuid
+          nullable: true
+        applies_to_dept_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - name
     LeaveApproval:
       type: object
       properties:
@@ -3544,6 +4600,18 @@ components:
         * `married` - Married
         * `divorced` - Divorced
         * `widowed` - Widowed
+    MetricTypeEnum:
+      enum:
+      - numeric
+      - percentage
+      - rating
+      - boolean
+      type: string
+      description: |-
+        * `numeric` - Numeric
+        * `percentage` - Percentage
+        * `rating` - Rating
+        * `boolean` - Boolean
     OrgSettings:
       type: object
       properties:
@@ -3882,13 +4950,51 @@ components:
           minLength: 1
           maxLength: 128
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/HolidayTypeEnum'
         applies_to_country_code:
           type: string
           maxLength: 2
         applies_to_state_code:
           type: string
           maxLength: 8
+    PatchedKpiCycleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        type:
+          $ref: '#/components/schemas/KpiCycleTypeEnum'
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+        review_opens_on:
+          type: string
+          format: date
+        review_closes_on:
+          type: string
+          format: date
+    PatchedKpiTemplateWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        description:
+          type: string
+        applies_to_role_id:
+          type: string
+          format: uuid
+          nullable: true
+        applies_to_dept_id:
+          type: string
+          format: uuid
+          nullable: true
     PatchedLeaveRequestRequest:
       type: object
       properties:
@@ -3941,6 +5047,22 @@ components:
           minLength: 1
           maxLength: 10
         settings: {}
+    PatchedPayrollPeriodRequest:
+      type: object
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        period_type:
+          $ref: '#/components/schemas/PeriodTypeEnum'
+        pay_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/PayrollPeriodStatusEnum'
     PatchedShiftAssignmentRequest:
       type: object
       properties:
@@ -3997,6 +5119,240 @@ components:
           type: string
           format: date
           nullable: true
+    PayrollPeriod:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        period_type:
+          $ref: '#/components/schemas/PeriodTypeEnum'
+        pay_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/PayrollPeriodStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - pay_date
+      - period_end
+      - period_start
+      - period_type
+      - updated_at
+    PayrollPeriodRequest:
+      type: object
+      properties:
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        period_type:
+          $ref: '#/components/schemas/PeriodTypeEnum'
+        pay_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/PayrollPeriodStatusEnum'
+      required:
+      - pay_date
+      - period_end
+      - period_start
+      - period_type
+    PayrollPeriodStatusEnum:
+      enum:
+      - draft
+      - locked
+      - published
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `locked` - Locked
+        * `published` - Published
+    PayrollRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        period:
+          type: string
+          format: uuid
+          readOnly: true
+        uploaded_by:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRunStatusEnum'
+          readOnly: true
+        row_count:
+          type: integer
+          readOnly: true
+        errors:
+          readOnly: true
+        csv_s3_key:
+          type: string
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - csv_s3_key
+      - errors
+      - id
+      - period
+      - published_at
+      - row_count
+      - status
+      - updated_at
+      - uploaded_by
+    PayrollRunStatusEnum:
+      enum:
+      - draft
+      - validated
+      - published
+      - failed
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `validated` - Validated
+        * `published` - Published
+        * `failed` - Failed
+    PayslipRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee_id:
+          type: string
+          format: uuid
+          readOnly: true
+        period:
+          type: string
+          format: uuid
+          readOnly: true
+        gross:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        currency_code:
+          type: string
+          readOnly: true
+        components:
+          readOnly: true
+        deductions:
+          readOnly: true
+        pdf_s3_key:
+          type: string
+          readOnly: true
+        pdf_url:
+          type: string
+          nullable: true
+          description: Return a presigned S3 GET URL for the PDF (valid 1 hour).
+          readOnly: true
+        pdf_generated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayslipRecordStatusEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        source:
+          allOf:
+          - $ref: '#/components/schemas/PayslipRecordSourceEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - components
+      - created_at
+      - currency_code
+      - deductions
+      - employee_id
+      - gross
+      - id
+      - net
+      - pdf_generated_at
+      - pdf_s3_key
+      - pdf_url
+      - period
+      - published_at
+      - source
+      - status
+    PayslipRecordSourceEnum:
+      enum:
+      - csv_import
+      - manual
+      type: string
+      description: |-
+        * `csv_import` - CSV import
+        * `manual` - Manual
+    PayslipRecordStatusEnum:
+      enum:
+      - draft
+      - published
+      - sent
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `published` - Published
+        * `sent` - Sent
+    PeriodTypeEnum:
+      enum:
+      - monthly
+      - bi_weekly
+      type: string
+      description: |-
+        * `monthly` - Monthly
+        * `bi_weekly` - Bi-weekly
     ScheduleTypeEnum:
       enum:
       - fixed
@@ -4137,18 +5493,6 @@ components:
       - end_time
       - name
       - start_time
-    SourceEnum:
-      enum:
-      - web
-      - kiosk
-      - mobile
-      - admin
-      type: string
-      description: |-
-        * `web` - Web
-        * `kiosk` - Kiosk
-        * `mobile` - Mobile
-        * `admin` - Admin
     Status872Enum:
       enum:
       - pending
@@ -4173,16 +5517,6 @@ components:
         * `active` - Active
         * `suspended` - Suspended
         * `archived` - Archived
-    TypeEnum:
-      enum:
-      - federal
-      - state
-      - company
-      type: string
-      description: |-
-        * `federal` - Federal
-        * `state` - State
-        * `company` - Company
     WorkSchedule:
       type: object
       properties:
