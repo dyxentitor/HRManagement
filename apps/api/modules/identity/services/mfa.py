@@ -44,6 +44,22 @@ def disable(user: User) -> None:
     user.save(update_fields=["mfa_enabled", "updated_at"])
 
 
+def verify_code_for_user(user: User, code: str) -> bool:
+    """Verify a TOTP code against a user's confirmed MFA device.
+
+    Returns True on success. Used by serializers / views that need to
+    re-challenge for sensitive operations (bank change, role change).
+    """
+    device = MFADevice.objects.filter(user=user, confirmed_at__isnull=False).first()
+    if not device:
+        return False
+    if not pyotp.TOTP(device.secret).verify(code, valid_window=1):
+        return False
+    device.last_used_at = timezone.now()
+    device.save(update_fields=["last_used_at"])
+    return True
+
+
 def verify_login_mfa(mfa_token: str, code: str) -> User | None:
     """Complete the second step of MFA-required login."""
     user_id = cache.get(f"mfa_challenge:{mfa_token}")
