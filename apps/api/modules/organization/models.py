@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from django.db import models
 
-from common.models import BaseModel
+from common.models import BaseModel, TenantBaseModel
 
 
 class Country(models.Model):
@@ -83,3 +83,32 @@ class Organization(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.slug} ({self.name})"
+
+
+class Department(TenantBaseModel):
+    name = models.CharField(max_length=200)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        related_name="children",
+        null=True,
+        blank=True,
+    )
+    # head_employee_id is a UUID without an FK constraint here;
+    # the FK to identity.Employee is added in M2 once that model exists.
+    head_employee_id = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        constraints: ClassVar = [
+            models.UniqueConstraint(
+                fields=["org_id", "name", "parent"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="department_unique_name_per_parent_within_org",
+            ),
+        ]
+        indexes: ClassVar = [
+            models.Index(fields=["org_id", "parent"]),
+        ]
+
+    def __str__(self) -> str:
+        return self.name

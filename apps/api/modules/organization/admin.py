@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Country, CountryHoliday, CountryLeaveTypeDefault, Organization
+from .models import Country, CountryHoliday, CountryLeaveTypeDefault, Department, Organization
 
 
 @admin.register(Organization)
@@ -26,3 +26,10 @@ class CountryHolidayAdmin(admin.ModelAdmin):
 class CountryLeaveTypeDefaultAdmin(admin.ModelAdmin):
     list_display = ("country_code", "code", "name", "default_days", "statutory")
     list_filter = ("country_code", "statutory")
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ("name", "org_id", "parent", "created_at")
+    list_filter = ("org_id",)
+    search_fields = ("name",)

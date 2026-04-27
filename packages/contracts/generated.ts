@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/api/v1/departments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["departments_list"];
+        put?: never;
+        post: operations["departments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/departments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["departments_retrieve"];
+        put: operations["departments_update"];
+        post?: never;
+        delete: operations["departments_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["departments_partial_update"];
+        trace?: never;
+    };
     "/api/v1/organizations/": {
         parameters: {
             query?: never;
@@ -82,6 +114,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Department: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            /** Format: uuid */
+            parent?: string | null;
+            /** Format: uuid */
+            head_employee_id?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        DepartmentRequest: {
+            name: string;
+            /** Format: uuid */
+            parent?: string | null;
+            /** Format: uuid */
+            head_employee_id?: string | null;
+        };
         Organization: {
             /** Format: uuid */
             readonly id: string;
@@ -97,6 +149,13 @@ export interface components {
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        PatchedDepartmentRequest: {
+            name?: string;
+            /** Format: uuid */
+            parent?: string | null;
+            /** Format: uuid */
+            head_employee_id?: string | null;
         };
         /**
          * @description * `active` - Active
@@ -114,6 +173,146 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    departments_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"][];
+                };
+            };
+        };
+    };
+    departments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentRequest"];
+                "multipart/form-data": components["schemas"]["DepartmentRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+        };
+    };
+    departments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this department. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+        };
+    };
+    departments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this department. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentRequest"];
+                "multipart/form-data": components["schemas"]["DepartmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+        };
+    };
+    departments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this department. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    departments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this department. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedDepartmentRequest"];
+                "multipart/form-data": components["schemas"]["PatchedDepartmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"];
+                };
+            };
+        };
+    };
     organizations_list: {
         parameters: {
             query?: never;

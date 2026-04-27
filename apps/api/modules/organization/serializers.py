@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Organization
+from .models import Department, Organization
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
@@ -19,4 +19,11 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = ("id", "name", "parent", "head_employee_id", "created_at", "updated_at")
         read_only_fields = ("id", "created_at", "updated_at")
