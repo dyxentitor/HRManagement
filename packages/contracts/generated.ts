@@ -4,6 +4,91 @@
  */
 
 export interface paths {
+    "/api/v1/attendance/clock-in/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Clock-in/out + today + records list. */
+        post: operations["attendance_clock_in_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance/clock-out/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Clock-in/out + today + records list. */
+        post: operations["attendance_clock_out_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance/records/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List own attendance records, with optional from/to date filters. */
+        get: operations["attendance_records_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance/team/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Team view (manager): all attendance for direct reports + self on a date. */
+        get: operations["attendance_team_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance/today/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Clock-in/out + today + records list. */
+        get: operations["attendance_today_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -769,6 +854,63 @@ export interface components {
          * @enum {string}
          */
         AccrualTypeEnum: "annual" | "monthly" | "event_based" | "none";
+        AttendanceRecord: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly org_id: string;
+            /** Format: uuid */
+            employee: string;
+            readonly employee_code: string;
+            /** Format: date */
+            work_date: string;
+            /** Format: date-time */
+            clock_in?: string | null;
+            /** Format: date-time */
+            clock_out?: string | null;
+            /** Format: double */
+            readonly computed_hours: number;
+            source?: components["schemas"]["SourceEnum"];
+            readonly is_holiday_work: boolean;
+            /** Format: uuid */
+            readonly holiday_id: string | null;
+            /** Format: uuid */
+            shift_assignment_id?: string | null;
+            readonly status: components["schemas"]["AttendanceRecordStatusEnum"];
+            ip?: string | null;
+            user_agent?: string;
+            notes?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        AttendanceRecordRequest: {
+            /** Format: uuid */
+            employee: string;
+            /** Format: date */
+            work_date: string;
+            /** Format: date-time */
+            clock_in?: string | null;
+            /** Format: date-time */
+            clock_out?: string | null;
+            source?: components["schemas"]["SourceEnum"];
+            /** Format: uuid */
+            shift_assignment_id?: string | null;
+            ip?: string | null;
+            user_agent?: string;
+            notes?: string;
+        };
+        /**
+         * @description * `present` - Present
+         *     * `late` - Late
+         *     * `absent` - Absent
+         *     * `holiday` - Holiday
+         *     * `on_leave` - On leave
+         *     * `partial` - Partial
+         * @enum {string}
+         */
+        AttendanceRecordStatusEnum: "present" | "late" | "absent" | "holiday" | "on_leave" | "partial";
         /** @enum {unknown} */
         BlankEnum: "";
         Department: {
@@ -1323,6 +1465,14 @@ export interface components {
             color?: string;
         };
         /**
+         * @description * `web` - Web
+         *     * `kiosk` - Kiosk
+         *     * `mobile` - Mobile
+         *     * `admin` - Admin
+         * @enum {string}
+         */
+        SourceEnum: "web" | "kiosk" | "mobile" | "admin";
+        /**
          * @description * `active` - Active
          *     * `suspended` - Suspended
          *     * `archived` - Archived
@@ -1367,6 +1517,111 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    attendance_clock_in_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceRecordRequest"];
+                "multipart/form-data": components["schemas"]["AttendanceRecordRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceRecord"];
+                };
+            };
+        };
+    };
+    attendance_clock_out_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendanceRecordRequest"];
+                "multipart/form-data": components["schemas"]["AttendanceRecordRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceRecord"];
+                };
+            };
+        };
+    };
+    attendance_records_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceRecord"];
+                };
+            };
+        };
+    };
+    attendance_team_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceRecord"];
+                };
+            };
+        };
+    };
+    attendance_today_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceRecord"];
+                };
+            };
+        };
+    };
     auth_login_create: {
         parameters: {
             query?: never;

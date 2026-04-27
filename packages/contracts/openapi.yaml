@@ -4,6 +4,100 @@ info:
   version: 0.1.0
   description: HR Management System — Phase 1
 paths:
+  /api/v1/attendance/clock-in/:
+    post:
+      operationId: attendance_clock_in_create
+      description: Clock-in/out + today + records list.
+      tags:
+      - attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendanceRecordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecord'
+          description: ''
+  /api/v1/attendance/clock-out/:
+    post:
+      operationId: attendance_clock_out_create
+      description: Clock-in/out + today + records list.
+      tags:
+      - attendance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AttendanceRecordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecord'
+          description: ''
+  /api/v1/attendance/records/:
+    get:
+      operationId: attendance_records_retrieve
+      description: List own attendance records, with optional from/to date filters.
+      tags:
+      - attendance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecord'
+          description: ''
+  /api/v1/attendance/team/:
+    get:
+      operationId: attendance_team_retrieve
+      description: 'Team view (manager): all attendance for direct reports + self
+        on a date.'
+      tags:
+      - attendance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecord'
+          description: ''
+  /api/v1/attendance/today/:
+    get:
+      operationId: attendance_today_retrieve
+      description: Clock-in/out + today + records list.
+      tags:
+      - attendance
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRecord'
+          description: ''
   /api/v1/auth/login:
     post:
       operationId: auth_login_create
@@ -1537,6 +1631,135 @@ components:
         * `monthly` - Monthly
         * `event_based` - Event-based
         * `none` - No accrual
+    AttendanceRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        org_id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee:
+          type: string
+          format: uuid
+        employee_code:
+          type: string
+          readOnly: true
+        work_date:
+          type: string
+          format: date
+        clock_in:
+          type: string
+          format: date-time
+          nullable: true
+        clock_out:
+          type: string
+          format: date-time
+          nullable: true
+        computed_hours:
+          type: number
+          format: double
+          readOnly: true
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+        is_holiday_work:
+          type: boolean
+          readOnly: true
+        holiday_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        shift_assignment_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceRecordStatusEnum'
+          readOnly: true
+        ip:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+          maxLength: 512
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - computed_hours
+      - created_at
+      - employee
+      - employee_code
+      - holiday_id
+      - id
+      - is_holiday_work
+      - org_id
+      - status
+      - updated_at
+      - work_date
+    AttendanceRecordRequest:
+      type: object
+      properties:
+        employee:
+          type: string
+          format: uuid
+        work_date:
+          type: string
+          format: date
+        clock_in:
+          type: string
+          format: date-time
+          nullable: true
+        clock_out:
+          type: string
+          format: date-time
+          nullable: true
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+        shift_assignment_id:
+          type: string
+          format: uuid
+          nullable: true
+        ip:
+          type: string
+          nullable: true
+          minLength: 1
+        user_agent:
+          type: string
+          maxLength: 512
+        notes:
+          type: string
+      required:
+      - employee
+      - work_date
+    AttendanceRecordStatusEnum:
+      enum:
+      - present
+      - late
+      - absent
+      - holiday
+      - on_leave
+      - partial
+      type: string
+      description: |-
+        * `present` - Present
+        * `late` - Late
+        * `absent` - Absent
+        * `holiday` - Holiday
+        * `on_leave` - On leave
+        * `partial` - Partial
     BlankEnum:
       enum:
       - ''
@@ -2888,6 +3111,18 @@ components:
       - end_time
       - name
       - start_time
+    SourceEnum:
+      enum:
+      - web
+      - kiosk
+      - mobile
+      - admin
+      type: string
+      description: |-
+        * `web` - Web
+        * `kiosk` - Kiosk
+        * `mobile` - Mobile
+        * `admin` - Admin
     StatusEe8Enum:
       enum:
       - active
