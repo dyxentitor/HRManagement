@@ -89,3 +89,15 @@ def test_seed_permission_catalogue_loads_m2_codes() -> None:
     assert "employee:bank:read" in codes
     assert "employee:salary:write" in codes
     assert len(codes) >= 29
+
+
+@pytest.mark.django_db
+def test_seed_permission_catalogue_loads_m3_codes() -> None:
+    call_command("seed_permission_catalogue")
+    codes = set(Permission.objects.values_list("code", flat=True))
+    # Spot-check M3 leave codes
+    assert "leave:request:create:self" in codes
+    assert "leave:balance:read:org" in codes
+    assert "leave:type:write" in codes
+    assert "leave:delegation:write:self" in codes
+    assert len(codes) >= 43

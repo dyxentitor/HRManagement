@@ -1,0 +1,16 @@
+# Permission codes added in M3 (leave module).
+
+- { code: "leave:request:create:self",    description: Submit a leave request for self }
+- { code: "leave:request:read:self",      description: Read own leave requests }
+- { code: "leave:request:read:team",      description: Read direct-reports' leave requests }
+- { code: "leave:request:read:org",       description: Read all leave requests in the org }
+- { code: "leave:request:approve:team",   description: Approve/reject leave requests for direct reports }
+- { code: "leave:request:cancel:self",    description: Cancel own pending request }
+- { code: "leave:request:cancel:org",     description: Cancel any leave request (HR) }
+- { code: "leave:balance:read:self",      description: Read own leave balances }
+- { code: "leave:balance:read:team",      description: Read direct-reports' leave balances }
+- { code: "leave:balance:read:org",       description: Read all leave balances in the org }
+- { code: "leave:balance:adjust:org",     description: Manually adjust leave balances (HR) }
+- { code: "leave:type:write",             description: Create/edit leave types }
+- { code: "leave:policy:write",           description: Create/edit leave policies }
+- { code: "leave:delegation:write:self",  description: Set/clear own approval delegation }
