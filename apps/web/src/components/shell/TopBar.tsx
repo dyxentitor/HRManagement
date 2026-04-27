@@ -8,6 +8,8 @@ export function TopBar() {
 	const navigate = useNavigate();
 	const canLeave = useCan("leave:request:create:self");
 	const canApprovals = useCan("leave:request:approve:team");
+	const canSchedule = useCan("attendance:clock:self");
+	const canRoster = useCan("schedule:assignment:write:team");
 
 	return (
 		<header className="border-b bg-white">
@@ -34,6 +36,22 @@ export function TopBar() {
 							className="text-slate-600 hover:text-slate-900"
 						>
 							Approvals
+						</Link>
+					)}
+					{canSchedule && (
+						<Link
+							to="/schedule/me"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Schedule
+						</Link>
+					)}
+					{canRoster && (
+						<Link
+							to="/schedule/roster"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Roster
 						</Link>
 					)}
 					<span aria-label="user-email">{user?.email}</span>
