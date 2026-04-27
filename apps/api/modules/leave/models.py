@@ -144,3 +144,85 @@ class LeaveBalanceLedger(models.Model):
 
     def __str__(self) -> str:
         return f"{self.employee_id}/{self.leave_type.code}/{self.delta}/{self.reason}"
+
+
+class LeaveRequest(TenantBaseModel):
+    REQUEST_STATUSES: ClassVar[tuple] = (
+        ("draft", "Draft"),
+        ("submitted", "Submitted"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("cancelled", "Cancelled"),
+        ("withdrawn", "Withdrawn"),
+    )
+    HALF_DAY_PERIOD_CHOICES: ClassVar[tuple] = (
+        ("am", "AM"),
+        ("pm", "PM"),
+    )
+
+    employee_id = models.UUIDField()
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.PROTECT, related_name="requests")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    total_days = models.DecimalField(max_digits=5, decimal_places=2)
+    is_half_day = models.BooleanField(default=False)
+    half_day_period = models.CharField(max_length=2, choices=HALF_DAY_PERIOD_CHOICES, blank=True)
+    reason = models.TextField(blank=True)
+    attachment_url = models.URLField(blank=True)
+    status = models.CharField(max_length=16, choices=REQUEST_STATUSES, default="draft")
+    current_level = models.IntegerField(default=0)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "leave_request"
+        indexes: ClassVar[list] = [
+            models.Index(fields=["employee_id", "-submitted_at"]),
+            models.Index(fields=["status", "current_level"]),
+            models.Index(fields=["org_id", "status"]),
+        ]
+
+    # Implements WorkflowSubject Protocol
+    @property
+    def employee(self):
+        from modules.employee.models import Employee
+
+        return Employee.all_objects.get(id=self.employee_id)
+
+    def __str__(self) -> str:
+        return (
+            f"LeaveRequest({self.employee_id}, {self.leave_type.code},"
+            f" {self.start_date}..{self.end_date})"
+        )
+
+
+class LeaveApproval(models.Model):
+    APPROVAL_STATUSES: ClassVar[tuple] = (
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("delegated", "Delegated"),
+        ("skipped", "Skipped"),
+    )
+
+    id = models.BigAutoField(primary_key=True)
+    leave_request = models.ForeignKey(
+        LeaveRequest, on_delete=models.CASCADE, related_name="approvals"
+    )
+    level = models.IntegerField()
+    approver_id = models.UUIDField()
+    status = models.CharField(max_length=16, choices=APPROVAL_STATUSES, default="pending")
+    comment = models.TextField(blank=True)
+    acted_at = models.DateTimeField(null=True, blank=True)
+    delegated_to = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "leave_approval"
+        indexes: ClassVar[list] = [
+            models.Index(fields=["leave_request", "level"]),
+            models.Index(fields=["approver_id", "status"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"LeaveApproval(req={self.leave_request_id}, level={self.level}, {self.status})"
