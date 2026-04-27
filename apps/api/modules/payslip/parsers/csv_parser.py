@@ -12,5 +12,10 @@ def parse_csv(text: str) -> tuple[list[dict], list[dict]]:
     errors: list[dict] = []
     reader = csv.DictReader(io.StringIO(text))
     for i, row in enumerate(reader, start=2):  # row 1 is header
-        rows.append({"_row": i, **{k: (v or "").strip() for k, v in row.items()}})
+        clean = {
+            k: (v or "").strip() if isinstance(v, str) else ""
+            for k, v in row.items()
+            if k is not None  # DictReader puts overflow values under None key
+        }
+        rows.append({"_row": i, **clean})
     return rows, errors
