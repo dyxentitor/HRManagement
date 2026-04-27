@@ -156,6 +156,14 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v1",
 }
 
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env("SMTP_HOST", default="mailhog")
+EMAIL_PORT = env.int("SMTP_PORT", default=1025)
+EMAIL_HOST_USER = env("SMTP_USER", default="")
+EMAIL_HOST_PASSWORD = env("SMTP_PASSWORD", default="")  # pragma: allowlist secret
+EMAIL_USE_TLS = env.bool("SMTP_USE_TLS", default=False)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="hrms@provintell.local")
+
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:5173", "http://127.0.0.1:5173"],

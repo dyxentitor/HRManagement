@@ -10,6 +10,7 @@ api_v1_patterns = [
         SpectacularSwaggerView.as_view(url_name="v1:schema"),
         name="swagger-ui",
     ),
+    path("", include("modules.identity.urls")),
     path("", include("modules.organization.urls")),
 ]
 

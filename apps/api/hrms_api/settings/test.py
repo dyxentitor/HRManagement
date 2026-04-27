@@ -1,6 +1,8 @@
 from .base import *  # noqa: F403
 
 DEBUG = False
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+DEFAULT_FROM_EMAIL = "test@hrms.local"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -13,3 +15,8 @@ PASSWORD_HASHERS = [
 ]
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
