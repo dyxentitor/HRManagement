@@ -1824,6 +1824,8 @@ services:
     environment: *api-env
     volumes:
       - ../apps/api:/app
+      - /app/.venv
+      - /app/staticfiles
     command: uv run python manage.py runserver 0.0.0.0:8000
     ports: ["8000:8000"]
     depends_on:
@@ -1844,7 +1846,10 @@ services:
     environment: *api-env
     volumes:
       - ../apps/api:/app
+      - /app/.venv
+      - /app/staticfiles
     command: uv run celery -A hrms_api worker -l info
+    restart: on-failure
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -1856,7 +1861,10 @@ services:
     environment: *api-env
     volumes:
       - ../apps/api:/app
+      - /app/.venv
+      - /app/staticfiles
     command: uv run celery -A hrms_api beat -l info -S django
+    restart: on-failure
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
