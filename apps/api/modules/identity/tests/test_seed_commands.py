@@ -135,3 +135,19 @@ def test_seed_permission_catalogue_loads_m6_codes() -> None:
     assert "payroll:component:write" in codes
     assert "payroll:period:write" in codes
     assert len(codes) >= 75  # 69 from M1b-M5 + 6 from M6
+
+
+@pytest.mark.django_db
+def test_seed_permission_catalogue_loads_m7_codes() -> None:
+    call_command("seed_permission_catalogue")
+    codes = set(Permission.objects.values_list("code", flat=True))
+    assert "kpi:cycle:read" in codes
+    assert "kpi:cycle:write" in codes
+    assert "kpi:template:read" in codes
+    assert "kpi:template:write" in codes
+    assert "kpi:assignment:read:self" in codes
+    assert "kpi:assignment:read:team" in codes
+    assert "kpi:assignment:write:team" in codes
+    assert "kpi:review:write:self" in codes
+    assert "kpi:review:write:team" in codes
+    assert len(codes) >= 84  # 75 from M1b-M6 + 9 from M7

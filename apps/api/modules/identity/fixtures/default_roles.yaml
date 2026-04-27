@@ -81,6 +81,15 @@
     - "payroll:run:publish"
     - "payroll:component:write"
     - "payroll:period:write"
+    - "kpi:cycle:read"
+    - "kpi:cycle:write"
+    - "kpi:template:read"
+    - "kpi:template:write"
+    - "kpi:assignment:read:self"
+    - "kpi:assignment:read:team"
+    - "kpi:assignment:write:team"
+    - "kpi:review:write:self"
+    - "kpi:review:write:team"
 
 - code: hr_manager
   name: HR Manager
@@ -158,6 +167,15 @@
     - "payroll:run:publish"
     - "payroll:component:write"
     - "payroll:period:write"
+    - "kpi:cycle:read"
+    - "kpi:cycle:write"
+    - "kpi:template:read"
+    - "kpi:template:write"
+    - "kpi:assignment:read:self"
+    - "kpi:assignment:read:team"
+    - "kpi:assignment:write:team"
+    - "kpi:review:write:self"
+    - "kpi:review:write:team"
 
 - code: finance
   name: Finance
@@ -226,6 +244,13 @@
     - "claim:approve:team"
     - "claim:cancel:self"
     - "payslip:read:self"
+    - "kpi:cycle:read"
+    - "kpi:template:read"
+    - "kpi:assignment:read:self"
+    - "kpi:assignment:read:team"
+    - "kpi:assignment:write:team"
+    - "kpi:review:write:self"
+    - "kpi:review:write:team"
 
 - code: team_lead
   name: Team Lead
@@ -261,6 +286,13 @@
     - "claim:approve:team"
     - "claim:cancel:self"
     - "payslip:read:self"
+    - "kpi:cycle:read"
+    - "kpi:template:read"
+    - "kpi:assignment:read:self"
+    - "kpi:assignment:read:team"
+    - "kpi:assignment:write:team"
+    - "kpi:review:write:self"
+    - "kpi:review:write:team"
 
 - code: employee
   name: Employee
@@ -286,6 +318,8 @@
     - "claim:read:self"
     - "claim:cancel:self"
     - "payslip:read:self"
+    - "kpi:assignment:read:self"
+    - "kpi:review:write:self"
 
 - code: auditor
   name: Auditor
@@ -327,3 +361,7 @@
     - "claim:read:finance"
     - "payslip:read:self"
     - "payslip:read:org"
+    - "kpi:cycle:read"
+    - "kpi:template:read"
+    - "kpi:assignment:read:self"
+    - "kpi:assignment:read:team"

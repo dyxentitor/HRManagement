@@ -1,0 +1,9 @@
+- { code: "kpi:cycle:read",            description: Read KPI cycles }
+- { code: "kpi:cycle:write",           description: Create/transition KPI cycles }
+- { code: "kpi:template:read",         description: Read KPI templates }
+- { code: "kpi:template:write",        description: Create/edit KPI templates }
+- { code: "kpi:assignment:read:self",  description: Read own KPI assignments }
+- { code: "kpi:assignment:read:team",  description: Read team KPI assignments }
+- { code: "kpi:assignment:write:team", description: Bulk-assign KPI templates }
+- { code: "kpi:review:write:self",     description: Submit self-review }
+- { code: "kpi:review:write:team",     description: Submit manager-review }
