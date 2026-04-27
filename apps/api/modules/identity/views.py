@@ -100,3 +100,59 @@ def password_reset_view(request) -> Response:
         new_password=s.validated_data["new_password"],
     )
     return Response({"detail": "Password updated."})
+
+
+from .serializers import LoginMFASerializer, MFAConfirmSerializer  # noqa: E402
+from .services import mfa as mfa_service  # noqa: E402
+from .services.sessions import create_session  # noqa: E402
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def mfa_enable_view(request) -> Response:
+    return Response(mfa_service.enable(request.user))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def mfa_confirm_view(request) -> Response:
+    s = MFAConfirmSerializer(data=request.data)
+    s.is_valid(raise_exception=True)
+    if not mfa_service.confirm(request.user, s.validated_data["code"]):
+        from rest_framework.exceptions import ValidationError
+
+        raise ValidationError({"code": "Invalid TOTP code"})
+    return Response({"detail": "MFA enabled."})
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def mfa_disable_view(request) -> Response:
+    mfa_service.disable(request.user)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def login_mfa_view(request) -> Response:
+    s = LoginMFASerializer(data=request.data)
+    s.is_valid(raise_exception=True)
+    user = mfa_service.verify_login_mfa(
+        mfa_token=s.validated_data["mfa_token"],
+        code=s.validated_data["code"],
+    )
+    if user is None:
+        from rest_framework.exceptions import AuthenticationFailed
+
+        raise AuthenticationFailed("Invalid MFA token or code")
+
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    refresh = RefreshToken.for_user(user)
+    create_session(
+        user,
+        refresh_token=str(refresh),
+        ip=_client_ip(request),
+        user_agent=_ua(request),
+    )
+    return Response({"access_token": str(refresh.access_token), "refresh_token": str(refresh)})

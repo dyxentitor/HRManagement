@@ -9,6 +9,8 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.utils import timezone
 
+from common.fields import EncryptedCharField
+
 
 def _default_preferences() -> dict[str, Any]:
     return {"theme": "system", "locale": "en-MY"}
@@ -248,3 +250,25 @@ class Session(models.Model):
 
     def __str__(self) -> str:
         return f"session({self.user.email}, created={self.created_at:%Y-%m-%d %H:%M})"
+
+
+class MFADevice(models.Model):
+    """A user's TOTP device. We currently support one device per user."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        "identity.User",
+        on_delete=models.CASCADE,
+        related_name="mfa_device",
+    )
+    type = models.CharField(max_length=16, default="totp")
+    secret = EncryptedCharField(max_length=64)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "identity_mfa_device"
+
+    def __str__(self) -> str:
+        return f"mfa({self.user.email}, type={self.type})"

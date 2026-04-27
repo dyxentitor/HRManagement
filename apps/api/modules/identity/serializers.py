@@ -46,3 +46,12 @@ class PasswordForgotSerializer(serializers.Serializer):
 class PasswordResetSerializer(serializers.Serializer):
     token = serializers.CharField()
     new_password = serializers.CharField(write_only=True, min_length=8)
+
+
+class MFAConfirmSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=8)
+
+
+class LoginMFASerializer(serializers.Serializer):
+    mfa_token = serializers.CharField()
+    code = serializers.CharField(max_length=8)
