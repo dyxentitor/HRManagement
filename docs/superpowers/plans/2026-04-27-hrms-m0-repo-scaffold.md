@@ -1154,6 +1154,8 @@ import react from "@vitejs/plugin-react"
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    // Mirrors tsconfig.json `paths` entry `"@/*": ["src/*"]`.
+    // Vite resolves `@/foo` by prefix-substituting `@` with the resolved src dir.
     alias: { "@": path.resolve(__dirname, "./src") },
   },
   server: {
@@ -1177,6 +1179,8 @@ import react from "@vitejs/plugin-react"
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    // Mirrors tsconfig.json `paths` entry `"@/*": ["src/*"]`.
+    // Vite resolves `@/foo` by prefix-substituting `@` with the resolved src dir.
     alias: { "@": path.resolve(__dirname, "./src") },
   },
   test: {
@@ -1303,6 +1307,12 @@ interface ImportMeta {
 
 ```typescript
 import "@testing-library/jest-dom/vitest"
+import { cleanup } from "@testing-library/react"
+import { afterEach } from "vitest"
+
+afterEach(() => {
+  cleanup()
+})
 ```
 
 - [ ] **Step 16: Write the failing test FIRST**
