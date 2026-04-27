@@ -2271,7 +2271,7 @@ jobs:
         run: uv run python manage.py makemigrations --check --dry-run
       - name: Run tests
         working-directory: apps/api
-        run: uv run pytest -n auto --cov=. --cov-report=xml
+        run: uv run pytest -n auto --cov=. --cov-report=xml --cov-fail-under=60
       - name: OpenAPI schema validates
         working-directory: apps/api
         run: uv run python manage.py spectacular --validate --file /tmp/openapi.yaml

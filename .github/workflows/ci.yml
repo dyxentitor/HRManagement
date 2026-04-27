@@ -1,0 +1,180 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (Django)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hrms
+          POSTGRES_PASSWORD: hrms  # pragma: allowlist secret
+          POSTGRES_DB: hrms_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U hrms"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DJANGO_SETTINGS_MODULE: hrms_api.settings.test
+      DJANGO_SECRET_KEY: ci  # pragma: allowlist secret
+      DATABASE_URL: postgres://hrms:hrms@localhost:5432/hrms_test  # pragma: allowlist secret
+      REDIS_URL: redis://localhost:6379/0
+      HRMS_FIELD_ENCRYPTION_KEY: ci-32byte-key-change-in-prod-pls!  # pragma: allowlist secret
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.4.x"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sync deps
+        working-directory: apps/api
+        run: uv sync --frozen
+      - name: Lint (ruff)
+        working-directory: apps/api
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Type-check (mypy)
+        working-directory: apps/api
+        run: uv run mypy hrms_api modules common
+      - name: Migrations check
+        working-directory: apps/api
+        run: uv run python manage.py makemigrations --check --dry-run
+      - name: Run tests
+        working-directory: apps/api
+        run: uv run pytest -n auto --cov=. --cov-report=xml --cov-fail-under=60
+      - name: OpenAPI schema validates
+        working-directory: apps/api
+        run: uv run python manage.py spectacular --validate --file /tmp/openapi.yaml
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: apps/api/coverage.xml
+
+  web:
+    name: Web (React)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - name: Install (workspace)
+        run: pnpm install --frozen-lockfile
+      - name: Lint (biome)
+        working-directory: apps/web
+        run: pnpm lint
+      - name: Type-check (tsc)
+        working-directory: apps/web
+        run: pnpm typecheck
+      - name: Test (vitest)
+        working-directory: apps/web
+        run: pnpm test
+      - name: Build (vite)
+        working-directory: apps/web
+        run: pnpm build
+      - name: Bundle-size budget
+        working-directory: apps/web
+        run: |
+          gz_total=$(find dist -name '*.js' -exec gzip -c {} \; | wc -c)
+          echo "Gzipped JS total: $gz_total bytes"
+          if [ "$gz_total" -gt 256000 ]; then
+            echo "::error::Gzipped JS total ($gz_total) exceeds 250KB budget"
+            exit 1
+          fi
+
+  contracts:
+    name: Contracts drift check
+    runs-on: ubuntu-latest
+    needs: [api]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hrms
+          POSTGRES_PASSWORD: hrms  # pragma: allowlist secret
+          POSTGRES_DB: hrms_test
+        ports: ["5432:5432"]
+    env:
+      DJANGO_SETTINGS_MODULE: hrms_api.settings.test
+      DJANGO_SECRET_KEY: ci  # pragma: allowlist secret
+      DATABASE_URL: postgres://hrms:hrms@localhost:5432/hrms_test  # pragma: allowlist secret
+      HRMS_FIELD_ENCRYPTION_KEY: ci-32byte-key-change-in-prod-pls!  # pragma: allowlist secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Sync API deps
+        working-directory: apps/api
+        run: uv sync --frozen
+      - name: Regenerate contracts
+        run: |
+          cd apps/api && uv run python manage.py spectacular --validate --file ../../packages/contracts/openapi.yaml
+          cd ../packages/contracts && pnpm run generate
+      - name: Diff against committed contracts
+        run: |
+          if ! git diff --quiet packages/contracts/; then
+            echo "::error::OpenAPI/TS contracts are out of date. Run \`make contracts\` and commit."
+            git diff packages/contracts/
+            exit 1
+          fi
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+      - uses: astral-sh/setup-uv@v3
+      - name: Bandit (Python)
+        working-directory: apps/api
+        run: |
+          uv sync --frozen
+          uv run bandit -r hrms_api modules common -ll
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: pnpm audit
+        run: pnpm audit --audit-level=high --prod
+        continue-on-error: false
