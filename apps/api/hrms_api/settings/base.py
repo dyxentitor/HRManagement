@@ -34,11 +34,19 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "django_celery_beat",
+    "rest_framework_simplejwt.token_blacklist",
     # Local
     "common",
     "modules.health",
     "modules.organization",
+    "modules.identity",
 ]
+
+AUTH_USER_MODEL = "identity.User"
+
+# Silence auth.E003: we use a partial UniqueConstraint (per-org) instead of
+# a global unique=True on email. The constraint is enforced at the DB level.
+SILENCED_SYSTEM_CHECKS = ["auth.E003"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -117,6 +125,26 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
     ],
     "EXCEPTION_HANDLER": "common.exception_handler.hrms_exception_handler",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+from datetime import timedelta  # noqa: E402
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": env("JWT_SIGNING_KEY", default=SECRET_KEY),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 SPECTACULAR_SETTINGS = {
