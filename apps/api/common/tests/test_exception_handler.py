@@ -2,7 +2,8 @@
 
 import pytest
 from django.urls import path
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
@@ -10,6 +11,7 @@ from common.errors import ProblemDetails
 
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def _raise_problem(_request) -> Response:  # pragma: no cover - exercised via test
     raise ProblemDetails(
         type_="https://hrms.example.com/errors/insufficient-balance",
