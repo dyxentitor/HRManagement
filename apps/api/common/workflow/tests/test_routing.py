@@ -140,7 +140,7 @@ def test_active_delegation_overrides_original(chain_users) -> None:
 
 @pytest.mark.django_db
 def test_leave_fallback_uses_grandmgr_when_no_delegation(chain_users) -> None:
-    grandmgr_user, mgr_user, _, mgr_emp = chain_users
+    grandmgr_user, mgr_user, _, _mgr_emp = chain_users
     found = get_effective_approver(
         candidate=mgr_user,
         scope="leave",
@@ -153,7 +153,7 @@ def test_leave_fallback_uses_grandmgr_when_no_delegation(chain_users) -> None:
 @pytest.mark.django_db
 def test_delegation_takes_priority_over_leave_fallback(chain_users) -> None:
     """Even if mgr is on leave, an explicit delegation wins."""
-    grandmgr_user, mgr_user, emp_user, _ = chain_users
+    _grandmgr_user, mgr_user, emp_user, _ = chain_users
     DelegationService.create(
         delegator=mgr_user,
         delegate=emp_user,
