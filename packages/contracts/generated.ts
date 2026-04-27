@@ -203,10 +203,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Phase 1: read-only org view at /api/v1/organizations/. Org admin endpoint
-         *     for creating new orgs lands in M1b together with auth.
-         */
+        /** @description Phase 1: read-only org view at /api/v1/organizations/. */
         get: operations["organizations_list"];
         put?: never;
         post?: never;
@@ -223,10 +220,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Phase 1: read-only org view at /api/v1/organizations/. Org admin endpoint
-         *     for creating new orgs lands in M1b together with auth.
-         */
+        /** @description Phase 1: read-only org view at /api/v1/organizations/. */
         get: operations["organizations_retrieve"];
         put?: never;
         post?: never;

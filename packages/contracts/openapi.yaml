@@ -116,7 +116,6 @@ paths:
       - departments
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -141,7 +140,6 @@ paths:
         required: true
       security:
       - jwtAuth: []
-      - {}
       responses:
         '201':
           content:
@@ -164,7 +162,6 @@ paths:
       - departments
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -195,7 +192,6 @@ paths:
         required: true
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -225,7 +221,6 @@ paths:
               $ref: '#/components/schemas/PatchedDepartmentRequest'
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -247,21 +242,17 @@ paths:
       - departments
       security:
       - jwtAuth: []
-      - {}
       responses:
         '204':
           description: No response body
   /api/v1/organizations/:
     get:
       operationId: organizations_list
-      description: |-
-        Phase 1: read-only org view at /api/v1/organizations/. Org admin endpoint
-        for creating new orgs lands in M1b together with auth.
+      description: 'Phase 1: read-only org view at /api/v1/organizations/.'
       tags:
       - organizations
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -274,9 +265,7 @@ paths:
   /api/v1/organizations/{slug}/:
     get:
       operationId: organizations_retrieve
-      description: |-
-        Phase 1: read-only org view at /api/v1/organizations/. Org admin endpoint
-        for creating new orgs lands in M1b together with auth.
+      description: 'Phase 1: read-only org view at /api/v1/organizations/.'
       parameters:
       - in: path
         name: slug
@@ -287,7 +276,6 @@ paths:
       - organizations
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:

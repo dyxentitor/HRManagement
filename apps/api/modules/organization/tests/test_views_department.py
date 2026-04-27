@@ -1,18 +1,21 @@
 """Tests for the DepartmentViewSet."""
 
+import uuid
+
 import pytest
 from rest_framework.test import APIClient
 
+from modules.identity.models import Permission, Role, RolePermission, User, UserRole
 from modules.organization.models import Department, Organization
 
 
 @pytest.fixture
-def client() -> APIClient:
-    return APIClient()
+def org_id() -> uuid.UUID:
+    return uuid.uuid4()
 
 
 @pytest.fixture
-def org() -> Organization:
+def org(org_id: uuid.UUID) -> Organization:
     return Organization.objects.create(
         name="Provintell",
         slug="provintell",
@@ -23,11 +26,33 @@ def org() -> Organization:
     )
 
 
+@pytest.fixture
+def auth_client(db, org_id: uuid.UUID) -> APIClient:
+    user = User.objects.create_user(
+        email="reader@example.com",
+        password="x",  # pragma: allowlist secret
+        org_id=org_id,
+    )
+    role = Role.objects.create(org_id=org_id, code="org_admin", name="Org Admin", is_system=True)
+    for code in ("org:settings:read", "department:read", "department:write"):
+        p, _ = Permission.objects.get_or_create(code=code, defaults={"description": ""})
+        RolePermission.objects.create(role=role, permission=p)
+    UserRole.objects.create(user=user, role=role, granted_by=None)
+    api = APIClient()
+    login = api.post(
+        "/api/v1/auth/login",
+        {"email": "reader@example.com", "password": "x"},  # pragma: allowlist secret
+        format="json",
+    ).json()
+    api.credentials(HTTP_AUTHORIZATION=f"Bearer {login['access_token']}")
+    return api
+
+
 @pytest.mark.django_db
-def test_create_department(client: APIClient, org: Organization) -> None:
-    resp = client.post(
+def test_create_department(auth_client: APIClient, org_id: uuid.UUID) -> None:
+    resp = auth_client.post(
         "/api/v1/departments/",
-        {"name": "Operations", "org_id": str(org.id)},
+        {"name": "Operations"},
         format="json",
     )
     assert resp.status_code == 201, resp.content
@@ -36,16 +61,17 @@ def test_create_department(client: APIClient, org: Organization) -> None:
 
 
 @pytest.mark.django_db
-def test_create_department_without_org_id_fails(client: APIClient) -> None:
-    resp = client.post("/api/v1/departments/", {"name": "Operations"}, format="json")
-    assert resp.status_code in (400, 422)
+def test_create_department_without_auth_fails() -> None:
+    anon = APIClient()
+    resp = anon.post("/api/v1/departments/", {"name": "Operations"}, format="json")
+    assert resp.status_code in (401, 403)
 
 
 @pytest.mark.django_db
-def test_list_departments(client: APIClient, org: Organization) -> None:
-    Department.all_objects.create(org_id=org.id, name="Operations")
-    Department.all_objects.create(org_id=org.id, name="Engineering")
-    resp = client.get("/api/v1/departments/")
+def test_list_departments(auth_client: APIClient, org_id: uuid.UUID) -> None:
+    Department.objects.create(org_id=org_id, name="Operations")
+    Department.objects.create(org_id=org_id, name="Engineering")
+    resp = auth_client.get("/api/v1/departments/")
     assert resp.status_code == 200
     data = resp.json()
     rows = data.get("results") if isinstance(data, dict) else data
@@ -54,17 +80,17 @@ def test_list_departments(client: APIClient, org: Organization) -> None:
 
 
 @pytest.mark.django_db
-def test_retrieve_department(client: APIClient, org: Organization) -> None:
-    d = Department.all_objects.create(org_id=org.id, name="HR")
-    resp = client.get(f"/api/v1/departments/{d.id}/")
+def test_retrieve_department(auth_client: APIClient, org_id: uuid.UUID) -> None:
+    d = Department.objects.create(org_id=org_id, name="HR")
+    resp = auth_client.get(f"/api/v1/departments/{d.id}/")
     assert resp.status_code == 200
     assert resp.json()["name"] == "HR"
 
 
 @pytest.mark.django_db
-def test_update_department(client: APIClient, org: Organization) -> None:
-    d = Department.all_objects.create(org_id=org.id, name="HR")
-    resp = client.patch(
+def test_update_department(auth_client: APIClient, org_id: uuid.UUID) -> None:
+    d = Department.objects.create(org_id=org_id, name="HR")
+    resp = auth_client.patch(
         f"/api/v1/departments/{d.id}/",
         {"name": "People & Culture"},
         format="json",
@@ -75,9 +101,9 @@ def test_update_department(client: APIClient, org: Organization) -> None:
 
 
 @pytest.mark.django_db
-def test_soft_delete_department(client: APIClient, org: Organization) -> None:
-    d = Department.all_objects.create(org_id=org.id, name="HR")
-    resp = client.delete(f"/api/v1/departments/{d.id}/")
+def test_soft_delete_department(auth_client: APIClient, org_id: uuid.UUID) -> None:
+    d = Department.objects.create(org_id=org_id, name="HR")
+    resp = auth_client.delete(f"/api/v1/departments/{d.id}/")
     assert resp.status_code in (200, 204)
-    d.refresh_from_db()
-    assert d.deleted_at is not None
+    d_fresh = Department.all_objects.get(pk=d.pk)
+    assert d_fresh.deleted_at is not None
