@@ -14,6 +14,8 @@ export function TopBar() {
 	const canFinance = useCan("claim:reimburse:finance");
 	const canPayslips = useCan("payslip:read:self");
 	const canPayroll = useCan("payroll:run:create");
+	const canKpi = useCan("kpi:assignment:read:self");
+	const canKpiAdmin = useCan("kpi:cycle:write");
 
 	return (
 		<header className="border-b bg-white">
@@ -88,6 +90,19 @@ export function TopBar() {
 							className="text-slate-600 hover:text-slate-900"
 						>
 							Payroll
+						</Link>
+					)}
+					{canKpi && (
+						<Link to="/kpi/me" className="text-slate-600 hover:text-slate-900">
+							KPI
+						</Link>
+					)}
+					{canKpiAdmin && (
+						<Link
+							to="/kpi/admin"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							KPI Admin
 						</Link>
 					)}
 					<span aria-label="user-email">{user?.email}</span>
