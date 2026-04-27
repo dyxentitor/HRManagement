@@ -1,0 +1,6 @@
+# Auto-generated. Do not edit by hand. Run `make contracts` to regenerate.
+openapi: 3.0.3
+info:
+  title: HRMS API
+  version: 0.1.0
+paths: {}

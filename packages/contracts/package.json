@@ -1,0 +1,13 @@
+{
+  "name": "@hrms/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "generated.ts",
+  "scripts": {
+    "generate": "openapi-typescript ./openapi.yaml -o ./generated.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.0.0"
+  }
+}
