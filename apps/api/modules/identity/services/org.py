@@ -16,12 +16,28 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
+def _default_employee_lookup(employee_id: uuid.UUID):
+    """Default: look up Employee by primary key. Returns None if not found.
+
+    Imports happen inside the function to avoid a Django app-loading cycle
+    (identity is loaded before employee).
+    Uses all_objects (bypasses TenantScopedManager) so this works without a
+    request-scoped org_id in thread-local.
+    """
+    try:
+        from modules.employee.models import Employee
+
+        return Employee.all_objects.filter(id=employee_id).first()
+    except Exception:
+        return None
+
+
 @dataclass
 class OrgService:
     """Pure-domain helper. Decoupled from the Employee ORM model so it can be
     used in M1 (no Employee yet) by injecting `employee_lookup`."""
 
-    employee_lookup: Callable[[uuid.UUID], Any] = field(default=lambda _eid: None)
+    employee_lookup: Callable[[uuid.UUID], Any] = field(default=_default_employee_lookup)
     max_depth: int = 10
 
     def with_max_depth(self, n: int) -> OrgService:
