@@ -222,3 +222,29 @@ class UserRole(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} -> {self.role}"
+
+
+class Session(models.Model):
+    """Tracks issued refresh tokens for server-side revocation.
+
+    `refresh_token_hash` is the sha256 of the refresh JWT; storing the hash
+    means the raw token never sits in the DB.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey("identity.User", on_delete=models.CASCADE, related_name="sessions")
+    refresh_token_hash = models.CharField(max_length=64, db_index=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=512, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "identity_session"
+        indexes: ClassVar = [
+            models.Index(fields=["user", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"session({self.user.email}, created={self.created_at:%Y-%m-%d %H:%M})"
