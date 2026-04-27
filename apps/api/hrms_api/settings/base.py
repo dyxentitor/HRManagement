@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     # Local
     "common",
     "modules.health",
+    "modules.organization",
 ]
 
 MIDDLEWARE = [

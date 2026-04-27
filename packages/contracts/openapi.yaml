@@ -4,6 +4,52 @@ info:
   version: 0.1.0
   description: HR Management System — Phase 1
 paths:
+  /api/v1/organizations/:
+    get:
+      operationId: organizations_list
+      description: |-
+        Phase 1: read-only org view at /api/v1/organizations/. Org admin endpoint
+        for creating new orgs lands in M1b together with auth.
+      tags:
+      - organizations
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+          description: ''
+  /api/v1/organizations/{slug}/:
+    get:
+      operationId: organizations_retrieve
+      description: |-
+        Phase 1: read-only org view at /api/v1/organizations/. Org admin endpoint
+        for creating new orgs lands in M1b together with auth.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - organizations
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: ''
   /health:
     get:
       operationId: health_retrieve
@@ -31,6 +77,64 @@ paths:
         '200':
           description: No response body
 components:
+  schemas:
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 80
+          pattern: ^[-a-zA-Z0-9_]+$
+        country_code:
+          type: string
+          maxLength: 2
+        default_currency:
+          type: string
+          maxLength: 3
+        default_timezone:
+          type: string
+          maxLength: 64
+        default_locale:
+          type: string
+          maxLength: 10
+        settings: {}
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - country_code
+      - created_at
+      - default_currency
+      - default_locale
+      - default_timezone
+      - id
+      - name
+      - slug
+      - updated_at
+    StatusEnum:
+      enum:
+      - active
+      - suspended
+      - archived
+      type: string
+      description: |-
+        * `active` - Active
+        * `suspended` - Suspended
+        * `archived` - Archived
   securitySchemes:
     basicAuth:
       type: http

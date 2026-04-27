@@ -4,6 +4,46 @@
  */
 
 export interface paths {
+    "/api/v1/organizations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Phase 1: read-only org view at /api/v1/organizations/. Org admin endpoint
+         *     for creating new orgs lands in M1b together with auth.
+         */
+        get: operations["organizations_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{slug}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Phase 1: read-only org view at /api/v1/organizations/. Org admin endpoint
+         *     for creating new orgs lands in M1b together with auth.
+         */
+        get: operations["organizations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -41,7 +81,31 @@ export interface paths {
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        Organization: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            slug: string;
+            country_code: string;
+            default_currency: string;
+            default_timezone: string;
+            default_locale: string;
+            settings?: unknown;
+            status?: components["schemas"]["StatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `active` - Active
+         *     * `suspended` - Suspended
+         *     * `archived` - Archived
+         * @enum {string}
+         */
+        StatusEnum: "active" | "suspended" | "archived";
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -50,6 +114,46 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    organizations_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"][];
+                };
+            };
+        };
+    };
+    organizations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+        };
+    };
     health_retrieve: {
         parameters: {
             query?: never;

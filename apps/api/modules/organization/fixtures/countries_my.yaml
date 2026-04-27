@@ -1,0 +1,55 @@
+- model: organization.country
+  pk: MY
+  fields:
+    name: Malaysia
+    default_currency: MYR
+    default_timezone: Asia/Kuala_Lumpur
+
+- model: organization.countryleavetypedefault
+  fields: { country_code: MY, code: ANNUAL,        name: Annual Leave,        default_days: 14, statutory: true,  accrual_type: annual }
+- model: organization.countryleavetypedefault
+  fields: { country_code: MY, code: MEDICAL,       name: Medical Leave,       default_days: 14, statutory: true,  accrual_type: annual }
+- model: organization.countryleavetypedefault
+  fields: { country_code: MY, code: MATERNITY,     name: Maternity Leave,     default_days: 98, statutory: true,  accrual_type: event_based }
+- model: organization.countryleavetypedefault
+  fields: { country_code: MY, code: PATERNITY,     name: Paternity Leave,     default_days: 7,  statutory: true,  accrual_type: event_based }
+- model: organization.countryleavetypedefault
+  fields: { country_code: MY, code: COMPASSIONATE, name: Compassionate Leave, default_days: 3,  statutory: false, accrual_type: event_based }
+- model: organization.countryleavetypedefault
+  fields: { country_code: MY, code: UNPAID,        name: Unpaid Leave,        default_days: 0,  statutory: false, accrual_type: none }
+- model: organization.countryleavetypedefault
+  fields: { country_code: MY, code: REPLACEMENT,   name: Replacement Leave,   default_days: 0,  statutory: false, accrual_type: event_based }
+
+# 2026 Malaysian federal public holidays (gazetted; pinned for the launch year).
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-01-01, name: New Year's Day, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-01-29, name: Chinese New Year, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-01-30, name: Chinese New Year (2nd day), type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-02-01, name: Federal Territory Day, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-03-21, name: Hari Raya Aidilfitri, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-03-22, name: Hari Raya Aidilfitri (2nd day), type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-05-01, name: Labour Day, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-05-27, name: Wesak Day, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-05-28, name: Hari Raya Aidiladha, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-06-04, name: Yang di-Pertuan Agong's Birthday, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-06-17, name: Awal Muharram, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-08-26, name: Maulidur Rasul, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-08-31, name: National Day, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-09-16, name: Malaysia Day, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-11-08, name: Deepavali, type: federal, state_code: null }
+- model: organization.countryholiday
+  fields: { country_code: MY, date: 2026-12-25, name: Christmas Day, type: federal, state_code: null }
