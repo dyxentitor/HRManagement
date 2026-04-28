@@ -5,6 +5,11 @@
 Use when promoting a staging-validated build to the Provintell production environment.
 **Always deploy to staging first and wait ≥ 1 hour before promoting to prod.**
 
+> **First-time install (greenfield host)?** Use `deploy/bootstrap.sh` instead of this
+> runbook — it generates `.env` with fresh secrets, brings up the stack, runs migrations,
+> seeds Provintell, and creates the first HR admin in one go. This runbook is for
+> *subsequent* releases to an existing host.
+
 ## Prerequisites
 
 - Staging deploy green (see [deploy-staging.md](deploy-staging.md))
