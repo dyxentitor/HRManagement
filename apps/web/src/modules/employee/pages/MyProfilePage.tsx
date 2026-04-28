@@ -126,7 +126,20 @@ export default function MyProfilePage() {
 		);
 	if (!profile)
 		return (
-			<p className="text-text-tertiary">No profile linked to this user.</p>
+			<div className="space-y-6">
+				<PageHeader breadcrumb="Personal" title="My Profile" />
+				<div className="bg-surface-hover border border-dashed border-border-subtle rounded-lg p-8 text-center text-text-tertiary">
+					<div className="text-h2 mb-2">👤</div>
+					<h2 className="text-h3 text-text-primary">
+						No employee record linked
+					</h2>
+					<p className="text-body mt-1">
+						Your account isn't linked to an employee yet. Ask HR to create your
+						employee record before you can manage personal details, banking, or
+						emergency contacts here.
+					</p>
+				</div>
+			</div>
 		);
 
 	const tenure = tenureFromHireDate(profile.hire_date);

@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { type AttendanceRecord, attendanceApi } from "@/modules/attendance/api";
+import {
+	ApiError,
+	type AttendanceRecord,
+	attendanceApi,
+} from "@/modules/attendance/api";
 import { type ShiftAssignment, scheduleApi } from "../api";
 
 function startOfWeekISO(d: Date): string {
@@ -24,10 +28,12 @@ export default function MySchedulePage() {
 	const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
 	const [todayRec, setTodayRec] = useState<AttendanceRecord | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [noEmployee, setNoEmployee] = useState<boolean>(false);
 	const [busy, setBusy] = useState<boolean>(false);
 
 	const refresh = useCallback(async () => {
 		setError(null);
+		setNoEmployee(false);
 		try {
 			const [a, t] = await Promise.all([
 				scheduleApi.myAssignments(weekStart, weekEnd),
@@ -36,7 +42,11 @@ export default function MySchedulePage() {
 			setAssignments(a);
 			setTodayRec(t);
 		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed to load");
+			if (e instanceof ApiError && e.status === 404) {
+				setNoEmployee(true);
+			} else {
+				setError(e instanceof Error ? e.message : "Failed to load");
+			}
 		}
 	}, [weekStart, weekEnd]);
 
@@ -70,6 +80,24 @@ export default function MySchedulePage() {
 
 	const days = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
 	const todayIso = today.toISOString().slice(0, 10);
+
+	if (noEmployee) {
+		return (
+			<div className="space-y-4 max-w-4xl">
+				<h1 className="text-h1 text-text-primary">My Schedule</h1>
+				<div className="bg-surface-hover border border-dashed border-border-subtle rounded-lg p-8 text-center text-text-tertiary">
+					<div className="text-h2 mb-2">📋</div>
+					<h2 className="text-h3 text-text-primary">
+						No employee record linked
+					</h2>
+					<p className="text-body mt-1">
+						Your account isn't linked to an employee yet, so there's no schedule
+						or attendance to show. Ask HR to create your employee record.
+					</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="space-y-4 max-w-4xl">

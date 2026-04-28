@@ -90,7 +90,7 @@ export const NAV: NavGroup[] = [
 			},
 			{
 				label: "Roster",
-				to: "/roster",
+				to: "/schedule/roster",
 				icon: ClipboardCheck,
 				perm: "schedule:assignment:write:team",
 			},
@@ -108,7 +108,7 @@ export const NAV: NavGroup[] = [
 			},
 			{
 				label: "Payroll",
-				to: "/payroll",
+				to: "/payroll/admin",
 				icon: Wallet,
 				perm: "payroll:run:create",
 			},
