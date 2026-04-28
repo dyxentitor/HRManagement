@@ -1,155 +1,63 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Bell, HelpCircle, Search } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
-import { NotificationBell } from "@/components/NotificationBell";
-import { useAuth } from "@/lib/auth";
-import { useCan } from "@/lib/perm";
+import { Button } from "@/components/ui/button";
+import { useCommandPalette } from "@/lib/cmdk";
+
+import { UserMenu } from "./UserMenu";
+
+function deriveTitle(pathname: string): { breadcrumb: string; title: string } {
+	const segs = pathname.split("/").filter(Boolean);
+	if (segs.length === 0) return { breadcrumb: "Home", title: "Dashboard" };
+	const head = (segs[0] ?? "").replace(/-/g, " ");
+	const tail = (segs[segs.length - 1] ?? "").replace(/-/g, " ");
+	const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+	return {
+		breadcrumb: segs.slice(0, -1).map(cap).join(" / ") || cap(head),
+		title: cap(tail),
+	};
+}
 
 export function TopBar() {
-	const { user, logout } = useAuth();
-	const navigate = useNavigate();
-	const canLeave = useCan("leave:request:create:self");
-	const canApprovals = useCan("approvals:inbox:read");
-	const canSchedule = useCan("attendance:clock:self");
-	const canRoster = useCan("schedule:assignment:write:team");
-	const canClaims = useCan("claim:create:self");
-	const canPayslips = useCan("payslip:read:self");
-	const canPayroll = useCan("payroll:run:create");
-	const canKpi = useCan("kpi:assignment:read:self");
-	const canKpiAdmin = useCan("kpi:cycle:write");
-	const canCerts = useCan("cert:read:self");
-	const canTraining = useCan("training:assignment:read:self");
-	const canCertAdmin = useCan("cert:read:org");
-	const canReports = useCan("report:list");
+	const { pathname } = useLocation();
+	const { breadcrumb, title } = deriveTitle(pathname);
+	const { setOpen } = useCommandPalette();
 
 	return (
-		<header className="border-b bg-white">
-			<div className="px-4 py-3 flex items-center justify-between">
-				<div className="font-semibold">HRMS</div>
-				<div className="flex items-center gap-3 text-sm">
-					<Link
-						to="/me/profile"
-						className="text-slate-600 hover:text-slate-900"
-					>
-						My Profile
-					</Link>
-					{canLeave && (
-						<Link
-							to="/leave/me"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Leave
-						</Link>
-					)}
-					{canApprovals && (
-						<Link
-							to="/approvals"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Approvals
-						</Link>
-					)}
-					{canSchedule && (
-						<Link
-							to="/schedule/me"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Schedule
-						</Link>
-					)}
-					{canRoster && (
-						<Link
-							to="/schedule/roster"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Roster
-						</Link>
-					)}
-					{canClaims && (
-						<Link
-							to="/claims/me"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Claims
-						</Link>
-					)}
-					{canPayslips && (
-						<Link
-							to="/payslips/me"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Payslips
-						</Link>
-					)}
-					{canPayroll && (
-						<Link
-							to="/payroll/admin"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Payroll
-						</Link>
-					)}
-					{canKpi && (
-						<Link to="/kpi/me" className="text-slate-600 hover:text-slate-900">
-							KPI
-						</Link>
-					)}
-					{canKpiAdmin && (
-						<Link
-							to="/kpi/admin"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							KPI Admin
-						</Link>
-					)}
-					{canCerts && (
-						<Link
-							to="/certifications/me"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Certs
-						</Link>
-					)}
-					{canTraining && (
-						<Link
-							to="/training/me"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Training
-						</Link>
-					)}
-					{canCertAdmin && (
-						<Link
-							to="/certifications/admin"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Cert Admin
-						</Link>
-					)}
-					{canReports && (
-						<Link to="/reports" className="text-slate-600 hover:text-slate-900">
-							Reports
-						</Link>
-					)}
-					<NotificationBell />
-					<Link
-						to="/notifications/preferences"
-						className="text-slate-600 hover:text-slate-900"
-					>
-						Notif. Prefs
-					</Link>
-					<span aria-label="user-email">{user?.email}</span>
-					<button
-						type="button"
-						onClick={async () => {
-							await logout();
-							navigate("/login");
-						}}
-						className="text-slate-600 hover:text-slate-900"
-					>
-						Log out
-					</button>
-				</div>
+		<header className="bg-surface rounded-lg px-4 py-3 flex items-center gap-4">
+			<div className="flex-1">
+				<p className="text-small text-text-tertiary leading-tight">
+					{breadcrumb}
+				</p>
+				<h1 className="text-h2 text-text-primary leading-tight">{title}</h1>
 			</div>
+			<button
+				type="button"
+				onClick={() => setOpen(true)}
+				className="hidden md:flex items-center gap-2 bg-canvas border border-border-subtle rounded-full px-4 py-1.5 text-small text-text-tertiary hover:text-text-secondary w-80"
+				aria-label="Open command palette"
+			>
+				<Search className="size-3.5" aria-hidden />
+				<span>⌘K · Search people, claims, leave…</span>
+			</button>
+			<Button
+				variant="ghost"
+				size="icon"
+				className="rounded-md bg-canvas border border-border-subtle hover:bg-surface-hover"
+				aria-label="Help"
+			>
+				<HelpCircle className="size-4" />
+			</Button>
+			<Button
+				variant="ghost"
+				size="icon"
+				className="rounded-md bg-canvas border border-border-subtle hover:bg-surface-hover relative"
+				aria-label="Notifications"
+			>
+				<Bell className="size-4" />
+				{/* unread pulse — wired in Sub-plan 2 (NotificationCard) */}
+			</Button>
+			<UserMenu variant="full" />
 		</header>
 	);
 }
