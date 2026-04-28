@@ -4,6 +4,13 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.1.0-m10] - 2026-04-28
+
+### Added
+- **M10 — Dashboards + Unified Approvals Inbox:** New `modules.dashboard` module (no DB models — pure service layer). `/api/v1/approvals/inbox` merges `LeaveApproval` + `ClaimApproval` pending rows for the current user, sorted newest-first, returning `{kind, id, employee_code, summary, submitted_at, deep_link}` items. `/api/v1/dashboards/{me,team,admin}` returns role-filtered `{variant, cards:[]}` payload; each card (`pending_approvals`, `my_leave_balance`, `upcoming_holidays`, `certs_expiring_team`, `kpi_cycle_progress_team`, `today_attendance_team`, `recent_claims_self`, `birthdays_this_month`) is a small self-contained fetcher (~25 lines) under `services/cards/`. Cards are visibility-gated by `is_visible_for()` (checks `requires_perms` against `get_user_perms()`). `DASHBOARD_CARDS` dict defines ordered card lists per variant; `CARD_TYPES` dict is the card registry.
+- Frontend: `UnifiedInboxPage` at `/approvals` replaces M3d's `/leave/approvals` + M5b's `/claims/finance` (those routes now `<Navigate>` redirect). TopBar "Approvals" link updated to `/approvals` gated on `approvals:inbox:read`. `DashboardPage` at `/` is now role-aware: introspects user perms to pick highest available variant (`admin > team > me`), fetches the matching endpoint, and renders typed card components (8 components in `components/cards/`). Users with no dashboard permission see a fallback message.
+- 4 new permission codes (M10): `dashboard:read:me`, `dashboard:read:team`, `dashboard:read:admin`, `approvals:inbox:read`. Catalogue grew from 97 to 101. Default roles updated: all roles get `dashboard:read:me`; manager/team_lead/hr_manager/org_admin get `dashboard:read:team` + `approvals:inbox:read`; hr_manager/org_admin get `dashboard:read:admin`; finance gets `approvals:inbox:read`; auditor gets all three dashboard:read variants.
+
 ## [0.1.0-m9] - 2026-04-28
 
 ### Added
