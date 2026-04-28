@@ -1,10 +1,81 @@
+// apps/web/tailwind.config.ts
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
 
-export default {
+const config: Config = {
 	darkMode: "class",
 	content: ["./index.html", "./src/**/*.{ts,tsx}"],
 	theme: {
-		extend: {},
+		extend: {
+			colors: {
+				canvas: "rgb(var(--bg-canvas) / <alpha-value>)",
+				surface: "rgb(var(--bg-surface) / <alpha-value>)",
+				"surface-hover": "rgb(var(--bg-hover) / <alpha-value>)",
+				"surface-elevated": "rgb(var(--bg-elevated) / <alpha-value>)",
+				"text-primary": "rgb(var(--text-primary) / <alpha-value>)",
+				"text-secondary": "rgb(var(--text-secondary) / <alpha-value>)",
+				"text-tertiary": "rgb(var(--text-tertiary) / <alpha-value>)",
+				"text-disabled": "rgb(var(--text-disabled) / <alpha-value>)",
+				accent: {
+					50: "rgb(var(--accent-50) / <alpha-value>)",
+					200: "rgb(var(--accent-200) / <alpha-value>)",
+					500: "rgb(var(--accent-500) / <alpha-value>)",
+					600: "rgb(var(--accent-600) / <alpha-value>)",
+					700: "rgb(var(--accent-700) / <alpha-value>)",
+				},
+				peach: "rgb(var(--pastel-peach) / <alpha-value>)",
+				lavender: "rgb(var(--pastel-lavender) / <alpha-value>)",
+				mint: "rgb(var(--pastel-mint) / <alpha-value>)",
+				yellow: "rgb(var(--pastel-yellow) / <alpha-value>)",
+				coral: "rgb(var(--pastel-coral) / <alpha-value>)",
+				sky: "rgb(var(--pastel-sky) / <alpha-value>)",
+				"border-subtle": "rgb(var(--border-subtle))",
+				"border-strong": "rgb(var(--border-strong))",
+			},
+			borderRadius: {
+				sm: "var(--radius-sm)",
+				md: "var(--radius-md)",
+				lg: "var(--radius-lg)",
+				xl: "var(--radius-xl)",
+				full: "var(--radius-full)",
+			},
+			fontFamily: {
+				sans: ['"Inter Variable"', "system-ui", "sans-serif"],
+				mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
+			},
+			fontSize: {
+				display: ["32px", { lineHeight: "40px", fontWeight: "700" }],
+				h1: ["24px", { lineHeight: "32px", fontWeight: "700" }],
+				h2: ["18px", { lineHeight: "26px", fontWeight: "600" }],
+				h3: ["14px", { lineHeight: "20px", fontWeight: "600" }],
+				body: ["13px", { lineHeight: "20px", fontWeight: "400" }],
+				small: ["11px", { lineHeight: "16px", fontWeight: "500" }],
+				label: [
+					"10px",
+					{ lineHeight: "14px", fontWeight: "700", letterSpacing: "0.08em" },
+				],
+			},
+			transitionDuration: {
+				fast: "var(--motion-fast)",
+				base: "var(--motion-base)",
+				slow: "var(--motion-slow)",
+			},
+			transitionTimingFunction: {
+				enter: "var(--ease-enter)",
+				exit: "var(--ease-exit)",
+			},
+			animation: {
+				shimmer: "shimmer 1.4s infinite linear",
+			},
+			boxShadow: {
+				popover: "0 8px 24px rgba(0,0,0,0.4)",
+				modal: "0 16px 48px rgba(0,0,0,0.55)",
+				toast: "0 8px 24px rgba(0,0,0,0.4)",
+				panel: "-10px 0 40px rgba(0,0,0,0.4)",
+			},
+		},
 	},
-	plugins: [],
-} satisfies Config;
+	plugins: [animate],
+};
+
+export default config;

@@ -1,7 +1,89 @@
+/* apps/web/src/index.css */
+@import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+@layer base {
+	:root {
+		/* Surfaces & text */
+		--bg-canvas: 11 11 20;
+		--bg-surface: 21 21 31;
+		--bg-hover: 27 27 39;
+		--bg-elevated: 30 30 44;
+		--text-primary: 255 255 255;
+		--text-secondary: 182 184 192;
+		--text-tertiary: 110 112 121;
+		--text-disabled: 74 77 88;
+		--border-subtle: 255 255 255 / 0.06;
+		--border-strong: 255 255 255 / 0.12;
+
+		/* Accent — violet */
+		--accent-50: 243 239 255;
+		--accent-200: 201 188 255;
+		--accent-500: 124 92 255;
+		--accent-600: 107 79 224;
+		--accent-700: 90 64 194;
+
+		/* Pastels — semantic + category */
+		--pastel-peach: 252 197 154;
+		--pastel-lavender: 191 177 242;
+		--pastel-mint: 151 217 199;
+		--pastel-yellow: 252 214 133;
+		--pastel-coral: 244 160 160;
+		--pastel-sky: 160 207 236;
+
+		/* Radii */
+		--radius-sm: 0.25rem;
+		--radius-md: 0.5rem;
+		--radius-lg: 0.75rem;
+		--radius-xl: 1.125rem;
+		--radius-full: 999px;
+
+		/* Motion */
+		--motion-instant: 0ms;
+		--motion-fast: 120ms;
+		--motion-base: 200ms;
+		--motion-slow: 320ms;
+		--ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+		--ease-exit: cubic-bezier(0.4, 0, 1, 1);
+	}
+
+	html, body, #root {
+		height: 100%;
+	}
+
+	body {
+		font-family: "Inter Variable", system-ui, sans-serif;
+		background: rgb(var(--bg-canvas));
+		color: rgb(var(--text-primary));
+		font-size: 13px;
+		line-height: 20px;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	*:focus-visible {
+		outline: 3px solid rgb(var(--accent-500) / 0.4);
+		outline-offset: 2px;
+		border-radius: 6px;
+	}
+
+	::selection {
+		background: rgb(var(--accent-500) / 0.4);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+	0% { background-position: -200%; }
+	100% { background-position: 200%; }
 }
