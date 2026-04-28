@@ -4,6 +4,47 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-04-28
+
+**HRMS Phase 1 — Production Release.**
+
+Phase 1 delivers a complete web HRMS for Provintell with all 12 milestones shipped:
+
+### Core platform (M0–M2)
+- Repo scaffold, Docker Compose, CI/CD, pre-commit
+- Multi-tenant-ready Django + DRF backend, React + Vite frontend
+- Identity, RBAC (HRMSPermission + TenantContext), audit log + chained payroll ledger
+- Tier-2 Employee directory with encrypted IC/bank/tax IDs (LHDN/EPF/SOCSO/EIS)
+
+### Feature modules (M3–M8)
+- Workflow engine (subject-agnostic; reused by Leave, Claims, KPI)
+- Leave with balances, ledger, approvals, holiday-replacement rule
+- Schedule (shifts, rosters, publish) + Attendance (clock-in/out, fail-soft holiday detection)
+- Claims with 3-tier approval chains keyed by amount band
+- Payroll CSV import + PDF generation + payroll-ledger writes
+- KPI cycles with snapshot pattern for historical preservation
+- Certification & training with daily expiry-reminder cron
+
+### UX & operations (M9–M12)
+- Notifications system with email digest batching
+- Unified approvals inbox + role-aware dashboards
+- Reports framework with 15 registered reports + CSV/XLSX/PDF export
+- Backup verification + Prometheus alerts + Grafana dashboards + 9 runbooks
+- Provintell launch seed data + 2-week parallel-run validation
+
+### By the numbers
+- 13 tagged releases (`v0.1.0-m{0..11}` → `v1.0.0`)
+- ~480 backend tests + ~10 frontend tests, all green
+- 105 permission codes
+- 13 modules: identity, organization, employee, leave, schedule, attendance, claims, payslip, kpi, certification, notification, dashboard, reporting + common.audit + common.workflow + common.reporting
+- Multi-country-ready schema; English (en-MY) + Malaysia (MYR / Asia/Kuala_Lumpur) seeded at launch
+
+### Phase 2 / Phase 3 are separate engagements
+- Phase 2: SaaS subscription model, plan-based feature gating, billing
+- Phase 3: Mobile app reusing the Phase 1 APIs
+
+**Tag policy change:** `v0.1.0-mN` milestone tags retire here. Future releases follow semver `vMAJOR.MINOR.PATCH`.
+
 ## [0.1.0-m11] - 2026-04-28
 
 ### Added
