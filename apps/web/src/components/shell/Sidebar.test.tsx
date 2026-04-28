@@ -3,6 +3,15 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 
+// Matches only <div> elements whose full text content equals `label`.
+// Group labels are rendered as <div>s; the UserMenu renders the username in a <span>,
+// so this prevents false positives when the username matches a group label (e.g. "admin").
+function getGroupLabel(label: string): HTMLElement | null {
+	return screen.queryByText((_, element) => {
+		return element?.tagName === "DIV" && element.textContent === label;
+	});
+}
+
 const mocks = vi.hoisted(() => ({
 	perms: new Set<string>(),
 	user: { email: "admin@provintell.demo" } as { email: string } | null,
@@ -59,7 +68,7 @@ describe("Sidebar", () => {
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(screen.queryByText(/^team$/i)).not.toBeInTheDocument();
+		expect(getGroupLabel("Team")).not.toBeInTheDocument();
 	});
 
 	it("shows the Admin group when an admin perm is granted", () => {
@@ -69,7 +78,7 @@ describe("Sidebar", () => {
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(screen.getByText(/^admin$/i)).toBeInTheDocument();
+		expect(getGroupLabel("Admin")).toBeInTheDocument();
 		expect(
 			screen.getByRole("link", { name: /employees/i }),
 		).toBeInTheDocument();

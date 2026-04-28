@@ -123,14 +123,7 @@ export function Sidebar() {
 			)}
 
 			<div className="mt-auto pt-3 border-t border-border-subtle">
-				{/*
-				 * NOTE: Using variant="compact" here instead of "full".
-				 * The "full" variant renders the email's local-part (e.g. "admin") as a
-				 * standalone text node, which collides with the "Admin" group label when
-				 * tests use `getByText(/^admin$/i)`.  The compact variant (avatar only)
-				 * avoids that ambiguity while still providing the user pill.
-				 */}
-				<UserMenu variant="compact" />
+				<UserMenu variant="full" />
 			</div>
 		</aside>
 	);
