@@ -7,3 +7,6 @@ tailwind.config.js
 tailwind.config.d.ts
 tsconfig.tsbuildinfo
 tsconfig.node.tsbuildinfo
+
+# Lighthouse audit reports (regenerated; not committed)
+lighthouse-reports/
