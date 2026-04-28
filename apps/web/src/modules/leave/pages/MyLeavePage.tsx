@@ -1,13 +1,50 @@
-import { useCallback, useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import {
+	type Column,
+	DataTable,
+	DetailPanel,
+	KpiTile,
+	StatusPill,
+} from "@/components/hrms";
+import { PageHeader } from "@/components/shell/PageHeader";
+import { Button } from "@/components/ui/button";
+
 import { type LeaveBalance, type LeaveRequest, leaveApi } from "../api";
+
+const TYPE_TONE: Record<
+	string,
+	"lavender" | "coral" | "peach" | "sky" | "mint" | "yellow"
+> = {
+	ANNUAL: "lavender",
+	SICK: "coral",
+	REPLACEMENT: "peach",
+	COMPASSIONATE: "sky",
+	MATERNITY: "mint",
+	PATERNITY: "mint",
+	UNPAID: "yellow",
+};
+
+const STATUS_TONE: Record<
+	LeaveRequest["status"],
+	"mint" | "yellow" | "coral" | "sky"
+> = {
+	approved: "mint",
+	submitted: "yellow",
+	rejected: "coral",
+	cancelled: "sky",
+	withdrawn: "sky",
+	draft: "sky",
+};
 
 export default function MyLeavePage() {
 	const [balances, setBalances] = useState<LeaveBalance[]>([]);
 	const [requests, setRequests] = useState<LeaveRequest[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [selected, setSelected] = useState<LeaveRequest | null>(null);
 
 	const refresh = useCallback(async () => {
 		setLoading(true);
@@ -27,157 +64,195 @@ export default function MyLeavePage() {
 	}, []);
 
 	useEffect(() => {
-		refresh();
+		void refresh();
 	}, [refresh]);
 
-	async function onCancel(id: string) {
+	const summary = useMemo(() => {
+		const total = requests.length;
+		const approved = requests.filter((r) => r.status === "approved").length;
+		const rejected = requests.filter((r) => r.status === "rejected").length;
+		const pending = requests.filter((r) => r.status === "submitted").length;
+		return { total, approved, rejected, pending };
+	}, [requests]);
+
+	const columns: Column<LeaveRequest>[] = [
+		{
+			key: "type",
+			header: "Type",
+			render: (r) => (
+				<StatusPill
+					tone={TYPE_TONE[r.leave_type_code] ?? "lavender"}
+					label={r.leave_type_code}
+				/>
+			),
+		},
+		{ key: "from", header: "From", render: (r) => r.start_date },
+		{ key: "to", header: "To", render: (r) => r.end_date },
+		{
+			key: "days",
+			header: "Days",
+			render: (r) => `${r.total_days}d`,
+			align: "right",
+		},
+		{
+			key: "status",
+			header: "Status",
+			render: (r) => (
+				<StatusPill tone={STATUS_TONE[r.status]} label={r.status} />
+			),
+		},
+	];
+
+	async function onCancel() {
+		if (!selected) return;
 		try {
-			await leaveApi.cancel(id);
+			await leaveApi.cancel(selected.id);
+			setSelected(null);
 			await refresh();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Cancel failed");
 		}
 	}
 
-	async function onWithdraw(id: string) {
-		try {
-			await leaveApi.withdraw(id);
-			await refresh();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Withdraw failed");
-		}
-	}
-
-	if (loading) return <p>Loading…</p>;
-	if (error)
-		return (
-			<p role="alert" className="text-red-600">
-				{error}
-			</p>
-		);
+	const canCancelSelected =
+		selected &&
+		(selected.status === "draft" || selected.status === "submitted");
 
 	return (
-		<div className="space-y-6 max-w-4xl">
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold">My Leave</h1>
-				<Link
-					to="/leave/apply"
-					className="bg-slate-900 text-white py-1.5 px-3 rounded text-sm"
-				>
-					Apply for leave
-				</Link>
+		<div className="space-y-6">
+			<PageHeader
+				title="Leave"
+				actions={
+					<Button
+						asChild
+						className="bg-accent-500 hover:bg-accent-600 text-white"
+					>
+						<Link to="/leave/apply">
+							<Plus className="size-4 mr-1" /> Apply for leave
+						</Link>
+					</Button>
+				}
+			/>
+
+			{error && (
+				<p className="text-coral text-small" role="alert">
+					{error}
+				</p>
+			)}
+
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+				<KpiTile
+					tone="sky"
+					icon={String(summary.total)}
+					label="Total leave"
+					value={String(summary.total)}
+				/>
+				<KpiTile
+					tone="lavender"
+					icon={String(summary.approved)}
+					label="Approved"
+					value={String(summary.approved)}
+				/>
+				<KpiTile
+					tone="coral"
+					icon={String(summary.rejected)}
+					label="Rejected"
+					value={String(summary.rejected)}
+				/>
+				<KpiTile
+					tone="yellow"
+					icon={String(summary.pending)}
+					label="Pending"
+					value={String(summary.pending)}
+				/>
 			</div>
 
-			<section className="bg-white border rounded p-4">
-				<h2 className="font-semibold mb-3">
-					Balances ({balances[0]?.year ?? new Date().getFullYear()})
-				</h2>
-				{balances.length === 0 ? (
-					<p className="text-slate-500 text-sm">No balances yet.</p>
+			<div className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+				{loading ? (
+					<p className="text-text-tertiary text-body">Loading…</p>
 				) : (
-					<table className="w-full text-sm">
-						<thead className="text-left text-slate-500">
-							<tr>
-								<th className="py-1">Type</th>
-								<th>Entitled</th>
-								<th>Accrued</th>
-								<th>Taken</th>
-								<th>Pending</th>
-								<th>Available</th>
-							</tr>
-						</thead>
-						<tbody>
-							{balances.map((b) => (
-								<tr key={b.id} className="border-t">
-									<td className="py-1.5">{b.leave_type_code}</td>
-									<td>{b.entitled}</td>
-									<td>{b.accrued}</td>
-									<td>{b.taken}</td>
-									<td>{b.pending}</td>
-									<td className="font-semibold">{b.available}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+					<DataTable<LeaveRequest>
+						rows={requests}
+						columns={columns}
+						rowKey={(r) => r.id}
+						onRowClick={(r) => setSelected(r)}
+					/>
 				)}
-			</section>
+			</div>
 
-			<section className="bg-white border rounded p-4">
-				<h2 className="font-semibold mb-3">My Requests</h2>
-				{requests.length === 0 ? (
-					<p className="text-slate-500 text-sm">
-						No leave requests yet.{" "}
-						<Link to="/leave/apply" className="underline">
-							Apply now
-						</Link>
-						.
-					</p>
-				) : (
-					<table className="w-full text-sm">
-						<thead className="text-left text-slate-500">
-							<tr>
-								<th className="py-1">Type</th>
-								<th>Dates</th>
-								<th>Days</th>
-								<th>Status</th>
-								<th>Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							{requests.map((r) => (
-								<tr key={r.id} className="border-t">
-									<td className="py-1.5">{r.leave_type_code}</td>
-									<td>
-										{r.start_date} → {r.end_date}
-									</td>
-									<td>{r.total_days}</td>
-									<td>
-										<StatusBadge status={r.status} />
-									</td>
-									<td className="space-x-2">
-										{r.status === "submitted" && (
-											<button
-												type="button"
-												onClick={() => onWithdraw(r.id)}
-												className="text-amber-700 hover:underline text-xs"
-											>
-												Withdraw
-											</button>
-										)}
-										{(r.status === "draft" || r.status === "submitted") && (
-											<button
-												type="button"
-												onClick={() => onCancel(r.id)}
-												className="text-red-700 hover:underline text-xs"
-											>
-												Cancel
-											</button>
-										)}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
+			{balances.length > 0 && (
+				<div className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+					<h2 className="text-h3 text-text-primary mb-3">Balances</h2>
+					<div className="flex flex-wrap gap-2">
+						{balances.map((b) => (
+							<StatusPill
+								key={b.id}
+								tone={TYPE_TONE[b.leave_type_code] ?? "lavender"}
+								label={`${b.leave_type_code}: ${b.available}/${b.entitled} d`}
+							/>
+						))}
+					</div>
+				</div>
+			)}
+
+			<DetailPanel
+				open={selected !== null}
+				onClose={() => setSelected(null)}
+				title={selected ? `Leave · ${selected.id}` : "Leave"}
+				footer={
+					canCancelSelected ? (
+						<Button
+							type="button"
+							variant="outline"
+							className="w-full border-coral/30 text-coral hover:bg-coral/10"
+							onClick={onCancel}
+						>
+							Cancel request
+						</Button>
+					) : null
+				}
+			>
+				{selected && (
+					<dl className="grid grid-cols-[110px_1fr] gap-y-2 text-body">
+						<dt className="text-label uppercase text-text-tertiary self-center">
+							Type
+						</dt>
+						<dd>
+							<StatusPill
+								tone={TYPE_TONE[selected.leave_type_code] ?? "lavender"}
+								label={selected.leave_type_code}
+							/>
+						</dd>
+						<dt className="text-label uppercase text-text-tertiary self-center">
+							Range
+						</dt>
+						<dd>
+							{selected.start_date} → {selected.end_date}
+						</dd>
+						<dt className="text-label uppercase text-text-tertiary self-center">
+							Days
+						</dt>
+						<dd>{selected.total_days}</dd>
+						<dt className="text-label uppercase text-text-tertiary self-center">
+							Status
+						</dt>
+						<dd>
+							<StatusPill
+								tone={STATUS_TONE[selected.status]}
+								label={selected.status}
+							/>
+						</dd>
+						{selected.reason && (
+							<>
+								<dt className="text-label uppercase text-text-tertiary self-start">
+									Reason
+								</dt>
+								<dd>{selected.reason}</dd>
+							</>
+						)}
+					</dl>
 				)}
-			</section>
+			</DetailPanel>
 		</div>
-	);
-}
-
-function StatusBadge({ status }: { status: string }) {
-	const colors: Record<string, string> = {
-		draft: "bg-slate-100 text-slate-700",
-		submitted: "bg-blue-100 text-blue-700",
-		approved: "bg-green-100 text-green-700",
-		rejected: "bg-red-100 text-red-700",
-		cancelled: "bg-slate-100 text-slate-500",
-		withdrawn: "bg-amber-100 text-amber-700",
-	};
-	return (
-		<span
-			className={`text-xs px-2 py-0.5 rounded ${colors[status] || "bg-slate-100"}`}
-		>
-			{status}
-		</span>
 	);
 }
