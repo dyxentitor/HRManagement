@@ -15,7 +15,7 @@ x-api-env: &api-env
   S3_BUCKET: hrms
   SMTP_HOST: mailhog
   SMTP_PORT: "1025"
-  HRMS_FIELD_ENCRYPTION_KEY: ${HRMS_FIELD_ENCRYPTION_KEY:-dev-32byte-key-change-in-prod-pls}
+  HRMS_FIELD_ENCRYPTION_KEY: ${HRMS_FIELD_ENCRYPTION_KEY:-5rrMC5h9nasS2Zt9vFYxZcVN8pd8o_niIzfNXD3afa8=}
 
 services:
   postgres:
