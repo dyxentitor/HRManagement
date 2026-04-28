@@ -60,6 +60,10 @@ def test_notification_mark_read(user):
 
 @pytest.mark.django_db
 def test_preference_unique_per_user_type_channel(user):
+    # Signal already seeded preferences on user create; delete the relevant row first
+    NotificationPreference.objects.filter(
+        user=user, type="leave.approved", channel="email"
+    ).delete()
     NotificationPreference.objects.create(
         user=user, type="leave.approved", channel="email", enabled=True
     )
