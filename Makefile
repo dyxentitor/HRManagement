@@ -5,7 +5,8 @@ COMPOSE := docker compose -f deploy/docker-compose.yml
 COMPOSE_PROD := docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml
 
 .PHONY: help dev dev-down dev-logs migrate makemigrations shell test test-api test-web \
-        contracts lint lint-fix typecheck build seed clean
+        contracts lint lint-fix typecheck build seed seed-provintell seed-provintell-prod \
+        verify-backup clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -67,9 +68,16 @@ build: ## Build production Docker images
 	docker build -t hrms-api:latest -f apps/api/Dockerfile apps/api/
 	docker build -t hrms-web:latest -f apps/web/Dockerfile apps/web/
 
-seed: ## (Phase 1+) Load demo data — implemented in M12
-	@echo "Seeder lands in M12. Not yet implemented."
-	@false
+seed: seed-provintell ## (alias) Run Provintell dev seed
+
+seed-provintell: ## Seed Provintell org with demo data (requires dev stack running)
+	$(COMPOSE) exec api uv run python manage.py seed_provintell
+
+seed-provintell-prod: ## Seed Provintell org — production mode (skips demo accounts)
+	$(COMPOSE) exec api uv run python manage.py seed_provintell --prod
+
+verify-backup: ## Verify latest backup restore (requires S3 credentials + Docker)
+	bash deploy/backups/verify-restore.sh
 
 clean: ## Remove build artifacts
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
