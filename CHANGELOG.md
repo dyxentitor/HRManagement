@@ -4,6 +4,37 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-04-29
+
+**HRMS UI/UX Redesign — Design_1 themes + Design_2 UX.**
+
+Replaces the placeholder light-theme top-bar UI with a dark-themed sidebar shell + 5 redesigned signature pages. No backend changes.
+
+### Added
+- Design token system: 10 surface/text colors, 5-step violet accent ramp, 6 pastels (peach / lavender / mint / yellow / coral / sky), 5-step type scale (Inter + JetBrains Mono), motion durations (instant / fast / base / slow), reduced-motion fallback.
+- 21 themed shadcn/ui primitives committed under `apps/web/src/components/ui/` (Button, Input, Dialog, Sheet, DropdownMenu, Command, Calendar, etc.).
+- 13 HRMS-specific composed components under `apps/web/src/components/hrms/`: KpiTile, EmployeeCard, DataTable, DetailPanel, DonutChart, ProgressBar, ApprovalActionBar, ClockInOutWidget, AttendanceLogRow, FileUploader, NotificationCard, EmptyState, StatusPill.
+- New shell: AppShell (2-col grid 220px sidebar + main), Sidebar with grouped Personal/Team/Admin nav and perm-gated items, TopBar with breadcrumb + ⌘K + bell + UserMenu, PageHeader, UserMenu dropdown.
+- ⌘K command palette (`@/components/shell/CommandPalette`) with Pages / Employees fuzzy search / Quick actions; keyboard shortcut wired globally.
+- Redesigned signature pages: Dashboard (3 variants — `/me`, `/team`, `/admin`), Employees directory (card grid + table toggle + department filter), Leave page (KPI tiles + DataTable + DetailPanel), Unified Approvals inbox (split list + filter pills + ApprovalActionBar), My Profile (avatar card + sectioned details + MFA-flagged Banking).
+- `axe-core/react` wired in dev mode to surface a11y violations live in the console.
+- Lighthouse a11y audit script: `apps/web/scripts/lighthouse.sh` (asserts ≥ 95 a11y on signature pages).
+- Frontend test count: 86 (up from 10 at v1.0.0).
+
+### Changed
+- Old TopBar's per-link nav block (My Profile / Leave / Approvals / Schedule / Roster / Claims / Payslips / Payroll / KPI / Certifications / Reports) removed in favour of the grouped Sidebar.
+- AppShell layout switched from a vertical flex stack with a top bar to a 2-column dark grid (sidebar + main column).
+- Dashboard cards (BirthdaysCard, CertsExpiringCard, KpiProgressCard, LeaveBalanceCard, PendingApprovalsCard, RecentClaimsCard, TodayAttendanceCard, UpcomingHolidaysCard) rewritten to use the new tokens.
+- AuthContext extended with `roles: string[]` placeholder (defaults to `[]` until `/api/v1/auth/me` exposes role codes).
+
+### Spec / plan
+- Spec: `docs/superpowers/specs/2026-04-28-hrms-ui-redesign.md`
+- Plans: `docs/superpowers/plans/2026-04-28-hrms-ui-{roadmap,foundation,components,pages,polish}.md`
+
+### Outstanding (deferred)
+- `/api/v1/auth/me` should expose `role_codes: list[str]` so the UserMenu shows real role labels instead of "Member" fallback.
+- `/api/v1/approvals/inbox` doesn't yet include KPI reviews — the KPI filter pill in the Approvals inbox shows a count of 0.
+
 ## [1.0.0] - 2026-04-28
 
 **HRMS Phase 1 — Production Release.**
