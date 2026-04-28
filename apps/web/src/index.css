@@ -17,6 +17,10 @@
 		--text-secondary: 182 184 192;
 		--text-tertiary: 136 138 147;
 		--text-disabled: 74 77 88;
+
+		/* CTA — used by the login page only (lime yellow signature) */
+		--cta: 213 248 74;
+		--cta-foreground: 11 11 20;
 		--border-subtle: 255 255 255 / 0.06;
 		--border-strong: 255 255 255 / 0.12;
 

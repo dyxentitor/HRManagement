@@ -21,9 +21,9 @@ describe("LoginForm", () => {
 		);
 		// Wait for AuthProvider loading to resolve
 		await waitFor(() =>
-			expect(screen.getByLabelText(/email/i)).toBeInTheDocument(),
+			expect(screen.getByLabelText("Email")).toBeInTheDocument(),
 		);
-		expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+		expect(screen.getByLabelText("Password")).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: /sign in/i }),
 		).toBeInTheDocument();
@@ -47,10 +47,10 @@ describe("LoginForm", () => {
 		);
 
 		await waitFor(() =>
-			expect(screen.getByLabelText(/email/i)).toBeInTheDocument(),
+			expect(screen.getByLabelText("Email")).toBeInTheDocument(),
 		);
-		await user.type(screen.getByLabelText(/email/i), "x@example.com");
-		await user.type(screen.getByLabelText(/password/i), "bad");
+		await user.type(screen.getByLabelText("Email"), "x@example.com");
+		await user.type(screen.getByLabelText("Password"), "bad");
 		await user.click(screen.getByRole("button", { name: /sign in/i }));
 
 		await waitFor(() => {

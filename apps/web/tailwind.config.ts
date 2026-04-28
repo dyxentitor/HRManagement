@@ -36,6 +36,12 @@ const config: Config = {
 				"border-subtle": "rgb(var(--border-subtle))",
 				"border-strong": "rgb(var(--border-strong))",
 
+				// CTA — login page only (lime yellow)
+				cta: {
+					DEFAULT: "rgb(var(--cta) / <alpha-value>)",
+					foreground: "rgb(var(--cta-foreground) / <alpha-value>)",
+				},
+
 				// shadcn-compat aliases — point shadcn's expected colour names at our tokens
 				background: "rgb(var(--bg-canvas) / <alpha-value>)",
 				foreground: "rgb(var(--text-primary) / <alpha-value>)",
