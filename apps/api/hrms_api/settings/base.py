@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "common",
     "common.audit",
     "common.workflow",
+    "common.reporting",
     "modules.health",
     "modules.organization",
     "modules.identity",

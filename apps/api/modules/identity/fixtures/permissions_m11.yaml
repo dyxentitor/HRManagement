@@ -1,0 +1,4 @@
+- { code: "report:list",             description: List available reports }
+- { code: "report:run",              description: Run a report (server-side render) }
+- { code: "report:export",           description: Export a report (CSV/XLSX/PDF) }
+- { code: "report:saved_view:write", description: Save / delete own report views }
