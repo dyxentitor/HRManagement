@@ -4,6 +4,16 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.1.0-m11] - 2026-04-28
+
+### Added
+- **M11 — Reports framework + 15 reports + frontend:** New `common.reporting` package providing a generic `Report` base class, `REGISTRY` dict, `@register` decorator, `SavedView` and `ReportExportJob` models (migrations included). Each contributing module ships a `reports.py`; `ReportingConfig.ready()` auto-imports them so registration happens on startup with no manual wiring.
+- **Exporters:** `CSVExporter` (sync), `XLSXExporter` (openpyxl), `PDFExporter` (ReportLab). `run_export` Celery task queries → renders → uploads to S3 → updates job status + sets `s3_key`. Poll endpoint generates a 1-hour presigned download URL.
+- **Endpoints:** `GET /api/v1/reports` (list visible), `GET /reports/{code}/schema` (filter + column spec for UI), `POST /reports/{code}/run` (paginated, server-side), `POST /reports/{code}/export` (async, returns `job_id`), `GET /reports/jobs/{id}` (poll), `GET/POST/DELETE /reports/saved-views` (user-scoped filter bookmarks).
+- **15 reports registered:** `leave.balance_summary`, `leave.taken_period`, `leave.pending_approvals` (leave module); `attendance.daily_summary`, `attendance.late_absent_log`, `attendance.hours_worked` (attendance module); `claims.pending_by_approver`, `claims.spend_by_category`, `claims.reimbursement_status` (claims module); `kpi.cycle_progress` (KPI module); `cert.expiring_soon` (certification module); `headcount.snapshot` (employee module); `hrops.probation_ending`, `hrops.contract_ending`, `hrops.birthdays_this_month` (employee module, HR-ops sub-group).
+- Frontend: `ReportsListPage` at `/reports` lists available reports grouped by module prefix. Generic `ReportRunPage` at `/reports/:code` introspects `/schema`, renders dynamic filter inputs (date/text/number/select), runs the report on submit, renders a paginated table with column headers from schema, shows CSV/XLSX/PDF export buttons that poll until done and expose a download link. TopBar "Reports" link gated on `report:list` perm.
+- 4 new permission codes (M11): `report:list`, `report:run`, `report:export`, `report:saved_view:write`. Catalogue grew from 101 to 105. All roles get `report:list` + `report:run` + `report:saved_view:write`; `report:export` gated to manager+ / finance / hr_manager / org_admin / auditor.
+
 ## [0.1.0-m10] - 2026-04-28
 
 ### Added
