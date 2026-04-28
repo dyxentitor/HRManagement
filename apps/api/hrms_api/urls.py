@@ -20,6 +20,7 @@ api_v1_patterns = [
     path("", include("modules.payslip.urls")),
     path("", include("modules.kpi.urls")),
     path("", include("modules.certification.urls")),
+    path("", include("modules.notification.urls")),
 ]
 
 
