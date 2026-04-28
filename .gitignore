@@ -37,6 +37,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Superpowers brainstorming (visual companion sessions)
+.superpowers/
+
 # Env / secrets
 .env
 .env.local
