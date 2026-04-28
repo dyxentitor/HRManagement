@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
+import { useCommandPalette } from "@/lib/cmdk";
 import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,8 @@ function NavItemLink({ item }: { item: NavItem }) {
 }
 
 export function Sidebar() {
+	const { setOpen: setCommandPaletteOpen } = useCommandPalette();
+
 	// Call useCan for every NAV item exactly once, in stable module-level order.
 	// ALL_ITEMS is a module-level constant so the hook count never changes across renders.
 	// eslint-disable-next-line react-hooks/rules-of-hooks
@@ -76,6 +79,7 @@ export function Sidebar() {
 
 			<button
 				type="button"
+				onClick={() => setCommandPaletteOpen(true)}
 				className="mx-1 mb-3 flex items-center gap-2 rounded-md bg-canvas border border-border-subtle px-2.5 py-2 text-small text-text-tertiary hover:text-text-secondary"
 				aria-label="Open command palette"
 			>
