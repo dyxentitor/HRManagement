@@ -13,6 +13,7 @@ import { kpiRoutes } from "./modules/kpi/routes";
 import { leaveRoutes } from "./modules/leave/routes";
 import { notificationsRoutes } from "./modules/notifications/routes";
 import { payslipRoutes } from "./modules/payslip/routes";
+import { reportsRoutes } from "./modules/reports/routes";
 import { scheduleRoutes } from "./modules/schedule/routes";
 
 const DashboardPageLazy = lazy(
@@ -79,6 +80,11 @@ const router = createBrowserRouter([
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
 			...dashboardRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...reportsRoutes.map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,

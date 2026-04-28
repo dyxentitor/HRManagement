@@ -19,6 +19,7 @@ export function TopBar() {
 	const canCerts = useCan("cert:read:self");
 	const canTraining = useCan("training:assignment:read:self");
 	const canCertAdmin = useCan("cert:read:org");
+	const canReports = useCan("report:list");
 
 	return (
 		<header className="border-b bg-white">
@@ -122,6 +123,11 @@ export function TopBar() {
 							className="text-slate-600 hover:text-slate-900"
 						>
 							Cert Admin
+						</Link>
+					)}
+					{canReports && (
+						<Link to="/reports" className="text-slate-600 hover:text-slate-900">
+							Reports
 						</Link>
 					)}
 					<NotificationBell />
