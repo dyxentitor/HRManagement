@@ -4,6 +4,15 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.1.0-m8] - 2026-04-28
+
+### Added
+- **M8 — Certification + Training:** `Certification`, `TrainingPlan`, `TrainingAssignment`, `TrainingProgress` models. `Certification` tracks employee credentials with `issued_on`/`expires_on`, S3 document key, status (`active`/`expired`/`revoked`), and three idempotent reminder flags (`reminder_sent_{30,60,90}d`). `TrainingAssignment` links employees to `TrainingPlan` with `status` FSM (`assigned → in_progress → completed / overdue`); `TrainingProgress` stores per-assignment progress percentages.
+- `scan_certification_expiry` service: exact-day match against `{30, 60, 90}` day windows; sets flag before notify so re-runs are idempotent (no double-send). Certs past `expires_on` are auto-transitioned to `expired`. `detect_certification_expiry` + `detect_training_overdue` Celery tasks wrap the services for daily cron invocation.
+- Endpoints: `GET/POST /api/v1/certifications/`, `GET /api/v1/certifications/me/`, `POST /{id}/document/presigned-upload`, `POST /{id}/document` (register after upload), `GET/POST /api/v1/training/plans/`, `GET/POST /api/v1/training/assignments/`, `GET /api/v1/training/assignments/me/`, `POST /assignments/{id}/complete/`, `GET /assignments/{id}/progress/`, `POST /training/progress/`.
+- Frontend: `MyCertificationsPage` (list with expiry colour badges: red <30d, amber <60d, green active; add-cert form), `MyTrainingPage` (list assignments + progress slider + Mark Complete button), `AdminCertPage` (all certs with expiry-window filter 30/60/90/180 days; training plan management). TopBar nav: "Certs" (`cert:read:self`), "Training" (`training:assignment:read:self`), "Cert Admin" (`cert:read:org`).
+- 10 new permission codes (M8): `cert:read:{self,team,org}`, `cert:write:{self,org}`, `training:plan:{read,write}`, `training:assignment:{read:self,write:team}`, `training:progress:write:self`. Catalogue grew from 84 to 94.
+
 ## [0.1.0-m7] - 2026-04-28
 
 ### Added

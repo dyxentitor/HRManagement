@@ -151,3 +151,19 @@ def test_seed_permission_catalogue_loads_m7_codes() -> None:
     assert "kpi:review:write:self" in codes
     assert "kpi:review:write:team" in codes
     assert len(codes) >= 84  # 75 from M1b-M6 + 9 from M7
+
+
+@pytest.mark.django_db
+def test_seed_permission_catalogue_loads_m8_codes() -> None:
+    call_command("seed_permission_catalogue")
+    codes = set(Permission.objects.values_list("code", flat=True))
+    assert "cert:read:self" in codes
+    assert "cert:read:org" in codes
+    assert "cert:write:self" in codes
+    assert "cert:write:org" in codes
+    assert "training:plan:read" in codes
+    assert "training:plan:write" in codes
+    assert "training:assignment:read:self" in codes
+    assert "training:assignment:write:team" in codes
+    assert "training:progress:write:self" in codes
+    assert len(codes) >= 94  # 84 from M1b-M7 + 10 from M8
