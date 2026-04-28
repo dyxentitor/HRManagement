@@ -28,6 +28,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
+	roles: string[];
 	login: (
 		email: string,
 		password: string,
@@ -120,6 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		() => ({
 			user,
 			perms: new Set(user?.permissions || []),
+			// roles are not yet returned by /api/v1/auth/me — default to [] until
+			// the MeSerializer is extended to include role codes.
+			roles: [],
 			loading,
 			login,
 			loginWithMFA,
