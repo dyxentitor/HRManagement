@@ -16,6 +16,9 @@ export function TopBar() {
 	const canPayroll = useCan("payroll:run:create");
 	const canKpi = useCan("kpi:assignment:read:self");
 	const canKpiAdmin = useCan("kpi:cycle:write");
+	const canCerts = useCan("cert:read:self");
+	const canTraining = useCan("training:assignment:read:self");
+	const canCertAdmin = useCan("cert:read:org");
 
 	return (
 		<header className="border-b bg-white">
@@ -103,6 +106,30 @@ export function TopBar() {
 							className="text-slate-600 hover:text-slate-900"
 						>
 							KPI Admin
+						</Link>
+					)}
+					{canCerts && (
+						<Link
+							to="/certifications/me"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Certs
+						</Link>
+					)}
+					{canTraining && (
+						<Link
+							to="/training/me"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Training
+						</Link>
+					)}
+					{canCertAdmin && (
+						<Link
+							to="/certifications/admin"
+							className="text-slate-600 hover:text-slate-900"
+						>
+							Cert Admin
 						</Link>
 					)}
 					<span aria-label="user-email">{user?.email}</span>

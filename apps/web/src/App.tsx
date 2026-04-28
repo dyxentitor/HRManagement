@@ -4,6 +4,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "./components/shell/AppShell";
 import { AuthProvider } from "./lib/auth";
 import { authRoutes } from "./modules/auth/routes";
+import { certificationRoutes } from "./modules/certification/routes";
 import { claimsRoutes } from "./modules/claims/routes";
 import { employeeRoutes } from "./modules/employee/routes";
 import { kpiRoutes } from "./modules/kpi/routes";
@@ -53,6 +54,11 @@ const router = createBrowserRouter([
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
 			...kpiRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...certificationRoutes.map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
