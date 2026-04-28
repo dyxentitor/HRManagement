@@ -1,3 +1,5 @@
+import { ProgressBar } from "@/components/hrms";
+
 type Props = { data: Record<string, unknown> };
 
 export function KpiProgressCard({ data }: Props) {
@@ -7,24 +9,22 @@ export function KpiProgressCard({ data }: Props) {
 	const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
 	return (
-		<div className="bg-white border rounded p-4">
-			<h3 className="font-semibold text-sm text-slate-700 mb-2">
+		<div className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+			<h3 className="text-label font-semibold text-text-secondary mb-3">
 				Team KPI Cycle
 			</h3>
 			{cycle == null ? (
-				<p className="text-xs text-slate-500">No active KPI cycle.</p>
+				<p className="text-small text-text-tertiary">No active KPI cycle.</p>
 			) : (
 				<>
-					<p className="text-xs text-slate-600 mb-1">{cycle}</p>
-					<div className="h-2 bg-slate-100 rounded">
-						<div
-							className="h-2 bg-green-500 rounded"
-							style={{ width: `${pct}%` }}
-						/>
-					</div>
-					<p className="text-xs text-slate-500 mt-1">
-						{completed}/{total} completed ({pct}%)
-					</p>
+					<p className="text-small text-text-secondary mb-3">{cycle}</p>
+					<ProgressBar
+						value={completed}
+						max={total || 1}
+						label={`${completed}/${total} completed`}
+						gradient={["lavender", "mint"]}
+					/>
+					<p className="text-small text-text-tertiary mt-2">{pct}% complete</p>
 				</>
 			)}
 		</div>

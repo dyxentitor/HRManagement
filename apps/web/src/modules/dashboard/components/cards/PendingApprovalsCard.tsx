@@ -1,23 +1,30 @@
+import { StatusPill } from "@/components/hrms";
+
 type Props = { data: Record<string, unknown> };
 
 export function PendingApprovalsCard({ data }: Props) {
-	const count = data.count as number;
+	const count = (data.count as number) ?? 0;
 	const items = (data.items as Array<Record<string, unknown>>) ?? [];
 	return (
-		<div className="bg-white border rounded p-4">
-			<h3 className="font-semibold text-sm text-slate-700 mb-2">
+		<div className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+			<h3 className="text-label font-semibold text-text-secondary mb-3">
 				Pending Approvals
 			</h3>
-			<p className="text-3xl font-bold text-amber-600">{count}</p>
+			<p className="text-h1 text-peach font-bold leading-none mb-3">{count}</p>
 			{items.length > 0 && (
-				<ul className="mt-2 space-y-1">
+				<ul className="space-y-2">
 					{items.slice(0, 3).map((item) => (
 						<li
 							key={item.id as string}
-							className="text-xs text-slate-600 truncate"
+							className="text-small flex items-center gap-2"
 						>
-							<span className="capitalize">{item.kind as string}</span> —{" "}
-							{item.employee_code as string}: {item.summary as string}
+							<StatusPill
+								tone="yellow"
+								label={(item.kind as string) ?? "request"}
+							/>
+							<span className="text-text-secondary truncate">
+								{item.employee_code as string}: {item.summary as string}
+							</span>
 						</li>
 					))}
 				</ul>

@@ -5,18 +5,23 @@ export function BirthdaysCard({ data }: Props) {
 	const birthdays = (data.birthdays as Birthday[]) ?? [];
 	const month = data.month as string;
 	return (
-		<div className="bg-white border rounded p-4">
-			<h3 className="font-semibold text-sm text-slate-700 mb-2">
+		<div className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+			<h3 className="text-label font-semibold text-text-secondary mb-3">
 				Birthdays — {month}
 			</h3>
 			{birthdays.length === 0 ? (
-				<p className="text-xs text-slate-500">No birthdays this month.</p>
+				<p className="text-small text-text-tertiary">
+					No birthdays this month.
+				</p>
 			) : (
-				<ul className="space-y-1">
+				<ul className="space-y-2">
 					{birthdays.map((b) => (
-						<li key={b.employee_code} className="text-xs flex justify-between">
-							<span>{b.name}</span>
-							<span className="text-slate-500">Day {b.day}</span>
+						<li
+							key={b.employee_code}
+							className="text-small flex justify-between items-center"
+						>
+							<span className="text-text-primary">{b.name}</span>
+							<span className="text-text-tertiary">Day {b.day}</span>
 						</li>
 					))}
 				</ul>
