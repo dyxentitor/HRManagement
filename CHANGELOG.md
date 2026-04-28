@@ -4,6 +4,11 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [0.1.0-m9] - 2026-04-28
+
+### Added
+- **M9 -- Notifications module:** `Notification`/`NotificationPreference`/`EmailDigestRun` models. `notify()` service that respects user preferences (security-relevant types always send). Default preferences seeded on user create via `post_save` signal. Hourly Celery digest task batches pending email notifications. Endpoints `/api/v1/notifications/*` (list, read, read-all, preferences GET+PATCH). Frontend: `NotificationBell` + `NotificationPanel` (slide-over grouped Today/Yesterday/Older) + `PreferencesPage` (type x channel toggle matrix). Existing modules (leave, claims, KPI, certification) now call `notify()` on domain events. 3 new permission codes -- catalogue 94 to 97.
+
 ## [0.1.0-m8] - 2026-04-28
 
 ### Added
