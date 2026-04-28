@@ -30,9 +30,9 @@ const config: Config = {
 				peach: "rgb(var(--pastel-peach) / <alpha-value>)",
 				lavender: "rgb(var(--pastel-lavender) / <alpha-value>)",
 				mint: "rgb(var(--pastel-mint) / <alpha-value>)",
-				"pastel-yellow": "rgb(var(--pastel-yellow) / <alpha-value>)",
+				yellow: "rgb(var(--pastel-yellow) / <alpha-value>)",
 				coral: "rgb(var(--pastel-coral) / <alpha-value>)",
-				"pastel-sky": "rgb(var(--pastel-sky) / <alpha-value>)",
+				sky: "rgb(var(--pastel-sky) / <alpha-value>)",
 				"border-subtle": "rgb(var(--border-subtle))",
 				"border-strong": "rgb(var(--border-strong))",
 
