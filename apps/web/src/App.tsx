@@ -3,9 +3,11 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import { AppShell } from "./components/shell/AppShell";
 import { AuthProvider } from "./lib/auth";
+import { approvalsRoutes } from "./modules/approvals/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { certificationRoutes } from "./modules/certification/routes";
 import { claimsRoutes } from "./modules/claims/routes";
+import { dashboardRoutes } from "./modules/dashboard/routes";
 import { employeeRoutes } from "./modules/employee/routes";
 import { kpiRoutes } from "./modules/kpi/routes";
 import { leaveRoutes } from "./modules/leave/routes";
@@ -65,6 +67,16 @@ const router = createBrowserRouter([
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
 			...notificationsRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...approvalsRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...dashboardRoutes.map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,

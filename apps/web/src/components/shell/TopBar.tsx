@@ -8,11 +8,10 @@ export function TopBar() {
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
 	const canLeave = useCan("leave:request:create:self");
-	const canApprovals = useCan("leave:request:approve:team");
+	const canApprovals = useCan("approvals:inbox:read");
 	const canSchedule = useCan("attendance:clock:self");
 	const canRoster = useCan("schedule:assignment:write:team");
 	const canClaims = useCan("claim:create:self");
-	const canFinance = useCan("claim:reimburse:finance");
 	const canPayslips = useCan("payslip:read:self");
 	const canPayroll = useCan("payroll:run:create");
 	const canKpi = useCan("kpi:assignment:read:self");
@@ -42,7 +41,7 @@ export function TopBar() {
 					)}
 					{canApprovals && (
 						<Link
-							to="/leave/approvals"
+							to="/approvals"
 							className="text-slate-600 hover:text-slate-900"
 						>
 							Approvals
@@ -70,14 +69,6 @@ export function TopBar() {
 							className="text-slate-600 hover:text-slate-900"
 						>
 							Claims
-						</Link>
-					)}
-					{canFinance && (
-						<Link
-							to="/claims/finance"
-							className="text-slate-600 hover:text-slate-900"
-						>
-							Finance
 						</Link>
 					)}
 					{canPayslips && (
