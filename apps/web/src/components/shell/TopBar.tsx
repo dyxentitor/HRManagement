@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 
+import { NotificationBell } from "@/components/NotificationBell";
 import { useAuth } from "@/lib/auth";
 import { useCan } from "@/lib/perm";
 
@@ -132,6 +133,13 @@ export function TopBar() {
 							Cert Admin
 						</Link>
 					)}
+					<NotificationBell />
+					<Link
+						to="/notifications/preferences"
+						className="text-slate-600 hover:text-slate-900"
+					>
+						Notif. Prefs
+					</Link>
 					<span aria-label="user-email">{user?.email}</span>
 					<button
 						type="button"
