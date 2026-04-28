@@ -15,7 +15,9 @@ import { notificationsRoutes } from "./modules/notifications/routes";
 import { payslipRoutes } from "./modules/payslip/routes";
 import { scheduleRoutes } from "./modules/schedule/routes";
 
-const HomePage = lazy(() => import("./pages/HomePage"));
+const DashboardPageLazy = lazy(
+	() => import("./modules/dashboard/pages/DashboardPage"),
+);
 
 const router = createBrowserRouter([
 	...authRoutes,
@@ -27,7 +29,7 @@ const router = createBrowserRouter([
 				index: true,
 				element: (
 					<Suspense fallback={null}>
-						<HomePage />
+						<DashboardPageLazy />
 					</Suspense>
 				),
 			},
