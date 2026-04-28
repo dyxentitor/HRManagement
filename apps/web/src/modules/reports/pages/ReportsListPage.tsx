@@ -26,8 +26,8 @@ export default function ReportsListPage() {
 			.finally(() => setLoading(false));
 	}, []);
 
-	if (loading) return <div className="p-6 text-slate-500">Loading…</div>;
-	if (error) return <div className="p-6 text-red-600">{error}</div>;
+	if (loading) return <div className="p-6 text-text-secondary">Loading…</div>;
+	if (error) return <div className="p-6 text-coral">{error}</div>;
 
 	const groups = groupByModule(reports);
 
@@ -36,7 +36,7 @@ export default function ReportsListPage() {
 			<h1 className="text-xl font-semibold mb-6">Reports</h1>
 			{Object.entries(groups).map(([module, items]) => (
 				<div key={module} className="mb-8">
-					<h2 className="text-sm font-semibold uppercase text-slate-500 tracking-wide mb-3">
+					<h2 className="text-sm font-semibold uppercase text-text-tertiary tracking-wide mb-3">
 						{module}
 					</h2>
 					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -44,10 +44,10 @@ export default function ReportsListPage() {
 							<Link
 								key={r.code}
 								to={`/reports/${r.code}`}
-								className="block border rounded-lg p-4 hover:border-blue-400 hover:shadow-sm transition-all"
+								className="block border border-border-subtle rounded-lg p-4 hover:border-accent-500 hover:shadow-sm transition-all bg-surface"
 							>
-								<div className="font-medium text-slate-800">{r.title}</div>
-								<div className="text-xs text-slate-500 mt-1">
+								<div className="font-medium text-text-primary">{r.title}</div>
+								<div className="text-xs text-text-secondary mt-1">
 									{r.exporters.join(" · ")}
 								</div>
 							</Link>
@@ -56,7 +56,7 @@ export default function ReportsListPage() {
 				</div>
 			))}
 			{reports.length === 0 && (
-				<p className="text-slate-500">No reports available.</p>
+				<p className="text-text-secondary">No reports available.</p>
 			)}
 		</div>
 	);

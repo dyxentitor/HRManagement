@@ -80,11 +80,11 @@ export default function AdminCertPage() {
 		<div className="space-y-8 max-w-5xl">
 			<h1 className="text-2xl font-bold">Certification Admin</h1>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
-			{success && <p className="text-green-600">{success}</p>}
+			{success && <p className="text-mint">{success}</p>}
 
 			{/* ── Expiry filter ────────────────────────────────────── */}
 			<section className="space-y-3">
@@ -97,7 +97,7 @@ export default function AdminCertPage() {
 								e.target.value ? Number(e.target.value) : undefined,
 							)
 						}
-						className="border rounded px-2 py-1 text-sm"
+						className="border border-border-subtle rounded px-2 py-1 text-sm bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 					>
 						{EXPIRY_WINDOWS.map(({ label, days }) => (
 							<option key={label} value={days ?? ""}>
@@ -108,24 +108,39 @@ export default function AdminCertPage() {
 				</div>
 
 				{certs.length === 0 ? (
-					<p className="text-slate-500">No certifications matching filter.</p>
+					<p className="text-text-secondary">
+						No certifications matching filter.
+					</p>
 				) : (
 					<table className="w-full border-collapse text-sm">
 						<thead>
-							<tr className="border-b bg-slate-50">
-								<th className="text-left p-2">Employee</th>
-								<th className="text-left p-2">Name</th>
-								<th className="text-left p-2">Issuer</th>
-								<th className="text-left p-2">Expires</th>
-								<th className="text-left p-2">Status</th>
+							<tr className="border-b border-border-subtle bg-surface-hover">
+								<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+									Employee
+								</th>
+								<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+									Name
+								</th>
+								<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+									Issuer
+								</th>
+								<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+									Expires
+								</th>
+								<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+									Status
+								</th>
 							</tr>
 						</thead>
 						<tbody>
 							{certs.map((c) => (
-								<tr key={c.id} className="border-b hover:bg-slate-50">
+								<tr
+									key={c.id}
+									className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
+								>
 									<td className="p-2 font-mono text-xs">{c.employee_id}</td>
 									<td className="p-2">{c.name}</td>
-									<td className="p-2 text-slate-600">{c.issuer || "—"}</td>
+									<td className="p-2 text-text-secondary">{c.issuer || "—"}</td>
 									<td className="p-2">{c.expires_on ?? "No expiry"}</td>
 									<td className="p-2 capitalize">{c.status}</td>
 								</tr>
@@ -142,7 +157,7 @@ export default function AdminCertPage() {
 					<button
 						type="button"
 						onClick={() => setShowPlanForm(!showPlanForm)}
-						className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+						className="px-3 py-1 bg-accent-500 text-white rounded hover:bg-accent-600 text-sm"
 					>
 						{showPlanForm ? "Cancel" : "New Plan"}
 					</button>
@@ -151,7 +166,7 @@ export default function AdminCertPage() {
 				{showPlanForm && (
 					<form
 						onSubmit={handleCreatePlan}
-						className="border rounded p-4 space-y-3 bg-white"
+						className="border border-border-subtle rounded p-4 space-y-3 bg-surface"
 					>
 						<div>
 							<label className="block text-sm font-medium">Plan Name *</label>
@@ -159,7 +174,7 @@ export default function AdminCertPage() {
 								required
 								value={newPlanName}
 								onChange={(e) => setNewPlanName(e.target.value)}
-								className="mt-1 block w-full border rounded px-3 py-2"
+								className="mt-1 block w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -168,13 +183,13 @@ export default function AdminCertPage() {
 								value={newPlanDesc}
 								onChange={(e) => setNewPlanDesc(e.target.value)}
 								rows={3}
-								className="mt-1 block w-full border rounded px-3 py-2"
+								className="mt-1 block w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 							/>
 						</div>
 						<button
 							type="submit"
 							disabled={savingPlan}
-							className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+							className="px-4 py-2 bg-accent-500 text-white rounded hover:bg-accent-600 disabled:opacity-50"
 						>
 							{savingPlan ? "Saving…" : "Create"}
 						</button>
@@ -182,20 +197,29 @@ export default function AdminCertPage() {
 				)}
 
 				{plans.length === 0 ? (
-					<p className="text-slate-500">No training plans created yet.</p>
+					<p className="text-text-secondary">No training plans created yet.</p>
 				) : (
 					<table className="w-full border-collapse text-sm">
 						<thead>
-							<tr className="border-b bg-slate-50">
-								<th className="text-left p-2">Name</th>
-								<th className="text-left p-2">Description</th>
+							<tr className="border-b border-border-subtle bg-surface-hover">
+								<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+									Name
+								</th>
+								<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+									Description
+								</th>
 							</tr>
 						</thead>
 						<tbody>
 							{plans.map((p) => (
-								<tr key={p.id} className="border-b hover:bg-slate-50">
+								<tr
+									key={p.id}
+									className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
+								>
 									<td className="p-2 font-medium">{p.name}</td>
-									<td className="p-2 text-slate-600">{p.description || "—"}</td>
+									<td className="p-2 text-text-secondary">
+										{p.description || "—"}
+									</td>
 								</tr>
 							))}
 						</tbody>

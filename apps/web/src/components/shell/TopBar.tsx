@@ -2,13 +2,39 @@ import { Bell, HelpCircle, Search } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
 import { useCommandPalette } from "@/lib/cmdk";
+import { NAV } from "./sidebar-nav";
 
 import { UserMenu } from "./UserMenu";
 
-function deriveTitle(pathname: string): { breadcrumb: string; title: string } {
+function deriveTitle(
+	pathname: string,
+	firstName?: string,
+): { breadcrumb: string; title: string } {
+	// Dashboard at "/"
+	if (pathname === "/" || pathname === "") {
+		return { breadcrumb: firstName ?? "Home", title: "Dashboard" };
+	}
+
+	// Search NAV for an exact-match or prefix-match (for sub-pages like /reports/:code)
+	for (const group of NAV) {
+		for (const item of group.items) {
+			// Exact match
+			if (item.to === pathname) {
+				return { breadcrumb: group.label, title: item.label };
+			}
+			// Prefix match for nested routes (e.g. /reports/some.code matches /reports)
+			if (item.to !== "/" && pathname.startsWith(`${item.to}/`)) {
+				return { breadcrumb: group.label, title: item.label };
+			}
+		}
+	}
+
+	// Fallback: auto-derive from path segments
 	const segs = pathname.split("/").filter(Boolean);
-	if (segs.length === 0) return { breadcrumb: "Home", title: "Dashboard" };
+	if (segs.length === 0)
+		return { breadcrumb: firstName ?? "Home", title: "Dashboard" };
 	const head = (segs[0] ?? "").replace(/-/g, " ");
 	const tail = (segs[segs.length - 1] ?? "").replace(/-/g, " ");
 	const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -20,7 +46,9 @@ function deriveTitle(pathname: string): { breadcrumb: string; title: string } {
 
 export function TopBar() {
 	const { pathname } = useLocation();
-	const { breadcrumb, title } = deriveTitle(pathname);
+	const { user } = useAuth();
+	const firstName = user?.email?.split("@")[0];
+	const { breadcrumb, title } = deriveTitle(pathname, firstName);
 	const { setOpen } = useCommandPalette();
 
 	return (

@@ -93,7 +93,7 @@ export default function ClaimSubmitPage() {
 						value={category}
 						onChange={(e) => setCategory(e.target.value)}
 						required
-						className="w-full border rounded px-3 py-2"
+						className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						aria-label="Category"
 					>
 						<option value="">Select…</option>
@@ -114,7 +114,7 @@ export default function ClaimSubmitPage() {
 							value={amount}
 							onChange={(e) => setAmount(e.target.value)}
 							required
-							className="w-full border rounded px-3 py-2"
+							className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						/>
 					</Field>
 					<Field label="Expense date" required>
@@ -123,7 +123,7 @@ export default function ClaimSubmitPage() {
 							value={expenseDate}
 							onChange={(e) => setExpenseDate(e.target.value)}
 							required
-							className="w-full border rounded px-3 py-2"
+							className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						/>
 					</Field>
 				</div>
@@ -133,7 +133,7 @@ export default function ClaimSubmitPage() {
 						type="text"
 						value={merchant}
 						onChange={(e) => setMerchant(e.target.value)}
-						className="w-full border rounded px-3 py-2"
+						className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 					/>
 				</Field>
 
@@ -142,7 +142,7 @@ export default function ClaimSubmitPage() {
 						value={description}
 						onChange={(e) => setDescription(e.target.value)}
 						rows={3}
-						className="w-full border rounded px-3 py-2"
+						className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 					/>
 				</Field>
 
@@ -157,7 +157,7 @@ export default function ClaimSubmitPage() {
 						className="block text-sm"
 					/>
 					{files.length > 0 && (
-						<ul className="mt-2 text-xs text-slate-600">
+						<ul className="mt-2 text-xs text-text-secondary">
 							{files.map((f) => (
 								<li key={f.name}>
 									{f.name} ({(f.size / 1024).toFixed(1)} KB)
@@ -168,7 +168,7 @@ export default function ClaimSubmitPage() {
 				</Field>
 
 				{error && (
-					<p role="alert" className="text-red-600 text-sm">
+					<p role="alert" className="text-coral text-sm">
 						{error}
 					</p>
 				)}
@@ -176,7 +176,7 @@ export default function ClaimSubmitPage() {
 				<button
 					type="submit"
 					disabled={!canSubmit}
-					className="bg-slate-900 text-white py-2 px-4 rounded disabled:opacity-50"
+					className="bg-accent-500 text-white py-2 px-4 rounded disabled:opacity-50 hover:bg-accent-600"
 				>
 					{submitting ? "Submitting…" : "Submit claim"}
 				</button>
@@ -192,8 +192,8 @@ function Field({
 }: { label: string; required?: boolean; children: React.ReactNode }) {
 	return (
 		<label className="block">
-			<span className="block text-sm text-slate-700 mb-1">
-				{label} {required && <span className="text-red-600">*</span>}
+			<span className="block text-sm text-text-secondary mb-1">
+				{label} {required && <span className="text-coral">*</span>}
 			</span>
 			{children}
 		</label>

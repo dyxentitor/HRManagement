@@ -84,11 +84,11 @@ export default function KpiAdminPage() {
 		<div className="space-y-8 max-w-4xl">
 			<h1 className="text-2xl font-bold">KPI Admin</h1>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
-			{success && <p className="text-green-600">{success}</p>}
+			{success && <p className="text-mint">{success}</p>}
 
 			{/* Templates section */}
 			<section>
@@ -96,14 +96,17 @@ export default function KpiAdminPage() {
 					Templates ({templates.length})
 				</h2>
 				{templates.length === 0 ? (
-					<p className="text-slate-500 text-sm">No templates yet.</p>
+					<p className="text-text-secondary text-sm">No templates yet.</p>
 				) : (
 					<ul className="space-y-1">
 						{templates.map((t) => (
-							<li key={t.id} className="text-sm border-b py-1">
+							<li
+								key={t.id}
+								className="text-sm border-b border-border-subtle py-1"
+							>
 								<span className="font-medium">{t.name}</span>
 								{t.definitions.length > 0 && (
-									<span className="text-slate-500 ml-2">
+									<span className="text-text-secondary ml-2">
 										({t.definitions.length} KPIs)
 									</span>
 								)}
@@ -120,7 +123,7 @@ export default function KpiAdminPage() {
 					<button
 						type="button"
 						onClick={() => setShowNewCycle(!showNewCycle)}
-						className="text-sm text-blue-600 hover:underline"
+						className="text-sm text-sky hover:underline"
 					>
 						{showNewCycle ? "Cancel" : "+ New Cycle"}
 					</button>
@@ -129,7 +132,7 @@ export default function KpiAdminPage() {
 				{showNewCycle && (
 					<form
 						onSubmit={handleCreateCycle}
-						className="border rounded p-4 space-y-3 mb-4"
+						className="border border-border-subtle rounded p-4 space-y-3 mb-4 bg-surface"
 						aria-label="new-cycle-form"
 					>
 						<h3 className="font-medium">New Cycle</h3>
@@ -143,7 +146,7 @@ export default function KpiAdminPage() {
 								value={newCycleName}
 								onChange={(e) => setNewCycleName(e.target.value)}
 								required
-								className="border rounded px-2 py-1 w-full"
+								className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -158,7 +161,7 @@ export default function KpiAdminPage() {
 										e.target.value as "quarterly" | "semi_annual" | "annual",
 									)
 								}
-								className="border rounded px-2 py-1"
+								className="border border-border-subtle rounded px-2 py-1 bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 							>
 								<option value="quarterly">Quarterly</option>
 								<option value="semi_annual">Semi-annual</option>
@@ -176,7 +179,7 @@ export default function KpiAdminPage() {
 									value={newCycleStartsOn}
 									onChange={(e) => setNewCycleStartsOn(e.target.value)}
 									required
-									className="border rounded px-2 py-1 w-full"
+									className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -189,7 +192,7 @@ export default function KpiAdminPage() {
 									value={newCycleEndsOn}
 									onChange={(e) => setNewCycleEndsOn(e.target.value)}
 									required
-									className="border rounded px-2 py-1 w-full"
+									className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -202,7 +205,7 @@ export default function KpiAdminPage() {
 									value={newCycleReviewOpens}
 									onChange={(e) => setNewCycleReviewOpens(e.target.value)}
 									required
-									className="border rounded px-2 py-1 w-full"
+									className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 								/>
 							</div>
 							<div>
@@ -215,14 +218,14 @@ export default function KpiAdminPage() {
 									value={newCycleReviewCloses}
 									onChange={(e) => setNewCycleReviewCloses(e.target.value)}
 									required
-									className="border rounded px-2 py-1 w-full"
+									className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 								/>
 							</div>
 						</div>
 						<button
 							type="submit"
 							disabled={!newCycleName}
-							className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+							className="bg-accent-500 text-white px-4 py-2 rounded disabled:opacity-50 hover:bg-accent-600"
 						>
 							Create Cycle
 						</button>
@@ -230,20 +233,23 @@ export default function KpiAdminPage() {
 				)}
 
 				{cycles.length === 0 ? (
-					<p className="text-slate-500 text-sm">No cycles yet.</p>
+					<p className="text-text-secondary text-sm">No cycles yet.</p>
 				) : (
 					<table className="w-full text-sm border-collapse">
 						<thead>
-							<tr className="border-b">
-								<th className="text-left py-2">Name</th>
-								<th className="text-left py-2">Type</th>
-								<th className="text-left py-2">Status</th>
-								<th className="text-left py-2">Actions</th>
+							<tr className="border-b border-border-subtle">
+								<th className="text-left py-2 text-text-secondary">Name</th>
+								<th className="text-left py-2 text-text-secondary">Type</th>
+								<th className="text-left py-2 text-text-secondary">Status</th>
+								<th className="text-left py-2 text-text-secondary">Actions</th>
 							</tr>
 						</thead>
 						<tbody>
 							{cycles.map((c) => (
-								<tr key={c.id} className="border-b">
+								<tr
+									key={c.id}
+									className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
+								>
 									<td className="py-2">{c.name}</td>
 									<td className="py-2 capitalize">
 										{c.type.replace("_", " ")}
@@ -256,7 +262,7 @@ export default function KpiAdminPage() {
 											<button
 												type="button"
 												onClick={() => handleTransition(c.id, "self")}
-												className="text-blue-600 hover:underline text-xs"
+												className="text-sky hover:underline text-xs"
 											>
 												Open Self Review
 											</button>
@@ -265,7 +271,7 @@ export default function KpiAdminPage() {
 											<button
 												type="button"
 												onClick={() => handleTransition(c.id, "manager")}
-												className="text-blue-600 hover:underline text-xs"
+												className="text-sky hover:underline text-xs"
 											>
 												Open Manager Review
 											</button>
@@ -274,13 +280,13 @@ export default function KpiAdminPage() {
 											<button
 												type="button"
 												onClick={() => handleTransition(c.id, "close")}
-												className="text-blue-600 hover:underline text-xs"
+												className="text-sky hover:underline text-xs"
 											>
 												Close Cycle
 											</button>
 										)}
 										{c.status === "closed" && (
-											<span className="text-slate-400 text-xs">Closed</span>
+											<span className="text-text-tertiary text-xs">Closed</span>
 										)}
 									</td>
 								</tr>

@@ -109,14 +109,14 @@ export default function RosterPage() {
 					<button
 						type="button"
 						onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
-						className="text-slate-600 hover:text-slate-900"
+						className="text-text-secondary hover:text-text-primary"
 					>
 						← Previous
 					</button>
 					<button
 						type="button"
 						onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
-						className="text-slate-600 hover:text-slate-900"
+						className="text-text-secondary hover:text-text-primary"
 					>
 						Next →
 					</button>
@@ -124,32 +124,34 @@ export default function RosterPage() {
 			</div>
 
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
 
-			<section className="bg-white border rounded p-4 space-y-3">
+			<section className="bg-surface border border-border-subtle rounded p-4 space-y-3">
 				<h2 className="font-semibold">Bulk assign pattern</h2>
 				<label className="block text-sm">
 					Employee IDs (comma-separated UUIDs)
 					<input
 						value={employeeIds}
 						onChange={(e) => setEmployeeIds(e.target.value)}
-						className="w-full border rounded px-2 py-1 mt-1 font-mono text-xs"
+						className="w-full border border-border-subtle rounded px-2 py-1 mt-1 font-mono text-xs bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						placeholder="uuid1, uuid2, uuid3"
 					/>
 				</label>
 				<div className="grid grid-cols-7 gap-2">
 					{WEEKDAYS.map((d) => (
 						<label key={d} className="text-xs">
-							<span className="block text-slate-500 capitalize mb-1">{d}</span>
+							<span className="block text-text-secondary capitalize mb-1">
+								{d}
+							</span>
 							<select
 								value={pattern[d] || ""}
 								onChange={(e) =>
 									setPattern({ ...pattern, [d]: e.target.value })
 								}
-								className="w-full border rounded px-1 py-1 text-xs"
+								className="w-full border border-border-subtle rounded px-1 py-1 text-xs bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 							>
 								<option value="">Off</option>
 								{shifts.map((s) => (
@@ -168,7 +170,7 @@ export default function RosterPage() {
 						disabled={
 							busy || !employeeIds || Object.values(pattern).every((v) => !v)
 						}
-						className="bg-slate-900 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50"
+						className="bg-accent-500 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50 hover:bg-accent-600"
 					>
 						{busy ? "..." : "Apply pattern"}
 					</button>
@@ -176,22 +178,22 @@ export default function RosterPage() {
 						type="button"
 						onClick={publish}
 						disabled={busy}
-						className="bg-green-700 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50"
+						className="bg-mint text-canvas px-3 py-1.5 rounded text-sm disabled:opacity-50 hover:bg-mint/90"
 					>
 						{busy ? "..." : "Publish week"}
 					</button>
 				</div>
 			</section>
 
-			<section className="bg-white border rounded p-4 overflow-x-auto">
+			<section className="bg-surface border border-border-subtle rounded p-4 overflow-x-auto">
 				<h2 className="font-semibold mb-3">Roster grid</h2>
 				{Object.keys(grid).length === 0 ? (
-					<p className="text-slate-500 text-sm">
+					<p className="text-text-secondary text-sm">
 						No assignments for this week.
 					</p>
 				) : (
 					<table className="w-full text-sm">
-						<thead className="text-left text-slate-500">
+						<thead className="text-left text-text-secondary border-b border-border-subtle">
 							<tr>
 								<th className="py-1">Employee</th>
 								{days.map((iso) => (
@@ -203,7 +205,7 @@ export default function RosterPage() {
 						</thead>
 						<tbody>
 							{Object.entries(grid).map(([empId, row]) => (
-								<tr key={empId} className="border-t">
+								<tr key={empId} className="border-t border-border-subtle">
 									<td className="py-1.5 font-mono text-xs">{row.code}</td>
 									{days.map((iso) => {
 										const a = row.days[iso];
@@ -211,12 +213,12 @@ export default function RosterPage() {
 											<td key={iso} className="py-1.5">
 												{a ? (
 													<span
-														className={`text-xs px-2 py-0.5 rounded ${a.is_published ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}
+														className={`text-xs px-2 py-0.5 rounded ${a.is_published ? "bg-sky/15 text-sky" : "bg-surface-hover text-text-secondary"}`}
 													>
 														{a.shift_name}
 													</span>
 												) : (
-													<span className="text-xs text-slate-400">—</span>
+													<span className="text-xs text-text-tertiary">—</span>
 												)}
 											</td>
 										);

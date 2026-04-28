@@ -50,11 +50,11 @@ export function NotificationBell() {
 				type="button"
 				aria-label="Notifications"
 				onClick={() => setPanelOpen((o) => !o)}
-				className="relative text-slate-600 hover:text-slate-900 px-1"
+				className="relative text-text-secondary hover:text-text-primary px-1"
 			>
 				<span aria-hidden>&#x1F514;</span>
 				{unreadCount > 0 && (
-					<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
+					<span className="absolute -top-1 -right-1 bg-coral text-canvas text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
 						{unreadCount > 9 ? "9+" : unreadCount}
 					</span>
 				)}

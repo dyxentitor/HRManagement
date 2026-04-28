@@ -72,27 +72,30 @@ export default function MyKpiPage() {
 		<div className="space-y-6 max-w-4xl">
 			<h1 className="text-2xl font-bold">My KPI Assignments</h1>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
-			{success && <p className="text-green-600">{success}</p>}
+			{success && <p className="text-mint">{success}</p>}
 
 			{assignments.length === 0 ? (
-				<p className="text-slate-500">No KPI assignments found.</p>
+				<p className="text-text-secondary">No KPI assignments found.</p>
 			) : (
 				<table className="w-full text-sm border-collapse">
 					<thead>
-						<tr className="border-b">
-							<th className="text-left py-2">Cycle</th>
-							<th className="text-left py-2">Status</th>
-							<th className="text-left py-2">KPIs</th>
+						<tr className="border-b border-border-subtle">
+							<th className="text-left py-2 text-text-secondary">Cycle</th>
+							<th className="text-left py-2 text-text-secondary">Status</th>
+							<th className="text-left py-2 text-text-secondary">KPIs</th>
 							<th />
 						</tr>
 					</thead>
 					<tbody>
 						{assignments.map((a) => (
-							<tr key={a.id} className="border-b">
+							<tr
+								key={a.id}
+								className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
+							>
 								<td className="py-2">{a.cycle}</td>
 								<td className="py-2 capitalize">
 									{a.status.replace("_", " ")}
@@ -103,7 +106,7 @@ export default function MyKpiPage() {
 										<button
 											type="button"
 											onClick={() => handleSelect(a)}
-											className="text-blue-600 hover:underline text-sm"
+											className="text-sky hover:underline text-sm"
 										>
 											Submit Self Review
 										</button>
@@ -118,7 +121,7 @@ export default function MyKpiPage() {
 			{selected && (
 				<form
 					onSubmit={handleSubmitSelf}
-					className="border rounded p-4 space-y-4"
+					className="border border-border-subtle rounded p-4 space-y-4 bg-surface"
 					aria-label="self-review-form"
 				>
 					<h2 className="font-semibold">
@@ -144,7 +147,7 @@ export default function MyKpiPage() {
 										[kpi.code]: Number(e.target.value),
 									}))
 								}
-								className="border rounded px-2 py-1 w-32"
+								className="border border-border-subtle rounded px-2 py-1 w-32 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 								placeholder="Score"
 							/>
 						</div>
@@ -160,7 +163,7 @@ export default function MyKpiPage() {
 							id="overall-comment"
 							value={comment}
 							onChange={(e) => setComment(e.target.value)}
-							className="border rounded px-2 py-1 w-full"
+							className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 							rows={3}
 						/>
 					</div>
@@ -168,14 +171,14 @@ export default function MyKpiPage() {
 						<button
 							type="submit"
 							disabled={saving}
-							className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+							className="bg-accent-500 text-white px-4 py-2 rounded disabled:opacity-50 hover:bg-accent-600"
 						>
 							{saving ? "Submitting…" : "Submit Self Review"}
 						</button>
 						<button
 							type="button"
 							onClick={() => setSelected(null)}
-							className="border px-4 py-2 rounded"
+							className="bg-canvas border border-border-subtle text-text-secondary px-4 py-2 rounded hover:bg-surface-hover"
 						>
 							Cancel
 						</button>

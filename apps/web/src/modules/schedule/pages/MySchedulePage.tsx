@@ -104,14 +104,14 @@ export default function MySchedulePage() {
 			<h1 className="text-2xl font-bold">My Schedule</h1>
 
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
 
-			<section className="bg-white border rounded p-4">
+			<section className="bg-surface border border-border-subtle rounded p-4">
 				<h2 className="font-semibold mb-3">Today — {todayIso}</h2>
-				<p className="text-sm text-slate-600 mb-2">
+				<p className="text-sm text-text-secondary mb-2">
 					Clock-in:{" "}
 					<strong>
 						{todayRec?.clock_in
@@ -128,7 +128,7 @@ export default function MySchedulePage() {
 					{"  •  "}
 					Status: <strong>{todayRec?.status ?? "no_record"}</strong>
 					{todayRec?.is_holiday_work && (
-						<span className="ml-2 text-amber-700">• Holiday work</span>
+						<span className="ml-2 text-yellow">• Holiday work</span>
 					)}
 				</p>
 				<div className="space-x-2">
@@ -136,7 +136,7 @@ export default function MySchedulePage() {
 						type="button"
 						onClick={clockIn}
 						disabled={busy || !!todayRec?.clock_in}
-						className="bg-slate-900 text-white py-1.5 px-3 rounded text-sm disabled:opacity-50"
+						className="bg-accent-500 text-white py-1.5 px-3 rounded text-sm disabled:opacity-50 hover:bg-accent-600"
 					>
 						{busy ? "..." : "Clock in"}
 					</button>
@@ -144,35 +144,35 @@ export default function MySchedulePage() {
 						type="button"
 						onClick={clockOut}
 						disabled={busy || !todayRec?.clock_in || !!todayRec?.clock_out}
-						className="bg-slate-700 text-white py-1.5 px-3 rounded text-sm disabled:opacity-50"
+						className="bg-canvas border border-border-subtle text-text-secondary py-1.5 px-3 rounded text-sm disabled:opacity-50 hover:bg-surface-hover"
 					>
 						{busy ? "..." : "Clock out"}
 					</button>
 				</div>
 			</section>
 
-			<section className="bg-white border rounded p-4">
+			<section className="bg-surface border border-border-subtle rounded p-4">
 				<div className="flex items-center justify-between mb-3">
 					<h2 className="font-semibold">Week of {weekStart}</h2>
 					<div className="space-x-2 text-sm">
 						<button
 							type="button"
 							onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
-							className="text-slate-600 hover:text-slate-900"
+							className="text-text-secondary hover:text-text-primary"
 						>
 							← Previous
 						</button>
 						<button
 							type="button"
 							onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
-							className="text-slate-600 hover:text-slate-900"
+							className="text-text-secondary hover:text-text-primary"
 						>
 							Next →
 						</button>
 					</div>
 				</div>
 				<table className="w-full text-sm">
-					<thead className="text-left text-slate-500">
+					<thead className="text-left text-text-secondary border-b border-border-subtle">
 						<tr>
 							{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => (
 								<th key={d} className="py-1">
@@ -188,11 +188,11 @@ export default function MySchedulePage() {
 								return (
 									<td key={iso} className="py-2 align-top">
 										{a ? (
-											<span className="text-xs px-2 py-1 rounded bg-slate-100">
+											<span className="text-xs px-2 py-1 rounded bg-surface-hover text-text-secondary">
 												{a.shift_name}
 											</span>
 										) : (
-											<span className="text-xs text-slate-400">—</span>
+											<span className="text-xs text-text-tertiary">—</span>
 										)}
 									</td>
 								);

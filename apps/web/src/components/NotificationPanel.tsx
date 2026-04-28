@@ -69,21 +69,21 @@ export function NotificationPanel({
 	const groups = groupByDate(notifications);
 
 	return (
-		<div className="absolute right-0 top-8 z-50 w-80 bg-white border border-slate-200 rounded shadow-lg">
-			<div className="flex items-center justify-between px-4 py-2 border-b">
+		<div className="absolute right-0 top-8 z-50 w-80 bg-surface border border-border-subtle rounded shadow-lg">
+			<div className="flex items-center justify-between px-4 py-2 border-b border-border-subtle">
 				<span className="font-semibold text-sm">Notifications</span>
 				<div className="flex gap-2">
 					<button
 						type="button"
 						onClick={handleReadAll}
-						className="text-xs text-blue-600 hover:underline"
+						className="text-xs text-sky hover:underline"
 					>
 						Mark all read
 					</button>
 					<button
 						type="button"
 						onClick={onClose}
-						className="text-slate-400 hover:text-slate-600 text-xs"
+						className="text-text-tertiary hover:text-text-secondary text-xs"
 					>
 						&#x2715;
 					</button>
@@ -91,13 +91,13 @@ export function NotificationPanel({
 			</div>
 			<div className="max-h-96 overflow-y-auto">
 				{groups.length === 0 && (
-					<p className="text-sm text-slate-500 p-4 text-center">
+					<p className="text-sm text-text-secondary p-4 text-center">
 						No notifications
 					</p>
 				)}
 				{groups.map((g) => (
 					<div key={g.label}>
-						<p className="text-xs font-semibold text-slate-400 px-4 py-1 bg-slate-50">
+						<p className="text-xs font-semibold text-text-tertiary px-4 py-1 bg-surface-hover">
 							{g.label}
 						</p>
 						{g.items.map((n) => (
@@ -105,12 +105,14 @@ export function NotificationPanel({
 								key={n.id}
 								type="button"
 								onClick={() => handleClickItem(n)}
-								className={`w-full text-left px-4 py-3 hover:bg-slate-50 border-b last:border-b-0 ${
-									!n.read_at ? "bg-blue-50" : ""
+								className={`w-full text-left px-4 py-3 hover:bg-surface-hover border-b border-border-subtle last:border-b-0 ${
+									!n.read_at ? "bg-sky/10" : ""
 								}`}
 							>
-								<p className="text-sm font-medium text-slate-800">{n.type}</p>
-								<p className="text-xs text-slate-500 mt-0.5">
+								<p className="text-sm font-medium text-text-primary">
+									{n.type}
+								</p>
+								<p className="text-xs text-text-secondary mt-0.5">
 									{new Date(n.created_at).toLocaleTimeString()}
 								</p>
 							</button>
@@ -118,7 +120,7 @@ export function NotificationPanel({
 					</div>
 				))}
 			</div>
-			<div className="px-4 py-2 border-t text-center">
+			<div className="px-4 py-2 border-t border-border-subtle text-center">
 				<a
 					href="/notifications/preferences"
 					onClick={(e) => {
@@ -126,7 +128,7 @@ export function NotificationPanel({
 						navigate("/notifications/preferences");
 						onClose();
 					}}
-					className="text-xs text-blue-600 hover:underline"
+					className="text-xs text-sky hover:underline"
 				>
 					Notification preferences
 				</a>

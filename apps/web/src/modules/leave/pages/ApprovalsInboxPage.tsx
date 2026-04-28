@@ -58,27 +58,30 @@ export default function ApprovalsInboxPage() {
 		<div className="space-y-4 max-w-4xl">
 			<h1 className="text-2xl font-bold">Approvals Inbox</h1>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
 
 			{pending.length === 0 ? (
-				<p className="text-slate-500">No pending approvals.</p>
+				<p className="text-text-secondary">No pending approvals.</p>
 			) : (
 				<ul className="space-y-2">
 					{pending.map((r) => (
-						<li key={r.id} className="bg-white border rounded p-3">
+						<li
+							key={r.id}
+							className="bg-surface border border-border-subtle rounded p-3"
+						>
 							<div className="flex items-center justify-between">
 								<div className="text-sm">
 									<div className="font-semibold">
 										{r.leave_type_code} • {r.total_days} day(s)
 									</div>
-									<div className="text-slate-600">
+									<div className="text-text-secondary">
 										{r.start_date} → {r.end_date}
 									</div>
 									{r.reason && (
-										<div className="text-slate-500 mt-1">"{r.reason}"</div>
+										<div className="text-text-tertiary mt-1">"{r.reason}"</div>
 									)}
 								</div>
 								{actingOn === r.id ? (
@@ -88,20 +91,20 @@ export default function ApprovalsInboxPage() {
 											onChange={(e) => setComment(e.target.value)}
 											placeholder="Comment (required for reject)"
 											rows={2}
-											className="border rounded px-2 py-1 w-64 text-sm"
+											className="border border-border-subtle rounded px-2 py-1 w-64 text-sm bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 										/>
 										<div className="space-x-2">
 											<button
 												type="button"
 												onClick={() => approve(r.id)}
-												className="text-xs bg-green-700 text-white px-3 py-1 rounded"
+												className="text-xs bg-mint text-canvas px-3 py-1 rounded hover:bg-mint/90"
 											>
 												Approve
 											</button>
 											<button
 												type="button"
 												onClick={() => reject(r.id)}
-												className="text-xs bg-red-700 text-white px-3 py-1 rounded"
+												className="text-xs bg-canvas text-coral border border-coral/30 px-3 py-1 rounded hover:bg-coral/10"
 											>
 												Reject
 											</button>
@@ -111,7 +114,7 @@ export default function ApprovalsInboxPage() {
 													setActingOn(null);
 													setComment("");
 												}}
-												className="text-xs text-slate-600 underline"
+												className="text-xs text-text-secondary underline"
 											>
 												Cancel
 											</button>
@@ -121,7 +124,7 @@ export default function ApprovalsInboxPage() {
 									<button
 										type="button"
 										onClick={() => setActingOn(r.id)}
-										className="text-sm text-slate-700 hover:text-slate-900 border rounded px-3 py-1"
+										className="text-sm text-text-secondary hover:text-text-primary border border-border-subtle rounded px-3 py-1 hover:bg-surface-hover"
 									>
 										Review
 									</button>

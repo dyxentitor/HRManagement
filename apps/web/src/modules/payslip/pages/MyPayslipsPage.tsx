@@ -42,25 +42,28 @@ export default function MyPayslipsPage() {
 		<div className="space-y-4 max-w-4xl">
 			<h1 className="text-2xl font-bold">My Payslips</h1>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
 			{payslips.length === 0 ? (
-				<p className="text-slate-500">No payslips available yet.</p>
+				<p className="text-text-secondary">No payslips available yet.</p>
 			) : (
 				<ul className="space-y-2">
 					{payslips.map((ps) => (
-						<li key={ps.id} className="bg-white border rounded p-3">
+						<li
+							key={ps.id}
+							className="bg-surface border border-border-subtle rounded p-3"
+						>
 							<div className="flex items-center justify-between">
 								<div className="text-sm">
 									<div className="font-semibold">
 										{ps.currency_code} {ps.net}{" "}
-										<span className="text-slate-500 font-normal">
+										<span className="text-text-tertiary font-normal">
 											(gross {ps.gross})
 										</span>
 									</div>
-									<div className="text-slate-600">
+									<div className="text-text-secondary">
 										{ps.status === "published" || ps.status === "sent"
 											? `Published ${ps.published_at?.slice(0, 10) ?? ""}`
 											: "Draft"}
@@ -70,7 +73,7 @@ export default function MyPayslipsPage() {
 									<button
 										type="button"
 										onClick={() => openPdf(ps.id)}
-										className="text-sm bg-slate-900 text-white py-1 px-3 rounded"
+										className="text-sm bg-accent-500 text-white py-1 px-3 rounded hover:bg-accent-600"
 									>
 										View PDF
 									</button>

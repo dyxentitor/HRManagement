@@ -18,7 +18,8 @@ function FilterInput({
 	value: string;
 	onChange: (v: string) => void;
 }) {
-	const base = "border rounded px-2 py-1 text-sm w-full";
+	const base =
+		"border border-border-subtle rounded px-2 py-1 text-sm w-full bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none";
 	if (filter.type === "select" && filter.options?.length) {
 		return (
 			<select
@@ -93,7 +94,7 @@ function ExportPanel({
 
 	return (
 		<div className="flex gap-2 items-center flex-wrap">
-			<span className="text-xs text-slate-500 font-medium">Export:</span>
+			<span className="text-xs text-text-secondary font-medium">Export:</span>
 			{exporters.map((fmt) => {
 				const job = jobs[fmt];
 				if (job?.status === "done" && job.download_url) {
@@ -103,7 +104,7 @@ function ExportPanel({
 							href={job.download_url}
 							target="_blank"
 							rel="noreferrer"
-							className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+							className="text-xs px-2 py-1 bg-mint/15 text-mint rounded hover:bg-mint/25"
 						>
 							Download {fmt.toUpperCase()}
 						</a>
@@ -113,7 +114,7 @@ function ExportPanel({
 					return (
 						<span
 							key={fmt}
-							className="text-xs px-2 py-1 bg-slate-100 text-slate-500 rounded"
+							className="text-xs px-2 py-1 bg-surface-hover text-text-secondary rounded"
 						>
 							{fmt.toUpperCase()} processing…
 						</span>
@@ -125,7 +126,7 @@ function ExportPanel({
 							key={fmt}
 							type="button"
 							onClick={() => startExport(fmt)}
-							className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+							className="text-xs px-2 py-1 bg-coral/15 text-coral rounded hover:bg-coral/25"
 						>
 							Retry {fmt.toUpperCase()}
 						</button>
@@ -137,7 +138,7 @@ function ExportPanel({
 						type="button"
 						disabled={!!exporting}
 						onClick={() => startExport(fmt)}
-						className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 disabled:opacity-50"
+						className="text-xs px-2 py-1 bg-sky/15 text-sky rounded hover:bg-sky/25 disabled:opacity-50"
 					>
 						{fmt.toUpperCase()}
 					</button>
@@ -183,33 +184,34 @@ export default function ReportRunPage() {
 
 	if (schemaError)
 		return (
-			<div className="p-6 text-red-600">
+			<div className="p-6 text-coral">
 				Error loading report schema: {schemaError}
 			</div>
 		);
-	if (!schema) return <div className="p-6 text-slate-500">Loading schema…</div>;
+	if (!schema)
+		return <div className="p-6 text-text-secondary">Loading schema…</div>;
 
 	const totalPages = result ? Math.ceil(result.total / result.page_size) : 0;
 
 	return (
 		<div className="p-6 max-w-screen-xl">
-			<div className="flex items-center gap-2 text-sm text-slate-500 mb-4">
+			<div className="flex items-center gap-2 text-sm text-text-secondary mb-4">
 				<Link to="/reports" className="hover:underline">
 					Reports
 				</Link>
 				<span>/</span>
-				<span className="text-slate-800">{schema.title}</span>
+				<span className="text-text-primary">{schema.title}</span>
 			</div>
 
 			<h1 className="text-xl font-semibold mb-4">{schema.title}</h1>
 
 			{/* Filters */}
 			{schema.filters.length > 0 && (
-				<div className="bg-slate-50 border rounded-lg p-4 mb-4">
+				<div className="bg-surface border border-border-subtle rounded-lg p-4 mb-4">
 					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 						{schema.filters.map((f) => (
 							<div key={f.field}>
-								<label className="block text-xs font-medium text-slate-600 mb-1">
+								<label className="block text-xs font-medium text-text-secondary mb-1">
 									{f.label}
 								</label>
 								<FilterInput
@@ -227,7 +229,7 @@ export default function ReportRunPage() {
 							type="button"
 							onClick={() => runReport(1)}
 							disabled={loading}
-							className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+							className="px-4 py-2 text-sm bg-accent-500 text-white rounded hover:bg-accent-600 disabled:opacity-50"
 						>
 							{loading ? "Running…" : "Run Report"}
 						</button>
@@ -241,7 +243,7 @@ export default function ReportRunPage() {
 						type="button"
 						onClick={() => runReport(1)}
 						disabled={loading}
-						className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+						className="px-4 py-2 text-sm bg-accent-500 text-white rounded hover:bg-accent-600 disabled:opacity-50"
 					>
 						{loading ? "Running…" : "Run Report"}
 					</button>
@@ -262,18 +264,18 @@ export default function ReportRunPage() {
 			{/* Results */}
 			{result && (
 				<>
-					<div className="text-sm text-slate-500 mb-2">
+					<div className="text-sm text-text-secondary mb-2">
 						{result.total.toLocaleString()} rows
 					</div>
 
-					<div className="overflow-x-auto border rounded-lg">
+					<div className="overflow-x-auto border border-border-subtle rounded-lg">
 						<table className="text-sm w-full">
 							<thead>
-								<tr className="bg-slate-50 border-b">
+								<tr className="bg-surface-hover border-b border-border-subtle">
 									{schema.columns.map((col) => (
 										<th
 											key={col.field}
-											className="text-left px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
+											className="text-left px-3 py-2 font-medium text-text-secondary whitespace-nowrap"
 										>
 											{col.label}
 										</th>
@@ -285,12 +287,12 @@ export default function ReportRunPage() {
 									<tr
 										// biome-ignore lint/suspicious/noArrayIndexKey: report rows have no stable ID
 										key={i}
-										className="border-b last:border-0 hover:bg-slate-50"
+										className="border-b border-border-subtle last:border-0 hover:bg-surface-hover transition-colors"
 									>
 										{schema.columns.map((col) => (
 											<td
 												key={col.field}
-												className="px-3 py-2 text-slate-700 whitespace-nowrap"
+												className="px-3 py-2 text-text-secondary whitespace-nowrap"
 											>
 												{row[col.field] ?? "—"}
 											</td>
@@ -301,7 +303,7 @@ export default function ReportRunPage() {
 									<tr>
 										<td
 											colSpan={schema.columns.length}
-											className="px-3 py-4 text-center text-slate-400"
+											className="px-3 py-4 text-center text-text-tertiary"
 										>
 											No results
 										</td>
@@ -318,18 +320,18 @@ export default function ReportRunPage() {
 								type="button"
 								disabled={page <= 1}
 								onClick={() => runReport(page - 1)}
-								className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-slate-50"
+								className="px-3 py-1 border border-border-subtle rounded disabled:opacity-50 hover:bg-surface-hover text-text-secondary"
 							>
 								← Prev
 							</button>
-							<span className="text-slate-500">
+							<span className="text-text-secondary">
 								Page {page} of {totalPages}
 							</span>
 							<button
 								type="button"
 								disabled={page >= totalPages}
 								onClick={() => runReport(page + 1)}
-								className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-slate-50"
+								className="px-3 py-1 border border-border-subtle rounded disabled:opacity-50 hover:bg-surface-hover text-text-secondary"
 							>
 								Next →
 							</button>

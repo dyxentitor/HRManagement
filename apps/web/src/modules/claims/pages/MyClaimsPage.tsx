@@ -42,18 +42,18 @@ export default function MyClaimsPage() {
 				<h1 className="text-2xl font-bold">My Claims</h1>
 				<Link
 					to="/claims/submit"
-					className="bg-slate-900 text-white py-1.5 px-3 rounded text-sm"
+					className="bg-accent-500 text-white py-1.5 px-3 rounded text-sm hover:bg-accent-600"
 				>
 					Submit a claim
 				</Link>
 			</div>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
 			{claims.length === 0 ? (
-				<p className="text-slate-500">
+				<p className="text-text-secondary">
 					No claims yet.{" "}
 					<Link to="/claims/submit" className="underline">
 						Submit one
@@ -61,8 +61,8 @@ export default function MyClaimsPage() {
 					.
 				</p>
 			) : (
-				<table className="w-full text-sm bg-white border rounded">
-					<thead className="text-left text-slate-500">
+				<table className="w-full text-sm bg-surface border border-border-subtle rounded">
+					<thead className="text-left text-text-secondary border-b border-border-subtle">
 						<tr>
 							<th className="py-2 pl-3">Date</th>
 							<th>Category</th>
@@ -73,7 +73,10 @@ export default function MyClaimsPage() {
 					</thead>
 					<tbody>
 						{claims.map((c) => (
-							<tr key={c.id} className="border-t">
+							<tr
+								key={c.id}
+								className="border-t border-border-subtle hover:bg-surface-hover transition-colors"
+							>
 								<td className="py-2 pl-3">{c.expense_date}</td>
 								<td>{c.category_code}</td>
 								<td className="font-semibold">
@@ -87,7 +90,7 @@ export default function MyClaimsPage() {
 										<button
 											type="button"
 											onClick={() => onCancel(c.id)}
-											className="text-red-700 hover:underline"
+											className="text-coral hover:underline"
 										>
 											Cancel
 										</button>
@@ -104,17 +107,17 @@ export default function MyClaimsPage() {
 
 function StatusBadge({ status }: { status: string }) {
 	const colors: Record<string, string> = {
-		draft: "bg-slate-100 text-slate-700",
-		submitted: "bg-blue-100 text-blue-700",
-		manager_approved: "bg-indigo-100 text-indigo-700",
-		finance_approved: "bg-purple-100 text-purple-700",
-		reimbursed: "bg-green-100 text-green-700",
-		rejected: "bg-red-100 text-red-700",
-		cancelled: "bg-slate-100 text-slate-500",
+		draft: "bg-surface-hover text-text-secondary",
+		submitted: "bg-sky/15 text-sky",
+		manager_approved: "bg-accent-500/15 text-accent-200",
+		finance_approved: "bg-accent-500/15 text-accent-200",
+		reimbursed: "bg-mint/15 text-mint",
+		rejected: "bg-coral/15 text-coral",
+		cancelled: "bg-surface-hover text-text-tertiary",
 	};
 	return (
 		<span
-			className={`text-xs px-2 py-0.5 rounded ${colors[status] || "bg-slate-100"}`}
+			className={`text-xs px-2 py-0.5 rounded ${colors[status] || "bg-surface-hover"}`}
 		>
 			{status.replace("_", " ")}
 		</span>

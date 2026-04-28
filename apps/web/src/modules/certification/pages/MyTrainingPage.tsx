@@ -53,10 +53,10 @@ export default function MyTrainingPage() {
 	}
 
 	function statusBadge(s: string): string {
-		if (s === "overdue") return "text-red-600 font-semibold";
-		if (s === "completed") return "text-green-600";
-		if (s === "in_progress") return "text-blue-600";
-		return "text-slate-600";
+		if (s === "overdue") return "text-coral font-semibold";
+		if (s === "completed") return "text-mint";
+		if (s === "in_progress") return "text-sky";
+		return "text-text-secondary";
 	}
 
 	function latestProgress(a: TrainingAssignment): number {
@@ -73,25 +73,30 @@ export default function MyTrainingPage() {
 		<div className="space-y-6 max-w-4xl">
 			<h1 className="text-2xl font-bold">My Training</h1>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
-			{success && <p className="text-green-600">{success}</p>}
+			{success && <p className="text-mint">{success}</p>}
 
 			{assignments.length === 0 ? (
-				<p className="text-slate-500">No training assignments.</p>
+				<p className="text-text-secondary">No training assignments.</p>
 			) : (
 				<div className="space-y-4">
 					{assignments.map((a) => {
 						const pct = latestProgress(a);
 						return (
-							<div key={a.id} className="border rounded p-4 bg-white space-y-3">
+							<div
+								key={a.id}
+								className="border border-border-subtle rounded p-4 bg-surface space-y-3"
+							>
 								<div className="flex items-center justify-between">
 									<span className="font-medium">{a.plan}</span>
 									<span className={statusBadge(a.status)}>{a.status}</span>
 								</div>
-								<div className="text-sm text-slate-500">Due: {a.due_date}</div>
+								<div className="text-sm text-text-secondary">
+									Due: {a.due_date}
+								</div>
 
 								{/* Progress slider */}
 								{a.status !== "completed" && (
@@ -110,9 +115,9 @@ export default function MyTrainingPage() {
 											}
 											className="w-full"
 										/>
-										<div className="w-full bg-slate-200 rounded-full h-2">
+										<div className="w-full bg-border-subtle rounded-full h-2">
 											<div
-												className="bg-blue-500 h-2 rounded-full"
+												className="bg-accent-500 h-2 rounded-full"
 												style={{ width: `${pct}%` }}
 											/>
 										</div>
@@ -124,7 +129,7 @@ export default function MyTrainingPage() {
 									<button
 										type="button"
 										onClick={() => handleComplete(a.id)}
-										className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+										className="px-3 py-1 bg-mint text-canvas rounded hover:bg-mint/90 text-sm"
 									>
 										Mark Complete
 									</button>

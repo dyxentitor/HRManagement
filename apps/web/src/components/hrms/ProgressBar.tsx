@@ -29,7 +29,7 @@ export function ProgressBar({
 					{showValue && <span>{Math.round(pct)}%</span>}
 				</div>
 			)}
-			<div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
+			<div className="h-1 bg-border-subtle/40 rounded-full overflow-hidden">
 				<div
 					role="progressbar"
 					aria-valuenow={clamped}

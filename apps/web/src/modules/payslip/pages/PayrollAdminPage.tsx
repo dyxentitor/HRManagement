@@ -82,13 +82,13 @@ export default function PayrollAdminPage() {
 		<div className="space-y-6 max-w-4xl">
 			<h1 className="text-2xl font-bold">Payroll Admin</h1>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
 
 			{/* Upload CSV */}
-			<section className="bg-white border rounded p-4 space-y-3">
+			<section className="bg-surface border border-border-subtle rounded p-4 space-y-3">
 				<h2 className="text-lg font-semibold">Upload Payroll CSV</h2>
 				<form onSubmit={handleUpload} className="space-y-3">
 					<div>
@@ -102,7 +102,7 @@ export default function PayrollAdminPage() {
 							id="period-select"
 							value={selectedPeriod}
 							onChange={(e) => setSelectedPeriod(e.target.value)}
-							className="border rounded px-2 py-1 text-sm w-full max-w-xs"
+							className="border border-border-subtle rounded px-2 py-1 text-sm w-full max-w-xs bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 						>
 							{periods.length === 0 && (
 								<option value="">No periods available</option>
@@ -132,19 +132,19 @@ export default function PayrollAdminPage() {
 					<button
 						type="submit"
 						disabled={uploading}
-						className="bg-slate-900 text-white py-1.5 px-4 rounded text-sm disabled:opacity-50"
+						className="bg-accent-500 text-white py-1.5 px-4 rounded text-sm disabled:opacity-50 hover:bg-accent-600"
 					>
 						{uploading ? "Uploading…" : "Upload"}
 					</button>
 				</form>
 				{uploadResult && (
 					<div className="mt-2 text-sm">
-						<p className="text-green-700">
+						<p className="text-mint">
 							Imported {uploadResult.row_count} row(s). Status:{" "}
 							{uploadResult.status}
 						</p>
 						{uploadResult.errors.length > 0 && (
-							<ul className="mt-1 text-red-600 list-disc list-inside">
+							<ul className="mt-1 text-coral list-disc list-inside">
 								{uploadResult.errors.map((err) => (
 									<li key={`upload-err-${err.row}`}>
 										Row {err.row}: {err.error}
@@ -160,11 +160,14 @@ export default function PayrollAdminPage() {
 			<section className="space-y-3">
 				<h2 className="text-lg font-semibold">Recent Runs</h2>
 				{runs.length === 0 ? (
-					<p className="text-slate-500 text-sm">No runs yet.</p>
+					<p className="text-text-secondary text-sm">No runs yet.</p>
 				) : (
 					<ul className="space-y-2">
 						{runs.map((run) => (
-							<li key={run.id} className="bg-white border rounded p-3">
+							<li
+								key={run.id}
+								className="bg-surface border border-border-subtle rounded p-3"
+							>
 								<div className="flex items-start justify-between">
 									<div className="text-sm">
 										<div className="font-semibold">
@@ -172,25 +175,25 @@ export default function PayrollAdminPage() {
 											<span
 												className={
 													run.status === "published"
-														? "text-green-700"
+														? "text-mint"
 														: run.status === "validated"
-															? "text-blue-700"
+															? "text-sky"
 															: run.status === "failed"
-																? "text-red-700"
-																: "text-slate-600"
+																? "text-coral"
+																: "text-text-secondary"
 												}
 											>
 												{run.status}
 											</span>
 										</div>
-										<div className="text-slate-600">
+										<div className="text-text-secondary">
 											{run.row_count} row(s) •{" "}
 											{run.errors.length > 0
 												? `${run.errors.length} error(s)`
 												: "no errors"}
 										</div>
 										{run.errors.length > 0 && (
-											<ul className="mt-1 text-red-600 text-xs list-disc list-inside">
+											<ul className="mt-1 text-coral text-xs list-disc list-inside">
 												{run.errors.slice(0, 3).map((err) => (
 													<li key={`run-err-${run.id}-${err.row}`}>
 														Row {err.row}: {err.error}
@@ -207,7 +210,7 @@ export default function PayrollAdminPage() {
 											type="button"
 											onClick={() => handlePublish(run.id)}
 											disabled={publishing === run.id}
-											className="text-sm bg-green-700 text-white py-1 px-3 rounded disabled:opacity-50"
+											className="text-sm bg-mint text-canvas py-1 px-3 rounded disabled:opacity-50 hover:bg-mint/90"
 										>
 											{publishing === run.id ? "Publishing…" : "Publish"}
 										</button>

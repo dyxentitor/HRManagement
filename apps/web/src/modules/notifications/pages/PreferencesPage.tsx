@@ -63,10 +63,13 @@ export default function PreferencesPage() {
 			<h1 className="text-xl font-semibold mb-4">Notification Preferences</h1>
 			<table className="w-full text-sm border-collapse">
 				<thead>
-					<tr className="border-b">
-						<th className="text-left py-2 pr-4">Event</th>
+					<tr className="border-b border-border-subtle">
+						<th className="text-left py-2 pr-4 text-text-secondary">Event</th>
 						{CHANNELS.map((ch) => (
-							<th key={ch} className="text-center py-2 px-3 capitalize">
+							<th
+								key={ch}
+								className="text-center py-2 px-3 capitalize text-text-secondary"
+							>
 								{ch.replace("_", " ")}
 							</th>
 						))}
@@ -74,13 +77,14 @@ export default function PreferencesPage() {
 				</thead>
 				<tbody>
 					{types.map((type) => (
-						<tr key={type} className="border-b hover:bg-slate-50">
-							<td className="py-2 pr-4 font-mono text-xs text-slate-600">
+						<tr
+							key={type}
+							className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
+						>
+							<td className="py-2 pr-4 font-mono text-xs text-text-secondary">
 								{type}
 								{SECURITY_TYPES.has(type) && (
-									<span className="ml-2 text-orange-500 text-xs">
-										(security)
-									</span>
+									<span className="ml-2 text-yellow text-xs">(security)</span>
 								)}
 							</td>
 							{CHANNELS.map((ch) => (
@@ -103,11 +107,11 @@ export default function PreferencesPage() {
 					type="button"
 					onClick={save}
 					disabled={saving}
-					className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+					className="px-4 py-2 bg-accent-500 text-white rounded text-sm hover:bg-accent-600 disabled:opacity-50"
 				>
 					{saving ? "Saving…" : "Save preferences"}
 				</button>
-				{saved && <span className="text-green-600 text-sm">Saved!</span>}
+				{saved && <span className="text-mint text-sm">Saved!</span>}
 			</div>
 		</div>
 	);

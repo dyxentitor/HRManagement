@@ -39,26 +39,31 @@ export default function FinanceQueuePage() {
 		<div className="space-y-4 max-w-4xl">
 			<h1 className="text-2xl font-bold">Finance Queue</h1>
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
 			{queue.length === 0 ? (
-				<p className="text-slate-500">No claims awaiting reimbursement.</p>
+				<p className="text-text-secondary">No claims awaiting reimbursement.</p>
 			) : (
 				<ul className="space-y-2">
 					{queue.map((c) => (
-						<li key={c.id} className="bg-white border rounded p-3">
+						<li
+							key={c.id}
+							className="bg-surface border border-border-subtle rounded p-3"
+						>
 							<div className="flex items-center justify-between">
 								<div className="text-sm">
 									<div className="font-semibold">
 										{c.category_code} • {c.currency_code} {c.amount}
 									</div>
-									<div className="text-slate-600">
+									<div className="text-text-secondary">
 										{c.expense_date} {c.merchant && `• ${c.merchant}`}
 									</div>
 									{c.description && (
-										<div className="text-slate-500 mt-1">"{c.description}"</div>
+										<div className="text-text-tertiary mt-1">
+											"{c.description}"
+										</div>
 									)}
 								</div>
 								{acting === c.id ? (
@@ -68,13 +73,13 @@ export default function FinanceQueuePage() {
 											value={reference}
 											onChange={(e) => setReference(e.target.value)}
 											placeholder="Bank reference / transaction ID"
-											className="border rounded px-2 py-1 w-64 text-sm"
+											className="border border-border-subtle rounded px-2 py-1 w-64 text-sm bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 										/>
 										<div className="space-x-2">
 											<button
 												type="button"
 												onClick={() => markReimbursed(c.id)}
-												className="text-xs bg-green-700 text-white px-3 py-1 rounded"
+												className="text-xs bg-mint text-canvas px-3 py-1 rounded hover:bg-mint/90"
 											>
 												Mark reimbursed
 											</button>
@@ -84,7 +89,7 @@ export default function FinanceQueuePage() {
 													setActing(null);
 													setReference("");
 												}}
-												className="text-xs text-slate-600 underline"
+												className="text-xs text-text-secondary underline"
 											>
 												Cancel
 											</button>
@@ -94,7 +99,7 @@ export default function FinanceQueuePage() {
 									<button
 										type="button"
 										onClick={() => setActing(c.id)}
-										className="text-sm border rounded px-3 py-1"
+										className="text-sm border border-border-subtle rounded px-3 py-1 text-text-secondary hover:bg-surface-hover"
 									>
 										Reimburse
 									</button>

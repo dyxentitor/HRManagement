@@ -4,16 +4,16 @@ import { type Certification, certificationApi } from "../api";
 
 function expiryBadge(cert: Certification): string {
 	if (cert.status === "expired" || cert.status === "revoked")
-		return "text-red-600";
-	if (!cert.expires_on) return "text-slate-500";
+		return "text-coral";
+	if (!cert.expires_on) return "text-text-secondary";
 	const today = new Date();
 	const expiry = new Date(cert.expires_on);
 	const diffDays = Math.ceil(
 		(expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
 	);
-	if (diffDays <= 30) return "text-red-600 font-semibold";
-	if (diffDays <= 60) return "text-amber-600 font-medium";
-	return "text-green-600";
+	if (diffDays <= 30) return "text-coral font-semibold";
+	if (diffDays <= 60) return "text-yellow font-medium";
+	return "text-mint";
 }
 
 export default function MyCertificationsPage() {
@@ -87,23 +87,23 @@ export default function MyCertificationsPage() {
 				<button
 					type="button"
 					onClick={() => setShowForm(!showForm)}
-					className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+					className="px-4 py-2 bg-accent-500 text-white rounded hover:bg-accent-600"
 				>
 					{showForm ? "Cancel" : "Add Certification"}
 				</button>
 			</div>
 
 			{error && (
-				<p role="alert" className="text-red-600">
+				<p role="alert" className="text-coral">
 					{error}
 				</p>
 			)}
-			{success && <p className="text-green-600">{success}</p>}
+			{success && <p className="text-mint">{success}</p>}
 
 			{showForm && (
 				<form
 					onSubmit={handleAdd}
-					className="border rounded p-4 space-y-3 bg-white"
+					className="border border-border-subtle rounded p-4 space-y-3 bg-surface"
 				>
 					<h2 className="font-semibold">Add Certification</h2>
 					<div>
@@ -112,7 +112,7 @@ export default function MyCertificationsPage() {
 							required
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							className="mt-1 block w-full border rounded px-3 py-2"
+							className="mt-1 block w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -120,7 +120,7 @@ export default function MyCertificationsPage() {
 						<input
 							value={issuer}
 							onChange={(e) => setIssuer(e.target.value)}
-							className="mt-1 block w-full border rounded px-3 py-2"
+							className="mt-1 block w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -130,7 +130,7 @@ export default function MyCertificationsPage() {
 						<input
 							value={certNumber}
 							onChange={(e) => setCertNumber(e.target.value)}
-							className="mt-1 block w-full border rounded px-3 py-2"
+							className="mt-1 block w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -140,7 +140,7 @@ export default function MyCertificationsPage() {
 							type="date"
 							value={issuedOn}
 							onChange={(e) => setIssuedOn(e.target.value)}
-							className="mt-1 block w-full border rounded px-3 py-2"
+							className="mt-1 block w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -149,13 +149,13 @@ export default function MyCertificationsPage() {
 							type="date"
 							value={expiresOn}
 							onChange={(e) => setExpiresOn(e.target.value)}
-							className="mt-1 block w-full border rounded px-3 py-2"
+							className="mt-1 block w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 						/>
 					</div>
 					<button
 						type="submit"
 						disabled={saving}
-						className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+						className="px-4 py-2 bg-accent-500 text-white rounded hover:bg-accent-600 disabled:opacity-50"
 					>
 						{saving ? "Saving…" : "Save"}
 					</button>
@@ -163,23 +163,36 @@ export default function MyCertificationsPage() {
 			)}
 
 			{certs.length === 0 ? (
-				<p className="text-slate-500">No certifications on record.</p>
+				<p className="text-text-secondary">No certifications on record.</p>
 			) : (
 				<table className="w-full border-collapse">
 					<thead>
-						<tr className="border-b bg-slate-50">
-							<th className="text-left p-2">Name</th>
-							<th className="text-left p-2">Issuer</th>
-							<th className="text-left p-2">Issued</th>
-							<th className="text-left p-2">Expires</th>
-							<th className="text-left p-2">Status</th>
+						<tr className="border-b border-border-subtle bg-surface-hover">
+							<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+								Name
+							</th>
+							<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+								Issuer
+							</th>
+							<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+								Issued
+							</th>
+							<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+								Expires
+							</th>
+							<th className="text-left p-2 text-text-secondary text-xs uppercase tracking-wide">
+								Status
+							</th>
 						</tr>
 					</thead>
 					<tbody>
 						{certs.map((c) => (
-							<tr key={c.id} className="border-b hover:bg-slate-50">
+							<tr
+								key={c.id}
+								className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
+							>
 								<td className="p-2 font-medium">{c.name}</td>
-								<td className="p-2 text-slate-600">{c.issuer || "—"}</td>
+								<td className="p-2 text-text-secondary">{c.issuer || "—"}</td>
 								<td className="p-2">{c.issued_on}</td>
 								<td className={`p-2 ${expiryBadge(c)}`}>
 									{c.expires_on ?? "No expiry"}
