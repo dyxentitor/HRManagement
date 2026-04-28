@@ -1,0 +1,113 @@
+groups:
+  - name: hrms_phase1
+    interval: 30s
+    rules:
+      - alert: APIHighErrorRate
+        expr: |
+          (sum(rate(django_http_responses_total_by_status_total{status=~"5.."}[5m]))
+           / sum(rate(django_http_responses_total_by_status_total[5m]))) > 0.01
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: "HRMS API 5xx rate > 1% for 5 min"
+          description: "Server error rate has exceeded 1% over the last 5 minutes. Check API logs."
+          runbook: "docs/runbooks/monitoring.md#apihigherrorrate"
+
+      - alert: APIHighP95Latency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(django_http_responses_total_by_status_total_bucket[10m])) by (le)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warn
+        annotations:
+          summary: "HRMS API P95 latency > 1s"
+          description: "95th percentile response time has exceeded 1 second for 10 minutes."
+          runbook: "docs/runbooks/monitoring.md#apihighp95latency"
+
+      - alert: DBConnPoolNearSaturation
+        expr: |
+          (pg_stat_database_numbackends{datname="hrms"}
+           / pg_settings_max_connections) > 0.8
+        for: 5m
+        labels:
+          severity: warn
+        annotations:
+          summary: "DB connection pool > 80% saturated"
+          description: "Postgres connection pool is over 80% used. Risk of connection exhaustion."
+          runbook: "docs/runbooks/monitoring.md#dbconnpoolnearsaturation"
+
+      - alert: CeleryQueueDeep
+        expr: celery_queue_length{queue="celery"} > 1000
+        for: 5m
+        labels:
+          severity: warn
+        annotations:
+          summary: "Celery default queue depth > 1000 tasks"
+          description: "Task queue has grown beyond 1000 items — workers may be lagging."
+          runbook: "docs/runbooks/monitoring.md#celeryqueuedeep"
+
+      - alert: CeleryQueueVeryDeep
+        expr: celery_queue_length{queue="celery"} > 10000
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Celery default queue depth > 10000 — paging"
+          description: "Task queue has grown beyond 10000 items. Immediate investigation required."
+          runbook: "docs/runbooks/monitoring.md#celeryqueueverydeep"
+
+      - alert: FailedLoginBruteForce
+        expr: rate(hrms_auth_failed_logins_total[1m]) > 50
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Failed login rate > 50/min — possible brute force"
+          description: "High rate of authentication failures detected. Check for brute-force attack."
+          runbook: "docs/runbooks/monitoring.md#failedloginbruteforce"
+
+      - alert: PayrollLedgerVerifyFail
+        expr: hrms_payroll_ledger_verify_status != 1
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "payroll_audit_ledger hash chain failed verification"
+          description: "The payroll audit ledger hash chain is broken. Do not run payroll until resolved."
+          runbook: "docs/runbooks/verify-payroll-ledger.md"
+
+      - alert: BackupJobFailed
+        expr: time() - hrms_backup_last_success_seconds > 86400
+        labels:
+          severity: page
+        annotations:
+          summary: "Nightly backup hasn't succeeded in 24h"
+          description: "No successful backup recorded in the last 24 hours. Check nightly-pgdump.sh logs."
+          runbook: "docs/runbooks/restore-from-backup.md"
+
+      - alert: DiskUsageHigh
+        expr: |
+          100 - (node_filesystem_avail_bytes{mountpoint="/"}
+                 / node_filesystem_size_bytes{mountpoint="/"} * 100) > 80
+        for: 10m
+        labels:
+          severity: warn
+        annotations:
+          summary: "Root filesystem > 80% full"
+          description: "Disk usage on root filesystem exceeds 80%. Clean up or expand storage."
+          runbook: "docs/runbooks/monitoring.md#diskusagehigh"
+
+      - alert: DiskUsageCritical
+        expr: |
+          100 - (node_filesystem_avail_bytes{mountpoint="/"}
+                 / node_filesystem_size_bytes{mountpoint="/"} * 100) > 95
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Root filesystem > 95% full — CRITICAL"
+          description: "Disk usage critical (>95%). Immediate action required to prevent data loss."
+          runbook: "docs/runbooks/monitoring.md#diskusagecritical"
