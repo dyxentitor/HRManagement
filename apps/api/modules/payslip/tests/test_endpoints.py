@@ -174,6 +174,50 @@ def test_retrieve_payslip(stack):
 
 
 @pytest.mark.django_db
+def test_employee_can_retrieve_own_payslip(stack):
+    """Regression: employee with only `payslip:read:self` must be able to GET their own payslip."""
+    *_, employee, period, payslip = stack
+    client = APIClient()
+    token = _login(client, "emp@x.com")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    resp = client.get(f"/api/v1/payslips/{payslip.id}/")
+    assert resp.status_code == 200, resp.content
+    assert resp.json()["id"] == str(payslip.id)
+
+
+@pytest.mark.django_db
+def test_employee_cannot_retrieve_other_employees_payslip(stack):
+    """Get-queryset scoping must still hide other employees' payslips."""
+    org, dept, hr_user, _emp_user, _hr_emp, _employee, period, _payslip = stack
+    other_user = User.objects.create_user(
+        email="other@x.com",
+        password="x",  # pragma: allowlist secret
+        org_id=org.id,
+    )
+    other_role = Role.objects.get(org_id=org.id, code="employee")
+    UserRole.objects.create(user=other_user, role=other_role)
+    other_emp = _make_emp(org, dept, other_user)
+    other_payslip = PayslipRecord.all_objects.create(
+        org_id=org.id,
+        employee_id=other_emp.id,
+        period=period,
+        gross=Decimal("3000"),
+        net=Decimal("2700"),
+        currency_code="MYR",
+        source="csv_import",
+        status="published",
+        components={"basic_salary": "3000"},
+        deductions={"epf": "330"},
+    )
+    client = APIClient()
+    token = _login(client, "emp@x.com")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    resp = client.get(f"/api/v1/payslips/{other_payslip.id}/")
+    # 404 (not 403) — the queryset hides it, ViewSet treats as not found
+    assert resp.status_code == 404, resp.content
+
+
+@pytest.mark.django_db
 def test_upload_csv_run(stack):
     org, dept, hr_user, *_ = stack
     employee = stack[5]  # the Employee object

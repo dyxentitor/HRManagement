@@ -88,6 +88,8 @@ export const payslipApi = {
 			"/api/v1/payroll/runs/",
 		).then(_unwrap),
 	uploadRun: async (periodId: string, csvFile: File): Promise<UploadResult> => {
+		const { tokenStorage } = await import("@/lib/token-storage");
+		const token = tokenStorage.getAccess();
 		const form = new FormData();
 		form.append("period", periodId);
 		form.append("csv", csvFile);
@@ -95,7 +97,7 @@ export const payslipApi = {
 			method: "POST",
 			body: form,
 			headers: {
-				Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}`,
+				Authorization: `Bearer ${token ?? ""}`,
 			},
 		});
 		if (!resp.ok) throw new Error("Upload failed");

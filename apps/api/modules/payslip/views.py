@@ -36,7 +36,11 @@ class PayslipViewSet(viewsets.ReadOnlyModelViewSet):
 
     @property
     def required_perms(self):
-        if self.action == "me":
+        # `me`, `retrieve`, and `list` are scoped to own payslips by
+        # get_queryset() when the user lacks payslip:read:org, so the
+        # `:self` perm is sufficient. Any mutating action requires
+        # the org-level perm.
+        if self.action in ("me", "retrieve", "list"):
             return ["payslip:read:self"]
         return ["payslip:read:org"]
 
