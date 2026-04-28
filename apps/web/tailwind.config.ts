@@ -17,6 +17,10 @@ const config: Config = {
 				"text-tertiary": "rgb(var(--text-tertiary) / <alpha-value>)",
 				"text-disabled": "rgb(var(--text-disabled) / <alpha-value>)",
 				accent: {
+					// shadcn-compat keys — DEFAULT + foreground for shadcn usage
+					DEFAULT: "rgb(var(--accent-500) / <alpha-value>)",
+					foreground: "rgb(var(--text-primary) / <alpha-value>)",
+					// our numeric scale — preserved for bg-accent-200, text-accent-500, etc.
 					50: "rgb(var(--accent-50) / <alpha-value>)",
 					200: "rgb(var(--accent-200) / <alpha-value>)",
 					500: "rgb(var(--accent-500) / <alpha-value>)",
@@ -31,6 +35,37 @@ const config: Config = {
 				"pastel-sky": "rgb(var(--pastel-sky) / <alpha-value>)",
 				"border-subtle": "rgb(var(--border-subtle))",
 				"border-strong": "rgb(var(--border-strong))",
+
+				// shadcn-compat aliases — point shadcn's expected colour names at our tokens
+				background: "rgb(var(--bg-canvas) / <alpha-value>)",
+				foreground: "rgb(var(--text-primary) / <alpha-value>)",
+				card: {
+					DEFAULT: "rgb(var(--bg-surface) / <alpha-value>)",
+					foreground: "rgb(var(--text-primary) / <alpha-value>)",
+				},
+				popover: {
+					DEFAULT: "rgb(var(--bg-elevated) / <alpha-value>)",
+					foreground: "rgb(var(--text-primary) / <alpha-value>)",
+				},
+				primary: {
+					DEFAULT: "rgb(var(--accent-500) / <alpha-value>)",
+					foreground: "rgb(var(--text-primary) / <alpha-value>)",
+				},
+				secondary: {
+					DEFAULT: "rgb(var(--bg-hover) / <alpha-value>)",
+					foreground: "rgb(var(--text-secondary) / <alpha-value>)",
+				},
+				muted: {
+					DEFAULT: "rgb(var(--bg-hover) / <alpha-value>)",
+					foreground: "rgb(var(--text-tertiary) / <alpha-value>)",
+				},
+				destructive: {
+					DEFAULT: "rgb(var(--pastel-coral) / <alpha-value>)",
+					foreground: "rgb(var(--bg-canvas) / <alpha-value>)",
+				},
+				border: "rgb(var(--border-subtle))",
+				input: "rgb(var(--border-subtle))",
+				ring: "rgb(var(--accent-500) / <alpha-value>)",
 			},
 			borderRadius: {
 				sm: "var(--radius-sm)",
