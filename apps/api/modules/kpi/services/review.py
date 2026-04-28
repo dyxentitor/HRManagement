@@ -18,6 +18,54 @@ from ..models import KpiAssignment, KpiReview, KpiReviewIteration
 logger = logging.getLogger(__name__)
 
 
+def _notify_manager_for_review(assignment: KpiAssignment, notif_type: str) -> None:
+    """Best-effort: notify the employee's direct manager after self-review submitted."""
+    try:
+        from modules.employee.models import Employee
+        from modules.notification.services.notify import notify
+
+        emp = Employee.all_objects.filter(id=assignment.employee_id).first()
+        if emp is None or emp.manager is None:
+            return
+        mgr_user = getattr(emp.manager, "user", None)
+        if mgr_user is None:
+            return
+        notify(
+            user=mgr_user,
+            type=notif_type,
+            payload={"assignment_id": str(assignment.id)},
+            deep_link="/kpi/admin",
+        )
+    except Exception:
+        logger.exception(
+            "Failed to send %s notification for assignment %s", notif_type, assignment.id
+        )
+
+
+def _notify_employee_for_review(assignment: KpiAssignment, notif_type: str) -> None:
+    """Best-effort: notify the employee after manager review submitted."""
+    try:
+        from modules.employee.models import Employee
+        from modules.notification.services.notify import notify
+
+        emp = Employee.all_objects.filter(id=assignment.employee_id).first()
+        if emp is None:
+            return
+        emp_user = getattr(emp, "user", None)
+        if emp_user is None:
+            return
+        notify(
+            user=emp_user,
+            type=notif_type,
+            payload={"assignment_id": str(assignment.id)},
+            deep_link="/kpi/me",
+        )
+    except Exception:
+        logger.exception(
+            "Failed to send %s notification for assignment %s", notif_type, assignment.id
+        )
+
+
 def _s3_client():
     return boto3.client(
         "s3",
@@ -88,6 +136,8 @@ class ReviewService:
             after={"stage": "self", "iteration": iteration, "review_id": review.id},
             actor_id=submitted_by,
         )
+        # Notify the employee's manager that a self-review was submitted
+        _notify_manager_for_review(assignment, "kpi.review_submitted_self")
         return review
 
     @staticmethod
@@ -137,6 +187,8 @@ class ReviewService:
             after={"stage": "manager", "iteration": iteration, "review_id": review.id},
             actor_id=submitted_by,
         )
+        # Notify the employee that their manager review was submitted
+        _notify_employee_for_review(assignment, "kpi.review_submitted_manager")
         return review
 
     @staticmethod

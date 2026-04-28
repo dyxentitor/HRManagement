@@ -13,6 +13,7 @@ from modules.identity.models import User
 from modules.leave.models import LeaveApproval, LeaveBalance, LeaveRequest, LeaveType
 from modules.leave.services.balance import BalanceService
 from modules.leave.services.leave_request import LeaveRequestService
+from modules.notification.models import Notification
 from modules.organization.models import Department, Organization
 
 
@@ -145,6 +146,8 @@ def test_approve_terminal_deducts_balance(setup) -> None:
     bal = LeaveBalance.all_objects.get(employee_id=emp_emp.id, leave_type=lt, year=2026)
     assert bal.taken == Decimal("3")
     assert bal.pending == Decimal("0")
+    # M9: Notification row should exist for the requester (leave.approved)
+    assert Notification.objects.filter(user=emp_user, type="leave.approved").count() > 0
 
 
 @pytest.mark.django_db
@@ -168,6 +171,8 @@ def test_reject_releases_balance(setup) -> None:
     assert bal.taken == Decimal("0")
     assert bal.pending == Decimal("0")
     assert bal.available == Decimal("14")
+    # M9: Notification row should exist for the requester (leave.rejected)
+    assert Notification.objects.filter(user=emp_user, type="leave.rejected").count() > 0
 
 
 @pytest.mark.django_db

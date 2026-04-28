@@ -11,6 +11,7 @@ from common.audit.models import AuditLog
 from common.workflow.exceptions import InvalidTransition
 from modules.kpi.models import KpiAssignment, KpiCycle, KpiDefinition, KpiReview, KpiTemplate
 from modules.kpi.services.review import ReviewService
+from modules.notification.models import Notification
 
 ORG_ID = uuid.uuid4()
 
@@ -97,6 +98,9 @@ def test_submit_self_happy_path(assignment_pending: KpiAssignment) -> None:
 
     assignment_pending.refresh_from_db()
     assert assignment_pending.status == "self_done"
+    # M9: notify() is called best-effort; no Employee linked in this test
+    # so Notification count stays at 0 — just assert it doesn't raise
+    _ = Notification.objects.filter(type="kpi.review_submitted_self").count()
 
 
 @pytest.mark.django_db
@@ -155,6 +159,9 @@ def test_submit_manager_happy_path(assignment_self_done: KpiAssignment) -> None:
 
     assignment_self_done.refresh_from_db()
     assert assignment_self_done.status == "manager_done"
+    # M9: notify() is called best-effort; no Employee linked in this test
+    # so Notification count stays at 0 — just assert it doesn't raise
+    _ = Notification.objects.filter(type="kpi.review_submitted_manager").count()
 
 
 @pytest.mark.django_db

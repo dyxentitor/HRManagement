@@ -12,6 +12,7 @@ from modules.claims.models import ClaimApproval, ClaimCategory, ClaimRequest
 from modules.claims.services.claim_request import ClaimRequestService
 from modules.employee.models import Employee
 from modules.identity.models import Role, User, UserRole
+from modules.notification.models import Notification
 from modules.organization.models import Department, Organization
 
 
@@ -127,6 +128,8 @@ def test_under_500_two_step_flow(stack) -> None:
     ClaimRequestService.act(claim, actor=fin_user, decision=Decision.APPROVE, comment="will pay")
     claim.refresh_from_db()
     assert claim.status == "finance_approved"
+    # M9: Notification row should exist for the requester (claim.approved)
+    assert Notification.objects.filter(user=emp_user, type="claim.approved").count() > 0
 
 
 @pytest.mark.django_db
@@ -172,6 +175,8 @@ def test_reject_at_manager_level(stack) -> None:
     ClaimRequestService.act(claim, actor=mgr_user, decision=Decision.REJECT, comment="not allowed")
     claim.refresh_from_db()
     assert claim.status == "rejected"
+    # M9: Notification row should exist for the requester (claim.rejected)
+    assert Notification.objects.filter(user=emp_user, type="claim.rejected").count() > 0
 
 
 @pytest.mark.django_db

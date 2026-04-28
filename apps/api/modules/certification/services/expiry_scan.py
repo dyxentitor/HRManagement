@@ -57,20 +57,30 @@ def scan_certification_expiry(*, org_id=None) -> dict[str, int]:
 
 
 def _notify(cert, days_remaining: int) -> None:
-    """Send in-app + email reminder. Best-effort."""
+    """Send in-app + email reminder via notify(). Best-effort."""
     import logging
-
-    from django.conf import settings
-    from django.core.mail import send_mail
 
     logger = logging.getLogger(__name__)
     try:
-        send_mail(
-            subject=f"[HRMS] Certification expiring in {days_remaining} days",
-            message=f"Your certification '{cert.name}' expires on {cert.expires_on}.",
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "hrms@provintell.local"),
-            recipient_list=[],  # employee email lookup omitted in M8 — Phase 2 wires this
-            fail_silently=True,
+        from modules.employee.models import Employee
+        from modules.notification.services.notify import notify
+
+        emp = Employee.all_objects.filter(id=cert.employee_id).first()
+        if emp is None:
+            return
+        emp_user = getattr(emp, "user", None)
+        if emp_user is None:
+            return
+        notify(
+            user=emp_user,
+            type="cert.expiring_soon",
+            payload={
+                "cert_id": str(cert.id),
+                "cert_name": cert.name,
+                "expires_on": str(cert.expires_on),
+                "days_remaining": days_remaining,
+            },
+            deep_link="/certifications/me",
         )
     except Exception:
         logger.exception("Failed to send expiry reminder for cert %s", cert.id)

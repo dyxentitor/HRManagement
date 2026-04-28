@@ -1,17 +1,38 @@
-"""Signal handlers — populate ClaimApproval rows on workflow events."""
+"""Signal handlers -- populate ClaimApproval rows on workflow events."""
 
 from __future__ import annotations
+
+import logging
 
 from django.dispatch import receiver
 from django.utils import timezone
 
 from common.workflow import (
+    workflow_approved,
+    workflow_rejected,
     workflow_step_approved,
     workflow_step_rejected,
     workflow_submitted,
 )
 
 from .models import ClaimApproval, ClaimRequest
+
+_log = logging.getLogger(__name__)
+
+
+def _notify_for_claim(user, notif_type: str, subject: ClaimRequest) -> None:
+    """Best-effort notify() call -- errors must not break the workflow."""
+    try:
+        from modules.notification.services.notify import notify
+
+        notify(
+            user=user,
+            type=notif_type,
+            payload={"claim_request_id": str(subject.id)},
+            deep_link="/claims/me",
+        )
+    except Exception:
+        _log.exception("Failed to send %s notification for claim %s", notif_type, subject.id)
 
 
 @receiver(workflow_submitted)
@@ -30,6 +51,8 @@ def _on_submitted(sender, subject, chain, **kwargs):
         approver_id=approver.id,
         status="pending",
     )
+    # Notify the approver about the submission
+    _notify_for_claim(approver, "claim.submitted", subject)
 
 
 @receiver(workflow_step_approved)
@@ -62,6 +85,16 @@ def _on_step_approved(sender, subject, chain, level, actor, comment, **kwargs):
     )
 
 
+@receiver(workflow_approved)
+def _on_approved(sender, subject, chain, **kwargs):
+    """Terminal approval -- notify the requester."""
+    if not isinstance(subject, ClaimRequest):
+        return
+    emp_user = getattr(subject.employee, "user", None)
+    if emp_user is not None:
+        _notify_for_claim(emp_user, "claim.approved", subject)
+
+
 @receiver(workflow_step_rejected)
 def _on_step_rejected(sender, subject, chain, level, actor, comment, **kwargs):
     if not isinstance(subject, ClaimRequest):
@@ -76,3 +109,13 @@ def _on_step_rejected(sender, subject, chain, level, actor, comment, **kwargs):
         comment=comment,
         approver_id=actor.id,
     )
+
+
+@receiver(workflow_rejected)
+def _on_rejected(sender, subject, chain, actor, comment, **kwargs):
+    """Rejection -- notify the requester."""
+    if not isinstance(subject, ClaimRequest):
+        return
+    emp_user = getattr(subject.employee, "user", None)
+    if emp_user is not None:
+        _notify_for_claim(emp_user, "claim.rejected", subject)

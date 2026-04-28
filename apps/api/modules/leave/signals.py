@@ -1,17 +1,38 @@
-"""Leave-module signal handlers — record approval rows on workflow events."""
+"""Leave-module signal handlers -- record approval rows on workflow events."""
 
 from __future__ import annotations
+
+import logging
 
 from django.dispatch import receiver
 from django.utils import timezone
 
 from common.workflow import (
+    workflow_approved,
+    workflow_rejected,
     workflow_step_approved,
     workflow_step_rejected,
     workflow_submitted,
 )
 
 from .models import LeaveApproval, LeaveRequest
+
+_log = logging.getLogger(__name__)
+
+
+def _notify_for_leave(user, notif_type: str, subject: LeaveRequest) -> None:
+    """Best-effort notify() call -- errors must not break the workflow."""
+    try:
+        from modules.notification.services.notify import notify
+
+        notify(
+            user=user,
+            type=notif_type,
+            payload={"leave_request_id": str(subject.id)},
+            deep_link="/leave/me",
+        )
+    except Exception:
+        _log.exception("Failed to send %s notification for leave %s", notif_type, subject.id)
 
 
 @receiver(workflow_submitted)
@@ -29,6 +50,8 @@ def _on_submitted(sender, subject, chain, **kwargs):
     LeaveApproval.objects.create(
         leave_request=subject, level=1, approver_id=approver.id, status="pending"
     )
+    # Notify the approver about the new submission
+    _notify_for_leave(approver, "leave.submitted", subject)
 
 
 @receiver(workflow_step_approved)
@@ -43,6 +66,19 @@ def _on_step_approved(sender, subject, chain, level, actor, comment, **kwargs):
     )
 
 
+@receiver(workflow_approved)
+def _on_approved(sender, subject, chain, **kwargs):
+    """Terminal approval -- notify the requester."""
+    if not isinstance(subject, LeaveRequest):
+        return
+    try:
+        emp_user = subject.employee.user
+    except Exception:
+        emp_user = None
+    if emp_user is not None:
+        _notify_for_leave(emp_user, "leave.approved", subject)
+
+
 @receiver(workflow_step_rejected)
 def _on_step_rejected(sender, subject, chain, level, actor, comment, **kwargs):
     if not isinstance(subject, LeaveRequest):
@@ -53,3 +89,16 @@ def _on_step_rejected(sender, subject, chain, level, actor, comment, **kwargs):
         comment=comment,
         approver_id=actor.id,
     )
+
+
+@receiver(workflow_rejected)
+def _on_rejected(sender, subject, chain, actor, comment, **kwargs):
+    """Rejection -- notify the requester."""
+    if not isinstance(subject, LeaveRequest):
+        return
+    try:
+        emp_user = subject.employee.user
+    except Exception:
+        emp_user = None
+    if emp_user is not None:
+        _notify_for_leave(emp_user, "leave.rejected", subject)

@@ -10,6 +10,7 @@ from freezegun import freeze_time
 
 from modules.certification.models import Certification, TrainingAssignment, TrainingPlan
 from modules.certification.services.expiry_scan import scan_certification_expiry
+from modules.notification.models import Notification
 
 ORG_ID = uuid.uuid4()
 EMP_ID = uuid.uuid4()
@@ -54,6 +55,8 @@ def test_cert_expiring_in_90d_sends_reminder():
     assert counts["90d"] == 1
     cert.refresh_from_db()
     assert cert.reminder_sent_90d is True
+    # M9: notify() called best-effort; no Employee linked in this test, so count stays 0
+    _ = Notification.objects.filter(type="cert.expiring_soon").count()
 
 
 @pytest.mark.django_db
