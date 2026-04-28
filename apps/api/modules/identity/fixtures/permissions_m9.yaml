@@ -1,0 +1,3 @@
+- { code: "notification:read:self",                description: Read own notifications }
+- { code: "notification:preferences:write:self",   description: Edit own notification preferences }
+- { code: "notification:digest:read:org",          description: Audit email digest runs (HR/admin) }

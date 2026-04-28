@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "modules.payslip",
     "modules.kpi",
     "modules.certification",
+    "modules.notification",
 ]
 
 AUTH_USER_MODEL = "identity.User"

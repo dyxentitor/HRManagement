@@ -100,6 +100,9 @@
     - "training:assignment:read:self"
     - "training:assignment:write:team"
     - "training:progress:write:self"
+    - "notification:read:self"
+    - "notification:preferences:write:self"
+    - "notification:digest:read:org"
 
 - code: hr_manager
   name: HR Manager
@@ -196,6 +199,9 @@
     - "training:assignment:read:self"
     - "training:assignment:write:team"
     - "training:progress:write:self"
+    - "notification:read:self"
+    - "notification:preferences:write:self"
+    - "notification:digest:read:org"
 
 - code: finance
   name: Finance
@@ -229,6 +235,8 @@
     - "payroll:run:publish"
     - "payroll:component:write"
     - "payroll:period:write"
+    - "notification:read:self"
+    - "notification:preferences:write:self"
 
 - code: manager
   name: Manager
@@ -277,6 +285,8 @@
     - "training:assignment:read:self"
     - "training:assignment:write:team"
     - "training:progress:write:self"
+    - "notification:read:self"
+    - "notification:preferences:write:self"
 
 - code: team_lead
   name: Team Lead
@@ -325,6 +335,8 @@
     - "training:assignment:read:self"
     - "training:assignment:write:team"
     - "training:progress:write:self"
+    - "notification:read:self"
+    - "notification:preferences:write:self"
 
 - code: employee
   name: Employee
@@ -357,6 +369,8 @@
     - "training:plan:read"
     - "training:assignment:read:self"
     - "training:progress:write:self"
+    - "notification:read:self"
+    - "notification:preferences:write:self"
 
 - code: auditor
   name: Auditor
@@ -407,3 +421,6 @@
     - "cert:read:org"
     - "training:plan:read"
     - "training:assignment:read:self"
+    - "notification:read:self"
+    - "notification:preferences:write:self"
+    - "notification:digest:read:org"
