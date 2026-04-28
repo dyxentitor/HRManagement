@@ -103,6 +103,10 @@
     - "notification:read:self"
     - "notification:preferences:write:self"
     - "notification:digest:read:org"
+    - "dashboard:read:me"
+    - "dashboard:read:team"
+    - "dashboard:read:admin"
+    - "approvals:inbox:read"
 
 - code: hr_manager
   name: HR Manager
@@ -202,6 +206,10 @@
     - "notification:read:self"
     - "notification:preferences:write:self"
     - "notification:digest:read:org"
+    - "dashboard:read:me"
+    - "dashboard:read:team"
+    - "dashboard:read:admin"
+    - "approvals:inbox:read"
 
 - code: finance
   name: Finance
@@ -237,6 +245,8 @@
     - "payroll:period:write"
     - "notification:read:self"
     - "notification:preferences:write:self"
+    - "dashboard:read:me"
+    - "approvals:inbox:read"
 
 - code: manager
   name: Manager
@@ -287,6 +297,9 @@
     - "training:progress:write:self"
     - "notification:read:self"
     - "notification:preferences:write:self"
+    - "dashboard:read:me"
+    - "dashboard:read:team"
+    - "approvals:inbox:read"
 
 - code: team_lead
   name: Team Lead
@@ -337,6 +350,9 @@
     - "training:progress:write:self"
     - "notification:read:self"
     - "notification:preferences:write:self"
+    - "dashboard:read:me"
+    - "dashboard:read:team"
+    - "approvals:inbox:read"
 
 - code: employee
   name: Employee
@@ -371,6 +387,7 @@
     - "training:progress:write:self"
     - "notification:read:self"
     - "notification:preferences:write:self"
+    - "dashboard:read:me"
 
 - code: auditor
   name: Auditor
@@ -424,3 +441,6 @@
     - "notification:read:self"
     - "notification:preferences:write:self"
     - "notification:digest:read:org"
+    - "dashboard:read:me"
+    - "dashboard:read:team"
+    - "dashboard:read:admin"

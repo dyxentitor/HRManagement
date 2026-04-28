@@ -1,0 +1,4 @@
+- { code: "dashboard:read:me",    description: Read own dashboard }
+- { code: "dashboard:read:team",  description: Read team dashboard (manager) }
+- { code: "dashboard:read:admin", description: Read admin dashboard (HR) }
+- { code: "approvals:inbox:read", description: Read unified approvals inbox }

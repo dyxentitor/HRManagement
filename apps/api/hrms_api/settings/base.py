@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "modules.kpi",
     "modules.certification",
     "modules.notification",
+    "modules.dashboard",
 ]
 
 AUTH_USER_MODEL = "identity.User"
