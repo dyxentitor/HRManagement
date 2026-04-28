@@ -8,3 +8,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 		<App />
 	</React.StrictMode>,
 );
+
+if (import.meta.env.DEV) {
+	void import("@axe-core/react").then(({ default: axe }) => {
+		axe(React, ReactDOM, 1000);
+	});
+}
