@@ -22,6 +22,7 @@ api_v1_patterns = [
     path("", include("modules.certification.urls")),
     path("", include("modules.notification.urls")),
     path("", include("modules.dashboard.urls")),
+    path("", include("common.reporting.urls")),
 ]
 
 
