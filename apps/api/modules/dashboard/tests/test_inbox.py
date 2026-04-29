@@ -14,6 +14,7 @@ from rest_framework.test import APIClient
 from modules.claims.models import ClaimApproval, ClaimCategory, ClaimRequest
 from modules.employee.models import Employee
 from modules.identity.models import Permission, Role, RolePermission, User, UserRole
+from modules.kpi.models import KpiAssignment, KpiCycle, KpiTemplate
 from modules.leave.models import LeaveApproval, LeaveRequest, LeaveType
 from modules.organization.models import Department, Organization
 
@@ -231,6 +232,75 @@ def test_inbox_endpoint_requires_permission(stack):
 
     response = client.get("/api/v1/approvals/inbox")
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_manager_sees_kpi_self_review_in_inbox(stack):
+    """Manager sees KPI assignments awaiting their review in the inbox."""
+    from modules.dashboard.services.inbox import get_inbox
+
+    org, mgr_user, emp_user, mgr_emp, emp_emp, _, _ = stack
+
+    # Create a KPI template, cycle in manager_review, and assignment with self_done status
+    template = KpiTemplate.all_objects.create(
+        org_id=org.id,
+        name="Standard KPI",
+    )
+    cycle = KpiCycle.all_objects.create(
+        org_id=org.id,
+        name="Q2 2026",
+        type="quarterly",
+        starts_on=datetime.date(2026, 4, 1),
+        ends_on=datetime.date(2026, 6, 30),
+        review_opens_on=datetime.date(2026, 7, 1),
+        review_closes_on=datetime.date(2026, 7, 15),
+        status="manager_review",
+    )
+    assignment = KpiAssignment.all_objects.create(
+        org_id=org.id,
+        cycle=cycle,
+        employee_id=emp_emp.id,
+        template=template,
+        status="self_done",
+    )
+
+    items = get_inbox(user=mgr_user)
+    kpi_items = [i for i in items if i.kind == "kpi"]
+    assert len(kpi_items) == 1
+    assert kpi_items[0].id == str(assignment.id)
+    assert kpi_items[0].employee_code == "EMP001"
+    assert "Q2 2026" in kpi_items[0].summary
+
+
+@pytest.mark.django_db
+def test_kpi_not_in_inbox_when_cycle_not_in_manager_review(stack):
+    """KPI assignments not in manager_review cycle are excluded from inbox."""
+    from modules.dashboard.services.inbox import get_inbox
+
+    org, mgr_user, emp_user, mgr_emp, emp_emp, _, _ = stack
+
+    template = KpiTemplate.all_objects.create(org_id=org.id, name="Standard KPI")
+    cycle = KpiCycle.all_objects.create(
+        org_id=org.id,
+        name="Q1 2026",
+        type="quarterly",
+        starts_on=datetime.date(2026, 1, 1),
+        ends_on=datetime.date(2026, 3, 31),
+        review_opens_on=datetime.date(2026, 4, 1),
+        review_closes_on=datetime.date(2026, 4, 15),
+        status="self_review",  # not manager_review
+    )
+    KpiAssignment.all_objects.create(
+        org_id=org.id,
+        cycle=cycle,
+        employee_id=emp_emp.id,
+        template=template,
+        status="self_done",
+    )
+
+    items = get_inbox(user=mgr_user)
+    kpi_items = [i for i in items if i.kind == "kpi"]
+    assert len(kpi_items) == 0
 
 
 @pytest.mark.django_db

@@ -123,6 +123,50 @@ If anything looks wrong in the first 30 minutes, trigger rollback immediately:
 
 See [rollback.md](rollback.md).
 
+## Configure SMTP
+
+HRMS uses Django's email backend for password-reset links, MFA notifications, and
+payslip distribution. In dev the stack sends through MailHog (no real mail); in
+production you must point it at a real SMTP relay.
+
+### Environment variables
+
+| Variable | Description | Example |
+|---|---|---|
+| `SMTP_HOST` | SMTP server hostname | `smtp.gmail.com` |
+| `SMTP_PORT` | SMTP port (587 = STARTTLS, 465 = SSL) | `587` |
+| `SMTP_USER` | SMTP login username | `hrms@provintell.com` |
+| `SMTP_PASSWORD` | SMTP password or app-password | *(see vault)* |
+| `SMTP_USE_TLS` | Set `1` to enable STARTTLS | `1` |
+| `DEFAULT_FROM_EMAIL` | Envelope From address shown to recipients | `hrms@provintell.com` |
+
+Set these in `/opt/hrms/.env` on the production host before step 8 (start stack).
+
+### Verify SMTP from inside the container
+
+After the stack is running, send a test email to confirm delivery:
+
+```bash
+docker compose -f deploy/docker-compose.yml \
+               -f deploy/docker-compose.prod.yml \
+    exec api uv run python manage.py sendtestemail admin@provintell.com
+```
+
+Check that the email arrives in the `admin@provintell.com` inbox. If it does not
+arrive within 2 minutes, check:
+
+1. `SMTP_HOST` / `SMTP_PORT` are reachable from the container (`nc -zv $SMTP_HOST $SMTP_PORT`)
+2. `SMTP_USER` and `SMTP_PASSWORD` are correct (try with your email client)
+3. For Gmail: use an App Password (not your account password) — see
+   https://myaccount.google.com/apppasswords
+4. Check Django logs for `SMTPException` or `ConnectionRefusedError`
+
+### MailHog (dev only)
+
+The dev stack runs MailHog at `http://localhost:8025`. All outbound email is
+captured there — nothing reaches the internet. Useful for testing password-reset
+flows locally without a real SMTP account.
+
 ## Last updated
 
-2026-04-28 — M12 initial release
+2026-04-29 — v1.2.0 Phase 1 complete

@@ -6,7 +6,7 @@ import pytest
 from django.core import mail
 from rest_framework.test import APIClient
 
-from modules.identity.models import Session, User
+from modules.identity.models import Role, Session, User, UserRole
 
 
 @pytest.fixture
@@ -172,6 +172,64 @@ def test_password_forgot_unknown_email_still_returns_200(client: APIClient) -> N
     )
     assert resp.status_code == 200
     assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_me_returns_role_codes_single_role(client: APIClient, user: User) -> None:
+    """GET /auth/me includes role_codes for a user with one role."""
+    org_id = user.org_id
+    role = Role.objects.create(org_id=org_id, code="hr_admin", name="HR Admin", is_system=False)
+    UserRole.objects.create(user=user, role=role, granted_by=None)
+
+    resp = client.post(
+        "/api/v1/auth/login",
+        {"email": "alice@example.com", "password": "s3cret-p@ss"},  # pragma: allowlist secret
+        format="json",
+    )
+    access = resp.json()["access_token"]
+    me = client.get("/api/v1/auth/me", HTTP_AUTHORIZATION=f"Bearer {access}")
+    assert me.status_code == 200
+    body = me.json()
+    assert "role_codes" in body
+    assert body["role_codes"] == ["hr_admin"]
+
+
+@pytest.mark.django_db
+def test_me_returns_role_codes_multiple_roles(client: APIClient, user: User) -> None:
+    """GET /auth/me includes role_codes for a user with multiple roles."""
+    org_id = user.org_id
+    role1 = Role.objects.create(org_id=org_id, code="employee", name="Employee", is_system=False)
+    role2 = Role.objects.create(org_id=org_id, code="manager", name="Manager", is_system=False)
+    UserRole.objects.create(user=user, role=role1, granted_by=None)
+    UserRole.objects.create(user=user, role=role2, granted_by=None)
+
+    resp = client.post(
+        "/api/v1/auth/login",
+        {"email": "alice@example.com", "password": "s3cret-p@ss"},  # pragma: allowlist secret
+        format="json",
+    )
+    access = resp.json()["access_token"]
+    me = client.get("/api/v1/auth/me", HTTP_AUTHORIZATION=f"Bearer {access}")
+    assert me.status_code == 200
+    body = me.json()
+    assert "role_codes" in body
+    assert set(body["role_codes"]) == {"employee", "manager"}
+
+
+@pytest.mark.django_db
+def test_me_returns_empty_role_codes_for_user_with_no_roles(client: APIClient, user: User) -> None:
+    """GET /auth/me returns empty role_codes for a user with no roles."""
+    resp = client.post(
+        "/api/v1/auth/login",
+        {"email": "alice@example.com", "password": "s3cret-p@ss"},  # pragma: allowlist secret
+        format="json",
+    )
+    access = resp.json()["access_token"]
+    me = client.get("/api/v1/auth/me", HTTP_AUTHORIZATION=f"Bearer {access}")
+    assert me.status_code == 200
+    body = me.json()
+    assert "role_codes" in body
+    assert body["role_codes"] == []
 
 
 @pytest.mark.django_db

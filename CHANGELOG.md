@@ -4,6 +4,27 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-04-29
+
+**HRMS Phase 1 complete — polish pass closing all v1.1.0 gaps.**
+
+### Added
+- **A1 — `role_codes` in `/api/v1/auth/me`**: `MeSerializer` now returns `role_codes: list[str]` from `UserRole`. `AuthContext.roles` is populated from this field; the UserMenu now shows real role labels instead of the "Member" placeholder.
+- **A2 — KPI reviews in unified Approvals inbox**: `get_inbox()` service extended to include `KpiAssignment` rows in `manager_review` cycles where the current user is the employee's direct manager. `InboxItem.kind` gains `"kpi"`. Frontend `api.ts` and `UnifiedInboxPage` KPI filter count now live.
+- **B1 — `/me/preferences` page** (`apps/web/src/modules/auth/pages/PreferencesPage.tsx`): unified preferences hub — locale dropdown (en-MY), theme stub ("Coming soon — Phase 1.5"), MFA enrollment section (QR-code modal + 6-digit confirm), notification preference matrix, and "Sign out all sessions" button wired to `/api/v1/auth/sessions/revoke-all/`.
+- **B2 — Employee detail page** (`/employees/:id`): read-only employee profile with avatar card, Employment section, Personal section (gated by `employee:read:org`), Reporting chain, Direct reports. `EmployeesPage` card clicks now navigate to the detail view.
+- **B3 — Forgot-password + reset-password pages**: `ForgotPasswordPage` and `ResetPasswordPage` under `/forgot-password` and `/reset-password`. Public routes; redirect to `/` if already signed in. LoginForm "Forgot?" link was already routing to `/forgot-password`.
+- **B4 — MFA enrollment UX polish**: QR-code generation added to the `mfa/enable` backend endpoint (returns `qr_code` as a base64 PNG data URL). Confirm modal in `/me/preferences` displays the QR code and manual key, then prompts for 6-digit code to finalize.
+- **C1 — SMTP env documentation**: `.env.example` expanded with a labelled "production SMTP" block. `docs/runbooks/deploy-prod.md` gains a "Configure SMTP" section with env-var table, Docker exec test command, and Gmail app-password guidance.
+
+### Changed
+- `AuthContext.roles` is now sourced from `data.role_codes` returned by `/api/v1/auth/me`; placeholder comment removed.
+- Approvals inbox KPI count is live (was hardcoded `0`).
+- `qrcode[pil]` added to backend dependencies for MFA QR generation.
+
+### Deferred
+- Dark/light theme toggle (Phase 1.5 — separate effort; theme section in `/me/preferences` shows "Coming soon" stub).
+
 ## [1.1.0] - 2026-04-29
 
 **HRMS UI/UX Redesign — Design_1 themes + Design_2 UX.**

@@ -133,6 +133,15 @@ def mfa_disable_view(request) -> Response:
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def revoke_all_sessions_view(request) -> Response:
+    from .services.sessions import revoke_all_user_sessions
+
+    count = revoke_all_user_sessions(request.user)
+    return Response({"revoked": count})
+
+
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def login_mfa_view(request) -> Response:
     s = LoginMFASerializer(data=request.data)

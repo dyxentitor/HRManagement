@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import base64
+import io
+
 import pyotp
+import qrcode
 from django.core.cache import cache
 from django.utils import timezone
 
@@ -10,7 +14,10 @@ from modules.identity.models import MFADevice, User
 
 
 def enable(user: User) -> dict:
-    """Generate a new TOTP secret + provisioning URI. Replaces any unconfirmed device."""
+    """Generate a new TOTP secret + provisioning URI + base64 QR code PNG.
+
+    Replaces any unconfirmed device.
+    """
     MFADevice.objects.filter(user=user, confirmed_at__isnull=True).delete()
     secret = pyotp.random_base32()
     MFADevice.objects.update_or_create(
@@ -19,7 +26,17 @@ def enable(user: User) -> dict:
     )
     issuer = "HRMS"
     provisioning_uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name=issuer)
-    return {"secret": secret, "provisioning_uri": provisioning_uri}
+
+    # Generate QR code PNG and encode as base64 data URL
+    qr = qrcode.QRCode(box_size=4, border=2)
+    qr.add_data(provisioning_uri)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    qr_code = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+    return {"secret": secret, "provisioning_uri": provisioning_uri, "qr_code": qr_code}
 
 
 def confirm(user: User, code: str) -> bool:

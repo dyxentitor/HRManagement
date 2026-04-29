@@ -19,6 +19,7 @@ export interface AuthUser {
 	mfa_enabled: boolean;
 	preferences: Record<string, unknown>;
 	permissions: string[];
+	role_codes: string[];
 }
 
 interface AuthState {
@@ -121,9 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		() => ({
 			user,
 			perms: new Set(user?.permissions || []),
-			// roles are not yet returned by /api/v1/auth/me — default to [] until
-			// the MeSerializer is extended to include role codes.
-			roles: [],
+			roles: user?.role_codes ?? [],
 			loading,
 			login,
 			loginWithMFA,

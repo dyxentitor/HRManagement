@@ -1,4 +1,4 @@
-"""Unified approvals inbox — merges pending leave + claim approvals for a user."""
+"""Unified approvals inbox — merges pending leave + claim + KPI approvals for a user."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from modules.leave.models import LeaveApproval, LeaveRequest
 
 @dataclass
 class InboxItem:
-    kind: str  # 'leave' or 'claim'
+    kind: str  # 'leave', 'claim', or 'kpi'
     id: str  # request id
     employee_code: str
     summary: str  # human-readable summary
@@ -85,6 +85,51 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                 deep_link=f"/approvals?focus={c.id}",
             )
         )
+
+    # KPI: assignments in manager_review cycle where the current user is the employee's manager
+    try:
+        from modules.employee.models import Employee as _EmpKpi
+        from modules.kpi.models import KpiAssignment, KpiReview
+
+        # Find employees whose direct manager is the current user
+        managed_employees = _EmpKpi.all_objects.filter(
+            manager__user=user,
+            deleted_at__isnull=True,
+        ).values_list("id", flat=True)
+
+        kpi_assignments = KpiAssignment.all_objects.filter(
+            employee_id__in=managed_employees,
+            status="self_done",
+            cycle__status="manager_review",
+            deleted_at__isnull=True,
+        ).select_related("cycle")
+
+        for assignment in kpi_assignments:
+            # Get the latest self-review for submitted_at
+            self_review = (
+                KpiReview.objects.filter(assignment=assignment, stage="self")
+                .order_by("-submitted_at")
+                .first()
+            )
+            emp = _EmpKpi.all_objects.filter(
+                id=assignment.employee_id, deleted_at__isnull=True
+            ).first()
+            emp_code = emp.employee_code if emp else str(assignment.employee_id)
+            cycle_name = assignment.cycle.name
+            items.append(
+                InboxItem(
+                    kind="kpi",
+                    id=str(assignment.id),
+                    employee_code=emp_code,
+                    summary=f"KPI {cycle_name} self-review",
+                    submitted_at=self_review.submitted_at if self_review else None,
+                    deep_link=f"/approvals?focus={assignment.id}",
+                )
+            )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Failed to load KPI inbox items")
 
     items.sort(key=lambda i: i.submitted_at or datetime.min, reverse=True)
     return items

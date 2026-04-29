@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
 	type Column,
@@ -36,6 +37,7 @@ const tableColumns: Column<Employee>[] = [
 
 export default function EmployeesPage() {
 	const canAdd = useCan("employee:write");
+	const navigate = useNavigate();
 	const [employees, setEmployees] = useState<Employee[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -153,15 +155,21 @@ export default function EmployeesPage() {
 			) : view === "cards" ? (
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 					{filtered.map((e) => (
-						<EmployeeCard
+						<button
 							key={e.id}
-							employee={e}
-							metric={{
-								label: "Attendance",
-								value: e.attendance_pct ?? 0,
-								max: 100,
-							}}
-						/>
+							type="button"
+							onClick={() => navigate(`/employees/${e.id}`)}
+							className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-xl"
+						>
+							<EmployeeCard
+								employee={e}
+								metric={{
+									label: "Attendance",
+									value: e.attendance_pct ?? 0,
+									max: 100,
+								}}
+							/>
+						</button>
 					))}
 				</div>
 			) : (

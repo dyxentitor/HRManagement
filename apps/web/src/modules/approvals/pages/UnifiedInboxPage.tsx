@@ -73,14 +73,13 @@ export default function UnifiedInboxPage() {
 			all: items.length,
 			leave: items.filter((i) => i.kind === "leave").length,
 			claim: items.filter((i) => i.kind === "claim").length,
-			kpi: 0,
+			kpi: items.filter((i) => i.kind === "kpi").length,
 		}),
 		[items],
 	);
 
 	const filtered = useMemo(() => {
 		if (filter === "all") return items;
-		if (filter === "kpi") return [];
 		return items.filter((i) => i.kind === filter);
 	}, [items, filter]);
 

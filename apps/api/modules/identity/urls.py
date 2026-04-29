@@ -11,6 +11,7 @@ from .views import (
     password_forgot_view,
     password_reset_view,
     refresh_view,
+    revoke_all_sessions_view,
 )
 
 urlpatterns = [
@@ -24,4 +25,5 @@ urlpatterns = [
     path("auth/mfa/confirm", mfa_confirm_view, name="mfa-confirm"),
     path("auth/mfa", mfa_disable_view, name="mfa-disable"),
     path("auth/login/mfa", login_mfa_view, name="login-mfa"),
+    path("auth/sessions/revoke-all", revoke_all_sessions_view, name="auth-sessions-revoke-all"),
 ]
