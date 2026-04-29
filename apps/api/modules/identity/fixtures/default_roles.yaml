@@ -16,6 +16,8 @@
     - user:read:org
     - role:read
     - role:write
+    - org:feature_flag:read
+    - org:feature_flag:write
     - permission:read
     - department:read
     - department:write
