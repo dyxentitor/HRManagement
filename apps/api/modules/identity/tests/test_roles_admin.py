@@ -2,6 +2,7 @@
 
 import pytest
 from django.core.management import call_command
+from rest_framework.test import APIClient
 
 from modules.identity.models import Permission, Role, RolePermission, User, UserRole
 from modules.identity.services.permissions import (
@@ -131,3 +132,81 @@ def test_reset_to_defaults(org):
     from common.audit.models import AuditLog
 
     assert AuditLog.objects.filter(action="role.reset_to_defaults").exists()
+
+
+def _login(client, email):
+    resp = client.post(
+        "/api/v1/auth/login",
+        {"email": email, "password": "x"},  # pragma: allowlist secret
+        format="json",
+    )
+    assert resp.status_code == 200, resp.content
+    return resp.json()["access_token"]
+
+
+@pytest.mark.django_db
+def test_endpoint_list_roles(org):
+    _admin_user(org)
+    client = APIClient()
+    token = _login(client, "admin@a.com")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    resp = client.get("/api/v1/roles/")
+    assert resp.status_code == 200, resp.content
+    codes = {r["code"] for r in resp.json()}
+    assert {"org_admin", "manager", "employee"} <= codes
+
+
+@pytest.mark.django_db
+def test_endpoint_patch_permissions_writes_audit(org):
+    from common.audit.models import AuditLog
+
+    _admin_user(org)
+    client = APIClient()
+    token = _login(client, "admin@a.com")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    initial_audit = AuditLog.objects.filter(action="role.permissions_changed").count()
+    resp = client.patch(
+        "/api/v1/roles/manager/permissions/",
+        {"permission_codes": ["leave:request:create:self"]},
+        format="json",
+    )
+    assert resp.status_code == 200, resp.content
+    after_audit = AuditLog.objects.filter(action="role.permissions_changed").count()
+    assert after_audit == initial_audit + 1
+
+
+@pytest.mark.django_db
+def test_endpoint_employee_cannot_patch(org):
+    """Employee role lacks role:write — must 403."""
+    emp = User.objects.create_user(
+        email="emp@a.com", password="x", org_id=org.id
+    )  # pragma: allowlist secret
+    UserRole.objects.create(
+        user=emp,
+        role=Role.objects.get(org_id=org.id, code="employee"),
+    )
+    client = APIClient()
+    token = _login(client, "emp@a.com")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    resp = client.patch(
+        "/api/v1/roles/manager/permissions/",
+        {"permission_codes": []},
+        format="json",
+    )
+    assert resp.status_code == 403, resp.content
+
+
+@pytest.mark.django_db
+def test_endpoint_reset_to_defaults(org):
+    """POST /roles/{code}/reset-to-defaults/ restores fixture perms."""
+    _admin_user(org)
+    manager = Role.objects.get(org_id=org.id, code="manager")
+    RolePermission.objects.filter(role=manager).delete()
+    assert RolePermission.objects.filter(role=manager).count() == 0
+
+    client = APIClient()
+    token = _login(client, "admin@a.com")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    resp = client.post("/api/v1/roles/manager/reset-to-defaults/", format="json")
+    assert resp.status_code == 200, resp.content
+    assert RolePermission.objects.filter(role=manager).count() > 0

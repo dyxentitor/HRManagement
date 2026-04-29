@@ -2,9 +2,11 @@
 
 import pytest
 from django.core.management import call_command
+from rest_framework.test import APIClient
 
 from modules.identity.models import Role, User, UserRole
 from modules.identity.services.permissions import (
+    LastAdminError,
     SelfDemoteError,
     UnknownRoleError,
     assign_roles_to_user,
@@ -104,3 +106,73 @@ def test_assign_roles_idempotent(org):
     initial_audit = AuditLog.objects.count()
     assign_roles_to_user(actor=admin, target=target, role_codes=["manager"])
     assert AuditLog.objects.count() == initial_audit  # no diff, no audit
+
+
+def _login(client, email):
+    resp = client.post(
+        "/api/v1/auth/login",
+        {"email": email, "password": "x"},  # pragma: allowlist secret
+        format="json",
+    )
+    assert resp.status_code == 200, resp.content
+    return resp.json()["access_token"]
+
+
+@pytest.mark.django_db
+def test_assign_roles_last_admin_error_when_other_demotes_last_admin(org):
+    """Setup: only `sole_admin` has org_admin. Another actor with role:write
+    tries to strip sole_admin's org_admin → LastAdminError."""
+    sole_admin = _user(org, "sole@a.com")
+    _grant(sole_admin, "org_admin")
+    actor = _user(org, "actor@a.com")
+    # Give actor enough perms to call the service. Service-level test —
+    # we don't go through the endpoint here.
+    _grant(actor, "manager")  # any role that's not org_admin
+
+    with pytest.raises(LastAdminError):
+        assign_roles_to_user(
+            actor=actor,
+            target=sole_admin,
+            role_codes=["manager"],  # drops org_admin
+        )
+
+
+@pytest.mark.django_db
+def test_endpoint_assign_roles_writes_two_audit_rows(org):
+    """One row for the granted role, one for the revoked role."""
+    from common.audit.models import AuditLog
+
+    admin = _user(org, "admin@a.com")
+    _grant(admin, "org_admin")
+    target = _user(org, "t@a.com")
+    _grant(target, "employee")
+
+    client = APIClient()
+    token = _login(client, "admin@a.com")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    granted_before = AuditLog.objects.filter(action="user.role_granted").count()
+    revoked_before = AuditLog.objects.filter(action="user.role_revoked").count()
+    resp = client.patch(
+        f"/api/v1/users/{target.id}/roles/",
+        {"role_codes": ["manager"]},
+        format="json",
+    )
+    assert resp.status_code == 200, resp.content
+    assert AuditLog.objects.filter(action="user.role_granted").count() == granted_before + 1
+    assert AuditLog.objects.filter(action="user.role_revoked").count() == revoked_before + 1
+
+
+@pytest.mark.django_db
+def test_endpoint_target_not_found_returns_404(org):
+    admin = _user(org, "admin@a.com")
+    _grant(admin, "org_admin")
+    client = APIClient()
+    token = _login(client, "admin@a.com")
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    resp = client.patch(
+        "/api/v1/users/00000000-0000-0000-0000-000000000000/roles/",
+        {"role_codes": ["manager"]},
+        format="json",
+    )
+    assert resp.status_code == 404
