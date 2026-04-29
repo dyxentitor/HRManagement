@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
+import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { useAuth } from "@/lib/auth";
 
@@ -8,6 +10,11 @@ import {
 	getPreferences,
 	updatePreferences,
 } from "../../notifications/api";
+import {
+	eventDomain,
+	getDomainLabel,
+	getEventLabel,
+} from "../../notifications/event-labels";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -30,6 +37,21 @@ async function authFetch(
 	const headers = new Headers(options.headers);
 	if (token) headers.set("Authorization", `Bearer ${token}`);
 	return fetch(url, { ...options, headers });
+}
+
+// ────────────────────────────────────────────────────────────
+// Section nav item
+// ────────────────────────────────────────────────────────────
+
+function NavItem({ href, label }: { href: string; label: string }) {
+	return (
+		<a
+			href={href}
+			className="block px-3 py-1.5 text-small rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
+		>
+			{label}
+		</a>
+	);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -89,6 +111,7 @@ function MFASection() {
 			setEnableData(null);
 			setCode("");
 			await refreshMe();
+			toast.success("Two-step verification enabled");
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Error");
 		} finally {
@@ -106,6 +129,7 @@ function MFASection() {
 			if (!resp.ok) throw new Error("Failed to disable MFA");
 			setDisableModalOpen(false);
 			await refreshMe();
+			toast.success("Two-step verification disabled");
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Error");
 		} finally {
@@ -114,8 +138,16 @@ function MFASection() {
 	}
 
 	return (
-		<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-			<h2 className="text-h3 text-text-primary mb-3">Two-step verification</h2>
+		<section
+			id="section-twostep"
+			className="bg-surface-hover border border-border-subtle rounded-lg p-5"
+		>
+			<header className="mb-3">
+				<h2 className="text-h2 text-text-primary">Two-step verification</h2>
+				<p className="text-body text-text-secondary mt-1">
+					Protect your account with an authenticator app.
+				</p>
+			</header>
 			{error && (
 				<p role="alert" className="text-coral text-small mb-2">
 					{error}
@@ -123,9 +155,7 @@ function MFASection() {
 			)}
 			{mfaEnabled ? (
 				<div className="flex items-center gap-3">
-					<span className="px-2.5 py-0.5 bg-mint/15 text-mint text-small font-semibold rounded-full">
-						Enabled
-					</span>
+					<StatusPill tone="mint" label="Enabled" />
 					<button
 						type="button"
 						onClick={() => setDisableModalOpen(true)}
@@ -269,6 +299,169 @@ function MFASection() {
 }
 
 // ────────────────────────────────────────────────────────────
+// Notification preferences matrix
+// ────────────────────────────────────────────────────────────
+
+function groupByDomain(
+	types: string[],
+): Array<{ domain: string; types: string[] }> {
+	const map = new Map<string, string[]>();
+	for (const t of types) {
+		const d = eventDomain(t);
+		if (!map.has(d)) map.set(d, []);
+		map.get(d)?.push(t);
+	}
+	// Sort types alphabetically within domain
+	return [...map.entries()].map(([domain, domTypes]) => ({
+		domain,
+		types: domTypes.sort(),
+	}));
+}
+
+function NotificationMatrix({
+	prefs,
+	onToggle,
+	onSave,
+	saving,
+	dirty,
+}: {
+	prefs: NotificationPreference[];
+	onToggle: (type: string, channel: "in_app" | "email") => void;
+	onSave: () => void;
+	saving: boolean;
+	dirty: boolean;
+}) {
+	const prefMap = new Map<string, NotificationPreference>();
+	for (const p of prefs) {
+		prefMap.set(`${p.type}:${p.channel}`, p);
+	}
+
+	function isEnabled(type: string, channel: "in_app" | "email"): boolean {
+		return prefMap.get(`${type}:${channel}`)?.enabled ?? true;
+	}
+
+	const types = [...new Set(prefs.map((p) => p.type))].sort();
+	const groups = groupByDomain(types);
+
+	return (
+		<div>
+			<table
+				className="w-full text-sm border-collapse"
+				aria-label="Notification preferences"
+			>
+				<thead>
+					<tr className="border-b border-border-subtle">
+						<th className="text-left py-2 pr-4 text-text-secondary font-medium">
+							Event
+						</th>
+						{CHANNELS.map((ch) => (
+							<th
+								key={ch}
+								className="text-center py-2 px-3 capitalize text-text-secondary font-medium"
+							>
+								{ch === "in_app" ? "In-app" : "Email"}
+							</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{groups.map(({ domain, types: domainTypes }, gi) => (
+						<>
+							<tr
+								key={`domain-${domain}`}
+								className={gi > 0 ? "border-t-2 border-border-subtle" : ""}
+							>
+								<td
+									colSpan={3}
+									className="pt-3 pb-1 text-label uppercase text-text-tertiary font-semibold tracking-wide"
+								>
+									{getDomainLabel(domain)}
+								</td>
+							</tr>
+							{domainTypes.map((type) => {
+								const isSecurity = SECURITY_TYPES.has(type);
+								return (
+									<tr
+										key={type}
+										className="border-b border-border-subtle hover:bg-surface-hover/50 transition-colors"
+									>
+										<td className="py-2 pr-4 text-body text-text-primary">
+											<span className="flex items-center gap-2">
+												{getEventLabel(type)}
+												{isSecurity && (
+													<StatusPill tone="coral" label="Security" />
+												)}
+											</span>
+										</td>
+										{CHANNELS.map((ch) => (
+											<td key={ch} className="text-center py-2 px-3">
+												{isSecurity ? (
+													<span title="Security notifications can't be disabled">
+														<input
+															type="checkbox"
+															checked={isEnabled(type, ch)}
+															disabled
+															aria-disabled="true"
+															aria-label={`${getEventLabel(type)} ${ch} (always on)`}
+															className="cursor-not-allowed opacity-50"
+														/>
+													</span>
+												) : (
+													<input
+														type="checkbox"
+														checked={isEnabled(type, ch)}
+														onChange={() => onToggle(type, ch)}
+														aria-label={`${getEventLabel(type)} ${ch === "in_app" ? "in-app" : "email"}`}
+														className="cursor-pointer"
+													/>
+												)}
+											</td>
+										))}
+									</tr>
+								);
+							})}
+						</>
+					))}
+				</tbody>
+			</table>
+
+			{/* Sticky save bar */}
+			<div
+				className={`mt-4 flex items-center gap-3 sticky bottom-0 py-3 bg-canvas border-t border-border-subtle transition-opacity ${dirty ? "opacity-100" : "opacity-60"}`}
+			>
+				<button
+					type="button"
+					onClick={onSave}
+					disabled={saving || !dirty}
+					className="px-4 py-2 bg-accent-500 text-white rounded text-sm hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed"
+				>
+					{saving ? "Saving…" : "Save preferences"}
+				</button>
+				{!dirty && (
+					<span className="text-small text-mint flex items-center gap-1">
+						<svg
+							className="size-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={2}
+							aria-hidden="true"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M5 13l4 4L19 7"
+							/>
+						</svg>
+						All preferences saved
+					</span>
+				)}
+			</div>
+		</div>
+	);
+}
+
+// ────────────────────────────────────────────────────────────
 // Main page
 // ────────────────────────────────────────────────────────────
 
@@ -276,28 +469,19 @@ export default function PreferencesPage() {
 	const { user, logout, refreshMe } = useAuth();
 	const [prefs, setPrefs] = useState<NotificationPreference[]>([]);
 	const [saving, setSaving] = useState(false);
-	const [saved, setSaved] = useState(false);
+	const [dirty, setDirty] = useState(false);
 	const [locale, setLocale] = useState("en-MY");
-	const [localeMsg, setLocaleMsg] = useState<string | null>(null);
-	const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [signOutConfirm, setSignOutConfirm] = useState(false);
 
 	useEffect(() => {
-		getPreferences().then(setPrefs);
+		getPreferences().then((p) => {
+			setPrefs(p);
+			setDirty(false);
+		});
 		if (user?.preferences?.locale) {
 			setLocale(user.preferences.locale as string);
 		}
 	}, [user]);
-
-	const prefMap = new Map<string, NotificationPreference>();
-	for (const p of prefs) {
-		prefMap.set(`${p.type}:${p.channel}`, p);
-	}
-
-	const types = [...new Set(prefs.map((p) => p.type))].sort();
-
-	function isEnabled(type: string, channel: "in_app" | "email"): boolean {
-		return prefMap.get(`${type}:${channel}`)?.enabled ?? true;
-	}
 
 	function toggle(type: string, channel: "in_app" | "email") {
 		if (SECURITY_TYPES.has(type)) return;
@@ -308,6 +492,7 @@ export default function PreferencesPage() {
 					: p,
 			),
 		);
+		setDirty(true);
 	}
 
 	async function saveNotifPrefs() {
@@ -317,9 +502,8 @@ export default function PreferencesPage() {
 			.map((p) => ({ type: p.type, channel: p.channel, enabled: p.enabled }));
 		await updatePreferences(updates);
 		setSaving(false);
-		setSaved(true);
-		if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-		saveTimerRef.current = setTimeout(() => setSaved(false), 2000);
+		setDirty(false);
+		toast.success("Notification preferences saved");
 	}
 
 	async function saveLocale(newLocale: string) {
@@ -332,11 +516,10 @@ export default function PreferencesPage() {
 			});
 			if (resp.ok) {
 				await refreshMe();
-				setLocaleMsg("Saved");
-				setTimeout(() => setLocaleMsg(null), 2000);
+				toast.success("Locale updated");
 			}
 		} catch {
-			setLocaleMsg("Failed to save");
+			toast.error("Failed to save locale");
 		}
 	}
 
@@ -352,117 +535,157 @@ export default function PreferencesPage() {
 	}
 
 	return (
-		<div className="space-y-6 max-w-3xl">
+		<div className="w-full">
 			<PageHeader breadcrumb="Personal" title="My Preferences" />
 
-			{/* Locale */}
-			<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-				<h2 className="text-h3 text-text-primary mb-3">Locale</h2>
-				<div className="flex items-center gap-3">
-					<label
-						className="text-small text-text-tertiary"
-						htmlFor="locale-select"
-					>
-						Language / region
-					</label>
-					<select
-						id="locale-select"
-						value={locale}
-						onChange={(e) => saveLocale(e.target.value)}
-						className="bg-canvas border border-border-subtle rounded-md px-3 py-1.5 text-body text-text-primary"
-					>
-						<option value="en-MY">English (Malaysia)</option>
-					</select>
-					{localeMsg && (
-						<span className="text-mint text-small">{localeMsg}</span>
-					)}
-				</div>
-			</section>
-
-			{/* Theme — deferred */}
-			<section className="bg-surface-hover border border-border-subtle rounded-lg p-4 opacity-60">
-				<h2 className="text-h3 text-text-primary mb-1">Theme</h2>
-				<p className="text-body text-text-secondary">
-					Dark / light theme toggle — Coming soon (Phase 1.5)
-				</p>
-			</section>
-
-			{/* MFA */}
-			<MFASection />
-
-			{/* Notification preferences */}
-			<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-				<h2 className="text-h3 text-text-primary mb-3">
-					Notification preferences
-				</h2>
-				<table className="w-full text-sm border-collapse">
-					<thead>
-						<tr className="border-b border-border-subtle">
-							<th className="text-left py-2 pr-4 text-text-secondary">Event</th>
-							{CHANNELS.map((ch) => (
-								<th
-									key={ch}
-									className="text-center py-2 px-3 capitalize text-text-secondary"
-								>
-									{ch.replace("_", " ")}
-								</th>
-							))}
-						</tr>
-					</thead>
-					<tbody>
-						{types.map((type) => (
-							<tr
-								key={type}
-								className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
-							>
-								<td className="py-2 pr-4 font-mono text-xs text-text-secondary">
-									{type}
-									{SECURITY_TYPES.has(type) && (
-										<span className="ml-2 text-yellow text-xs">(security)</span>
-									)}
-								</td>
-								{CHANNELS.map((ch) => (
-									<td key={ch} className="text-center py-2 px-3">
-										<input
-											type="checkbox"
-											checked={isEnabled(type, ch)}
-											disabled={SECURITY_TYPES.has(type)}
-											onChange={() => toggle(type, ch)}
-											className="cursor-pointer disabled:cursor-not-allowed"
-										/>
-									</td>
-								))}
-							</tr>
-						))}
-					</tbody>
-				</table>
-				<div className="mt-4 flex items-center gap-3">
-					<button
-						type="button"
-						onClick={saveNotifPrefs}
-						disabled={saving}
-						className="px-4 py-2 bg-accent-500 text-white rounded text-sm hover:bg-accent-600 disabled:opacity-50"
-					>
-						{saving ? "Saving…" : "Save preferences"}
-					</button>
-					{saved && <span className="text-mint text-sm">Saved!</span>}
-				</div>
-			</section>
-
-			{/* Sign out everywhere */}
-			<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-				<h2 className="text-h3 text-text-primary mb-1">Sign out everywhere</h2>
-				<p className="text-body text-text-secondary mb-3">
-					Revoke all active sessions on all devices and sign out immediately.
-				</p>
-				<button
-					type="button"
-					onClick={handleSignOutEverywhere}
-					className="px-4 py-2 border border-coral/40 text-coral rounded text-sm hover:bg-coral/10"
+			<div className="mt-6 flex gap-8 w-full">
+				{/* Left nav rail (≥lg) */}
+				<nav
+					aria-label="Preferences sections"
+					className="hidden lg:block w-[220px] shrink-0"
 				>
-					Sign out all sessions
-				</button>
-			</section>
+					<div className="sticky top-6 space-y-1">
+						<NavItem href="#section-general" label="General" />
+						<NavItem href="#section-twostep" label="Two-step verification" />
+						<NavItem href="#section-notifications" label="Notifications" />
+						<NavItem href="#section-danger" label="Danger zone" />
+					</div>
+				</nav>
+
+				{/* Right content column */}
+				<div className="flex-1 max-w-3xl space-y-6 min-w-0">
+					{/* ── General ────────────────────────────────────────── */}
+					<section
+						id="section-general"
+						className="bg-surface-hover border border-border-subtle rounded-lg p-5"
+					>
+						<header className="mb-4">
+							<h2 className="text-h2 text-text-primary">General</h2>
+							<p className="text-body text-text-secondary mt-1">
+								Language and regional display preferences.
+							</p>
+						</header>
+
+						<p className="text-label uppercase text-text-tertiary mb-2">
+							Language / region
+						</p>
+						<div className="flex items-center gap-3">
+							<label className="sr-only" htmlFor="locale-select">
+								Language / region
+							</label>
+							<select
+								id="locale-select"
+								value={locale}
+								onChange={(e) => saveLocale(e.target.value)}
+								className="bg-canvas border border-border-subtle rounded-md px-3 py-1.5 text-body text-text-primary"
+							>
+								<option value="en-MY">English (Malaysia)</option>
+							</select>
+						</div>
+
+						{/* Theme — deferred to Phase 1.5 */}
+						<div className="mt-5">
+							<p className="text-label uppercase text-text-tertiary mb-2">
+								Theme
+							</p>
+							<div
+								aria-disabled="true"
+								className="opacity-60 cursor-not-allowed pointer-events-none rounded-md border border-border-subtle bg-canvas px-4 py-3 flex items-center justify-between"
+							>
+								<div>
+									<p className="text-body text-text-primary">
+										Dark / light theme
+									</p>
+									<p className="text-small text-text-secondary">
+										Choose between dark and light appearance.
+									</p>
+								</div>
+								<StatusPill tone="lavender" label="Phase 1.5" />
+							</div>
+						</div>
+					</section>
+
+					{/* ── Two-step verification ──────────────────────────── */}
+					<MFASection />
+
+					{/* ── Notifications ─────────────────────────────────── */}
+					<section
+						id="section-notifications"
+						className="bg-surface-hover border border-border-subtle rounded-lg p-5"
+					>
+						<header className="mb-4">
+							<h2 className="text-h2 text-text-primary">Notifications</h2>
+							<p className="text-body text-text-secondary mt-1">
+								Choose which events notify you and how. Security events are
+								always on.
+							</p>
+						</header>
+
+						<NotificationMatrix
+							prefs={prefs}
+							onToggle={toggle}
+							onSave={saveNotifPrefs}
+							saving={saving}
+							dirty={dirty}
+						/>
+					</section>
+
+					{/* ── Danger zone ────────────────────────────────────── */}
+					<section
+						id="section-danger"
+						className="mt-12 border border-coral/30 rounded-lg p-5"
+					>
+						<header className="mb-4">
+							<h2 className="text-h2 text-text-primary">Danger zone</h2>
+							<p className="text-body text-text-secondary mt-1">
+								Destructive actions that affect your account access.
+							</p>
+						</header>
+
+						<div className="flex items-start justify-between gap-4">
+							<div>
+								<p className="text-body text-text-primary font-medium">
+									Sign out everywhere
+								</p>
+								<p className="text-small text-text-secondary">
+									Revoke all active sessions on all devices including this one.
+								</p>
+							</div>
+							{signOutConfirm ? (
+								<div className="flex flex-col items-end gap-2 shrink-0">
+									<p className="text-small text-coral">
+										This will sign out all active sessions including this one.
+									</p>
+									<div className="flex gap-2">
+										<button
+											type="button"
+											onClick={handleSignOutEverywhere}
+											className="px-4 py-2 bg-coral text-white rounded text-sm hover:opacity-90"
+										>
+											Confirm sign out
+										</button>
+										<button
+											type="button"
+											onClick={() => setSignOutConfirm(false)}
+											className="px-3 py-2 border border-border-subtle text-text-secondary rounded text-sm hover:bg-surface-hover"
+										>
+											Cancel
+										</button>
+									</div>
+								</div>
+							) : (
+								<button
+									type="button"
+									onClick={() => setSignOutConfirm(true)}
+									className="shrink-0 px-4 py-2 border border-coral/40 text-coral rounded text-sm hover:bg-coral/10"
+								>
+									Sign out all sessions
+								</button>
+							)}
+						</div>
+					</section>
+				</div>
+			</div>
 		</div>
 	);
 }

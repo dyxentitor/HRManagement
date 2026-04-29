@@ -1,11 +1,52 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { StatusPill } from "@/components/hrms";
+import { PageHeader } from "@/components/shell/PageHeader";
+
 import {
 	type PayrollPeriod,
 	type PayrollRun,
 	type UploadResult,
 	payslipApi,
 } from "../api";
+
+function formatPeriodLabel(p: PayrollPeriod): string {
+	const fmt = (iso: string) => {
+		const d = new Date(iso);
+		return d.toLocaleDateString("en-MY", {
+			day: "numeric",
+			month: "short",
+			year: "numeric",
+		});
+	};
+	return `${fmt(p.period_start)} – ${fmt(p.period_end)}`;
+}
+
+const RUN_STATUS_TONE: Record<
+	PayrollRun["status"],
+	"mint" | "sky" | "coral" | "yellow"
+> = {
+	published: "mint",
+	validated: "sky",
+	failed: "coral",
+	draft: "yellow",
+};
+
+const RUN_STATUS_LABEL: Record<PayrollRun["status"], string> = {
+	published: "Published",
+	validated: "Validated",
+	failed: "Failed",
+	draft: "Draft",
+};
+
+const PERIOD_STATUS_TONE: Record<
+	PayrollPeriod["status"],
+	"lavender" | "mint" | "yellow"
+> = {
+	locked: "lavender",
+	published: "mint",
+	draft: "yellow",
+};
 
 export default function PayrollAdminPage() {
 	const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
@@ -78,73 +119,96 @@ export default function PayrollAdminPage() {
 		}
 	}
 
+	const selectedPeriodObj = periods.find((p) => p.id === selectedPeriod);
+
 	return (
-		<div className="space-y-6 max-w-4xl">
-			<h1 className="text-2xl font-bold">Payroll Admin</h1>
+		<div className="space-y-6 max-w-5xl mx-auto">
+			<PageHeader breadcrumb="Payroll" title="Payroll Admin" />
+
 			{error && (
-				<p role="alert" className="text-coral">
+				<p role="alert" className="text-coral text-small">
 					{error}
 				</p>
 			)}
 
-			{/* Upload CSV */}
-			<section className="bg-surface border border-border-subtle rounded p-4 space-y-3">
-				<h2 className="text-lg font-semibold">Upload Payroll CSV</h2>
-				<form onSubmit={handleUpload} className="space-y-3">
+			{/* ── Upload CSV ────────────────────────────────────────── */}
+			<section className="bg-surface-hover border border-border-subtle rounded-lg p-5 space-y-4">
+				<header>
+					<h2 className="text-h2 text-text-primary">Upload payroll CSV</h2>
+					<p className="text-body text-text-secondary mt-1">
+						Select the payroll period and upload a CSV to create a new run.
+					</p>
+				</header>
+
+				<form onSubmit={handleUpload} className="space-y-4">
 					<div>
 						<label
 							htmlFor="period-select"
-							className="block text-sm font-medium mb-1"
+							className="block text-label uppercase text-text-tertiary mb-2"
 						>
-							Payroll Period
+							Payroll period
 						</label>
-						<select
-							id="period-select"
-							value={selectedPeriod}
-							onChange={(e) => setSelectedPeriod(e.target.value)}
-							className="border border-border-subtle rounded px-2 py-1 text-sm w-full max-w-xs bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
-						>
-							{periods.length === 0 && (
-								<option value="">No periods available</option>
+						<div className="flex items-center gap-3 flex-wrap">
+							<select
+								id="period-select"
+								value={selectedPeriod}
+								onChange={(e) => setSelectedPeriod(e.target.value)}
+								className="border border-border-subtle rounded-md px-3 py-1.5 text-body text-text-primary bg-canvas focus:border-accent-500 focus:outline-none max-w-xs"
+							>
+								{periods.length === 0 && (
+									<option value="">No periods available</option>
+								)}
+								{periods.map((p) => (
+									<option key={p.id} value={p.id}>
+										{formatPeriodLabel(p)}
+									</option>
+								))}
+							</select>
+							{selectedPeriodObj && (
+								<StatusPill
+									tone={PERIOD_STATUS_TONE[selectedPeriodObj.status]}
+									label={
+										selectedPeriodObj.status.charAt(0).toUpperCase() +
+										selectedPeriodObj.status.slice(1)
+									}
+								/>
 							)}
-							{periods.map((p) => (
-								<option key={p.id} value={p.id}>
-									{p.period_start} – {p.period_end} ({p.status})
-								</option>
-							))}
-						</select>
+						</div>
 					</div>
+
 					<div>
 						<label
 							htmlFor="csv-file"
-							className="block text-sm font-medium mb-1"
+							className="block text-label uppercase text-text-tertiary mb-2"
 						>
-							CSV File
+							CSV file
 						</label>
 						<input
 							id="csv-file"
 							type="file"
 							accept=".csv,text/csv"
 							ref={fileRef}
-							className="text-sm"
+							className="text-small text-text-secondary"
 						/>
 					</div>
+
 					<button
 						type="submit"
 						disabled={uploading}
-						className="bg-accent-500 text-white py-1.5 px-4 rounded text-sm disabled:opacity-50 hover:bg-accent-600"
+						className="bg-accent-500 text-white py-2 px-4 rounded text-sm disabled:opacity-50 hover:bg-accent-600"
 					>
 						{uploading ? "Uploading…" : "Upload"}
 					</button>
 				</form>
+
 				{uploadResult && (
-					<div className="mt-2 text-sm">
-						<p className="text-mint">
+					<div className="pt-2 border-t border-border-subtle">
+						<p className="text-mint text-small">
 							Imported {uploadResult.row_count} row(s). Status:{" "}
 							{uploadResult.status}
 						</p>
 						{uploadResult.errors.length > 0 && (
-							<ul className="mt-1 text-coral list-disc list-inside">
+							<ul className="mt-1 text-coral text-small list-disc list-inside">
 								{uploadResult.errors.map((err) => (
 									<li key={`upload-err-${err.row}`}>
 										Row {err.row}: {err.error}
@@ -156,51 +220,52 @@ export default function PayrollAdminPage() {
 				)}
 			</section>
 
-			{/* Recent Runs */}
+			{/* ── Recent Runs ────────────────────────────────────────── */}
 			<section className="space-y-3">
-				<h2 className="text-lg font-semibold">Recent Runs</h2>
+				<header>
+					<h2 className="text-h2 text-text-primary">Recent runs</h2>
+					<p className="text-body text-text-secondary mt-1">
+						Validated runs can be published to make payslips available.
+					</p>
+				</header>
+
 				{runs.length === 0 ? (
-					<p className="text-text-secondary text-sm">No runs yet.</p>
+					<div className="bg-surface-hover border border-border-subtle rounded-lg p-8 text-center">
+						<p className="text-text-secondary">No payroll runs yet.</p>
+					</div>
 				) : (
 					<ul className="space-y-2">
 						{runs.map((run) => (
 							<li
 								key={run.id}
-								className="bg-surface border border-border-subtle rounded p-3"
+								className="bg-surface-hover border border-border-subtle rounded-lg p-4"
 							>
-								<div className="flex items-start justify-between">
-									<div className="text-sm">
-										<div className="font-semibold">
-											Run {run.id.slice(0, 8)}… •{" "}
-											<span
-												className={
-													run.status === "published"
-														? "text-mint"
-														: run.status === "validated"
-															? "text-sky"
-															: run.status === "failed"
-																? "text-coral"
-																: "text-text-secondary"
-												}
-											>
-												{run.status}
+								<div className="flex items-start justify-between gap-4">
+									<div className="space-y-1">
+										<div className="flex items-center gap-2 flex-wrap">
+											<span className="text-body text-text-primary font-medium font-mono text-small">
+												{run.id.slice(0, 8)}…
+											</span>
+											<StatusPill
+												tone={RUN_STATUS_TONE[run.status]}
+												label={RUN_STATUS_LABEL[run.status]}
+											/>
+											<span className="text-small text-text-tertiary">
+												{run.row_count} row{run.row_count !== 1 ? "s" : ""}
 											</span>
 										</div>
-										<div className="text-text-secondary">
-											{run.row_count} row(s) •{" "}
-											{run.errors.length > 0
-												? `${run.errors.length} error(s)`
-												: "no errors"}
-										</div>
 										{run.errors.length > 0 && (
-											<ul className="mt-1 text-coral text-xs list-disc list-inside">
+											<ul className="mt-1 text-coral text-small list-disc list-inside">
 												{run.errors.slice(0, 3).map((err) => (
 													<li key={`run-err-${run.id}-${err.row}`}>
 														Row {err.row}: {err.error}
 													</li>
 												))}
 												{run.errors.length > 3 && (
-													<li>… and {run.errors.length - 3} more</li>
+													<li className="text-text-tertiary">
+														…and {run.errors.length - 3} more error
+														{run.errors.length - 3 !== 1 ? "s" : ""}
+													</li>
 												)}
 											</ul>
 										)}
@@ -210,7 +275,7 @@ export default function PayrollAdminPage() {
 											type="button"
 											onClick={() => handlePublish(run.id)}
 											disabled={publishing === run.id}
-											className="text-sm bg-mint text-canvas py-1 px-3 rounded disabled:opacity-50 hover:bg-mint/90"
+											className="shrink-0 text-sm bg-mint text-canvas py-1.5 px-3 rounded disabled:opacity-50 hover:bg-mint/90"
 										>
 											{publishing === run.id ? "Publishing…" : "Publish"}
 										</button>

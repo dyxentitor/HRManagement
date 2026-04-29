@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import { AppShell } from "./components/shell/AppShell";
+import { Toaster } from "./components/ui/sonner";
 import { AuthProvider } from "./lib/auth";
 import { approvalsRoutes } from "./modules/approvals/routes";
 import { authRoutes } from "./modules/auth/routes";
@@ -97,6 +98,7 @@ export function App() {
 	return (
 		<AuthProvider>
 			<RouterProvider router={router} />
+			<Toaster />
 		</AuthProvider>
 	);
 }
