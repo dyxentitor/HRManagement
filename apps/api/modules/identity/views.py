@@ -261,3 +261,58 @@ def role_reset_view(request, code: str) -> Response:
 
     role = Role.objects.get(org_id=request.user.org_id, code=code)
     return Response(RoleDetailSerializer(role).data)
+
+
+from modules.identity.models import User as UserModel, UserRole  # noqa: E402
+from modules.identity.serializers import AssignRolesInputSerializer  # noqa: E402
+from modules.identity.services.permissions import (  # noqa: E402
+    LastAdminError,
+    SelfDemoteError,
+    assign_roles_to_user,
+)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def assign_user_roles_view(request, user_id: str) -> Response:
+    """PATCH /api/v1/users/{user_id}/roles/
+
+    Body: {"role_codes": ["manager", "team_lead"]}
+    """
+    if "role:write" not in get_user_perms(request.user):
+        return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = AssignRolesInputSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    try:
+        target = UserModel.objects.get(id=user_id, org_id=request.user.org_id)
+    except UserModel.DoesNotExist:
+        return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        assign_roles_to_user(
+            actor=request.user,
+            target=target,
+            role_codes=serializer.validated_data["role_codes"],
+        )
+    except UnknownRoleError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except SelfDemoteError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except LastAdminError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    role_codes = list(
+        UserRole.objects.filter(user=target)
+        .values_list("role__code", flat=True)
+        .order_by("role__code"),
+    )
+    return Response(
+        {
+            "user_id": str(target.id),
+            "email": target.email,
+            "role_codes": role_codes,
+            "permissions": sorted(get_user_perms(target)),
+        }
+    )
