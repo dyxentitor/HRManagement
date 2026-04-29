@@ -109,3 +109,25 @@ def test_idempotent_no_audit(org):
     initial_audit = AuditLog.objects.count()
     set_role_permissions(actor=actor, role_code="manager", permission_codes=current)
     assert AuditLog.objects.count() == initial_audit
+
+
+@pytest.mark.django_db
+def test_reset_to_defaults(org):
+    """Reset re-applies the fixture's permissions for that role."""
+    actor = _admin_user(org)
+    manager = Role.objects.get(org_id=org.id, code="manager")
+    # Strip manager to nothing
+    RolePermission.objects.filter(role=manager).delete()
+    assert RolePermission.objects.filter(role=manager).count() == 0
+
+    from modules.identity.services.permissions import reset_role_to_defaults
+
+    reset_role_to_defaults(actor=actor, role_code="manager")
+
+    after = RolePermission.objects.filter(role=manager).count()
+    assert after > 0  # fixture restored some perms
+
+    # Audit row written
+    from common.audit.models import AuditLog
+
+    assert AuditLog.objects.filter(action="role.reset_to_defaults").exists()

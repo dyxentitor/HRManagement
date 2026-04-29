@@ -179,7 +179,7 @@ def set_role_permissions(*, actor, role_code: str, permission_codes: list[str]):
 
     - Validates every code exists in the catalogue.
     - org_admin must keep ORG_ADMIN_REQUIRED_PERMS + all identity:* perms.
-    - At least one role in the org must hold each *:write or *:approve perm.
+    - At least one role in the org must continue to hold each non-read permission being removed.
     - Audit row: role.permissions_changed with {before, after} payloads.
     - Idempotent.
 
@@ -259,5 +259,52 @@ def set_role_permissions(*, actor, role_code: str, permission_codes: list[str]):
         entity_id=role.id,
         before={"role_code": role_code, "permissions": sorted(current)},
         after={"role_code": role_code, "permissions": sorted(requested)},
+        actor_id=actor.id,
+    )
+
+
+def reset_role_to_defaults(*, actor, role_code: str):
+    """Re-apply the fixture's default perms for this role, dropping admin edits.
+
+    The fixture at modules/identity/fixtures/default_roles.yaml is the
+    single source of truth for "default" role permission sets.
+    """
+    from pathlib import Path
+
+    import yaml
+
+    from common.audit import service as audit
+    from modules.identity.models import Permission, Role, RolePermission
+
+    fixture_path = Path(__file__).resolve().parent.parent / "fixtures" / "default_roles.yaml"
+    with fixture_path.open() as f:
+        entries = yaml.safe_load(f)
+    entry = next((e for e in entries if e["code"] == role_code), None)
+    if entry is None:
+        raise UnknownRoleError(f"No default fixture for role code: {role_code}")
+
+    role = Role.objects.get(org_id=actor.org_id, code=role_code)
+    prev_codes = sorted(
+        RolePermission.objects.filter(role=role).values_list("permission__code", flat=True),
+    )
+    wanted_codes = sorted(entry.get("permissions", []))
+    perm_ids = list(
+        Permission.objects.filter(code__in=wanted_codes).values_list("id", flat=True),
+    )
+
+    # Replace
+    RolePermission.objects.filter(role=role).delete()
+    RolePermission.objects.bulk_create(
+        [RolePermission(role=role, permission_id=pid) for pid in perm_ids],
+        ignore_conflicts=True,
+    )
+
+    audit.append(
+        org_id=actor.org_id,
+        action="role.reset_to_defaults",
+        entity="role",
+        entity_id=role.id,
+        before={"role_code": role_code, "permissions": prev_codes},
+        after={"role_code": role_code, "permissions": wanted_codes},
         actor_id=actor.id,
     )
