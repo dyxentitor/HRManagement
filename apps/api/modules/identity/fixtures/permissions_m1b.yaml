@@ -30,3 +30,7 @@
 - { code: audit:read:org,                description: Read the audit log }
 - { code: "audit:payroll-ledger:read:org",   description: Read the payroll-ledger entries }
 - { code: "audit:payroll-ledger:verify:org", description: Run payroll-ledger hash-chain verification }
+
+# feature flags
+- { code: org:feature_flag:read,  description: Read feature flag state for the org }
+- { code: org:feature_flag:write, description: Toggle feature flags for the org }
