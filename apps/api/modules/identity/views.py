@@ -165,3 +165,99 @@ def login_mfa_view(request) -> Response:
         user_agent=_ua(request),
     )
     return Response({"access_token": str(refresh.access_token), "refresh_token": str(refresh)})
+
+
+# --- Admin: role admin endpoints (Feature 2) -----------------------------
+
+from typing import ClassVar  # noqa: E402
+
+from rest_framework import viewsets  # noqa: E402
+
+from modules.identity.models import Role  # noqa: E402
+from modules.identity.permissions import HRMSPermission  # noqa: E402
+from modules.identity.serializers import (  # noqa: E402
+    RoleDetailSerializer,
+    RoleListItemSerializer,
+    RolePermissionsInputSerializer,
+)
+from modules.identity.services.permissions import (  # noqa: E402
+    LastWritePermissionHolderError,
+    OrgAdminProtectionError,
+    UnknownPermissionError,
+    UnknownRoleError,
+    get_user_perms,
+    reset_role_to_defaults,
+    set_role_permissions,
+)
+
+
+class RoleViewSet(viewsets.ReadOnlyModelViewSet):
+    """List + retrieve roles in the actor's org."""
+
+    permission_classes: ClassVar = [HRMSPermission]
+    required_perms: ClassVar = ["role:read"]
+    lookup_field = "code"
+
+    def get_queryset(self):
+        return Role.objects.filter(org_id=self.request.user.org_id).order_by("code")
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return RoleListItemSerializer
+        return RoleDetailSerializer
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def role_permissions_view(request, code: str) -> Response:
+    """PATCH /api/v1/roles/{code}/permissions/
+
+    Body: {"permission_codes": ["...", "..."]}
+    """
+    if "role:write" not in get_user_perms(request.user):
+        return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = RolePermissionsInputSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    try:
+        set_role_permissions(
+            actor=request.user,
+            role_code=code,
+            permission_codes=serializer.validated_data["permission_codes"],
+        )
+    except Role.DoesNotExist:
+        return Response(
+            {"detail": f"Role '{code}' not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except UnknownPermissionError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except OrgAdminProtectionError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except LastWritePermissionHolderError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    role = Role.objects.get(org_id=request.user.org_id, code=code)
+    return Response(RoleDetailSerializer(role).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def role_reset_view(request, code: str) -> Response:
+    """POST /api/v1/roles/{code}/reset-to-defaults/"""
+    if "role:write" not in get_user_perms(request.user):
+        return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        reset_role_to_defaults(actor=request.user, role_code=code)
+    except UnknownRoleError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+    except Role.DoesNotExist:
+        return Response(
+            {"detail": f"Role '{code}' not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    role = Role.objects.get(org_id=request.user.org_id, code=code)
+    return Response(RoleDetailSerializer(role).data)
