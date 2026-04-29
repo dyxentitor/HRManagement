@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 
 import {
@@ -37,21 +38,6 @@ async function authFetch(
 	const headers = new Headers(options.headers);
 	if (token) headers.set("Authorization", `Bearer ${token}`);
 	return fetch(url, { ...options, headers });
-}
-
-// ────────────────────────────────────────────────────────────
-// Section nav item
-// ────────────────────────────────────────────────────────────
-
-function NavItem({ href, label }: { href: string; label: string }) {
-	return (
-		<a
-			href={href}
-			className="block px-3 py-1.5 text-small rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
-		>
-			{label}
-		</a>
-	);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -425,18 +411,8 @@ function NotificationMatrix({
 				</tbody>
 			</table>
 
-			{/* Sticky save bar */}
-			<div
-				className={`mt-4 flex items-center gap-3 sticky bottom-0 py-3 bg-canvas border-t border-border-subtle transition-opacity ${dirty ? "opacity-100" : "opacity-60"}`}
-			>
-				<button
-					type="button"
-					onClick={onSave}
-					disabled={saving || !dirty}
-					className="px-4 py-2 bg-accent-500 text-white rounded text-sm hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed"
-				>
-					{saving ? "Saving…" : "Save preferences"}
-				</button>
+			{/* Card-bottom save row — no sticky bar */}
+			<div className="mt-4 flex items-center justify-end gap-3 pt-3 border-t border-border-subtle">
 				{!dirty && (
 					<span className="text-small text-mint flex items-center gap-1">
 						<svg
@@ -456,6 +432,9 @@ function NotificationMatrix({
 						All preferences saved
 					</span>
 				)}
+				<Button onClick={onSave} disabled={saving || !dirty} size="sm">
+					{saving ? "Saving…" : "Save preferences"}
+				</Button>
 			</div>
 		</div>
 	);
@@ -535,157 +514,139 @@ export default function PreferencesPage() {
 	}
 
 	return (
-		<div className="w-full">
-			<PageHeader breadcrumb="Personal" title="My Preferences" />
+		<div className="space-y-6">
+			<PageHeader
+				breadcrumb="Personal"
+				title="My Preferences"
+				subtitle="Account settings, notifications, and security."
+			/>
 
-			<div className="mt-6 flex gap-8 w-full">
-				{/* Left nav rail (≥lg) */}
-				<nav
-					aria-label="Preferences sections"
-					className="hidden lg:block w-[220px] shrink-0"
-				>
-					<div className="sticky top-6 space-y-1">
-						<NavItem href="#section-general" label="General" />
-						<NavItem href="#section-twostep" label="Two-step verification" />
-						<NavItem href="#section-notifications" label="Notifications" />
-						<NavItem href="#section-danger" label="Danger zone" />
+			{/* ── General ────────────────────────────────────────── */}
+			<section
+				id="section-general"
+				className="bg-surface-hover border border-border-subtle rounded-lg p-5"
+			>
+				<header className="mb-4">
+					<h2 className="text-h2 text-text-primary">General</h2>
+					<p className="text-body text-text-secondary mt-1">
+						Language and regional display preferences.
+					</p>
+				</header>
+
+				<p className="text-label uppercase text-text-tertiary mb-2">
+					Language / region
+				</p>
+				<div className="flex items-center gap-3">
+					<label className="sr-only" htmlFor="locale-select">
+						Language / region
+					</label>
+					<select
+						id="locale-select"
+						value={locale}
+						onChange={(e) => saveLocale(e.target.value)}
+						className="bg-canvas border border-border-subtle rounded-md px-3 py-1.5 text-body text-text-primary"
+					>
+						<option value="en-MY">English (Malaysia)</option>
+					</select>
+				</div>
+
+				{/* Theme — deferred to Phase 1.5, shown as disabled row */}
+				<div className="mt-5">
+					<p className="text-label uppercase text-text-tertiary mb-2">Theme</p>
+					<div
+						aria-disabled="true"
+						className="opacity-60 cursor-not-allowed pointer-events-none rounded-md border border-border-subtle bg-canvas px-4 py-3 flex items-center justify-between"
+					>
+						<div>
+							<p className="text-body text-text-primary">Dark / light theme</p>
+							<p className="text-small text-text-secondary">
+								Choose between dark and light appearance.
+							</p>
+						</div>
+						<StatusPill tone="lavender" label="Phase 1.5" />
 					</div>
-				</nav>
+				</div>
+			</section>
 
-				{/* Right content column */}
-				<div className="flex-1 max-w-3xl space-y-6 min-w-0">
-					{/* ── General ────────────────────────────────────────── */}
-					<section
-						id="section-general"
-						className="bg-surface-hover border border-border-subtle rounded-lg p-5"
-					>
-						<header className="mb-4">
-							<h2 className="text-h2 text-text-primary">General</h2>
-							<p className="text-body text-text-secondary mt-1">
-								Language and regional display preferences.
-							</p>
-						</header>
+			{/* ── Two-step verification ──────────────────────────── */}
+			<MFASection />
 
-						<p className="text-label uppercase text-text-tertiary mb-2">
-							Language / region
+			{/* ── Notifications ─────────────────────────────────── */}
+			<section
+				id="section-notifications"
+				className="bg-surface-hover border border-border-subtle rounded-lg p-5"
+			>
+				<header className="mb-4">
+					<h2 className="text-h2 text-text-primary">Notifications</h2>
+					<p className="text-body text-text-secondary mt-1">
+						Choose how you want to be notified for each event. Security events
+						can't be disabled.
+					</p>
+				</header>
+
+				<NotificationMatrix
+					prefs={prefs}
+					onToggle={toggle}
+					onSave={saveNotifPrefs}
+					saving={saving}
+					dirty={dirty}
+				/>
+			</section>
+
+			{/* ── Danger zone ────────────────────────────────────── */}
+			<section
+				id="section-danger"
+				className="bg-surface-hover border border-coral/30 rounded-lg p-5"
+			>
+				<header className="mb-4">
+					<h2 className="text-h2 text-text-primary">Danger zone</h2>
+					<p className="text-body text-text-secondary mt-1">
+						Destructive actions that affect your account access.
+					</p>
+				</header>
+
+				<div className="flex items-start justify-between gap-4">
+					<div>
+						<p className="text-body text-text-primary font-medium">
+							Sign out everywhere
 						</p>
-						<div className="flex items-center gap-3">
-							<label className="sr-only" htmlFor="locale-select">
-								Language / region
-							</label>
-							<select
-								id="locale-select"
-								value={locale}
-								onChange={(e) => saveLocale(e.target.value)}
-								className="bg-canvas border border-border-subtle rounded-md px-3 py-1.5 text-body text-text-primary"
-							>
-								<option value="en-MY">English (Malaysia)</option>
-							</select>
-						</div>
-
-						{/* Theme — deferred to Phase 1.5 */}
-						<div className="mt-5">
-							<p className="text-label uppercase text-text-tertiary mb-2">
-								Theme
+						<p className="text-small text-text-secondary">
+							Revoke all active sessions on all devices including this one.
+						</p>
+					</div>
+					{signOutConfirm ? (
+						<div className="flex flex-col items-end gap-2 shrink-0">
+							<p className="text-small text-coral">
+								This will sign out all active sessions including this one.
 							</p>
-							<div
-								aria-disabled="true"
-								className="opacity-60 cursor-not-allowed pointer-events-none rounded-md border border-border-subtle bg-canvas px-4 py-3 flex items-center justify-between"
-							>
-								<div>
-									<p className="text-body text-text-primary">
-										Dark / light theme
-									</p>
-									<p className="text-small text-text-secondary">
-										Choose between dark and light appearance.
-									</p>
-								</div>
-								<StatusPill tone="lavender" label="Phase 1.5" />
-							</div>
-						</div>
-					</section>
-
-					{/* ── Two-step verification ──────────────────────────── */}
-					<MFASection />
-
-					{/* ── Notifications ─────────────────────────────────── */}
-					<section
-						id="section-notifications"
-						className="bg-surface-hover border border-border-subtle rounded-lg p-5"
-					>
-						<header className="mb-4">
-							<h2 className="text-h2 text-text-primary">Notifications</h2>
-							<p className="text-body text-text-secondary mt-1">
-								Choose which events notify you and how. Security events are
-								always on.
-							</p>
-						</header>
-
-						<NotificationMatrix
-							prefs={prefs}
-							onToggle={toggle}
-							onSave={saveNotifPrefs}
-							saving={saving}
-							dirty={dirty}
-						/>
-					</section>
-
-					{/* ── Danger zone ────────────────────────────────────── */}
-					<section
-						id="section-danger"
-						className="mt-12 border border-coral/30 rounded-lg p-5"
-					>
-						<header className="mb-4">
-							<h2 className="text-h2 text-text-primary">Danger zone</h2>
-							<p className="text-body text-text-secondary mt-1">
-								Destructive actions that affect your account access.
-							</p>
-						</header>
-
-						<div className="flex items-start justify-between gap-4">
-							<div>
-								<p className="text-body text-text-primary font-medium">
-									Sign out everywhere
-								</p>
-								<p className="text-small text-text-secondary">
-									Revoke all active sessions on all devices including this one.
-								</p>
-							</div>
-							{signOutConfirm ? (
-								<div className="flex flex-col items-end gap-2 shrink-0">
-									<p className="text-small text-coral">
-										This will sign out all active sessions including this one.
-									</p>
-									<div className="flex gap-2">
-										<button
-											type="button"
-											onClick={handleSignOutEverywhere}
-											className="px-4 py-2 bg-coral text-white rounded text-sm hover:opacity-90"
-										>
-											Confirm sign out
-										</button>
-										<button
-											type="button"
-											onClick={() => setSignOutConfirm(false)}
-											className="px-3 py-2 border border-border-subtle text-text-secondary rounded text-sm hover:bg-surface-hover"
-										>
-											Cancel
-										</button>
-									</div>
-								</div>
-							) : (
+							<div className="flex gap-2">
 								<button
 									type="button"
-									onClick={() => setSignOutConfirm(true)}
-									className="shrink-0 px-4 py-2 border border-coral/40 text-coral rounded text-sm hover:bg-coral/10"
+									onClick={handleSignOutEverywhere}
+									className="px-4 py-2 bg-coral text-white rounded text-sm hover:opacity-90"
 								>
-									Sign out all sessions
+									Confirm sign out
 								</button>
-							)}
+								<button
+									type="button"
+									onClick={() => setSignOutConfirm(false)}
+									className="px-3 py-2 border border-border-subtle text-text-secondary rounded text-sm hover:bg-surface-hover"
+								>
+									Cancel
+								</button>
+							</div>
 						</div>
-					</section>
+					) : (
+						<button
+							type="button"
+							onClick={() => setSignOutConfirm(true)}
+							className="shrink-0 px-4 py-2 border border-coral/40 text-coral rounded text-sm hover:bg-coral/10"
+						>
+							Sign out all sessions
+						</button>
+					)}
 				</div>
-			</div>
+			</section>
 		</div>
 	);
 }

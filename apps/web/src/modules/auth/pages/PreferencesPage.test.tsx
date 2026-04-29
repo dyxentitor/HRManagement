@@ -225,7 +225,7 @@ describe("PreferencesPage", () => {
 		renderPage();
 		await waitFor(() => screen.getByText("Successful sign-in"));
 		expect(screen.getByText(/Account & security/i)).toBeInTheDocument();
-		// Domain headings — use getAllByText since "Leave" also appears in nav
+		// Domain headings
 		const leaveHeadings = screen.getAllByText(/^Leave$/i);
 		expect(leaveHeadings.length).toBeGreaterThanOrEqual(1);
 		expect(screen.getByText(/Claims/i)).toBeInTheDocument();
@@ -259,5 +259,19 @@ describe("PreferencesPage", () => {
 		const securityPills = screen.getAllByText("Security");
 		// 5 security event types
 		expect(securityPills.length).toBeGreaterThanOrEqual(5);
+	});
+
+	it("Save preferences button is disabled when no changes have been made", async () => {
+		mocks.getPreferences.mockResolvedValue(PREFS);
+		renderPage();
+		await waitFor(() => screen.getByText("Successful sign-in"));
+		const saveBtn = screen.getByRole("button", { name: /Save preferences/i });
+		expect(saveBtn).toBeDisabled();
+		// Toggle a non-security checkbox to make it dirty
+		const nonSecurityCheckbox = screen.getByLabelText(
+			/Leave request submitted in-app/i,
+		);
+		await userEvent.click(nonSecurityCheckbox);
+		expect(saveBtn).not.toBeDisabled();
 	});
 });
