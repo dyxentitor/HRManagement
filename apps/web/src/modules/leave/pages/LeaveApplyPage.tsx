@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { employeeApi } from "@/modules/employee/api";
 import { type LeaveType, leaveApi } from "../api";
 
 export default function LeaveApplyPage() {
 	const navigate = useNavigate();
+	const [noEmployee, setNoEmployee] = useState<boolean>(false);
 	const [types, setTypes] = useState<LeaveType[]>([]);
 	const [leaveType, setLeaveType] = useState<string>("");
 	const [startDate, setStartDate] = useState<string>("");
@@ -16,10 +18,16 @@ export default function LeaveApplyPage() {
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		leaveApi
-			.listTypes()
-			.then(setTypes)
-			.catch(() => setError("Failed to load leave types"));
+		employeeApi.getMe().then((emp) => {
+			if (!emp) {
+				setNoEmployee(true);
+				return;
+			}
+			leaveApi
+				.listTypes()
+				.then(setTypes)
+				.catch(() => setError("Failed to load leave types"));
+		});
 	}, []);
 
 	function diffInDays(start: string, end: string): number {
@@ -54,6 +62,24 @@ export default function LeaveApplyPage() {
 		} finally {
 			setSubmitting(false);
 		}
+	}
+
+	if (noEmployee) {
+		return (
+			<div className="max-w-xl space-y-4">
+				<h1 className="text-2xl font-bold">Apply for Leave</h1>
+				<div className="bg-surface-hover border border-dashed border-border-subtle rounded-lg p-8 text-center text-text-tertiary">
+					<div className="text-h2 mb-2">📋</div>
+					<h2 className="text-h3 text-text-primary">
+						No employee record linked
+					</h2>
+					<p className="text-body mt-1">
+						Your account isn't linked to an employee yet, so leave cannot be
+						applied. Ask HR to create your employee record first.
+					</p>
+				</div>
+			</div>
+		);
 	}
 
 	return (

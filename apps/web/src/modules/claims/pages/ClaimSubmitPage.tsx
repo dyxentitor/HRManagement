@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { employeeApi } from "@/modules/employee/api";
 import { type ClaimCategory, claimsApi } from "../api";
 
 export default function ClaimSubmitPage() {
 	const navigate = useNavigate();
+	const [noEmployee, setNoEmployee] = useState<boolean>(false);
 	const [categories, setCategories] = useState<ClaimCategory[]>([]);
 	const [category, setCategory] = useState<string>("");
 	const [amount, setAmount] = useState<string>("");
@@ -17,10 +19,16 @@ export default function ClaimSubmitPage() {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
-		claimsApi
-			.listCategories()
-			.then(setCategories)
-			.catch(() => setError("Failed to load categories"));
+		employeeApi.getMe().then((emp) => {
+			if (!emp) {
+				setNoEmployee(true);
+				return;
+			}
+			claimsApi
+				.listCategories()
+				.then(setCategories)
+				.catch(() => setError("Failed to load categories"));
+		});
 	}, []);
 
 	const selectedCat = categories.find((c) => c.id === category);
@@ -83,6 +91,24 @@ export default function ClaimSubmitPage() {
 		!!expenseDate &&
 		(!requiresAttachment || files.length > 0) &&
 		!submitting;
+
+	if (noEmployee) {
+		return (
+			<div className="space-y-4 max-w-xl">
+				<h1 className="text-2xl font-bold">Submit a Claim</h1>
+				<div className="bg-surface-hover border border-dashed border-border-subtle rounded-lg p-8 text-center text-text-tertiary">
+					<div className="text-h2 mb-2">🧾</div>
+					<h2 className="text-h3 text-text-primary">
+						No employee record linked
+					</h2>
+					<p className="text-body mt-1">
+						Your account isn't linked to an employee yet, so claims cannot be
+						submitted. Ask HR to create your employee record first.
+					</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="space-y-4 max-w-xl">
