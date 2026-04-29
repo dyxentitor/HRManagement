@@ -55,7 +55,7 @@ class Command(BaseCommand):
         n_roles = 0
         n_links_total = 0
         for entry in entries:
-            role, _ = Role.objects.update_or_create(
+            role, created = Role.objects.get_or_create(
                 org_id=org_id,
                 code=entry["code"],
                 defaults={
@@ -66,22 +66,20 @@ class Command(BaseCommand):
             )
             n_roles += 1
 
-            # Sync permission links to match the fixture exactly (drop, then add).
-            existing_perm_ids = set(role.role_permissions.values_list("permission_id", flat=True))
-            wanted_perm_ids = {db_perms[c] for c in entry.get("permissions", [])}
-
-            to_add = wanted_perm_ids - existing_perm_ids
-            to_remove = existing_perm_ids - wanted_perm_ids
-
-            if to_add:
+            # Only seed permissions when the Role is brand-new. Existing roles'
+            # permission sets are sacred — admin may have customized them via the
+            # /admin/roles UI. Use the "Reset to defaults" endpoint to opt back
+            # into the fixture's set.
+            if created:
+                wanted_perm_ids = {db_perms[c] for c in entry.get("permissions", [])}
                 RolePermission.objects.bulk_create(
-                    [RolePermission(role=role, permission_id=pid) for pid in to_add],
+                    [RolePermission(role=role, permission_id=pid) for pid in wanted_perm_ids],
                     ignore_conflicts=True,
                 )
-            if to_remove:
-                RolePermission.objects.filter(role=role, permission_id__in=to_remove).delete()
-
-            n_links_total += len(wanted_perm_ids)
+                n_links_total += len(wanted_perm_ids)
+            else:
+                # Count existing perms for the summary line — no mutation.
+                n_links_total += role.role_permissions.count()
 
         msg = f"Default roles for org {org_id}: {n_roles} roles, {n_links_total} permission links."
         self.stdout.write(self.style.SUCCESS(msg))
