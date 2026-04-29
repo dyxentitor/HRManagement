@@ -141,3 +141,123 @@ def assign_roles_to_user(*, actor, target, role_codes: list[str]):
             after={"role_code": code},
             actor_id=actor.id,
         )
+
+
+# --- Admin: role permission editor --------------------------------------
+
+
+# Permissions that org_admin must never lose (Section 5 rule 1 in spec).
+ORG_ADMIN_REQUIRED_PERMS = frozenset(
+    {
+        "role:read",
+        "role:write",
+        "org:feature_flag:read",
+        "org:feature_flag:write",
+    }
+)
+
+
+class UnknownPermissionError(Exception):
+    pass
+
+
+class OrgAdminProtectionError(Exception):
+    pass
+
+
+class LastWritePermissionHolderError(Exception):
+    pass
+
+
+def _is_protected_admin_perm(code: str) -> bool:
+    """org_admin must keep these. Includes any identity:* perm."""
+    return code in ORG_ADMIN_REQUIRED_PERMS or code.startswith("identity:")
+
+
+def set_role_permissions(*, actor, role_code: str, permission_codes: list[str]):
+    """Replace the role's permission set within the actor's org.
+
+    - Validates every code exists in the catalogue.
+    - org_admin must keep ORG_ADMIN_REQUIRED_PERMS + all identity:* perms.
+    - At least one role in the org must hold each *:write or *:approve perm.
+    - Audit row: role.permissions_changed with {before, after} payloads.
+    - Idempotent.
+
+    Raises UnknownPermissionError, OrgAdminProtectionError,
+    LastWritePermissionHolderError.
+    """
+    from common.audit import service as audit
+    from modules.identity.models import Permission, Role, RolePermission
+
+    permission_codes = list(dict.fromkeys(permission_codes))
+
+    # Validate every code is in the catalogue
+    found = set(
+        Permission.objects.filter(code__in=permission_codes).values_list("code", flat=True),
+    )
+    missing = [c for c in permission_codes if c not in found]
+    if missing:
+        raise UnknownPermissionError(f"Unknown permission code(s): {', '.join(missing)}")
+
+    role = Role.objects.get(org_id=actor.org_id, code=role_code)
+    requested = set(permission_codes)
+    current = set(
+        RolePermission.objects.filter(role=role).values_list("permission__code", flat=True),
+    )
+    to_add = requested - current
+    to_remove = current - requested
+
+    # Guard 1: org_admin keeps required perms
+    if role_code == "org_admin":
+        stripping_protected = [c for c in to_remove if _is_protected_admin_perm(c)]
+        if stripping_protected:
+            raise OrgAdminProtectionError(
+                f"org_admin must retain identity admin perms: {sorted(stripping_protected)}",
+            )
+
+    # Guard 2: at least one role must hold each mutating (non-read) perm
+    for code in to_remove:
+        if ":read" in code:
+            continue
+        # Count OTHER roles in the same org that hold this perm
+        other_holders = (
+            RolePermission.objects.filter(
+                role__org_id=actor.org_id,
+                permission__code=code,
+            )
+            .exclude(role_id=role.id)
+            .exists()
+        )
+        if not other_holders:
+            raise LastWritePermissionHolderError(
+                f"This change would leave nobody able to {code}. "
+                f"Grant {code} to another role first.",
+            )
+
+    if not to_add and not to_remove:
+        return  # idempotent — no audit, no DB writes
+
+    # Apply
+    if to_remove:
+        RolePermission.objects.filter(
+            role=role,
+            permission__code__in=to_remove,
+        ).delete()
+    if to_add:
+        perm_ids = list(
+            Permission.objects.filter(code__in=to_add).values_list("id", flat=True),
+        )
+        RolePermission.objects.bulk_create(
+            [RolePermission(role=role, permission_id=pid) for pid in perm_ids],
+            ignore_conflicts=True,
+        )
+
+    audit.append(
+        org_id=actor.org_id,
+        action="role.permissions_changed",
+        entity="role",
+        entity_id=role.id,
+        before={"role_code": role_code, "permissions": sorted(current)},
+        after={"role_code": role_code, "permissions": sorted(requested)},
+        actor_id=actor.id,
+    )
