@@ -64,3 +64,24 @@ class FinanceResolver(RoleResolver):
 
     def __init__(self) -> None:
         super().__init__(role_code="finance")
+
+
+class FallbackResolver:
+    """Tries each inner resolver in order; returns the first non-None result.
+
+    Use this when a chain step needs a resolution waterfall. Example:
+    direct manager → department head → HR role, so a leave request from
+    an employee with no direct manager still finds an approver.
+    """
+
+    def __init__(self, *resolvers: Any) -> None:
+        if not resolvers:
+            raise ValueError("FallbackResolver requires at least one resolver")
+        self.resolvers = resolvers
+
+    def resolve(self, subject_employee: Any, request: Any) -> User | None:
+        for resolver in self.resolvers:
+            user = resolver.resolve(subject_employee, request)
+            if user is not None:
+                return user
+        return None

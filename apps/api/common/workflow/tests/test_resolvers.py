@@ -9,6 +9,7 @@ from cryptography.fernet import Fernet
 from common.workflow.resolvers import (
     DepartmentHeadResolver,
     DirectManagerResolver,
+    FallbackResolver,
     FinanceResolver,
     RoleResolver,
 )
@@ -173,3 +174,80 @@ def test_role_resolver_scopes_by_org(org: Organization, dept: Department) -> Non
     subject_emp = _make_employee(org, dept, "EMP")
     found = FinanceResolver().resolve(subject_emp, request=None)
     assert found is None  # only same-org finance users are eligible
+
+
+# --- FallbackResolver -------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_fallback_returns_first_non_none(org: Organization, dept: Department) -> None:
+    """First resolver wins when it returns a user."""
+    manager_user = _make_user(org, email="mgr@x.com")
+    manager_emp = _make_employee(org, dept, "MGR", user=manager_user)
+    subject_emp = _make_employee(org, dept, "EMP", manager_emp=manager_emp)
+
+    resolver = FallbackResolver(DirectManagerResolver(), DepartmentHeadResolver())
+    found = resolver.resolve(subject_emp, request=None)
+    assert found is not None and found.id == manager_user.id
+
+
+@pytest.mark.django_db
+def test_fallback_falls_through_to_department_head(
+    org: Organization,
+    dept: Department,
+) -> None:
+    """When direct manager is None, fallback uses department head."""
+    head_user = _make_user(org, email="head@x.com")
+    head_emp = _make_employee(org, dept, "HEAD", user=head_user)
+    dept.head_employee_id = head_emp.id
+    dept.save()
+    subject_emp = _make_employee(org, dept, "EMP")  # no manager
+
+    resolver = FallbackResolver(DirectManagerResolver(), DepartmentHeadResolver())
+    found = resolver.resolve(subject_emp, request=None)
+    assert found is not None and found.id == head_user.id
+
+
+@pytest.mark.django_db
+def test_fallback_falls_through_to_role(org: Organization, dept: Department) -> None:
+    """No manager + no department head → falls through to RoleResolver."""
+    hr_user = _make_user(org, email="hr@x.com")
+    role = Role.objects.create(
+        org_id=org.id,
+        code="hr_manager",
+        name="HR",
+        is_system=True,
+    )
+    UserRole.objects.create(user=hr_user, role=role, granted_by=None)
+    subject_emp = _make_employee(org, dept, "EMP")  # no manager, no dept head
+
+    resolver = FallbackResolver(
+        DirectManagerResolver(),
+        DepartmentHeadResolver(),
+        RoleResolver("hr_manager"),
+    )
+    found = resolver.resolve(subject_emp, request=None)
+    assert found is not None and found.id == hr_user.id
+
+
+@pytest.mark.django_db
+def test_fallback_returns_none_when_all_fail(
+    org: Organization,
+    dept: Department,
+) -> None:
+    """All resolvers return None → fallback returns None (engine raises)."""
+    subject_emp = _make_employee(org, dept, "EMP")  # no manager, no dept head, no roles
+
+    resolver = FallbackResolver(
+        DirectManagerResolver(),
+        DepartmentHeadResolver(),
+        RoleResolver("hr_manager"),
+    )
+    found = resolver.resolve(subject_emp, request=None)
+    assert found is None
+
+
+def test_fallback_rejects_empty_init() -> None:
+    """At least one inner resolver is required."""
+    with pytest.raises(ValueError):
+        FallbackResolver()

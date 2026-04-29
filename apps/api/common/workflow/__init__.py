@@ -35,6 +35,7 @@ def __getattr__(name: str):
         # resolvers
         "DepartmentHeadResolver",
         "DirectManagerResolver",
+        "FallbackResolver",
         "FinanceResolver",
         "RoleResolver",
         # routing
@@ -107,12 +108,14 @@ def __getattr__(name: str):
     elif name in {
         "DepartmentHeadResolver",
         "DirectManagerResolver",
+        "FallbackResolver",
         "FinanceResolver",
         "RoleResolver",
     }:
         from .resolvers import (
             DepartmentHeadResolver,
             DirectManagerResolver,
+            FallbackResolver,
             FinanceResolver,
             RoleResolver,
         )
@@ -120,6 +123,7 @@ def __getattr__(name: str):
         _map = {
             "DepartmentHeadResolver": DepartmentHeadResolver,
             "DirectManagerResolver": DirectManagerResolver,
+            "FallbackResolver": FallbackResolver,
             "FinanceResolver": FinanceResolver,
             "RoleResolver": RoleResolver,
         }
@@ -144,6 +148,7 @@ __all__ = [
     "DelegationService",
     "DepartmentHeadResolver",
     "DirectManagerResolver",
+    "FallbackResolver",
     "FinanceResolver",
     "InvalidTransition",
     "NoApproverFound",
