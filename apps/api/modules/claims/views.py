@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
+from common.feature_flags.decorators import requires_feature
 from common.workflow import Decision
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
@@ -28,6 +29,7 @@ from .services.attachment import AttachmentService
 from .services.claim_request import ClaimRequestService
 
 
+@requires_feature("claims")
 class ClaimCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = ClaimCategorySerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
@@ -48,6 +50,7 @@ class ClaimCategoryViewSet(viewsets.ModelViewSet):
         serializer.save(org_id=self.request.user.org_id)
 
 
+@requires_feature("claims")
 class ClaimPolicyViewSet(viewsets.ModelViewSet):
     serializer_class = ClaimPolicySerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
@@ -68,6 +71,7 @@ class ClaimPolicyViewSet(viewsets.ModelViewSet):
         serializer.save(org_id=self.request.user.org_id)
 
 
+@requires_feature("claims")
 class ClaimRequestViewSet(viewsets.ModelViewSet):
     serializer_class = ClaimRequestSerializer
     permission_classes: ClassVar[list] = [HRMSPermission]

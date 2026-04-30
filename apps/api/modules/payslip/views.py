@@ -10,6 +10,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
+from common.feature_flags.decorators import requires_feature
 from common.workflow.exceptions import InvalidTransition
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
@@ -24,6 +25,7 @@ from .services.csv_import import import_csv
 from .services.publish import publish_run
 
 
+@requires_feature("payslip")
 class PayslipViewSet(viewsets.ReadOnlyModelViewSet):
     """Employee payslips.
 
@@ -85,6 +87,7 @@ class PayslipViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
+@requires_feature("payslip")
 class PayrollPeriodViewSet(viewsets.ModelViewSet):
     """Payroll periods — list/create/update for HR/finance."""
 
@@ -107,6 +110,7 @@ class PayrollPeriodViewSet(viewsets.ModelViewSet):
         serializer.save(org_id=self.request.user.org_id)
 
 
+@requires_feature("payslip")
 class PayrollRunViewSet(viewsets.GenericViewSet):
     """Payroll run management.
 
