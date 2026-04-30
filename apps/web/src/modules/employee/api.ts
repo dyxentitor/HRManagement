@@ -21,6 +21,10 @@ export interface Employee {
 	state?: string;
 	postcode?: string;
 	country_code?: string;
+	/** Auth user linked to this employee record, if any. */
+	user_id?: string;
+	/** Role codes currently assigned to the linked user. */
+	user_roles?: string[];
 }
 
 export interface ReportingChainEntry {

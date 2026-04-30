@@ -5,6 +5,7 @@ import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
+import { RolesCard } from "@/modules/admin/components/RolesCard";
 
 import { type Employee, type ReportingChainEntry, employeeApi } from "../api";
 
@@ -206,6 +207,14 @@ export default function EmployeeDetailPage() {
 										: "—",
 								},
 							]}
+						/>
+					)}
+
+					{/* Roles — only shown when the employee is linked to an auth user */}
+					{employee.user_id && (
+						<RolesCard
+							userId={employee.user_id}
+							currentRoles={employee.user_roles ?? []}
 						/>
 					)}
 
