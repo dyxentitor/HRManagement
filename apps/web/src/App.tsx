@@ -4,6 +4,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "./components/shell/AppShell";
 import { Toaster } from "./components/ui/sonner";
 import { AuthProvider } from "./lib/auth";
+import { FeaturesProvider } from "./lib/feature-flags";
 import { approvalsRoutes } from "./modules/approvals/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { certificationRoutes } from "./modules/certification/routes";
@@ -97,8 +98,10 @@ const router = createBrowserRouter([
 export function App() {
 	return (
 		<AuthProvider>
-			<RouterProvider router={router} />
-			<Toaster />
+			<FeaturesProvider>
+				<RouterProvider router={router} />
+				<Toaster />
+			</FeaturesProvider>
 		</AuthProvider>
 	);
 }
