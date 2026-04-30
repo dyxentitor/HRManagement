@@ -22,6 +22,7 @@ from common.feature_flags.registry import (
 
 
 def _is_own_enabled(org_id: UUID, key: str) -> bool:
+    """DB-and-cache layer. Does not apply critical-override or cascade — callers do."""
     cached = cache_helpers.get(org_id, key)
     if cached is not None:
         return cached
