@@ -61,7 +61,7 @@ export const employeeApi = {
 		const result = (await api.GET("/api/v1/employees/{id}/", {
 			params: { path: { id } },
 		})) as {
-			data?: unknown;
+			data?: Record<string, unknown>;
 			error?: unknown;
 			response: Response;
 		};
@@ -69,7 +69,10 @@ export const employeeApi = {
 			if (result.response?.status === 404) return null;
 			throw new Error("Could not load employee");
 		}
-		return result.data as Employee;
+		if (!result.data) return null;
+		// Backend returns `user` (FK UUID); frontend expects `user_id`.
+		const { user, ...rest } = result.data;
+		return { ...rest, user_id: user as string | undefined } as Employee;
 	},
 	getReportingChain: async (id: string): Promise<ReportingChainEntry[]> => {
 		const BASE_URL =

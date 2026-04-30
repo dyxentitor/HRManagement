@@ -28,14 +28,41 @@ export interface FeatureFlag {
 	depends_on_any?: string[];
 }
 
+// Backend returns permission_codes / user_count; frontend interfaces use
+// permissions / member_count. These helpers translate at the API boundary.
+type BackendRoleSummary = Omit<RoleSummary, "member_count"> & {
+	user_count: number;
+};
+type BackendRoleDetail = Omit<RoleDetail, "permissions" | "member_count"> & {
+	permission_codes: string[];
+	user_count: number;
+};
+
+function toRoleSummary(r: BackendRoleSummary): RoleSummary {
+	const { user_count, ...rest } = r;
+	return { ...rest, member_count: user_count };
+}
+
+function toRoleDetail(r: BackendRoleDetail): RoleDetail {
+	const { permission_codes, user_count, ...rest } = r;
+	return { ...rest, permissions: permission_codes, member_count: user_count };
+}
+
+type BackendUserRolesResponse = {
+	user_id: string;
+	email: string;
+	role_codes: string[];
+	permissions: string[];
+};
+
 export const roleApi = {
 	list: async (): Promise<RoleSummary[]> => {
 		const { data, error } = (await api.GET("/api/v1/roles/" as never)) as {
-			data?: RoleSummary[];
+			data?: BackendRoleSummary[];
 			error?: unknown;
 		};
 		if (error) throw new Error("Could not load roles");
-		return data ?? [];
+		return (data ?? []).map(toRoleSummary);
 	},
 
 	retrieve: async (code: string): Promise<RoleDetail> => {
@@ -44,9 +71,9 @@ export const roleApi = {
 			{
 				params: { path: { code } },
 			} as never,
-		)) as { data?: RoleDetail; error?: unknown };
+		)) as { data?: BackendRoleDetail; error?: unknown };
 		if (error || !data) throw new Error("Could not load role");
-		return data;
+		return toRoleDetail(data);
 	},
 
 	setPermissions: async (
@@ -57,11 +84,11 @@ export const roleApi = {
 			"/api/v1/roles/{code}/permissions/" as never,
 			{
 				params: { path: { code } },
-				body: { permissions },
+				body: { permission_codes: permissions },
 			} as never,
-		)) as { data?: RoleDetail; error?: unknown };
+		)) as { data?: BackendRoleDetail; error?: unknown };
 		if (error || !data) throw new Error("Could not save permissions");
-		return data;
+		return toRoleDetail(data);
 	},
 
 	reset: async (code: string): Promise<RoleDetail> => {
@@ -70,9 +97,9 @@ export const roleApi = {
 			{
 				params: { path: { code } },
 			} as never,
-		)) as { data?: RoleDetail; error?: unknown };
+		)) as { data?: BackendRoleDetail; error?: unknown };
 		if (error || !data) throw new Error("Could not reset role");
-		return data;
+		return toRoleDetail(data);
 	},
 };
 
@@ -87,9 +114,9 @@ export const userRolesApi = {
 				params: { path: { id: userId } },
 				body: { role_codes: roleCodes },
 			} as never,
-		)) as { data?: UserRolesResponse; error?: unknown };
+		)) as { data?: BackendUserRolesResponse; error?: unknown };
 		if (error || !data) throw new Error("Could not assign roles");
-		return data;
+		return { id: data.user_id, roles: data.role_codes };
 	},
 };
 
