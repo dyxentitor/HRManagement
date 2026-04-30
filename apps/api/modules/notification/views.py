@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
+from common.feature_flags.decorators import requires_feature
+
 from .models import Notification, NotificationPreference
 from .serializers import (
     NotificationPreferenceSerializer,
@@ -22,6 +24,7 @@ from .serializers import (
 from .services.preferences import SECURITY_TYPES
 
 
+@requires_feature("notifications")
 class NotificationViewSet(GenericViewSet):
     """List, mark-read, mark-all-read for own notifications."""
 
