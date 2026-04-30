@@ -215,6 +215,11 @@ export default function EmployeeDetailPage() {
 						<RolesCard
 							userId={employee.user_id}
 							currentRoles={employee.user_roles ?? []}
+							onChange={(roles) =>
+								setEmployee((prev) =>
+									prev ? { ...prev, user_roles: roles } : prev,
+								)
+							}
 						/>
 					)}
 
