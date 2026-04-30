@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
+from common.feature_flags.decorators import requires_feature
 from common.workflow.exceptions import InvalidTransition
 from modules.identity.permissions import HRMSPermission
 
@@ -30,6 +31,7 @@ from .services.cycle import CycleService
 from .services.review import ReviewService
 
 
+@requires_feature("kpi")
 class KpiTemplateViewSet(viewsets.ModelViewSet):
     permission_classes: ClassVar[list] = [HRMSPermission]
 
@@ -53,6 +55,7 @@ class KpiTemplateViewSet(viewsets.ModelViewSet):
         serializer.save(org_id=self.request.user.org_id)
 
 
+@requires_feature("kpi")
 class KpiCycleViewSet(viewsets.ModelViewSet):
     permission_classes: ClassVar[list] = [HRMSPermission]
 
@@ -101,6 +104,7 @@ class KpiCycleViewSet(viewsets.ModelViewSet):
         return Response(KpiCycleSerializer(cycle).data)
 
 
+@requires_feature("kpi")
 class KpiAssignmentViewSet(viewsets.GenericViewSet):
     permission_classes: ClassVar[list] = [HRMSPermission]
     serializer_class = KpiAssignmentSerializer
@@ -169,6 +173,7 @@ class KpiAssignmentViewSet(viewsets.GenericViewSet):
         return Response(KpiAssignmentSerializer(qs, many=True).data)
 
 
+@requires_feature("kpi")
 class KpiReviewViewSet(viewsets.GenericViewSet):
     """Review actions on assignments: self, manager, evidence."""
 
@@ -246,6 +251,7 @@ class KpiReviewViewSet(viewsets.GenericViewSet):
         return Response(result, status=status.HTTP_200_OK)
 
 
+@requires_feature("kpi")
 class KpiTeamSummaryViewSet(viewsets.GenericViewSet):
     permission_classes: ClassVar[list] = [HRMSPermission]
     required_perms: ClassVar[list] = ["kpi:assignment:read:team"]

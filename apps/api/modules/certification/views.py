@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
+from common.feature_flags.decorators import requires_feature
 from modules.identity.permissions import HRMSPermission
 
 from .models import Certification, TrainingAssignment, TrainingPlan, TrainingProgress
@@ -28,6 +29,7 @@ from .services.certification import get_presigned_upload_url, register_document
 from .services.training import complete_assignment
 
 
+@requires_feature("certification")
 class CertificationViewSet(viewsets.ModelViewSet):
     """CRUD for certifications + presigned-upload + register-document."""
 
@@ -119,6 +121,7 @@ class CertificationViewSet(viewsets.ModelViewSet):
         return Response(CertificationSerializer(cert).data)
 
 
+@requires_feature("training")
 class TrainingPlanViewSet(viewsets.ModelViewSet):
     """CRUD for training plans."""
 
@@ -141,6 +144,7 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
         serializer.save(org_id=self.request.user.org_id)
 
 
+@requires_feature("training")
 class TrainingAssignmentViewSet(viewsets.ModelViewSet):
     """Training assignments with me + complete + progress nested."""
 
@@ -217,6 +221,7 @@ class TrainingAssignmentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@requires_feature("training")
 class TrainingProgressViewSet(viewsets.GenericViewSet):
     """Write-only viewset for progress updates."""
 
