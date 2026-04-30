@@ -5,6 +5,7 @@ import { AppShell } from "./components/shell/AppShell";
 import { Toaster } from "./components/ui/sonner";
 import { AuthProvider } from "./lib/auth";
 import { FeaturesProvider } from "./lib/feature-flags";
+import { adminRoutes } from "./modules/admin/routes";
 import { approvalsRoutes } from "./modules/approvals/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { certificationRoutes } from "./modules/certification/routes";
@@ -87,6 +88,11 @@ const router = createBrowserRouter([
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
 			...reportsRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...adminRoutes.map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
