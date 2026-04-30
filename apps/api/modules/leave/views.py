@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
+from common.feature_flags.decorators import requires_feature
 from common.workflow import Decision
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
@@ -23,6 +24,7 @@ from .serializers import (
 from .services.leave_request import LeaveRequestService
 
 
+@requires_feature("leave")
 class LeaveTypeViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LeaveTypeSerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
@@ -35,6 +37,7 @@ class LeaveTypeViewSet(viewsets.ReadOnlyModelViewSet):
         ).order_by("code")
 
 
+@requires_feature("leave")
 class LeaveBalanceViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LeaveBalanceSerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
@@ -59,6 +62,7 @@ class LeaveBalanceViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(self.get_serializer(self.get_queryset(), many=True).data)
 
 
+@requires_feature("leave")
 class LeaveRequestViewSet(viewsets.ModelViewSet):
     serializer_class = LeaveRequestSerializer
     permission_classes: ClassVar[list] = [HRMSPermission]

@@ -10,6 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
+from common.feature_flags.decorators import requires_feature
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
 
@@ -29,6 +30,7 @@ def _ua(request) -> str:
     return request.META.get("HTTP_USER_AGENT", "")[:512]
 
 
+@requires_feature("attendance")
 class AttendanceViewSet(viewsets.GenericViewSet):
     """Clock-in/out + today + records list."""
 

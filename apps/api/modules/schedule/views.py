@@ -8,6 +8,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from common.feature_flags.decorators import requires_feature
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
 
@@ -23,6 +24,7 @@ from .serializers import (
 from .services.schedule import ScheduleService
 
 
+@requires_feature("schedule")
 class WorkScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = WorkScheduleSerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
@@ -43,6 +45,7 @@ class WorkScheduleViewSet(viewsets.ModelViewSet):
         serializer.save(org_id=self.request.user.org_id)
 
 
+@requires_feature("schedule")
 class ShiftViewSet(viewsets.ModelViewSet):
     serializer_class = ShiftSerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
@@ -63,6 +66,7 @@ class ShiftViewSet(viewsets.ModelViewSet):
         serializer.save(org_id=self.request.user.org_id)
 
 
+@requires_feature("schedule")
 class ShiftAssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = ShiftAssignmentSerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
@@ -152,6 +156,7 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(qs.order_by("work_date"), many=True).data)
 
 
+@requires_feature("schedule")
 class HolidayViewSet(viewsets.ModelViewSet):
     serializer_class = HolidaySerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
