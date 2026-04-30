@@ -1,6 +1,6 @@
-"""@requires_feature(key) class decorator.
+"""@requires_feature(key) class decorator for any DRF view class.
 
-Wraps the ViewSet's dispatch() to short-circuit with 403 when the key
+Wraps the dispatch() to short-circuit with 403 when the key
 is disabled for the request user's org. Critical modules pass through
 because is_enabled() short-circuits them to True.
 """

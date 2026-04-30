@@ -12,6 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.feature_flags.decorators import requires_feature
 from modules.identity.permissions import HRMSPermission
 
 from .models import ReportExportJob, SavedView
@@ -38,6 +39,7 @@ def _s3_presign(s3_key: str) -> str:
     )
 
 
+@requires_feature("reports")
 class ReportListView(APIView):
     """GET /api/v1/reports — list visible reports for user."""
 
@@ -59,6 +61,7 @@ class ReportListView(APIView):
         return Response(result)
 
 
+@requires_feature("reports")
 class ReportSchemaView(APIView):
     """GET /api/v1/reports/{code}/schema — columns + filter spec for UI."""
 
@@ -72,6 +75,7 @@ class ReportSchemaView(APIView):
         return Response(cls.schema())
 
 
+@requires_feature("reports")
 class ReportRunView(APIView):
     """POST /api/v1/reports/{code}/run — body: {filters, page?, page_size?}."""
 
@@ -106,6 +110,7 @@ class ReportRunView(APIView):
         )
 
 
+@requires_feature("reports")
 class ReportExportView(APIView):
     """POST /api/v1/reports/{code}/export — body: {filters, format} -> 202 + job_id."""
 
@@ -136,6 +141,7 @@ class ReportExportView(APIView):
         return Response({"job_id": job.id}, status=202)
 
 
+@requires_feature("reports")
 class ReportJobDetailView(APIView):
     """GET /api/v1/reports/jobs/{job_id} — poll status."""
 
@@ -157,6 +163,7 @@ class ReportJobDetailView(APIView):
         return Response(data)
 
 
+@requires_feature("reports")
 class SavedViewListCreateView(APIView):
     """GET /api/v1/reports/saved-views?code=   POST /api/v1/reports/saved-views."""
 
@@ -177,6 +184,7 @@ class SavedViewListCreateView(APIView):
         return Response(ser.data, status=201)
 
 
+@requires_feature("reports")
 class SavedViewDeleteView(APIView):
     """DELETE /api/v1/reports/saved-views/{id}."""
 

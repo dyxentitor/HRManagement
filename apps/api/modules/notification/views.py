@@ -59,6 +59,7 @@ class NotificationViewSet(GenericViewSet):
         return Response({"updated": updated})
 
 
+@requires_feature("notifications")
 class NotificationPreferencesView(APIView):
     """GET + PATCH own notification preferences."""
 
