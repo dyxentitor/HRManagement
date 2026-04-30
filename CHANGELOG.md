@@ -4,6 +4,27 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-04-30
+
+**Admin tools — system admin can configure roles, permissions, and modules from the UI.**
+
+### Added
+- **Feature 1 — Per-user role assignment**: `org_admin` (and any role with `role:write`) can assign system roles to any user via a new "Edit roles" dialog on the Employee detail page. New endpoint `PATCH /api/v1/users/{id}/roles/`. Includes self-demote guard (cannot remove your own `role:write`) and last-admin guard (cannot strip the only `role:write` holder).
+- **Feature 2 — Per-role permission editor**: new admin pages `/admin/roles` (list) and `/admin/roles/{code}` (matrix). Admin can toggle individual permissions for any of the 7 system roles, save, or reset to defaults. New endpoints `GET /api/v1/roles/`, `GET /api/v1/roles/{code}/`, `PATCH /api/v1/roles/{code}/permissions/`, `POST /api/v1/roles/{code}/reset-to-defaults/`. Includes guard that `org_admin` keeps `role:read` + `role:write` so admins cannot lock themselves out.
+- **Feature 3 — Per-org feature flags**: new admin page `/admin/modules` with toggles for 10 togglable modules (Leave, Schedule, Attendance, Claims, Payslip, KPI, Certifications, Training, Reports, Notifications). 3 critical modules (Identity, Employee, Organization) and 2 derived (Approvals, Dashboard) shown as read-only. New `common.feature_flags` Django app with `FeatureFlag` model, `is_enabled` cascade service, Redis-cached lookups (60s TTL), `@requires_feature` decorator, and endpoints `GET /api/v1/org/feature-flags/` + `PATCH /api/v1/org/feature-flags/{key}/`.
+- **Permissions**: new permission codes `org:feature_flag:read` and `org:feature_flag:write`, granted to `org_admin` by default.
+- **Frontend**: `FeaturesProvider` + `useFeature(key)` hook gates the sidebar and ⌘K command palette. Sidebar gains a new "Roles" and "Modules" link in the Admin group.
+
+### Changed
+- `seed_default_roles` management command switches from destructive SYNC semantics to **create-if-absent**: existing roles' permission sets are preserved across deploys, so admin edits survive seeding.
+- All 10 togglable ViewSets (`LeaveRequestViewSet`, `ScheduleAssignmentViewSet`, `ClockEventViewSet`, `ClaimViewSet`, `PayslipViewSet`, `KPIAssignmentViewSet`, `CertificationViewSet`, `TrainingViewSet`, `ReportViewSet`, `NotificationViewSet`) wear the `@requires_feature` decorator; disabled modules return a 403 with `code: "module_disabled"` and detail `"Module 'X' is disabled for this organisation"`.
+
+### Backend tests
+506 passed, 3 skipped (was 463). Count rises from new role-admin endpoints, feature-flag service, decorator integration, and audit-log smoke tests.
+
+### Frontend tests
+119 passed (was 92). Coverage added for `FeaturesProvider`, admin API client, AdminRolesPage, AdminRoleDetailPage, RolesCard, AdminModulesPage.
+
 ## [1.2.0] - 2026-04-29
 
 **HRMS Phase 1 complete — polish pass closing all v1.1.0 gaps.**
