@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { useCommandPalette } from "@/lib/cmdk";
+import { useFeature } from "@/lib/feature-flags";
 import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 
@@ -39,15 +40,22 @@ export function Sidebar() {
 
 	// Call useCan for every NAV item exactly once, in stable module-level order.
 	// ALL_ITEMS is a module-level constant so the hook count never changes across renders.
-	// eslint-disable-next-line react-hooks/rules-of-hooks
+	// biome-ignore lint/correctness/useHookAtTopLevel: ALL_ITEMS is module-constant; hook count fixed.
 	const canFlags = ALL_ITEMS.map((item) =>
 		item.perm === "" ? true : useCan(item.perm),
 	);
+	// biome-ignore lint/correctness/useHookAtTopLevel: ALL_ITEMS is module-constant; hook count fixed.
+	const featureFlags = ALL_ITEMS.map((item) =>
+		item.module ? useFeature(item.module) : true,
+	);
 
 	// Build a visibility map keyed by route path.
-	// canFlags is a tiny boolean array (~14 items) — building a Map inline is negligible.
+	// canFlags/featureFlags are tiny boolean arrays — building a Map inline is negligible.
 	const visibleByPath = new Map<string, boolean>(
-		ALL_ITEMS.map((item, i) => [item.to, canFlags[i] ?? false]),
+		ALL_ITEMS.map((item, i) => [
+			item.to,
+			(canFlags[i] ?? false) && (featureFlags[i] ?? true),
+		]),
 	);
 
 	const isVisible = (item: NavItem) => visibleByPath.get(item.to) ?? false;

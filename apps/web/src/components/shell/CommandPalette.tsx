@@ -1,10 +1,15 @@
 import {
+	BarChart3,
 	Calendar,
 	Clock,
 	FileSpreadsheet,
+	GraduationCap,
 	Inbox,
 	LayoutDashboard,
 	Receipt,
+	Settings,
+	Shield,
+	Target,
 	UserCircle,
 	Users,
 	Wallet,
@@ -22,6 +27,7 @@ import {
 	CommandSeparator,
 } from "@/components/ui/command";
 import { useCommandPalette } from "@/lib/cmdk";
+import { useFeature } from "@/lib/feature-flags";
 import { useCan } from "@/lib/perm";
 
 import { type Employee, employeeApi } from "@/modules/employee/api";
@@ -34,30 +40,49 @@ const PAGES = [
 		to: "/leave/me",
 		icon: Calendar,
 		perm: "leave:request:create:self",
+		module: "leave",
 	},
 	{
 		label: "Schedule",
 		to: "/schedule/me",
 		icon: Clock,
 		perm: "attendance:clock:self",
+		module: "schedule",
 	},
 	{
 		label: "Claims",
 		to: "/claims/me",
 		icon: Receipt,
 		perm: "claim:create:self",
+		module: "claims",
 	},
 	{
 		label: "Payslips",
 		to: "/payslips/me",
 		icon: Wallet,
 		perm: "payslip:read:self",
+		module: "payslip",
+	},
+	{
+		label: "KPI",
+		to: "/kpi/me",
+		icon: Target,
+		perm: "kpi:assignment:read:self",
+		module: "kpi",
+	},
+	{
+		label: "Certifications",
+		to: "/certifications/me",
+		icon: GraduationCap,
+		perm: "cert:read:self",
+		module: "certification",
 	},
 	{
 		label: "Approvals",
 		to: "/approvals",
 		icon: Inbox,
 		perm: "approvals:inbox:read",
+		module: "approvals",
 	},
 	{
 		label: "Employees",
@@ -66,10 +91,30 @@ const PAGES = [
 		perm: "employee:read:org",
 	},
 	{
+		label: "Roles",
+		to: "/admin/roles",
+		icon: Shield,
+		perm: "role:read",
+	},
+	{
+		label: "Modules",
+		to: "/admin/modules",
+		icon: Settings,
+		perm: "org:feature_flag:read",
+	},
+	{
 		label: "Reports",
 		to: "/reports",
 		icon: FileSpreadsheet,
 		perm: "report:list",
+		module: "reports",
+	},
+	{
+		label: "KPI Admin",
+		to: "/kpi/admin",
+		icon: BarChart3,
+		perm: "kpi:cycle:write",
+		module: "kpi",
 	},
 ];
 
@@ -82,6 +127,10 @@ export function CommandPalette() {
 	// Pre-cache page perm checks at top level so the rules-of-hooks count is fixed.
 	// biome-ignore lint/correctness/useHookAtTopLevel: PAGES is module-constant; hook count is fixed.
 	const pagePerms = PAGES.map((p) => (p.perm === "" ? true : useCan(p.perm)));
+	// biome-ignore lint/correctness/useHookAtTopLevel: PAGES is module-constant; hook count is fixed.
+	const pageFeatures = PAGES.map((p) =>
+		p.module ? useFeature(p.module) : true,
+	);
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
@@ -110,7 +159,7 @@ export function CommandPalette() {
 		nav(to);
 	};
 
-	const visiblePages = PAGES.filter((_, i) => pagePerms[i]);
+	const visiblePages = PAGES.filter((_, i) => pagePerms[i] && pageFeatures[i]);
 
 	return (
 		<CommandDialog open={open} onOpenChange={setOpen}>

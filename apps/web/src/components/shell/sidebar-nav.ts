@@ -8,6 +8,8 @@ import {
 	Inbox,
 	LayoutDashboard,
 	Receipt,
+	Settings,
+	Shield,
 	Target,
 	UserCircle,
 	Users,
@@ -22,6 +24,8 @@ export interface NavItem {
 	icon: ComponentType<{ className?: string }>;
 	/** permission code that gates visibility; "" means always visible */
 	perm: string;
+	/** module key — if set, item is hidden when the feature flag is off */
+	module?: string;
 	/** key used by useNotifBadge to read unread counts */
 	badge?: "approvals" | "notifications";
 }
@@ -44,36 +48,42 @@ export const NAV: NavGroup[] = [
 				to: "/leave/me",
 				icon: Calendar,
 				perm: "leave:request:create:self",
+				module: "leave",
 			},
 			{
 				label: "Schedule",
 				to: "/schedule/me",
 				icon: Briefcase,
 				perm: "attendance:clock:self",
+				module: "schedule",
 			},
 			{
 				label: "Claims",
 				to: "/claims/me",
 				icon: Receipt,
 				perm: "claim:create:self",
+				module: "claims",
 			},
 			{
 				label: "Payslips",
 				to: "/payslips/me",
 				icon: Wallet,
 				perm: "payslip:read:self",
+				module: "payslip",
 			},
 			{
 				label: "KPI",
 				to: "/kpi/me",
 				icon: Target,
 				perm: "kpi:assignment:read:self",
+				module: "kpi",
 			},
 			{
 				label: "Certifications",
 				to: "/certifications/me",
 				icon: GraduationCap,
 				perm: "cert:read:self",
+				module: "certification",
 			},
 		],
 	},
@@ -87,12 +97,14 @@ export const NAV: NavGroup[] = [
 				icon: Inbox,
 				perm: "approvals:inbox:read",
 				badge: "approvals",
+				module: "approvals",
 			},
 			{
 				label: "Roster",
 				to: "/schedule/roster",
 				icon: ClipboardCheck,
 				perm: "schedule:assignment:write:team",
+				module: "schedule",
 			},
 		],
 	},
@@ -107,22 +119,37 @@ export const NAV: NavGroup[] = [
 				perm: "employee:read:org",
 			},
 			{
+				label: "Roles",
+				to: "/admin/roles",
+				icon: Shield,
+				perm: "role:read",
+			},
+			{
+				label: "Modules",
+				to: "/admin/modules",
+				icon: Settings,
+				perm: "org:feature_flag:read",
+			},
+			{
 				label: "Payroll",
 				to: "/payroll/admin",
 				icon: Wallet,
 				perm: "payroll:run:create",
+				module: "payroll",
 			},
 			{
 				label: "Reports",
 				to: "/reports",
 				icon: FileSpreadsheet,
 				perm: "report:list",
+				module: "reports",
 			},
 			{
 				label: "KPI Admin",
 				to: "/kpi/admin",
 				icon: BarChart3,
 				perm: "kpi:cycle:write",
+				module: "kpi",
 			},
 		],
 	},
