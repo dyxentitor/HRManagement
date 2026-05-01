@@ -1,234 +1,242 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { type Shift, type ShiftAssignment, scheduleApi } from "../api";
+import { PageHeader } from "@/components/shell/PageHeader";
 
-function startOfWeekISO(d: Date): string {
-	const day = d.getDay();
-	const diff = (day + 6) % 7;
-	const m = new Date(d);
-	m.setDate(d.getDate() - diff);
-	return m.toISOString().slice(0, 10);
-}
-function addDaysISO(iso: string, days: number): string {
-	const d = new Date(iso);
-	d.setDate(d.getDate() + days);
+import {
+	type BulkFillWarning,
+	type CalendarAssignment,
+	type CalendarPayload,
+	type Team,
+	scheduleApi,
+	teamApi,
+} from "../api";
+import { BuildRosterModal } from "../components/BuildRosterModal";
+import { CellPopover } from "../components/CellPopover";
+import { RosterGrid } from "../components/RosterGrid";
+import { RosterToolbar } from "../components/RosterToolbar";
+import { StatsFooter } from "../components/StatsFooter";
+
+type ViewMode = "week" | "month";
+
+function isoDate(d: Date): string {
 	return d.toISOString().slice(0, 10);
 }
 
-const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+function rangeFor(
+	viewMode: ViewMode,
+	anchor: Date,
+): { from: string; to: string; label: string } {
+	if (viewMode === "week") {
+		const day = anchor.getDay();
+		const diff = (day + 6) % 7;
+		const monday = new Date(anchor);
+		monday.setDate(anchor.getDate() - diff);
+		const sunday = new Date(monday);
+		sunday.setDate(monday.getDate() + 6);
+		return {
+			from: isoDate(monday),
+			to: isoDate(sunday),
+			label: `Week of ${isoDate(monday)}`,
+		};
+	}
+	const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+	const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+	return {
+		from: isoDate(first),
+		to: isoDate(last),
+		label: anchor.toLocaleDateString("en-US", {
+			month: "long",
+			year: "numeric",
+		}),
+	};
+}
 
 export default function RosterPage() {
-	const today = new Date();
-	const [weekStart, setWeekStart] = useState<string>(startOfWeekISO(today));
-	const weekEnd = addDaysISO(weekStart, 6);
-	const [shifts, setShifts] = useState<Shift[]>([]);
-	const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
+	const [viewMode, setViewMode] = useState<ViewMode>(
+		() => (localStorage.getItem("roster.view_mode") as ViewMode) ?? "week",
+	);
+	const [anchor, setAnchor] = useState<Date>(new Date());
+	const [payload, setPayload] = useState<CalendarPayload | null>(null);
+	const [teams, setTeams] = useState<Team[]>([]);
+	const [teamId, setTeamId] = useState<string>("");
+	const [search, setSearch] = useState<string>("");
+	const [popover, setPopover] = useState<{
+		employee_id: string;
+		date: string;
+		assignment: CalendarAssignment | undefined;
+	} | null>(null);
+	const [buildOpen, setBuildOpen] = useState(false);
+	const [warnings, setWarnings] = useState<BulkFillWarning[]>([]);
 	const [error, setError] = useState<string | null>(null);
-	const [busy, setBusy] = useState<boolean>(false);
 
-	// Bulk-assign form state
-	const [employeeIds, setEmployeeIds] = useState<string>("");
-	const [pattern, setPattern] = useState<Record<string, string>>({});
+	const { from, to, label } = useMemo(
+		() => rangeFor(viewMode, anchor),
+		[viewMode, anchor],
+	);
+
+	useEffect(() => {
+		localStorage.setItem("roster.view_mode", viewMode);
+	}, [viewMode]);
 
 	const refresh = useCallback(async () => {
-		setError(null);
 		try {
-			const [s, a] = await Promise.all([
-				scheduleApi.listShifts(),
-				scheduleApi.listAssignments(weekStart, weekEnd),
+			const [calendar, teamList] = await Promise.all([
+				scheduleApi.calendar({
+					from,
+					to,
+					team_id: teamId || undefined,
+					q: search || undefined,
+				}),
+				teamApi.list(),
 			]);
-			setShifts(s);
-			setAssignments(a);
+			setPayload(calendar);
+			setTeams(teamList);
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to load");
 		}
-	}, [weekStart, weekEnd]);
+	}, [from, to, teamId, search]);
 
 	useEffect(() => {
 		refresh();
 	}, [refresh]);
 
-	// Roster grouped by employee
-	const grid = useMemo(() => {
-		const byEmp: Record<
-			string,
-			{ code: string; days: Record<string, ShiftAssignment | undefined> }
-		> = {};
-		for (const a of assignments) {
-			if (!byEmp[a.employee])
-				byEmp[a.employee] = { code: a.employee_code, days: {} };
-			byEmp[a.employee].days[a.work_date] = a;
-		}
-		return byEmp;
-	}, [assignments]);
+	const unpublishedCount = useMemo(
+		() => (payload?.assignments ?? []).filter((a) => !a.is_published).length,
+		[payload],
+	);
 
-	const days = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
+	function step(direction: 1 | -1) {
+		const next = new Date(anchor);
+		if (viewMode === "week") next.setDate(next.getDate() + 7 * direction);
+		else next.setMonth(next.getMonth() + direction);
+		setAnchor(next);
+	}
 
-	async function applyBulk() {
-		setBusy(true);
-		setError(null);
-		try {
-			const ids = employeeIds
-				.split(",")
-				.map((s) => s.trim())
-				.filter(Boolean);
-			const cleanPattern: Record<string, string> = {};
-			for (const k of WEEKDAYS) if (pattern[k]) cleanPattern[k] = pattern[k];
-			await scheduleApi.bulkAssign({
-				employee_ids: ids,
-				pattern: cleanPattern,
-				date_from: weekStart,
-				date_to: weekEnd,
-			});
-			await refresh();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Bulk assign failed");
-		} finally {
-			setBusy(false);
-		}
+	async function applySelection(
+		selection: { employee_id: string; date: string }[],
+	) {
+		if (!payload || selection.length === 0 || !payload.shifts.length) return;
+		const result = await scheduleApi.bulkFill({
+			cells: selection.map((s) => ({
+				employee_id: s.employee_id,
+				work_date: s.date,
+			})),
+			shift_id: payload.shifts[0].id,
+			notes: "",
+		});
+		setWarnings(result.warnings);
+		await refresh();
 	}
 
 	async function publish() {
-		setBusy(true);
-		try {
-			const r = await scheduleApi.publish(weekStart, weekEnd);
-			alert(`Published ${r.published} assignments`);
-			await refresh();
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Publish failed");
-		} finally {
-			setBusy(false);
-		}
+		await scheduleApi.publish(from, to);
+		await refresh();
 	}
 
 	return (
-		<div className="space-y-4 max-w-6xl">
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold">Roster — Week of {weekStart}</h1>
-				<div className="space-x-2 text-sm">
-					<button
-						type="button"
-						onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
-						className="text-text-secondary hover:text-text-primary"
-					>
-						← Previous
-					</button>
-					<button
-						type="button"
-						onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
-						className="text-text-secondary hover:text-text-primary"
-					>
-						Next →
-					</button>
-				</div>
-			</div>
+		<div className="space-y-3">
+			<PageHeader breadcrumb="Schedule" title="Roster" />
+
+			<RosterToolbar
+				rangeLabel={label}
+				viewMode={viewMode}
+				onViewMode={setViewMode}
+				onPrev={() => step(-1)}
+				onNext={() => step(1)}
+				teams={teams}
+				teamId={teamId}
+				onTeamId={setTeamId}
+				search={search}
+				onSearch={setSearch}
+				warningCount={warnings.length}
+				unpublishedCount={unpublishedCount}
+				onPublish={publish}
+				onBuild={() => setBuildOpen(true)}
+			/>
 
 			{error && (
-				<p role="alert" className="text-coral">
+				<p role="alert" className="text-coral text-small">
 					{error}
 				</p>
 			)}
 
-			<section className="bg-surface border border-border-subtle rounded p-4 space-y-3">
-				<h2 className="font-semibold">Bulk assign pattern</h2>
-				<label className="block text-sm">
-					Employee IDs (comma-separated UUIDs)
-					<input
-						value={employeeIds}
-						onChange={(e) => setEmployeeIds(e.target.value)}
-						className="w-full border border-border-subtle rounded px-2 py-1 mt-1 font-mono text-xs bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-						placeholder="uuid1, uuid2, uuid3"
-					/>
-				</label>
-				<div className="grid grid-cols-7 gap-2">
-					{WEEKDAYS.map((d) => (
-						<label key={d} className="text-xs">
-							<span className="block text-text-secondary capitalize mb-1">
-								{d}
-							</span>
-							<select
-								value={pattern[d] || ""}
-								onChange={(e) =>
-									setPattern({ ...pattern, [d]: e.target.value })
-								}
-								className="w-full border border-border-subtle rounded px-1 py-1 text-xs bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
-							>
-								<option value="">Off</option>
-								{shifts.map((s) => (
-									<option key={s.id} value={s.id}>
-										{s.name}
-									</option>
-								))}
-							</select>
-						</label>
-					))}
-				</div>
-				<div className="space-x-2">
-					<button
-						type="button"
-						onClick={applyBulk}
-						disabled={
-							busy || !employeeIds || Object.values(pattern).every((v) => !v)
+			{payload === null ? (
+				<p className="text-text-tertiary text-small">Loading…</p>
+			) : (
+				<>
+					<RosterGrid
+						viewMode={viewMode}
+						payload={payload}
+						onCellClick={(key, assignment) =>
+							setPopover({ ...key, assignment })
 						}
-						className="bg-accent-500 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50 hover:bg-accent-600"
-					>
-						{busy ? "..." : "Apply pattern"}
-					</button>
-					<button
-						type="button"
-						onClick={publish}
-						disabled={busy}
-						className="bg-mint text-canvas px-3 py-1.5 rounded text-sm disabled:opacity-50 hover:bg-mint/90"
-					>
-						{busy ? "..." : "Publish week"}
-					</button>
-				</div>
-			</section>
+						onSelectionApply={applySelection}
+					/>
+					{popover && (
+						<CellPopover
+							open
+							assignment={
+								popover.assignment
+									? {
+											id: popover.assignment.id,
+											shift_id: popover.assignment.shift_id,
+											shift_code: popover.assignment.shift_code,
+											covering_for_id: popover.assignment.covering_for_id,
+											covering_for_name: popover.assignment.covering_for_name,
+											notes: popover.assignment.notes,
+										}
+									: null
+							}
+							shifts={payload.shifts}
+							onSave={async (b) => {
+								await scheduleApi.bulkFill({
+									cells: [
+										{
+											employee_id: popover.employee_id,
+											work_date: popover.date,
+										},
+									],
+									shift_id: b.shift_id,
+									notes: b.notes,
+								});
+								setPopover(null);
+								await refresh();
+							}}
+							onDelete={async () => {
+								if (popover.assignment) {
+									await scheduleApi.deleteAssignment(popover.assignment.id);
+									setPopover(null);
+									await refresh();
+								}
+							}}
+							onCoverUp={() => {
+								const coveringForId = window.prompt(
+									"Covering for employee ID (paste UUID):",
+								);
+								if (popover.assignment && coveringForId) {
+									scheduleApi
+										.coverUp(popover.assignment.id, coveringForId)
+										.then(() => {
+											setPopover(null);
+											refresh();
+										});
+								}
+							}}
+							onClose={() => setPopover(null)}
+						/>
+					)}
+					<StatsFooter stats={payload.stats} />
+				</>
+			)}
 
-			<section className="bg-surface border border-border-subtle rounded p-4 overflow-x-auto">
-				<h2 className="font-semibold mb-3">Roster grid</h2>
-				{Object.keys(grid).length === 0 ? (
-					<p className="text-text-secondary text-sm">
-						No assignments for this week.
-					</p>
-				) : (
-					<table className="w-full text-sm">
-						<thead className="text-left text-text-secondary border-b border-border-subtle">
-							<tr>
-								<th className="py-1">Employee</th>
-								{days.map((iso) => (
-									<th key={iso} className="py-1">
-										{iso.slice(5)}
-									</th>
-								))}
-							</tr>
-						</thead>
-						<tbody>
-							{Object.entries(grid).map(([empId, row]) => (
-								<tr key={empId} className="border-t border-border-subtle">
-									<td className="py-1.5 font-mono text-xs">{row.code}</td>
-									{days.map((iso) => {
-										const a = row.days[iso];
-										return (
-											<td key={iso} className="py-1.5">
-												{a ? (
-													<span
-														className={`text-xs px-2 py-0.5 rounded ${a.is_published ? "bg-sky/15 text-sky" : "bg-surface-hover text-text-secondary"}`}
-													>
-														{a.shift_name}
-													</span>
-												) : (
-													<span className="text-xs text-text-tertiary">—</span>
-												)}
-											</td>
-										);
-									})}
-								</tr>
-							))}
-						</tbody>
-					</table>
-				)}
-			</section>
+			<BuildRosterModal
+				open={buildOpen}
+				shifts={payload?.shifts ?? []}
+				weekStart={from}
+				weekEnd={to}
+				onClose={() => setBuildOpen(false)}
+				onApplied={refresh}
+			/>
 		</div>
 	);
 }
