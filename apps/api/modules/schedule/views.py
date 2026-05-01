@@ -23,6 +23,7 @@ from .serializers import (
 )
 from .services.calendar import build_calendar
 from .services.schedule import ScheduleService
+from .services.warnings import compute_warnings
 
 
 @requires_feature("schedule")
@@ -98,6 +99,7 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
             "partial_update",
             "destroy",
             "bulk_pattern",
+            "bulk_fill",
         ):
             return ["schedule:assignment:write:team"]
         if self.action == "publish":
@@ -126,6 +128,46 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
             notes=ser.validated_data.get("notes", ""),
         )
         return Response({"created": n}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"], url_path="bulk-fill")
+    def bulk_fill(self, request):
+        from .serializers import BulkFillSerializer
+
+        ser = BulkFillSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        org_id = request.user.org_id
+        shift_id = ser.validated_data["shift_id"]
+        cells = [
+            {
+                "employee_id": str(c["employee_id"]),
+                "work_date": c["work_date"].isoformat(),
+            }
+            for c in ser.validated_data["cells"]
+        ]
+        notes = ser.validated_data.get("notes", "")
+
+        warnings = compute_warnings(org_id=org_id, cells=cells, shift_id=str(shift_id))
+
+        created = 0
+        updated = 0
+        for c in ser.validated_data["cells"]:
+            obj, was_created = ShiftAssignment.all_objects.update_or_create(
+                org_id=org_id,
+                employee_id=c["employee_id"],
+                work_date=c["work_date"],
+                deleted_at__isnull=True,
+                defaults={
+                    "shift_id": shift_id,
+                    "assigned_by": request.user.id,
+                    "notes": notes,
+                },
+            )
+            if was_created:
+                created += 1
+            else:
+                updated += 1
+        return Response({"created": created, "updated": updated, "warnings": warnings})
 
     @action(detail=False, methods=["post"], url_path="publish")
     def publish(self, request):

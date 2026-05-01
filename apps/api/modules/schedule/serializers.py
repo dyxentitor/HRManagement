@@ -86,3 +86,19 @@ class BulkAssignSerializer(serializers.Serializer):
 class PublishSerializer(serializers.Serializer):
     date_from = serializers.DateField()
     date_to = serializers.DateField()
+
+
+class BulkFillCellSerializer(serializers.Serializer):
+    employee_id = serializers.UUIDField()
+    work_date = serializers.DateField()
+
+
+class BulkFillSerializer(serializers.Serializer):
+    cells = BulkFillCellSerializer(many=True)
+    shift_id = serializers.UUIDField()
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate_cells(self, value):
+        if not value:
+            raise serializers.ValidationError("cells must not be empty")
+        return value
