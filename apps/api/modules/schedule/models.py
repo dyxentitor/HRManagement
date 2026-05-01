@@ -128,6 +128,15 @@ class ShiftAssignment(TenantBaseModel):
                 {"covering_for": "An employee cannot cover for themselves."},
             )
 
+    def save(self, *args, **kwargs):
+        if self.covering_for_id is not None and self.covering_for_id == self.employee_id:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError(
+                {"covering_for": "An employee cannot cover for themselves."},
+            )
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return f"{self.employee.employee_code}/{self.work_date}/{self.shift.name}"
 

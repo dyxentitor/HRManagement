@@ -142,6 +142,21 @@ def test_covering_for_self_reference_rejected(setup):
         a.full_clean()
 
 
+def test_covering_for_self_reference_rejected_on_save(setup):
+    """ORM .save() path also enforces the invariant (mirrors Employee.manager)."""
+    org, e1, _, s = setup
+    a = ShiftAssignment(
+        org_id=org.id,
+        employee=e1,
+        shift=s,
+        work_date=dt.date(2026, 3, 5),
+        assigned_by=uuid.uuid4(),
+        covering_for=e1,
+    )
+    with pytest.raises(ValidationError):
+        a.save()
+
+
 def test_covering_for_set_null_on_employee_hard_delete(setup):
     """SET_NULL fires only on hard delete (TenantBaseModel.delete is soft)."""
     org, e1, e2, s = setup
