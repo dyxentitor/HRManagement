@@ -53,6 +53,7 @@ class Shift(TenantBaseModel):
     start_time = models.TimeField()
     end_time = models.TimeField()
     crosses_midnight = models.BooleanField(default=False)
+    code = models.CharField(max_length=3)
     color = models.CharField(max_length=7, default="#3B82F6")
 
     class Meta:
@@ -63,7 +64,17 @@ class Shift(TenantBaseModel):
                 condition=models.Q(deleted_at__isnull=True),
                 name="shift_unique_name_per_org",
             ),
+            models.UniqueConstraint(
+                fields=["org_id", "code"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="shift_unique_code_per_org",
+            ),
         ]
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.upper()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.name} ({self.start_time}-{self.end_time})"
