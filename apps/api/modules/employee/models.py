@@ -89,6 +89,13 @@ class Employee(TenantBaseModel):
         blank=True,
         related_name="direct_reports",
     )
+    team = models.ForeignKey(
+        "Team",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+    )
     role_title = models.CharField(max_length=100)
     employment_type = models.CharField(max_length=16, choices=EMPLOYMENT_TYPE_CHOICES)
     schedule_type = models.CharField(max_length=8, choices=SCHEDULE_TYPE_CHOICES, default="fixed")
@@ -145,3 +152,38 @@ class Employee(TenantBaseModel):
         if self.manager_id is not None and self.manager_id == self.id:
             raise ValidationError({"manager": "An employee cannot be their own manager."})
         super().save(*args, **kwargs)
+
+
+class Team(TenantBaseModel):
+    """Org-defined work team (e.g., Team Lead, 24x7 Standby).
+
+    Used for grouping rows in the roster. Optional `min_headcount` drives
+    coverage warnings on the schedule grid.
+    """
+
+    name = models.CharField(max_length=64)
+    parent_team = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+    )
+    sort_order = models.IntegerField(default=0)
+    min_headcount = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = "employee_team"
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(
+                fields=["org_id", "name"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="team_unique_name_per_org",
+            ),
+        ]
+        indexes: ClassVar[list] = [
+            models.Index(fields=["org_id", "sort_order"]),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
