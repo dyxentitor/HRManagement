@@ -4,6 +4,33 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-05-02
+
+**Roster redesign — unified Week/Month planning page on the v1.1.0 theme.**
+
+### Added
+- **Roster page** (`/admin/schedule`): unified Week/Month view toggle (persisted per-user). Click cells to edit; shift-click extends a lasso selection that fills via a single API call. Toolbar with date nav, view toggle, team + search filters, warnings indicator, Build Roster + Publish actions.
+- **Cell tone system** (`apps/web/src/modules/schedule/lib/cell-tone.ts`): priority-ordered resolver — inactive employees show striped canvas; approved leaves show mint; cover-up shifts get a coral border; M=violet, D=lavender, N=sky, S=yellow.
+- **Backend `Team` model** (`modules/employee/Team`): nullable parent_team for nesting, sort_order, optional min_headcount for coverage warnings.
+- **Backend `Shift.code`** field (1–3 chars, unique-per-org). Existing shifts auto-backfill to `name[:1].upper()`.
+- **Backend `ShiftAssignment.covering_for`** FK with self-reference guard (validated in both `clean()` and `save()`).
+- **Endpoints**: `GET /api/v1/schedule/shift-assignments/calendar/` (single-read calendar payload with assignments + leaves + holidays + stats + coverage), `POST /api/v1/schedule/shift-assignments/bulk-fill/` (cell-list lasso fill), `PATCH /api/v1/schedule/shift-assignments/{id}/cover-up/`, full Team CRUD at `/api/v1/teams/`.
+- **Permissions**: `team:read` (org_admin + hr_manager + manager + team_lead default), `team:write` (org_admin + hr_manager only).
+- **Soft warnings** on bulk-fill: leave overlap, employee >48h scheduled in week, team drops under min_headcount. Display only — never block save.
+- **MySchedulePage refresh** uses the shared cell-tone system + RosterCell component.
+- **Employee.full_name** as a model `@property` — consolidates derivation from EmployeeSerializer.
+
+### Changed
+- `seed_provintell` now seeds 6 teams (Team Lead, Team Focus, Team Commitment, 24x7 Standby [min_headcount=2], Level 2 CyberLAB [parent: 24x7 Standby], Level 3 CloudOps) and links the 5 PVT-* employees by role_title.
+- `seed_provintell` Day/Night shifts now carry `code` values (D, N) — fixes a constraint conflict that surfaced after the Shift.code requirement landed.
+- `as never` casts removed from `apps/web/src/modules/admin/api.ts` and the new schedule endpoint helpers in `apps/web/src/modules/schedule/api.ts`.
+
+### Backend tests
+559 passed (was 506). 1 pre-existing attendance failure (test_clock_out_completes_record) carried forward from v1.3.0.
+
+### Frontend tests
+145 passed (was 119).
+
 ## [1.3.0] - 2026-04-30
 
 **Admin tools — system admin can configure roles, permissions, and modules from the UI.**

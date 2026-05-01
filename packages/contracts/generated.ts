@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/approvals/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["approvals_inbox_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance/clock-in/": {
         parameters: {
             query?: never;
@@ -249,6 +265,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/sessions/revoke-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["auth_sessions_revoke_all_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/certifications/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description CRUD for certifications + presigned-upload + register-document. */
+        get: operations["certifications_list"];
+        put?: never;
+        /** @description CRUD for certifications + presigned-upload + register-document. */
+        post: operations["certifications_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/certifications/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description CRUD for certifications + presigned-upload + register-document. */
+        get: operations["certifications_retrieve"];
+        /** @description CRUD for certifications + presigned-upload + register-document. */
+        put: operations["certifications_update"];
+        post?: never;
+        /** @description CRUD for certifications + presigned-upload + register-document. */
+        delete: operations["certifications_destroy"];
+        options?: never;
+        head?: never;
+        /** @description CRUD for certifications + presigned-upload + register-document. */
+        patch: operations["certifications_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/certifications/{id}/document/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Register the S3 key after a successful direct upload. */
+        post: operations["certifications_document_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/certifications/{id}/document/presigned-upload/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Return a presigned S3 PUT URL for uploading a certification document. */
+        post: operations["certifications_document_presigned_upload_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/certifications/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return own certifications. */
+        get: operations["certifications_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/claims/": {
         parameters: {
             query?: never;
@@ -455,6 +576,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["claims_policies_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/dashboards/{variant}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["dashboards_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/departments/": {
@@ -1002,6 +1139,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List, mark-read, mark-all-read for own notifications. */
+        get: operations["notifications_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description List, mark-read, mark-all-read for own notifications. */
+        patch: operations["notifications_read_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/notifications/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET + PATCH own notification preferences. */
+        get: operations["notifications_preferences_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description GET + PATCH own notification preferences. */
+        patch: operations["notifications_preferences_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description List, mark-read, mark-all-read for own notifications. */
+        post: operations["notifications_read_all_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/org/feature-flags/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/org/feature-flags/ — list all 15 entries with state. */
+        get: operations["org_feature_flags_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/org/feature-flags/{key}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description PATCH /api/v1/org/feature-flags/{key}/ — toggle enabled. */
+        patch: operations["org_feature_flags_partial_update"];
+        trace?: never;
+    };
     "/api/v1/org/settings": {
         parameters: {
             query?: never;
@@ -1257,6 +1497,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/reports — list visible reports for user. */
+        get: operations["reports_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{code}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/v1/reports/{code}/export — body: {filters, format} -> 202 + job_id. */
+        post: operations["reports_export_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{code}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/v1/reports/{code}/run — body: {filters, page?, page_size?}. */
+        post: operations["reports_run_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{code}/schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/reports/{code}/schema — columns + filter spec for UI. */
+        get: operations["reports_schema_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/reports/jobs/{job_id} — poll status. */
+        get: operations["reports_jobs_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/saved-views": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/reports/saved-views?code=   POST /api/v1/reports/saved-views. */
+        get: operations["reports_saved_views_retrieve"];
+        put?: never;
+        /** @description GET /api/v1/reports/saved-views?code=   POST /api/v1/reports/saved-views. */
+        post: operations["reports_saved_views_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/saved-views/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description DELETE /api/v1/reports/saved-views/{id}. */
+        delete: operations["reports_saved_views_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List + retrieve roles in the actor's org. */
+        get: operations["roles_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/{code}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List + retrieve roles in the actor's org. */
+        get: operations["roles_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/{code}/permissions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description PATCH /api/v1/roles/{code}/permissions/
+         *
+         *     Body: {"permission_codes": ["...", "..."]}
+         */
+        patch: operations["roles_permissions_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/roles/{code}/reset-to-defaults/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/v1/roles/{code}/reset-to-defaults/ */
+        post: operations["roles_reset_to_defaults_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/calendar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_calendar_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/schedule/holidays/": {
         parameters: {
             query?: never;
@@ -1321,6 +1769,38 @@ export interface paths {
         patch: operations["schedule_shift_assignments_partial_update"];
         trace?: never;
     };
+    "/api/v1/schedule/shift-assignments/{id}/cover-up/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["schedule_shift_assignments_cover_up_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/schedule/shift-assignments/bulk-fill/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["schedule_shift_assignments_bulk_fill_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/schedule/shift-assignments/bulk-pattern/": {
         parameters: {
             query?: never;
@@ -1331,6 +1811,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["schedule_shift_assignments_bulk_pattern_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/shift-assignments/calendar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_shift_assignments_calendar_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1431,6 +1927,226 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["schedule_work_schedules_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/teams/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description CRUD for org-defined work teams used to group roster rows. */
+        get: operations["teams_list"];
+        put?: never;
+        /** @description CRUD for org-defined work teams used to group roster rows. */
+        post: operations["teams_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description CRUD for org-defined work teams used to group roster rows. */
+        get: operations["teams_retrieve"];
+        /** @description CRUD for org-defined work teams used to group roster rows. */
+        put: operations["teams_update"];
+        post?: never;
+        /** @description CRUD for org-defined work teams used to group roster rows. */
+        delete: operations["teams_destroy"];
+        options?: never;
+        head?: never;
+        /** @description CRUD for org-defined work teams used to group roster rows. */
+        patch: operations["teams_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/training/assignments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Training assignments with me + complete + progress nested. */
+        get: operations["training_assignments_list"];
+        put?: never;
+        /** @description Training assignments with me + complete + progress nested. */
+        post: operations["training_assignments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training/assignments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Training assignments with me + complete + progress nested. */
+        get: operations["training_assignments_retrieve"];
+        /** @description Training assignments with me + complete + progress nested. */
+        put: operations["training_assignments_update"];
+        post?: never;
+        /** @description Training assignments with me + complete + progress nested. */
+        delete: operations["training_assignments_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Training assignments with me + complete + progress nested. */
+        patch: operations["training_assignments_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/training/assignments/{id}/complete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Mark assignment completed with optional evidence. */
+        post: operations["training_assignments_complete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training/assignments/{id}/progress/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return progress entries for this assignment. */
+        get: operations["training_assignments_progress_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training/assignments/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return own training assignments. */
+        get: operations["training_assignments_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training/plans/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description CRUD for training plans. */
+        get: operations["training_plans_list"];
+        put?: never;
+        /** @description CRUD for training plans. */
+        post: operations["training_plans_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training/plans/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description CRUD for training plans. */
+        get: operations["training_plans_retrieve"];
+        /** @description CRUD for training plans. */
+        put: operations["training_plans_update"];
+        post?: never;
+        /** @description CRUD for training plans. */
+        delete: operations["training_plans_destroy"];
+        options?: never;
+        head?: never;
+        /** @description CRUD for training plans. */
+        patch: operations["training_plans_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/training/progress/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Write-only viewset for progress updates. */
+        post: operations["training_progress_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/training/progress/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Write-only viewset for progress updates. */
+        patch: operations["training_progress_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/roles/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description PATCH /api/v1/users/{user_id}/roles/
+         *
+         *     Body: {"role_codes": ["manager", "team_lead"]}
+         */
+        patch: operations["users_roles_partial_update"];
         trace?: never;
     };
     "/health": {
@@ -1546,6 +2262,74 @@ export interface components {
         AttendanceRecordStatusEnum: "present" | "late" | "absent" | "holiday" | "on_leave" | "partial";
         /** @enum {unknown} */
         BlankEnum: "";
+        Certification: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            employee_id: string;
+            name: string;
+            issuer?: string;
+            certificate_number?: string;
+            /** Format: date */
+            issued_on: string;
+            /** Format: date */
+            expires_on?: string | null;
+            readonly document_s3_key: string;
+            readonly status: components["schemas"]["CertificationStatusEnum"];
+            readonly reminder_sent_30d: boolean;
+            readonly reminder_sent_60d: boolean;
+            readonly reminder_sent_90d: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        CertificationRequest: {
+            /** Format: uuid */
+            employee_id: string;
+            name: string;
+            issuer?: string;
+            certificate_number?: string;
+            /** Format: date */
+            issued_on: string;
+            /** Format: date */
+            expires_on?: string | null;
+        };
+        /**
+         * @description * `active` - Active
+         *     * `expired` - Expired
+         *     * `revoked` - Revoked
+         * @enum {string}
+         */
+        CertificationStatusEnum: "active" | "expired" | "revoked";
+        CertificationWrite: {
+            /** Format: uuid */
+            employee_id: string;
+            name: string;
+            issuer?: string;
+            certificate_number?: string;
+            /** Format: date */
+            issued_on: string;
+            /** Format: date */
+            expires_on?: string | null;
+        };
+        CertificationWriteRequest: {
+            /** Format: uuid */
+            employee_id: string;
+            name: string;
+            issuer?: string;
+            certificate_number?: string;
+            /** Format: date */
+            issued_on: string;
+            /** Format: date */
+            expires_on?: string | null;
+        };
+        /**
+         * @description * `in_app` - In-app
+         *     * `email` - Email
+         * @enum {string}
+         */
+        ChannelEnum: "in_app" | "email";
         ClaimApproval: {
             readonly id: number;
             level: number;
@@ -1687,6 +2471,14 @@ export interface components {
          * @enum {string}
          */
         ClaimStatusEnum: "draft" | "submitted" | "manager_approved" | "finance_approved" | "reimbursed" | "rejected" | "cancelled";
+        /**
+         * @description * `pending` - Pending
+         *     * `sent` - Sent
+         *     * `failed` - Failed
+         *     * `skipped` - Skipped
+         * @enum {string}
+         */
+        DeliveryStatusEnum: "pending" | "sent" | "failed" | "skipped";
         Department: {
             /** Format: uuid */
             readonly id: string;
@@ -2134,6 +2926,19 @@ export interface components {
          * @enum {string}
          */
         MetricTypeEnum: "numeric" | "percentage" | "rating" | "boolean";
+        Notification: {
+            readonly id: number;
+            readonly type: string;
+            readonly channel: components["schemas"]["ChannelEnum"];
+            readonly payload: unknown;
+            readonly deep_link: string;
+            readonly priority: components["schemas"]["PriorityEnum"];
+            readonly delivery_status: components["schemas"]["DeliveryStatusEnum"];
+            /** Format: date-time */
+            readonly read_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
         OrgSettings: {
             /** Format: uuid */
             readonly id: string;
@@ -2161,6 +2966,17 @@ export interface components {
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        PatchedCertificationWriteRequest: {
+            /** Format: uuid */
+            employee_id?: string;
+            name?: string;
+            issuer?: string;
+            certificate_number?: string;
+            /** Format: date */
+            issued_on?: string;
+            /** Format: date */
+            expires_on?: string | null;
         };
         PatchedClaimCategoryRequest: {
             code?: string;
@@ -2326,6 +3142,8 @@ export interface components {
             employee?: string;
             /** Format: uuid */
             shift?: string;
+            /** Format: uuid */
+            covering_for?: string | null;
             /** Format: date */
             work_date?: string;
             status?: components["schemas"]["ShiftAssignmentStatusEnum"];
@@ -2335,12 +3153,44 @@ export interface components {
         };
         PatchedShiftRequest: {
             name?: string;
+            code?: string;
             /** Format: time */
             start_time?: string;
             /** Format: time */
             end_time?: string;
             crosses_midnight?: boolean;
             color?: string;
+        };
+        /** @description Team CRUD serializer — org_id assigned server-side from request user. */
+        PatchedTeamRequest: {
+            name?: string;
+            /** Format: uuid */
+            parent_team?: string | null;
+            sort_order?: number;
+            min_headcount?: number | null;
+        };
+        PatchedTrainingAssignmentWriteRequest: {
+            /** Format: uuid */
+            plan?: string;
+            /** Format: uuid */
+            employee_id?: string;
+            /** Format: date */
+            due_date?: string;
+        };
+        PatchedTrainingPlanRequest: {
+            name?: string;
+            description?: string;
+            /** Format: uuid */
+            required_for_role_id?: string | null;
+            /** Format: uuid */
+            required_for_dept_id?: string | null;
+        };
+        PatchedTrainingProgressWriteRequest: {
+            /** Format: uuid */
+            assignment?: string;
+            /** Format: decimal */
+            progress_pct?: string;
+            notes?: string;
         };
         PatchedWorkScheduleRequest: {
             /** Format: uuid */
@@ -2457,6 +3307,36 @@ export interface components {
          */
         PeriodTypeEnum: "monthly" | "bi_weekly";
         /**
+         * @description * `low` - Low
+         *     * `normal` - Normal
+         *     * `high` - High
+         *     * `urgent` - Urgent
+         * @enum {string}
+         */
+        PriorityEnum: "low" | "normal" | "high" | "urgent";
+        /** @description Used for retrieve. Includes full permission_codes[]. */
+        RoleDetail: {
+            /** Format: uuid */
+            readonly id: string;
+            code: string;
+            name: string;
+            description?: string;
+            is_system?: boolean;
+            readonly permission_codes: string;
+            readonly user_count: string;
+        };
+        /** @description Used for the list endpoint. */
+        RoleListItem: {
+            /** Format: uuid */
+            readonly id: string;
+            code: string;
+            name: string;
+            description?: string;
+            is_system?: boolean;
+            readonly permission_count: string;
+            readonly user_count: string;
+        };
+        /**
          * @description * `fixed` - Fixed
          *     * `shift` - Shift
          * @enum {string}
@@ -2466,6 +3346,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             name: string;
+            code: string;
             /** Format: time */
             start_time: string;
             /** Format: time */
@@ -2482,6 +3363,10 @@ export interface components {
             /** Format: uuid */
             shift: string;
             readonly shift_name: string;
+            readonly shift_code: string;
+            /** Format: uuid */
+            covering_for?: string | null;
+            readonly covering_for_name: string;
             /** Format: date */
             work_date: string;
             status?: components["schemas"]["ShiftAssignmentStatusEnum"];
@@ -2497,6 +3382,8 @@ export interface components {
             employee: string;
             /** Format: uuid */
             shift: string;
+            /** Format: uuid */
+            covering_for?: string | null;
             /** Format: date */
             work_date: string;
             status?: components["schemas"]["ShiftAssignmentStatusEnum"];
@@ -2514,6 +3401,7 @@ export interface components {
         ShiftAssignmentStatusEnum: "scheduled" | "completed" | "absent" | "cancelled";
         ShiftRequest: {
             name: string;
+            code: string;
             /** Format: time */
             start_time: string;
             /** Format: time */
@@ -2537,6 +3425,132 @@ export interface components {
          * @enum {string}
          */
         StatusEe8Enum: "active" | "suspended" | "archived";
+        /** @description Team CRUD serializer — org_id assigned server-side from request user. */
+        Team: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            /** Format: uuid */
+            parent_team?: string | null;
+            sort_order?: number;
+            min_headcount?: number | null;
+        };
+        /** @description Team CRUD serializer — org_id assigned server-side from request user. */
+        TeamRequest: {
+            name: string;
+            /** Format: uuid */
+            parent_team?: string | null;
+            sort_order?: number;
+            min_headcount?: number | null;
+        };
+        TrainingAssignment: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            plan: string;
+            /** Format: uuid */
+            employee_id: string;
+            /** Format: uuid */
+            assigned_by: string;
+            /** Format: date */
+            due_date: string;
+            readonly status: components["schemas"]["TrainingAssignmentStatusEnum"];
+            /** Format: date-time */
+            readonly completed_at: string | null;
+            readonly evidence_s3_key: string;
+            readonly progress: components["schemas"]["TrainingProgress"][];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        TrainingAssignmentRequest: {
+            /** Format: uuid */
+            plan: string;
+            /** Format: uuid */
+            employee_id: string;
+            /** Format: uuid */
+            assigned_by: string;
+            /** Format: date */
+            due_date: string;
+        };
+        /**
+         * @description * `assigned` - Assigned
+         *     * `in_progress` - In progress
+         *     * `completed` - Completed
+         *     * `overdue` - Overdue
+         * @enum {string}
+         */
+        TrainingAssignmentStatusEnum: "assigned" | "in_progress" | "completed" | "overdue";
+        TrainingAssignmentWrite: {
+            /** Format: uuid */
+            plan: string;
+            /** Format: uuid */
+            employee_id: string;
+            /** Format: date */
+            due_date: string;
+        };
+        TrainingAssignmentWriteRequest: {
+            /** Format: uuid */
+            plan: string;
+            /** Format: uuid */
+            employee_id: string;
+            /** Format: date */
+            due_date: string;
+        };
+        TrainingPlan: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            required_for_role_id?: string | null;
+            /** Format: uuid */
+            required_for_dept_id?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        TrainingPlanRequest: {
+            name: string;
+            description?: string;
+            /** Format: uuid */
+            required_for_role_id?: string | null;
+            /** Format: uuid */
+            required_for_dept_id?: string | null;
+        };
+        TrainingProgress: {
+            readonly id: number;
+            /** Format: uuid */
+            assignment: string;
+            /** Format: decimal */
+            progress_pct?: string;
+            notes?: string;
+            /** Format: date-time */
+            readonly ts: string;
+        };
+        TrainingProgressRequest: {
+            /** Format: uuid */
+            assignment: string;
+            /** Format: decimal */
+            progress_pct?: string;
+            notes?: string;
+        };
+        TrainingProgressWrite: {
+            /** Format: uuid */
+            assignment: string;
+            /** Format: decimal */
+            progress_pct?: string;
+            notes?: string;
+        };
+        TrainingProgressWriteRequest: {
+            /** Format: uuid */
+            assignment: string;
+            /** Format: decimal */
+            progress_pct?: string;
+            notes?: string;
+        };
         WorkSchedule: {
             /** Format: uuid */
             readonly id: string;
@@ -2568,6 +3582,24 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    approvals_inbox_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     attendance_clock_in_create: {
         parameters: {
             query?: never;
@@ -2850,6 +3882,231 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    auth_sessions_revoke_all_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    certifications_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Certification"][];
+                };
+            };
+        };
+    };
+    certifications_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificationWriteRequest"];
+                "multipart/form-data": components["schemas"]["CertificationWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificationWrite"];
+                };
+            };
+        };
+    };
+    certifications_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Certification"];
+                };
+            };
+        };
+    };
+    certifications_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificationWriteRequest"];
+                "multipart/form-data": components["schemas"]["CertificationWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificationWrite"];
+                };
+            };
+        };
+    };
+    certifications_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    certifications_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCertificationWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedCertificationWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CertificationWrite"];
+                };
+            };
+        };
+    };
+    certifications_document_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificationRequest"];
+                "multipart/form-data": components["schemas"]["CertificationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Certification"];
+                };
+            };
+        };
+    };
+    certifications_document_presigned_upload_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CertificationRequest"];
+                "multipart/form-data": components["schemas"]["CertificationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Certification"];
+                };
+            };
+        };
+    };
+    certifications_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Certification"];
+                };
             };
         };
     };
@@ -3461,6 +4718,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ClaimPolicy"];
                 };
+            };
+        };
+    };
+    dashboards_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                variant: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4708,6 +5985,139 @@ export interface operations {
             };
         };
     };
+    notifications_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"][];
+                };
+            };
+        };
+    };
+    notifications_read_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+        };
+    };
+    notifications_preferences_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    notifications_preferences_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    notifications_read_all_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+        };
+    };
+    org_feature_flags_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_feature_flags_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     org_settings_retrieve: {
         parameters: {
             query?: never;
@@ -5108,6 +6518,259 @@ export interface operations {
             };
         };
     };
+    reports_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reports_export_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reports_run_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reports_schema_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reports_jobs_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reports_saved_views_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reports_saved_views_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reports_saved_views_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    roles_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleListItem"][];
+                };
+            };
+        };
+    };
+    roles_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"];
+                };
+            };
+        };
+    };
+    roles_permissions_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    roles_reset_to_defaults_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    schedule_calendar_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
     schedule_holidays_list: {
         parameters: {
             query?: never;
@@ -5380,6 +7043,56 @@ export interface operations {
             };
         };
     };
+    schedule_shift_assignments_cover_up_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedShiftAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["PatchedShiftAssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_bulk_fill_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["ShiftAssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
     schedule_shift_assignments_bulk_pattern_create: {
         parameters: {
             query?: never;
@@ -5393,6 +7106,25 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["ShiftAssignmentRequest"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftAssignment"];
+                };
+            };
+        };
+    };
+    schedule_shift_assignments_calendar_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
@@ -5716,6 +7448,554 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["WorkSchedule"];
                 };
+            };
+        };
+    };
+    teams_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"][];
+                };
+            };
+        };
+    };
+    teams_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamRequest"];
+                "multipart/form-data": components["schemas"]["TeamRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+        };
+    };
+    teams_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this team. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+        };
+    };
+    teams_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this team. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TeamRequest"];
+                "multipart/form-data": components["schemas"]["TeamRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+        };
+    };
+    teams_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this team. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    teams_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this team. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedTeamRequest"];
+                "multipart/form-data": components["schemas"]["PatchedTeamRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Team"];
+                };
+            };
+        };
+    };
+    training_assignments_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingAssignment"][];
+                };
+            };
+        };
+    };
+    training_assignments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingAssignmentWriteRequest"];
+                "multipart/form-data": components["schemas"]["TrainingAssignmentWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingAssignmentWrite"];
+                };
+            };
+        };
+    };
+    training_assignments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingAssignment"];
+                };
+            };
+        };
+    };
+    training_assignments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingAssignmentWriteRequest"];
+                "multipart/form-data": components["schemas"]["TrainingAssignmentWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingAssignmentWrite"];
+                };
+            };
+        };
+    };
+    training_assignments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    training_assignments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedTrainingAssignmentWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedTrainingAssignmentWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingAssignmentWrite"];
+                };
+            };
+        };
+    };
+    training_assignments_complete_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["TrainingAssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingAssignment"];
+                };
+            };
+        };
+    };
+    training_assignments_progress_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingAssignment"];
+                };
+            };
+        };
+    };
+    training_assignments_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingAssignment"];
+                };
+            };
+        };
+    };
+    training_plans_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingPlan"][];
+                };
+            };
+        };
+    };
+    training_plans_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingPlanRequest"];
+                "multipart/form-data": components["schemas"]["TrainingPlanRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingPlan"];
+                };
+            };
+        };
+    };
+    training_plans_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingPlan"];
+                };
+            };
+        };
+    };
+    training_plans_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingPlanRequest"];
+                "multipart/form-data": components["schemas"]["TrainingPlanRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingPlan"];
+                };
+            };
+        };
+    };
+    training_plans_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    training_plans_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedTrainingPlanRequest"];
+                "multipart/form-data": components["schemas"]["PatchedTrainingPlanRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingPlan"];
+                };
+            };
+        };
+    };
+    training_progress_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrainingProgressWriteRequest"];
+                "multipart/form-data": components["schemas"]["TrainingProgressWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingProgressWrite"];
+                };
+            };
+        };
+    };
+    training_progress_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedTrainingProgressWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedTrainingProgressWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingProgressWrite"];
+                };
+            };
+        };
+    };
+    users_roles_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -1,9 +1,19 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 0.1.0
+  version: 1.4.0
   description: HR Management System — Phase 1
 paths:
+  /api/v1/approvals/inbox:
+    get:
+      operationId: approvals_inbox_retrieve
+      tags:
+      - approvals
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/attendance/clock-in/:
     post:
       operationId: attendance_clock_in_create
@@ -203,6 +213,225 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/auth/sessions/revoke-all:
+    post:
+      operationId: auth_sessions_revoke_all_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/certifications/:
+    get:
+      operationId: certifications_list
+      description: CRUD for certifications + presigned-upload + register-document.
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Certification'
+          description: ''
+    post:
+      operationId: certifications_create
+      description: CRUD for certifications + presigned-upload + register-document.
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CertificationWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificationWrite'
+          description: ''
+  /api/v1/certifications/{id}/:
+    get:
+      operationId: certifications_retrieve
+      description: CRUD for certifications + presigned-upload + register-document.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
+    put:
+      operationId: certifications_update
+      description: CRUD for certifications + presigned-upload + register-document.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CertificationWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificationWrite'
+          description: ''
+    patch:
+      operationId: certifications_partial_update
+      description: CRUD for certifications + presigned-upload + register-document.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCertificationWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCertificationWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificationWrite'
+          description: ''
+    delete:
+      operationId: certifications_destroy
+      description: CRUD for certifications + presigned-upload + register-document.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/certifications/{id}/document/:
+    post:
+      operationId: certifications_document_create
+      description: Register the S3 key after a successful direct upload.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
+  /api/v1/certifications/{id}/document/presigned-upload/:
+    post:
+      operationId: certifications_document_presigned_upload_create
+      description: Return a presigned S3 PUT URL for uploading a certification document.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CertificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
+  /api/v1/certifications/me/:
+    get:
+      operationId: certifications_me_retrieve
+      description: Return own certifications.
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
   /api/v1/claims/:
     get:
       operationId: claims_list
@@ -808,6 +1037,22 @@ paths:
       - jwtAuth: []
       responses:
         '204':
+          description: No response body
+  /api/v1/dashboards/{variant}:
+    get:
+      operationId: dashboards_retrieve
+      parameters:
+      - in: path
+        name: variant
+        schema:
+          type: string
+        required: true
+      tags:
+      - dashboards
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
           description: No response body
   /api/v1/departments/:
     get:
@@ -2011,6 +2256,108 @@ paths:
               schema:
                 $ref: '#/components/schemas/LeaveType'
           description: ''
+  /api/v1/notifications:
+    get:
+      operationId: notifications_list
+      description: List, mark-read, mark-all-read for own notifications.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/notifications/{id}/read:
+    patch:
+      operationId: notifications_read_partial_update
+      description: List, mark-read, mark-all-read for own notifications.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/notifications/preferences:
+    get:
+      operationId: notifications_preferences_retrieve
+      description: GET + PATCH own notification preferences.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: notifications_preferences_partial_update
+      description: GET + PATCH own notification preferences.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/notifications/read-all:
+    post:
+      operationId: notifications_read_all_create
+      description: List, mark-read, mark-all-read for own notifications.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/org/feature-flags/:
+    get:
+      operationId: org_feature_flags_retrieve
+      description: GET /api/v1/org/feature-flags/ — list all 15 entries with state.
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/org/feature-flags/{key}/:
+    patch:
+      operationId: org_feature_flags_partial_update
+      description: PATCH /api/v1/org/feature-flags/{key}/ — toggle enabled.
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/org/settings:
     get:
       operationId: org_settings_retrieve
@@ -2412,6 +2759,213 @@ paths:
               schema:
                 $ref: '#/components/schemas/PayslipRecord'
           description: ''
+  /api/v1/reports:
+    get:
+      operationId: reports_retrieve
+      description: GET /api/v1/reports — list visible reports for user.
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/{code}/export:
+    post:
+      operationId: reports_export_create
+      description: 'POST /api/v1/reports/{code}/export — body: {filters, format} ->
+        202 + job_id.'
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/{code}/run:
+    post:
+      operationId: reports_run_create
+      description: 'POST /api/v1/reports/{code}/run — body: {filters, page?, page_size?}.'
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/{code}/schema:
+    get:
+      operationId: reports_schema_retrieve
+      description: GET /api/v1/reports/{code}/schema — columns + filter spec for UI.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/jobs/{job_id}:
+    get:
+      operationId: reports_jobs_retrieve
+      description: GET /api/v1/reports/jobs/{job_id} — poll status.
+      parameters:
+      - in: path
+        name: job_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/saved-views:
+    get:
+      operationId: reports_saved_views_retrieve
+      description: GET /api/v1/reports/saved-views?code=   POST /api/v1/reports/saved-views.
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: reports_saved_views_create
+      description: GET /api/v1/reports/saved-views?code=   POST /api/v1/reports/saved-views.
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/saved-views/{id}:
+    delete:
+      operationId: reports_saved_views_destroy
+      description: DELETE /api/v1/reports/saved-views/{id}.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/roles/:
+    get:
+      operationId: roles_list
+      description: List + retrieve roles in the actor's org.
+      tags:
+      - roles
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleListItem'
+          description: ''
+  /api/v1/roles/{code}/:
+    get:
+      operationId: roles_retrieve
+      description: List + retrieve roles in the actor's org.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDetail'
+          description: ''
+  /api/v1/roles/{code}/permissions/:
+    patch:
+      operationId: roles_permissions_partial_update
+      description: |-
+        PATCH /api/v1/roles/{code}/permissions/
+
+        Body: {"permission_codes": ["...", "..."]}
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/roles/{code}/reset-to-defaults/:
+    post:
+      operationId: roles_reset_to_defaults_create
+      description: POST /api/v1/roles/{code}/reset-to-defaults/
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/schedule/calendar/:
+    get:
+      operationId: schedule_calendar_retrieve
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
   /api/v1/schedule/holidays/:
     get:
       operationId: schedule_holidays_list
@@ -2668,6 +3222,57 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/schedule/shift-assignments/{id}/cover-up/:
+    patch:
+      operationId: schedule_shift_assignments_cover_up_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShiftAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedShiftAssignmentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+  /api/v1/schedule/shift-assignments/bulk-fill/:
+    post:
+      operationId: schedule_shift_assignments_bulk_fill_create
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ShiftAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
   /api/v1/schedule/shift-assignments/bulk-pattern/:
     post:
       operationId: schedule_shift_assignments_bulk_pattern_create
@@ -2682,6 +3287,20 @@ paths:
             schema:
               $ref: '#/components/schemas/ShiftAssignmentRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftAssignment'
+          description: ''
+  /api/v1/schedule/shift-assignments/calendar/:
+    get:
+      operationId: schedule_shift_assignments_calendar_retrieve
+      tags:
+      - schedule
       security:
       - jwtAuth: []
       responses:
@@ -2984,6 +3603,556 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/teams/:
+    get:
+      operationId: teams_list
+      description: CRUD for org-defined work teams used to group roster rows.
+      tags:
+      - teams
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+          description: ''
+    post:
+      operationId: teams_create
+      description: CRUD for org-defined work teams used to group roster rows.
+      tags:
+      - teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TeamRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: ''
+  /api/v1/teams/{id}/:
+    get:
+      operationId: teams_retrieve
+      description: CRUD for org-defined work teams used to group roster rows.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this team.
+        required: true
+      tags:
+      - teams
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: ''
+    put:
+      operationId: teams_update
+      description: CRUD for org-defined work teams used to group roster rows.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this team.
+        required: true
+      tags:
+      - teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TeamRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: ''
+    patch:
+      operationId: teams_partial_update
+      description: CRUD for org-defined work teams used to group roster rows.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this team.
+        required: true
+      tags:
+      - teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTeamRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTeamRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+          description: ''
+    delete:
+      operationId: teams_destroy
+      description: CRUD for org-defined work teams used to group roster rows.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this team.
+        required: true
+      tags:
+      - teams
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/training/assignments/:
+    get:
+      operationId: training_assignments_list
+      description: Training assignments with me + complete + progress nested.
+      tags:
+      - training
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrainingAssignment'
+          description: ''
+    post:
+      operationId: training_assignments_create
+      description: Training assignments with me + complete + progress nested.
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingAssignmentWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrainingAssignmentWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingAssignmentWrite'
+          description: ''
+  /api/v1/training/assignments/{id}/:
+    get:
+      operationId: training_assignments_retrieve
+      description: Training assignments with me + complete + progress nested.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingAssignment'
+          description: ''
+    put:
+      operationId: training_assignments_update
+      description: Training assignments with me + complete + progress nested.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingAssignmentWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrainingAssignmentWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingAssignmentWrite'
+          description: ''
+    patch:
+      operationId: training_assignments_partial_update
+      description: Training assignments with me + complete + progress nested.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTrainingAssignmentWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTrainingAssignmentWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingAssignmentWrite'
+          description: ''
+    delete:
+      operationId: training_assignments_destroy
+      description: Training assignments with me + complete + progress nested.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/training/assignments/{id}/complete/:
+    post:
+      operationId: training_assignments_complete_create
+      description: Mark assignment completed with optional evidence.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrainingAssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingAssignment'
+          description: ''
+  /api/v1/training/assignments/{id}/progress/:
+    get:
+      operationId: training_assignments_progress_retrieve
+      description: Return progress entries for this assignment.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingAssignment'
+          description: ''
+  /api/v1/training/assignments/me/:
+    get:
+      operationId: training_assignments_me_retrieve
+      description: Return own training assignments.
+      tags:
+      - training
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingAssignment'
+          description: ''
+  /api/v1/training/plans/:
+    get:
+      operationId: training_plans_list
+      description: CRUD for training plans.
+      tags:
+      - training
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrainingPlan'
+          description: ''
+    post:
+      operationId: training_plans_create
+      description: CRUD for training plans.
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingPlanRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrainingPlanRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+          description: ''
+  /api/v1/training/plans/{id}/:
+    get:
+      operationId: training_plans_retrieve
+      description: CRUD for training plans.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+          description: ''
+    put:
+      operationId: training_plans_update
+      description: CRUD for training plans.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingPlanRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrainingPlanRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+          description: ''
+    patch:
+      operationId: training_plans_partial_update
+      description: CRUD for training plans.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTrainingPlanRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTrainingPlanRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingPlan'
+          description: ''
+    delete:
+      operationId: training_plans_destroy
+      description: CRUD for training plans.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - training
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/training/progress/:
+    post:
+      operationId: training_progress_create
+      description: Write-only viewset for progress updates.
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingProgressWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrainingProgressWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingProgressWrite'
+          description: ''
+  /api/v1/training/progress/{id}/:
+    patch:
+      operationId: training_progress_partial_update
+      description: Write-only viewset for progress updates.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - training
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTrainingProgressWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTrainingProgressWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingProgressWrite'
+          description: ''
+  /api/v1/users/{user_id}/roles/:
+    patch:
+      operationId: users_roles_partial_update
+      description: |-
+        PATCH /api/v1/users/{user_id}/roles/
+
+        Body: {"role_codes": ["manager", "team_lead"]}
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /health:
     get:
       operationId: health_retrieve
@@ -3166,6 +4335,166 @@ components:
     BlankEnum:
       enum:
       - ''
+    Certification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        issuer:
+          type: string
+          maxLength: 200
+        certificate_number:
+          type: string
+          maxLength: 100
+        issued_on:
+          type: string
+          format: date
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        document_s3_key:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/CertificationStatusEnum'
+          readOnly: true
+        reminder_sent_30d:
+          type: boolean
+          readOnly: true
+        reminder_sent_60d:
+          type: boolean
+          readOnly: true
+        reminder_sent_90d:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - document_s3_key
+      - employee_id
+      - id
+      - issued_on
+      - name
+      - reminder_sent_30d
+      - reminder_sent_60d
+      - reminder_sent_90d
+      - status
+      - updated_at
+    CertificationRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        issuer:
+          type: string
+          maxLength: 200
+        certificate_number:
+          type: string
+          maxLength: 100
+        issued_on:
+          type: string
+          format: date
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - employee_id
+      - issued_on
+      - name
+    CertificationStatusEnum:
+      enum:
+      - active
+      - expired
+      - revoked
+      type: string
+      description: |-
+        * `active` - Active
+        * `expired` - Expired
+        * `revoked` - Revoked
+    CertificationWrite:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        issuer:
+          type: string
+          maxLength: 200
+        certificate_number:
+          type: string
+          maxLength: 100
+        issued_on:
+          type: string
+          format: date
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - employee_id
+      - issued_on
+      - name
+    CertificationWriteRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        issuer:
+          type: string
+          maxLength: 200
+        certificate_number:
+          type: string
+          maxLength: 100
+        issued_on:
+          type: string
+          format: date
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - employee_id
+      - issued_on
+      - name
+    ChannelEnum:
+      enum:
+      - in_app
+      - email
+      type: string
+      description: |-
+        * `in_app` - In-app
+        * `email` - Email
     ClaimApproval:
       type: object
       properties:
@@ -3531,6 +4860,18 @@ components:
         * `reimbursed` - Reimbursed
         * `rejected` - Rejected
         * `cancelled` - Cancelled
+    DeliveryStatusEnum:
+      enum:
+      - pending
+      - sent
+      - failed
+      - skipped
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `sent` - Sent
+        * `failed` - Failed
+        * `skipped` - Skipped
     Department:
       type: object
       properties:
@@ -4612,6 +5953,51 @@ components:
         * `percentage` - Percentage
         * `rating` - Rating
         * `boolean` - Boolean
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+        channel:
+          allOf:
+          - $ref: '#/components/schemas/ChannelEnum'
+          readOnly: true
+        payload:
+          readOnly: true
+        deep_link:
+          type: string
+          readOnly: true
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          readOnly: true
+        delivery_status:
+          allOf:
+          - $ref: '#/components/schemas/DeliveryStatusEnum'
+          readOnly: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - channel
+      - created_at
+      - deep_link
+      - delivery_status
+      - id
+      - payload
+      - priority
+      - read_at
+      - type
     OrgSettings:
       type: object
       properties:
@@ -4699,6 +6085,29 @@ components:
       - name
       - slug
       - updated_at
+    PatchedCertificationWriteRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        issuer:
+          type: string
+          maxLength: 200
+        certificate_number:
+          type: string
+          maxLength: 100
+        issued_on:
+          type: string
+          format: date
+        expires_on:
+          type: string
+          format: date
+          nullable: true
     PatchedClaimCategoryRequest:
       type: object
       properties:
@@ -5072,6 +6481,10 @@ components:
         shift:
           type: string
           format: uuid
+        covering_for:
+          type: string
+          format: uuid
+          nullable: true
         work_date:
           type: string
           format: date
@@ -5089,6 +6502,10 @@ components:
           type: string
           minLength: 1
           maxLength: 64
+        code:
+          type: string
+          minLength: 1
+          maxLength: 3
         start_time:
           type: string
           format: time
@@ -5101,6 +6518,69 @@ components:
           type: string
           minLength: 1
           maxLength: 7
+    PatchedTeamRequest:
+      type: object
+      description: Team CRUD serializer — org_id assigned server-side from request
+        user.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        parent_team:
+          type: string
+          format: uuid
+          nullable: true
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        min_headcount:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+    PatchedTrainingAssignmentWriteRequest:
+      type: object
+      properties:
+        plan:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date
+    PatchedTrainingPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        required_for_role_id:
+          type: string
+          format: uuid
+          nullable: true
+        required_for_dept_id:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedTrainingProgressWriteRequest:
+      type: object
+      properties:
+        assignment:
+          type: string
+          format: uuid
+        progress_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        notes:
+          type: string
     PatchedWorkScheduleRequest:
       type: object
       properties:
@@ -5353,6 +6833,80 @@ components:
       description: |-
         * `monthly` - Monthly
         * `bi_weekly` - Bi-weekly
+    PriorityEnum:
+      enum:
+      - low
+      - normal
+      - high
+      - urgent
+      type: string
+      description: |-
+        * `low` - Low
+        * `normal` - Normal
+        * `high` - High
+        * `urgent` - Urgent
+    RoleDetail:
+      type: object
+      description: Used for retrieve. Includes full permission_codes[].
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 64
+        name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 255
+        is_system:
+          type: boolean
+        permission_codes:
+          type: string
+          readOnly: true
+        user_count:
+          type: string
+          readOnly: true
+      required:
+      - code
+      - id
+      - name
+      - permission_codes
+      - user_count
+    RoleListItem:
+      type: object
+      description: Used for the list endpoint.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          maxLength: 64
+        name:
+          type: string
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 255
+        is_system:
+          type: boolean
+        permission_count:
+          type: string
+          readOnly: true
+        user_count:
+          type: string
+          readOnly: true
+      required:
+      - code
+      - id
+      - name
+      - permission_count
+      - user_count
     ScheduleTypeEnum:
       enum:
       - fixed
@@ -5371,6 +6925,9 @@ components:
         name:
           type: string
           maxLength: 64
+        code:
+          type: string
+          maxLength: 3
         start_time:
           type: string
           format: time
@@ -5383,6 +6940,7 @@ components:
           type: string
           maxLength: 7
       required:
+      - code
       - end_time
       - id
       - name
@@ -5406,6 +6964,16 @@ components:
         shift_name:
           type: string
           readOnly: true
+        shift_code:
+          type: string
+          readOnly: true
+        covering_for:
+          type: string
+          format: uuid
+          nullable: true
+        covering_for_name:
+          type: string
+          readOnly: true
         work_date:
           type: string
           format: date
@@ -5426,12 +6994,14 @@ components:
           type: string
       required:
       - assigned_by
+      - covering_for_name
       - employee
       - employee_code
       - id
       - is_published
       - published_at
       - shift
+      - shift_code
       - shift_name
       - work_date
     ShiftAssignmentRequest:
@@ -5443,6 +7013,10 @@ components:
         shift:
           type: string
           format: uuid
+        covering_for:
+          type: string
+          format: uuid
+          nullable: true
         work_date:
           type: string
           format: date
@@ -5477,6 +7051,10 @@ components:
           type: string
           minLength: 1
           maxLength: 64
+        code:
+          type: string
+          minLength: 1
+          maxLength: 3
         start_time:
           type: string
           format: time
@@ -5490,6 +7068,7 @@ components:
           minLength: 1
           maxLength: 7
       required:
+      - code
       - end_time
       - name
       - start_time
@@ -5517,6 +7096,295 @@ components:
         * `active` - Active
         * `suspended` - Suspended
         * `archived` - Archived
+    Team:
+      type: object
+      description: Team CRUD serializer — org_id assigned server-side from request
+        user.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 64
+        parent_team:
+          type: string
+          format: uuid
+          nullable: true
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        min_headcount:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+      required:
+      - id
+      - name
+    TeamRequest:
+      type: object
+      description: Team CRUD serializer — org_id assigned server-side from request
+        user.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        parent_team:
+          type: string
+          format: uuid
+          nullable: true
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        min_headcount:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+      required:
+      - name
+    TrainingAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        plan:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        assigned_by:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date
+        status:
+          allOf:
+          - $ref: '#/components/schemas/TrainingAssignmentStatusEnum'
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        evidence_s3_key:
+          type: string
+          readOnly: true
+        progress:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrainingProgress'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assigned_by
+      - completed_at
+      - created_at
+      - due_date
+      - employee_id
+      - evidence_s3_key
+      - id
+      - plan
+      - progress
+      - status
+      - updated_at
+    TrainingAssignmentRequest:
+      type: object
+      properties:
+        plan:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        assigned_by:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date
+      required:
+      - assigned_by
+      - due_date
+      - employee_id
+      - plan
+    TrainingAssignmentStatusEnum:
+      enum:
+      - assigned
+      - in_progress
+      - completed
+      - overdue
+      type: string
+      description: |-
+        * `assigned` - Assigned
+        * `in_progress` - In progress
+        * `completed` - Completed
+        * `overdue` - Overdue
+    TrainingAssignmentWrite:
+      type: object
+      properties:
+        plan:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date
+      required:
+      - due_date
+      - employee_id
+      - plan
+    TrainingAssignmentWriteRequest:
+      type: object
+      properties:
+        plan:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        due_date:
+          type: string
+          format: date
+      required:
+      - due_date
+      - employee_id
+      - plan
+    TrainingPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        required_for_role_id:
+          type: string
+          format: uuid
+          nullable: true
+        required_for_dept_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    TrainingPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        required_for_role_id:
+          type: string
+          format: uuid
+          nullable: true
+        required_for_dept_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - name
+    TrainingProgress:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        assignment:
+          type: string
+          format: uuid
+        progress_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        notes:
+          type: string
+        ts:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - assignment
+      - id
+      - ts
+    TrainingProgressRequest:
+      type: object
+      properties:
+        assignment:
+          type: string
+          format: uuid
+        progress_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        notes:
+          type: string
+      required:
+      - assignment
+    TrainingProgressWrite:
+      type: object
+      properties:
+        assignment:
+          type: string
+          format: uuid
+        progress_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        notes:
+          type: string
+      required:
+      - assignment
+    TrainingProgressWriteRequest:
+      type: object
+      properties:
+        assignment:
+          type: string
+          format: uuid
+        progress_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        notes:
+          type: string
+      required:
+      - assignment
     WorkSchedule:
       type: object
       properties:

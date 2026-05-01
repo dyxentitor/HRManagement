@@ -126,6 +126,11 @@ export interface Team {
 	min_headcount: number | null;
 }
 
+// Generic helpers for endpoints whose URL carries query strings or whose
+// drf-spectacular schema is too narrow to type cleanly (custom @action
+// endpoints, dynamic ?from=…&to=… filters). These deliberately keep the
+// `as never` escape hatch — the legacy endpoints below depend on it and
+// the cost/benefit of full typed paths there is not worth the churn.
 async function _get<T>(url: string): Promise<T> {
 	const { data, error } = await api.GET(url as never);
 	if (error) throw new Error(`GET ${url} failed`);
@@ -139,15 +144,6 @@ async function _post<T>(url: string, body?: unknown): Promise<T> {
 	const { data, error } = await api.POST(url as never, opts);
 	if (error) throw new Error(`POST ${url} failed`);
 	return data as T;
-}
-async function _patch<T>(url: string, body: unknown): Promise<T> {
-	const { data, error } = await api.PATCH(url as never, { body } as never);
-	if (error) throw new Error(`PATCH ${url} failed`);
-	return data as T;
-}
-async function _delete(url: string): Promise<void> {
-	const { error } = await api.DELETE(url as never);
-	if (error) throw new Error(`DELETE ${url} failed`);
 }
 
 function _unwrap<T>(d: { results?: T[] } | T[]): T[] {
@@ -183,6 +179,9 @@ export const scheduleApi = {
 			"/api/v1/schedule/shift-assignments/publish/",
 			{ date_from, date_to },
 		),
+	// Calendar endpoint: spectacular emits `query?: never` for this @action,
+	// so we cannot pass typed query params; fall back to manual querystring +
+	// the generic helper. Path itself is in the OpenAPI spec.
 	calendar: (params: {
 		from: string;
 		to: string;
@@ -202,25 +201,53 @@ export const scheduleApi = {
 			`/api/v1/schedule/shift-assignments/calendar/?${qs.toString()}`,
 		);
 	},
-	bulkFill: (body: {
+	// Bulk-fill: typed path, but spectacular emits the wrong body shape
+	// (ShiftAssignmentRequest fallback for an @action endpoint). Body is
+	// cast at the call site; response is decoded via `as`.
+	bulkFill: async (body: {
 		cells: BulkFillCell[];
 		shift_id: string;
 		notes?: string;
-	}) =>
-		_post<BulkFillResult>(
+	}): Promise<BulkFillResult> => {
+		const { data, error } = await api.POST(
 			"/api/v1/schedule/shift-assignments/bulk-fill/",
-			body,
-		),
-	coverUp: (assignmentId: string, coveringForId: string | null) =>
-		_patch<CalendarAssignment>(
-			`/api/v1/schedule/shift-assignments/${assignmentId}/cover-up/`,
-			{ covering_for_id: coveringForId },
-		),
-	deleteAssignment: (id: string) =>
-		_delete(`/api/v1/schedule/shift-assignments/${id}/`),
+			{ body: body as never },
+		);
+		if (error || !data) throw new Error("bulk-fill failed");
+		return data as unknown as BulkFillResult;
+	},
+	// Cover-up: typed path + path param `id`. Body is the wrong fallback
+	// shape so we cast at the call site.
+	coverUp: async (
+		assignmentId: string,
+		coveringForId: string | null,
+	): Promise<CalendarAssignment> => {
+		const { data, error } = await api.PATCH(
+			"/api/v1/schedule/shift-assignments/{id}/cover-up/",
+			{
+				params: { path: { id: assignmentId } },
+				body: { covering_for_id: coveringForId } as never,
+			},
+		);
+		if (error || !data) throw new Error("cover-up failed");
+		return data as unknown as CalendarAssignment;
+	},
+	// Delete: typed path + path param `id`.
+	deleteAssignment: async (id: string): Promise<void> => {
+		const { error } = await api.DELETE(
+			"/api/v1/schedule/shift-assignments/{id}/",
+			{ params: { path: { id } } },
+		);
+		if (error) throw new Error(`DELETE shift-assignment ${id} failed`);
+	},
 };
 
 export const teamApi = {
-	list: () =>
-		_get<{ results?: Team[] } | Team[]>("/api/v1/teams/").then(_unwrap),
+	// Typed path. Spectacular models the response as Team[] directly (not paginated),
+	// so we still pass through `_unwrap` for safety in case pagination is enabled.
+	list: async (): Promise<Team[]> => {
+		const { data, error } = await api.GET("/api/v1/teams/");
+		if (error) throw new Error("GET /api/v1/teams/ failed");
+		return _unwrap(data as unknown as { results?: Team[] } | Team[]);
+	},
 };

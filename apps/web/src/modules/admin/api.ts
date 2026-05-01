@@ -57,49 +57,46 @@ type BackendUserRolesResponse = {
 
 export const roleApi = {
 	list: async (): Promise<RoleSummary[]> => {
-		const { data, error } = (await api.GET("/api/v1/roles/" as never)) as {
-			data?: BackendRoleSummary[];
-			error?: unknown;
-		};
+		const { data, error } = await api.GET("/api/v1/roles/");
 		if (error) throw new Error("Could not load roles");
-		return (data ?? []).map(toRoleSummary);
+		return ((data ?? []) as unknown as BackendRoleSummary[]).map(toRoleSummary);
 	},
 
 	retrieve: async (code: string): Promise<RoleDetail> => {
-		const { data, error } = (await api.GET(
-			"/api/v1/roles/{code}/" as never,
-			{
-				params: { path: { code } },
-			} as never,
-		)) as { data?: BackendRoleDetail; error?: unknown };
+		const { data, error } = await api.GET("/api/v1/roles/{code}/", {
+			params: { path: { code } },
+		});
 		if (error || !data) throw new Error("Could not load role");
-		return toRoleDetail(data);
+		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 
 	setPermissions: async (
 		code: string,
 		permissions: string[],
 	): Promise<RoleDetail> => {
-		const { data, error } = (await api.PATCH(
-			"/api/v1/roles/{code}/permissions/" as never,
+		// drf-spectacular emits `requestBody?: never` for this APIView —
+		// body is cast at the call site. Response shape is also unknown
+		// to spectacular, so we re-decode via toRoleDetail.
+		const { data, error } = await api.PATCH(
+			"/api/v1/roles/{code}/permissions/",
 			{
 				params: { path: { code } },
-				body: { permission_codes: permissions },
-			} as never,
-		)) as { data?: BackendRoleDetail; error?: unknown };
+				body: { permission_codes: permissions } as never,
+			},
+		);
 		if (error || !data) throw new Error("Could not save permissions");
-		return toRoleDetail(data);
+		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 
 	reset: async (code: string): Promise<RoleDetail> => {
-		const { data, error } = (await api.POST(
-			"/api/v1/roles/{code}/reset-to-defaults/" as never,
+		const { data, error } = await api.POST(
+			"/api/v1/roles/{code}/reset-to-defaults/",
 			{
 				params: { path: { code } },
-			} as never,
-		)) as { data?: BackendRoleDetail; error?: unknown };
+			},
+		);
 		if (error || !data) throw new Error("Could not reset role");
-		return toRoleDetail(data);
+		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 };
 
@@ -108,39 +105,37 @@ export const userRolesApi = {
 		userId: string,
 		roleCodes: string[],
 	): Promise<UserRolesResponse> => {
-		const { data, error } = (await api.PATCH(
-			"/api/v1/users/{id}/roles/" as never,
-			{
-				params: { path: { id: userId } },
-				body: { role_codes: roleCodes },
-			} as never,
-		)) as { data?: BackendUserRolesResponse; error?: unknown };
+		// Backend route is /users/<uuid:user_id>/roles/ — generated path
+		// param is `user_id`. drf-spectacular emits `requestBody?: never`
+		// for this APIView so the body is cast at the call site.
+		const { data, error } = await api.PATCH("/api/v1/users/{user_id}/roles/", {
+			params: { path: { user_id: userId } },
+			body: { role_codes: roleCodes } as never,
+		});
 		if (error || !data) throw new Error("Could not assign roles");
-		return { id: data.user_id, roles: data.role_codes };
+		const decoded = data as unknown as BackendUserRolesResponse;
+		return { id: decoded.user_id, roles: decoded.role_codes };
 	},
 };
 
 export const featureFlagApi = {
 	list: async (): Promise<FeatureFlag[]> => {
-		const { data, error } = (await api.GET(
-			"/api/v1/org/feature-flags/" as never,
-		)) as {
-			data?: FeatureFlag[];
-			error?: unknown;
-		};
+		const { data, error } = await api.GET("/api/v1/org/feature-flags/");
 		if (error) throw new Error("Could not load feature flags");
-		return data ?? [];
+		return (data ?? []) as unknown as FeatureFlag[];
 	},
 
 	setEnabled: async (key: string, enabled: boolean): Promise<FeatureFlag> => {
-		const { data, error } = (await api.PATCH(
-			"/api/v1/org/feature-flags/{key}/" as never,
+		// drf-spectacular emits `requestBody?: never` for this APIView —
+		// body is cast at the call site.
+		const { data, error } = await api.PATCH(
+			"/api/v1/org/feature-flags/{key}/",
 			{
 				params: { path: { key } },
-				body: { enabled },
-			} as never,
-		)) as { data?: FeatureFlag; error?: unknown };
+				body: { enabled } as never,
+			},
+		);
 		if (error || !data) throw new Error("Could not update feature flag");
-		return data;
+		return data as unknown as FeatureFlag;
 	},
 };
