@@ -33,7 +33,7 @@ SELF_EDIT_WHITELIST = frozenset(
 class EmployeeSerializer(serializers.ModelSerializer):
     """Full HR view — all fields readable; encrypted fields write-through."""
 
-    full_name = serializers.SerializerMethodField()
+    full_name = serializers.CharField(read_only=True)
 
     class Meta:
         model = Employee
@@ -103,11 +103,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "socso_no": {"write_only": True},
             "eis_no": {"write_only": True},
         }
-
-    def get_full_name(self, obj: Employee) -> str:
-        if obj.preferred_name:
-            return f"{obj.preferred_name} {obj.last_name}"
-        return f"{obj.first_name} {obj.last_name}"
 
 
 class EmployeeMeSerializer(EmployeeSerializer):

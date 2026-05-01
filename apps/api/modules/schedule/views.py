@@ -75,7 +75,7 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
         qs = ShiftAssignment.all_objects.filter(
             org_id=self.request.user.org_id,
             deleted_at__isnull=True,
-        )
+        ).select_related("shift", "covering_for")
         emp_id = self.request.query_params.get("employee_id")
         if emp_id:
             qs = qs.filter(employee_id=emp_id)

@@ -143,6 +143,12 @@ class Employee(TenantBaseModel):
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.employee_code})"
 
+    @property
+    def full_name(self) -> str:
+        """Display name — preferred_name (if set) else first_name, plus last_name."""
+        first = self.preferred_name or self.first_name
+        return f"{first} {self.last_name}"
+
     def clean(self) -> None:
         if self.manager_id is not None and self.manager_id == self.id:
             raise ValidationError({"manager": "An employee cannot be their own manager."})
