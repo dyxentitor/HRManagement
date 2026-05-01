@@ -21,6 +21,7 @@ from .serializers import (
     ShiftSerializer,
     WorkScheduleSerializer,
 )
+from .services.calendar import build_calendar
 from .services.schedule import ScheduleService
 
 
@@ -89,7 +90,7 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
 
     @property
     def required_perms(self):
-        if self.action in ("list", "retrieve"):
+        if self.action in ("list", "retrieve", "calendar"):
             return ["schedule:assignment:read:team"]
         if self.action in (
             "create",
@@ -136,6 +137,42 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
             date_to=ser.validated_data["date_to"],
         )
         return Response({"published": n})
+
+    @action(detail=False, methods=["get"], url_path="calendar")
+    def calendar(self, request):
+        from datetime import date as _date
+
+        date_from = request.query_params.get("from")
+        date_to = request.query_params.get("to")
+        if not date_from or not date_to:
+            return Response(
+                {"detail": "from and to query params required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            df = _date.fromisoformat(date_from)
+            dt_ = _date.fromisoformat(date_to)
+        except ValueError:
+            return Response(
+                {"detail": "from and to must be ISO date (YYYY-MM-DD)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        team_id = request.query_params.get("team_id") or None
+        department_id = request.query_params.get("department_id") or None
+        q = request.query_params.get("q") or None
+        include_inactive = request.query_params.get("include_inactive") == "true"
+
+        payload = build_calendar(
+            org_id=request.user.org_id,
+            date_from=df,
+            date_to=dt_,
+            team_id=team_id,
+            department_id=department_id,
+            q=q,
+            include_inactive=include_inactive,
+        )
+        return Response(payload)
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
