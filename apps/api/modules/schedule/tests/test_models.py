@@ -95,6 +95,7 @@ def test_shift_create(org: Organization) -> None:
     s = Shift.all_objects.create(
         org_id=org.id,
         name="Morning",
+        code="M",
         start_time=datetime.time(6, 0),
         end_time=datetime.time(14, 0),
         crosses_midnight=False,
@@ -108,6 +109,7 @@ def test_shift_crosses_midnight(org: Organization) -> None:
     s = Shift.all_objects.create(
         org_id=org.id,
         name="Night",
+        code="N",
         start_time=datetime.time(22, 0),
         end_time=datetime.time(7, 0),
         crosses_midnight=True,
@@ -121,6 +123,7 @@ def test_shift_assignment_unique_per_employee_date(org: Organization, employee: 
     s = Shift.all_objects.create(
         org_id=org.id,
         name="Morning",
+        code="M",
         start_time=datetime.time(6, 0),
         end_time=datetime.time(14, 0),
         crosses_midnight=False,

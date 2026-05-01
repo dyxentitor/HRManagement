@@ -105,6 +105,7 @@ def test_bulk_assign_creates_one_assignment_per_date(setup) -> None:
     s_morning = Shift.all_objects.create(
         org_id=org.id,
         name="Morning",
+        code="M",
         start_time=datetime.time(6, 0),
         end_time=datetime.time(14, 0),
         crosses_midnight=False,
@@ -130,6 +131,7 @@ def test_publish_assignments_stamps_published_at(setup) -> None:
     s = Shift.all_objects.create(
         org_id=org.id,
         name="X",
+        code="X",
         start_time=datetime.time(9, 0),
         end_time=datetime.time(18, 0),
         crosses_midnight=False,

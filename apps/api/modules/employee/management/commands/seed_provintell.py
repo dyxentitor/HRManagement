@@ -238,6 +238,7 @@ class Command(BaseCommand):
             org_id=org.id,
             name="Day",
             defaults={
+                "code": "D",
                 "start_time": datetime.time(9, 0),
                 "end_time": datetime.time(18, 0),
                 "crosses_midnight": False,
@@ -248,6 +249,7 @@ class Command(BaseCommand):
             org_id=org.id,
             name="Night",
             defaults={
+                "code": "N",
                 "start_time": datetime.time(22, 0),
                 "end_time": datetime.time(7, 0),
                 "crosses_midnight": True,
