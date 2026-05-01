@@ -69,16 +69,15 @@ def _ensure_teams(org: Organization) -> dict[str, Team]:
         ("l2", "Level 2 CyberLAB", "standby", None),
         ("l3", "Level 3 CloudOps", None, None),
     ]
-    for sort, (key, name, parent_key, min_hc) in enumerate(spec):
+    for sort_order, (key, name, parent_key, min_hc) in enumerate(spec):
         parent = out.get(parent_key) if parent_key else None
         t, _ = Team.all_objects.update_or_create(
             org_id=org.id,
             name=name,
             defaults={
                 "parent_team": parent,
-                "sort_order": sort,
+                "sort_order": sort_order,
                 "min_headcount": min_hc,
-                "deleted_at": None,
             },
         )
         out[key] = t
