@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from rest_framework import serializers
 
-from .models import Employee
+from .models import Employee, Team
 
 # Fields that an employee may edit on their own record. Anything outside this
 # list requires `employee:write:org` (HR).
@@ -118,3 +118,12 @@ class EmployeeMeSerializer(EmployeeSerializer):
             # DRF forbids read_only + write_only on the same field.
             field_kwargs.pop("write_only", None)
         return extra
+
+
+class TeamSerializer(serializers.ModelSerializer):
+    """Team CRUD serializer — org_id assigned server-side from request user."""
+
+    class Meta:
+        model = Team
+        fields = ("id", "name", "parent_team", "sort_order", "min_headcount")
+        read_only_fields = ("id",)

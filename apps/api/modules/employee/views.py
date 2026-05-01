@@ -12,8 +12,8 @@ from rest_framework.response import Response
 
 from modules.identity.permissions import HRMSPermission
 
-from .models import Employee
-from .serializers import EmployeeMeSerializer, EmployeeSerializer
+from .models import Employee, Team
+from .serializers import EmployeeMeSerializer, EmployeeSerializer, TeamSerializer
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
@@ -125,3 +125,26 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 "probation_end_date": end.isoformat(),
             }
         return Response(body)
+
+
+class TeamViewSet(viewsets.ModelViewSet):
+    """CRUD for org-defined work teams used to group roster rows."""
+
+    serializer_class = TeamSerializer
+    permission_classes: ClassVar = [HRMSPermission]
+    queryset = Team.objects.none()  # required by DRF router for basename detection
+
+    def get_queryset(self):
+        return Team.all_objects.filter(
+            org_id=self.request.user.org_id,
+            deleted_at__isnull=True,
+        ).order_by("sort_order", "name")
+
+    @property
+    def required_perms(self) -> list[str]:
+        if self.action in ("list", "retrieve"):
+            return ["team:read"]
+        return ["team:write"]
+
+    def perform_create(self, serializer):
+        serializer.save(org_id=self.request.user.org_id)
