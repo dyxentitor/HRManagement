@@ -92,6 +92,13 @@ class ShiftAssignment(TenantBaseModel):
     assigned_by = models.UUIDField()
     published_at = models.DateTimeField(null=True, blank=True)
     notes = models.TextField(blank=True)
+    covering_for = models.ForeignKey(
+        "employee.Employee",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="covered_by",
+    )
 
     class Meta:
         db_table = "schedule_shift_assignment"
@@ -111,6 +118,15 @@ class ShiftAssignment(TenantBaseModel):
     @property
     def is_published(self) -> bool:
         return self.published_at is not None
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+        if self.covering_for_id is not None and self.covering_for_id == self.employee_id:
+            raise ValidationError(
+                {"covering_for": "An employee cannot cover for themselves."},
+            )
 
     def __str__(self) -> str:
         return f"{self.employee.employee_code}/{self.work_date}/{self.shift.name}"
