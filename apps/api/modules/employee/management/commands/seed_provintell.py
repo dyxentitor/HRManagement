@@ -13,7 +13,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from modules.employee.models import Employee
+from modules.employee.models import Employee, Team
 from modules.identity.models import Role, User, UserRole
 from modules.leave.models import LeaveType
 from modules.leave.services.balance import BalanceService
@@ -54,6 +54,37 @@ def _ensure_departments(org: Organization) -> dict[str, Department]:
     return out
 
 
+def _ensure_teams(org: Organization) -> dict[str, Team]:
+    """Idempotent team seed for Provintell's 6-team structure.
+
+    Returns {team_key: Team} so callers can link employees by stable key.
+    Includes self-nesting (L2 under Standby).
+    """
+    out: dict[str, Team] = {}
+    spec = [
+        ("lead", "Team Lead", None, None),
+        ("focus", "Team Focus", None, None),
+        ("commitment", "Team Commitment", None, None),
+        ("standby", "24x7 Standby", None, 2),
+        ("l2", "Level 2 CyberLAB", "standby", None),
+        ("l3", "Level 3 CloudOps", None, None),
+    ]
+    for sort, (key, name, parent_key, min_hc) in enumerate(spec):
+        parent = out.get(parent_key) if parent_key else None
+        t, _ = Team.all_objects.update_or_create(
+            org_id=org.id,
+            name=name,
+            defaults={
+                "parent_team": parent,
+                "sort_order": sort,
+                "min_headcount": min_hc,
+                "deleted_at": None,
+            },
+        )
+        out[key] = t
+    return out
+
+
 def _ensure_employee(
     org: Organization,
     dept: Department,
@@ -85,6 +116,7 @@ def _ensure_employee(
         "emergency_contact_relationship": "spouse",
         "emergency_contact_phone": "+60123456788",
         "user": kwargs.get("user"),
+        "team": kwargs.get("team"),
         "status": "active",
     }
     emp, _ = Employee.all_objects.update_or_create(
@@ -133,10 +165,11 @@ class Command(BaseCommand):
         self.stdout.write("Loading MY country reference...")
         call_command("seed_country_reference_data", "--country", "MY")
 
-        # 2. Org + departments
-        self.stdout.write("Creating Provintell org + departments...")
+        # 2. Org + departments + teams
+        self.stdout.write("Creating Provintell org + departments + teams...")
         org = _ensure_org()
         depts = _ensure_departments(org)
+        teams = _ensure_teams(org)
 
         # 3. Permissions catalogue + default roles
         self.stdout.write("Seeding permissions + roles...")
@@ -186,6 +219,7 @@ class Command(BaseCommand):
             last_name="Lead",
             role_title="SOC Lead",
             user=u_ops_lead,
+            team=teams["lead"],
         )
         eng_lead = _ensure_employee(
             org,
@@ -195,6 +229,7 @@ class Command(BaseCommand):
             last_name="Lead",
             role_title="Engineering Lead",
             user=u_eng_lead,
+            team=teams["l3"],
         )
         _ensure_employee(
             org,
@@ -205,6 +240,7 @@ class Command(BaseCommand):
             manager=ops_lead,
             schedule_type="shift",
             role_title="SOC Analyst",
+            team=teams["focus"],
         )
         _ensure_employee(
             org,
@@ -215,6 +251,7 @@ class Command(BaseCommand):
             manager=ops_lead,
             schedule_type="shift",
             role_title="SOC Analyst",
+            team=teams["commitment"],
         )
         _ensure_employee(
             org,
@@ -224,6 +261,7 @@ class Command(BaseCommand):
             last_name="One",
             manager=eng_lead,
             role_title="Software Engineer",
+            team=teams["l2"],
         )
 
         # Department head links
