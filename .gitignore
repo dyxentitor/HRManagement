@@ -61,3 +61,6 @@ logs/
 # Misc
 .tmp/
 .cache/
+docs/
+References/
+presentation/
