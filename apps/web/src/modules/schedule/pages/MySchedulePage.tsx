@@ -6,6 +6,8 @@ import {
 	attendanceApi,
 } from "@/modules/attendance/api";
 import { type ShiftAssignment, scheduleApi } from "../api";
+import { RosterCell } from "../components/RosterCell";
+import { resolveCellTone } from "../lib/cell-tone";
 
 function startOfWeekISO(d: Date): string {
 	const day = d.getDay(); // 0=Sun..6=Sat
@@ -185,15 +187,40 @@ export default function MySchedulePage() {
 						<tr>
 							{days.map((iso) => {
 								const a = assignments.find((x) => x.work_date === iso);
+								const adapted = a
+									? {
+											id: a.id,
+											employee_id: "self",
+											work_date: a.work_date,
+											shift_id: a.shift,
+											shift_code: a.shift_code,
+											covering_for_id: a.covering_for,
+											covering_for_name: a.covering_for_name,
+											is_published: a.is_published,
+											notes: a.notes,
+										}
+									: undefined;
+								const tone = resolveCellTone({
+									employee: { id: "self", status: "active" },
+									date: iso,
+									assignment: adapted,
+									leaves: [],
+									holidays: [],
+								});
 								return (
-									<td key={iso} className="py-2 align-top">
-										{a ? (
-											<span className="text-xs px-2 py-1 rounded bg-surface-hover text-text-secondary">
-												{a.shift_name}
-											</span>
-										) : (
-											<span className="text-xs text-text-tertiary">—</span>
-										)}
+									<td key={iso} className="px-0.5 py-0.5 align-top">
+										<RosterCell
+											viewMode="week"
+											tone={tone}
+											employeeName="Me"
+											date={iso}
+											shiftName={a?.shift_name ?? null}
+											startTime={null}
+											endTime={null}
+											selected={false}
+											onClick={() => {}}
+											onShiftClick={() => {}}
+										/>
 									</td>
 								);
 							})}
