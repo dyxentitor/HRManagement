@@ -21,6 +21,8 @@
 # department
 - { code: department:read,  description: Read departments in the org }
 - { code: department:write, description: Create/edit/delete departments in the org }
+- { code: team:read,         description: Read teams in the org }
+- { code: team:write,        description: Create/edit/delete teams in the org }
 
 # org settings
 - { code: org:settings:read,  description: Read organization settings }

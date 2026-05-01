@@ -21,6 +21,8 @@
     - permission:read
     - department:read
     - department:write
+    - team:read
+    - team:write
     - org:settings:read
     - org:settings:write
     - audit:read:org
@@ -130,6 +132,7 @@
     - permission:read
     - department:read
     - department:write
+    - team:read
     - org:settings:read
     - audit:read:org
     - "audit:payroll-ledger:read:org"
@@ -272,6 +275,7 @@
     - user:read:team
     - role:read
     - department:read
+    - team:read
     - employee:read:self
     - employee:read:team
     - "leave:request:read:self"
@@ -329,6 +333,7 @@
     - user:read:team
     - role:read
     - department:read
+    - team:read
     - employee:read:self
     - employee:read:team
     - "leave:request:read:self"
