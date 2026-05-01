@@ -79,20 +79,27 @@ export default function RosterPage() {
 	}, [viewMode]);
 
 	const refresh = useCallback(async () => {
+		// Calendar is required (the grid can't render without it). Teams is a
+		// nice-to-have for the filter dropdown — if it 403s on a misconfigured
+		// role, the grid still renders.
 		try {
-			const [calendar, teamList] = await Promise.all([
-				scheduleApi.calendar({
-					from,
-					to,
-					team_id: teamId || undefined,
-					q: search || undefined,
-				}),
-				teamApi.list(),
-			]);
+			const calendar = await scheduleApi.calendar({
+				from,
+				to,
+				team_id: teamId || undefined,
+				q: search || undefined,
+			});
 			setPayload(calendar);
-			setTeams(teamList);
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to load");
+			return;
+		}
+		try {
+			setTeams(await teamApi.list());
+		} catch {
+			// Teams unavailable — fall back to empty list. Filter dropdown will
+			// only offer "All teams"; the grid still works.
+			setTeams([]);
 		}
 	}, [from, to, teamId, search]);
 
