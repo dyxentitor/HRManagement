@@ -15,14 +15,21 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
 class ShiftSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shift
-        fields = ("id", "name", "start_time", "end_time", "crosses_midnight", "color")
+        fields = ("id", "name", "code", "start_time", "end_time", "crosses_midnight", "color")
         read_only_fields = ("id",)
 
 
 class ShiftAssignmentSerializer(serializers.ModelSerializer):
     employee_code = serializers.CharField(source="employee.employee_code", read_only=True)
     shift_name = serializers.CharField(source="shift.name", read_only=True)
+    shift_code = serializers.CharField(source="shift.code", read_only=True)
+    covering_for_name = serializers.SerializerMethodField()
     is_published = serializers.BooleanField(read_only=True)
+
+    def get_covering_for_name(self, obj):
+        if obj.covering_for_id is None:
+            return None
+        return obj.covering_for.full_name
 
     class Meta:
         model = ShiftAssignment
@@ -32,6 +39,9 @@ class ShiftAssignmentSerializer(serializers.ModelSerializer):
             "employee_code",
             "shift",
             "shift_name",
+            "shift_code",
+            "covering_for",
+            "covering_for_name",
             "work_date",
             "status",
             "assigned_by",
@@ -43,6 +53,8 @@ class ShiftAssignmentSerializer(serializers.ModelSerializer):
             "id",
             "employee_code",
             "shift_name",
+            "shift_code",
+            "covering_for_name",
             "published_at",
             "is_published",
         )

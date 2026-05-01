@@ -136,6 +136,7 @@ def test_create_shift_as_manager(stack) -> None:
         "/api/v1/schedule/shifts/",
         {
             "name": "Day",
+            "code": "D",
             "start_time": "09:00:00",
             "end_time": "18:00:00",
             "crosses_midnight": False,
