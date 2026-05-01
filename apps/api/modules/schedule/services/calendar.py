@@ -209,7 +209,7 @@ def _build_stats(*, teams_qs, assignments, date_range, employees) -> dict:
     for a in assignments:
         start, end = a.shift.start_time, a.shift.end_time
         hours = ((end.hour + end.minute / 60) - (start.hour + start.minute / 60)) % 24
-        if hours == 0:
+        if hours == 0 and a.shift.crosses_midnight:
             hours = 24
         by_day[a.work_date]["hours"] += hours
         by_day[a.work_date]["employees"].add(a.employee_id)

@@ -204,3 +204,56 @@ def test_calendar_orphans_to_unassigned_if_team_soft_deleted(org_setup):
     unassigned = next((t for t in payload["teams"] if t["name"] == "Unassigned"), None)
     assert unassigned is not None
     assert any(m["id"] == str(emp.id) for m in unassigned["members"])
+
+
+def test_calendar_zero_duration_shift_is_zero_hours(org_setup):
+    """A degenerate 0-duration shift (start == end, not crosses_midnight) reports 0h, not 24h."""
+    org, _, _, emp, _ = org_setup
+    bad_shift = Shift.all_objects.create(
+        org_id=org.id,
+        name="Broken",
+        code="B",
+        start_time=dt.time(9, 0),
+        end_time=dt.time(9, 0),
+    )
+    ShiftAssignment.all_objects.create(
+        org_id=org.id,
+        employee=emp,
+        shift=bad_shift,
+        work_date=dt.date(2026, 3, 4),
+        assigned_by=uuid.uuid4(),
+    )
+    payload = build_calendar(
+        org_id=org.id,
+        date_from=dt.date(2026, 3, 4),
+        date_to=dt.date(2026, 3, 4),
+    )
+    by_day = {d["date"]: d for d in payload["stats"]["by_day"]}
+    assert by_day["2026-03-04"]["hours"] == 0
+
+
+def test_calendar_midnight_crossing_shift_is_24h_when_start_eq_end(org_setup):
+    """A shift with start==end AND crosses_midnight=True reports 24h (e.g., 24x7 standby)."""
+    org, _, _, emp, _ = org_setup
+    standby = Shift.all_objects.create(
+        org_id=org.id,
+        name="Standby",
+        code="X",
+        start_time=dt.time(0, 0),
+        end_time=dt.time(0, 0),
+        crosses_midnight=True,
+    )
+    ShiftAssignment.all_objects.create(
+        org_id=org.id,
+        employee=emp,
+        shift=standby,
+        work_date=dt.date(2026, 3, 4),
+        assigned_by=uuid.uuid4(),
+    )
+    payload = build_calendar(
+        org_id=org.id,
+        date_from=dt.date(2026, 3, 4),
+        date_to=dt.date(2026, 3, 4),
+    )
+    by_day = {d["date"]: d for d in payload["stats"]["by_day"]}
+    assert by_day["2026-03-04"]["hours"] == 24
