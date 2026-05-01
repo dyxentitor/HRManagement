@@ -100,6 +100,7 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
             "destroy",
             "bulk_pattern",
             "bulk_fill",
+            "cover_up",
         ):
             return ["schedule:assignment:write:team"]
         if self.action == "publish":
@@ -215,6 +216,25 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
             include_inactive=include_inactive,
         )
         return Response(payload)
+
+    @action(detail=True, methods=["patch"], url_path="cover-up")
+    def cover_up(self, request, pk=None):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        assignment = self.get_object()
+        new_id = request.data.get("covering_for_id")
+        if new_id is not None and str(new_id) == str(assignment.employee_id):
+            return Response(
+                {"detail": "An employee cannot cover for themselves."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        assignment.covering_for_id = new_id
+        try:
+            assignment.full_clean()
+        except DjangoValidationError as exc:
+            return Response(exc.message_dict, status=status.HTTP_400_BAD_REQUEST)
+        assignment.save(update_fields=["covering_for"])
+        return Response(self.get_serializer(assignment).data)
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
