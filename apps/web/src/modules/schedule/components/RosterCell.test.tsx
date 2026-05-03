@@ -89,4 +89,44 @@ describe("RosterCell", () => {
 		);
 		expect(screen.getByTestId("draft-dot")).toBeInTheDocument();
 	});
+
+	it("renders heavy violet outline when focused=true", () => {
+		render(
+			<RosterCell
+				viewMode="month"
+				tone={{ kind: "off", letter: "X", tone: "surface" }}
+				employeeName="A"
+				date="2026-03-04"
+				shiftName={null}
+				startTime={null}
+				endTime={null}
+				selected={false}
+				focused={true}
+				onClick={() => {}}
+				onShiftClick={() => {}}
+			/>,
+		);
+		const btn = screen.getByRole("button");
+		expect(btn.className).toContain("ring-2");
+		expect(btn.className).toContain("accent-500");
+	});
+
+	it("renders coral dot when pendingEdit=true regardless of isPublished", () => {
+		render(
+			<RosterCell
+				viewMode="month"
+				tone={{ kind: "shift", letter: "M", tone: "accent", isPublished: true }}
+				employeeName="A"
+				date="2026-03-04"
+				shiftName="Morning"
+				startTime="09:00"
+				endTime="18:00"
+				selected={false}
+				pendingEdit={true}
+				onClick={() => {}}
+				onShiftClick={() => {}}
+			/>,
+		);
+		expect(screen.getByTestId("draft-dot")).toBeInTheDocument();
+	});
 });

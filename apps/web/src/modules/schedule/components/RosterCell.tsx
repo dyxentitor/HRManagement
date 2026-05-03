@@ -11,6 +11,8 @@ interface Props {
 	startTime: string | null;
 	endTime: string | null;
 	selected: boolean;
+	focused?: boolean;
+	pendingEdit?: boolean;
 	onClick: () => void;
 	onShiftClick: () => void;
 }
@@ -36,6 +38,8 @@ export function RosterCell(props: Props) {
 		startTime,
 		endTime,
 		selected,
+		focused = false,
+		pendingEdit = false,
 		onClick,
 		onShiftClick,
 	} = props;
@@ -53,7 +57,8 @@ export function RosterCell(props: Props) {
 			? "bg-[repeating-linear-gradient(45deg,rgb(var(--bg-canvas)),rgb(var(--bg-canvas))_4px,rgb(var(--bg-surface))_4px,rgb(var(--bg-surface))_8px)]"
 			: "";
 	const coverBorder = tone.kind === "cover-up" ? "ring-2 ring-coral" : "";
-	const isDraft = tone.kind === "shift" && tone.isPublished === false;
+	const isDraft =
+		pendingEdit || (tone.kind === "shift" && tone.isPublished === false);
 
 	const cls = cn(
 		"relative w-full text-center rounded font-mono text-text-primary transition-colors cursor-pointer",
@@ -62,6 +67,7 @@ export function RosterCell(props: Props) {
 		inactiveStripe,
 		coverBorder,
 		selected && "outline outline-2 outline-accent-500/60",
+		focused && "outline outline-2 outline-accent-500 ring-2 ring-accent-500/30",
 		"hover:outline hover:outline-1 hover:outline-accent-500/40",
 	);
 
