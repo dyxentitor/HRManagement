@@ -227,7 +227,10 @@ export default function RosterPage() {
 	) {
 		if (!payload || selection.length === 0 || !payload.shifts.length) return;
 		const result = await scheduleApi.bulkFill({
-			cells: selection,
+			cells: selection.map((s) => ({
+				employee_id: s.employee_id,
+				work_date: s.date,
+			})),
 			shift_id: payload.shifts[0].id,
 			notes: "",
 		});
