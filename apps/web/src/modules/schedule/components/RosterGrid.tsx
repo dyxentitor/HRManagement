@@ -13,21 +13,25 @@ interface SelectionKey {
 interface Props {
 	viewMode: "week" | "month";
 	payload: CalendarPayload;
-	onCellClick: (
+	pendingEdits: Map<string, string | null>;
+	focusedEmployeeId?: string;
+	focusedDate?: string;
+	onCellOpen: (
 		key: SelectionKey,
 		assignment: CalendarAssignment | undefined,
 	) => void;
+	onRowOpen: (employeeId: string) => void;
 	onSelectionApply: (selection: SelectionKey[]) => void;
 }
 
 function buildDateRange(from: string, to: string): string[] {
 	const out: string[] = [];
-	const start = new Date(`${from}T00:00:00`);
-	const end = new Date(`${to}T00:00:00`);
+	const start = new Date(`${from}T00:00:00Z`);
+	const end = new Date(`${to}T00:00:00Z`);
 	const cur = new Date(start);
 	while (cur <= end) {
 		out.push(cur.toISOString().slice(0, 10));
-		cur.setDate(cur.getDate() + 1);
+		cur.setUTCDate(cur.getUTCDate() + 1);
 	}
 	return out;
 }
@@ -35,7 +39,11 @@ function buildDateRange(from: string, to: string): string[] {
 export function RosterGrid({
 	viewMode,
 	payload,
-	onCellClick,
+	pendingEdits,
+	focusedEmployeeId,
+	focusedDate,
+	onCellOpen,
+	onRowOpen,
 	onSelectionApply,
 }: Props) {
 	const [collapsed, setCollapsed] = useState<Set<string>>(() => {
@@ -141,7 +149,7 @@ export function RosterGrid({
 									key={d}
 									className="text-label uppercase text-text-tertiary text-center px-1 py-1"
 								>
-									{new Date(`${d}T00:00:00`).getDate()}
+									{new Date(`${d}T00:00:00Z`).getUTCDate()}
 								</th>
 							))}
 						</tr>
@@ -158,7 +166,11 @@ export function RosterGrid({
 								payload={payload}
 								assignmentByKey={assignmentByKey}
 								selection={selection}
-								onCellClick={onCellClick}
+								pendingEdits={pendingEdits}
+								focusedEmployeeId={focusedEmployeeId}
+								focusedDate={focusedDate}
+								onCellOpen={onCellOpen}
+								onRowOpen={onRowOpen}
 								onShiftClick={handleShiftClick}
 							/>
 						))}
@@ -178,7 +190,11 @@ interface TeamRowsProps {
 	payload: CalendarPayload;
 	assignmentByKey: Map<string, CalendarAssignment>;
 	selection: SelectionKey[];
-	onCellClick: Props["onCellClick"];
+	pendingEdits: Map<string, string | null>;
+	focusedEmployeeId?: string;
+	focusedDate?: string;
+	onCellOpen: Props["onCellOpen"];
+	onRowOpen: Props["onRowOpen"];
 	onShiftClick: (key: SelectionKey) => void;
 }
 
@@ -206,23 +222,49 @@ function TeamRows(p: TeamRowsProps) {
 			{!p.collapsed &&
 				p.team.members.map((emp) => (
 					<tr key={emp.id}>
-						<td className="px-2 py-0.5 text-small text-text-primary sticky left-0 bg-canvas whitespace-nowrap">
-							{emp.full_name}
+						<td className="px-2 py-0.5 text-small sticky left-0 bg-canvas whitespace-nowrap">
+							<button
+								type="button"
+								onClick={() => p.onRowOpen(emp.id)}
+								className="text-text-primary hover:text-accent-200"
+							>
+								{emp.full_name}
+							</button>
 						</td>
 						{p.dates.map((d) => {
-							const a = p.assignmentByKey.get(`${emp.id}|${d}`);
+							const key = `${emp.id}|${d}`;
+							const serverAssignment = p.assignmentByKey.get(key);
+							const pendingShiftId = p.pendingEdits.get(key);
+							const effectiveAssignment =
+								pendingShiftId === undefined
+									? serverAssignment
+									: pendingShiftId === null
+										? undefined
+										: ({
+												...(serverAssignment ?? {}),
+												shift_id: pendingShiftId,
+												shift_code:
+													p.payload.shifts.find((s) => s.id === pendingShiftId)
+														?.code ?? "?",
+												is_published: false,
+											} as CalendarAssignment);
 							const tone = resolveCellTone({
 								employee: emp,
 								date: d,
-								assignment: a,
+								assignment: effectiveAssignment,
 								leaves: p.payload.leaves,
 								holidays: p.payload.holidays,
 							});
 							const selected = p.selection.some(
 								(s) => s.employee_id === emp.id && s.date === d,
 							);
-							const shift = a
-								? p.payload.shifts.find((s) => s.id === a.shift_id)
+							const focused =
+								p.focusedEmployeeId === emp.id && p.focusedDate === d;
+							const pendingEdit = p.pendingEdits.has(key);
+							const shift = effectiveAssignment
+								? p.payload.shifts.find(
+										(s) => s.id === effectiveAssignment.shift_id,
+									)
 								: null;
 							return (
 								<td key={d} className="px-0.5 py-0.5">
@@ -235,8 +277,13 @@ function TeamRows(p: TeamRowsProps) {
 										startTime={shift?.start_time ?? null}
 										endTime={shift?.end_time ?? null}
 										selected={selected}
+										focused={focused}
+										pendingEdit={pendingEdit}
 										onClick={() =>
-											p.onCellClick({ employee_id: emp.id, date: d }, a)
+											p.onCellOpen(
+												{ employee_id: emp.id, date: d },
+												serverAssignment,
+											)
 										}
 										onShiftClick={() =>
 											p.onShiftClick({ employee_id: emp.id, date: d })

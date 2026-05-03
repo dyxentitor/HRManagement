@@ -65,64 +65,64 @@ const payload: CalendarPayload = {
 	stats: { by_day: [], totals: { hours: 0, headcount: 0 }, coverage: [] },
 };
 
+const baseProps = {
+	viewMode: "week" as const,
+	payload,
+	pendingEdits: new Map<string, string | null>(),
+	onCellOpen: vi.fn(),
+	onRowOpen: vi.fn(),
+	onSelectionApply: vi.fn(),
+};
+
 describe("RosterGrid", () => {
 	beforeEach(() => {
 		localStorage.clear();
+		vi.clearAllMocks();
 	});
 
 	it("renders teams as collapsible groups", () => {
-		render(
-			<RosterGrid
-				viewMode="week"
-				payload={payload}
-				onCellClick={vi.fn()}
-				onSelectionApply={vi.fn()}
-			/>,
-		);
+		render(<RosterGrid {...baseProps} />);
 		expect(screen.getByText(/Focus/)).toBeInTheDocument();
 		expect(screen.getByText("Syafiq")).toBeInTheDocument();
 		expect(screen.getByText("Anas")).toBeInTheDocument();
 	});
 
 	it("collapses a team group on header click", async () => {
-		render(
-			<RosterGrid
-				viewMode="week"
-				payload={payload}
-				onCellClick={vi.fn()}
-				onSelectionApply={vi.fn()}
-			/>,
-		);
-		await userEvent.click(screen.getByRole("button", { name: /Focus/ }));
+		render(<RosterGrid {...baseProps} />);
+		await userEvent.click(screen.getByRole("button", { name: /^▼ Focus/ }));
 		expect(screen.queryByText("Syafiq")).not.toBeInTheDocument();
 	});
 
-	it("invokes onCellClick on plain click", async () => {
-		const onCellClick = vi.fn();
-		render(
-			<RosterGrid
-				viewMode="week"
-				payload={payload}
-				onCellClick={onCellClick}
-				onSelectionApply={vi.fn()}
-			/>,
-		);
+	it("invokes onCellOpen on plain click", async () => {
+		const onCellOpen = vi.fn();
+		render(<RosterGrid {...baseProps} onCellOpen={onCellOpen} />);
 		const cells = screen
 			.getAllByRole("button")
 			.filter((b) => b.textContent === "X");
 		await userEvent.click(cells[0]);
-		expect(onCellClick).toHaveBeenCalled();
+		expect(onCellOpen).toHaveBeenCalled();
+		const arg = onCellOpen.mock.calls[0][0];
+		expect(arg).toHaveProperty("employee_id");
+		expect(arg).toHaveProperty("date");
+	});
+
+	it("invokes onRowOpen when employee name is clicked", async () => {
+		const onRowOpen = vi.fn();
+		render(<RosterGrid {...baseProps} onRowOpen={onRowOpen} />);
+		await userEvent.click(screen.getByRole("button", { name: "Syafiq" }));
+		expect(onRowOpen).toHaveBeenCalledWith("e1");
+	});
+
+	it("renders draft dot when pending edit exists for cell", () => {
+		const pendingEdits = new Map<string, string | null>([
+			["e1|2026-03-05", "s1"],
+		]);
+		render(<RosterGrid {...baseProps} pendingEdits={pendingEdits} />);
+		expect(screen.getAllByTestId("draft-dot").length).toBeGreaterThanOrEqual(1);
 	});
 
 	it("shift-click extends selection and shows toolbar", async () => {
-		render(
-			<RosterGrid
-				viewMode="week"
-				payload={payload}
-				onCellClick={vi.fn()}
-				onSelectionApply={vi.fn()}
-			/>,
-		);
+		render(<RosterGrid {...baseProps} />);
 		const cells = screen
 			.getAllByRole("button")
 			.filter((b) => b.textContent === "X");
