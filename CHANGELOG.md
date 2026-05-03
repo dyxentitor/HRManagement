@@ -4,6 +4,30 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-05-02
+
+**Roster UX polish — per-employee side panel replaces the cell popover.**
+
+### Added
+- **`<RowEditPanel>`** — right-docked drawer for per-employee editing. Opens on cell click (scrolled to clicked day) or on employee-name click (whole row). Top: weekday-pattern picker + `[1mo|2mo|3mo]` toggle + Apply button. Bottom: scrollable day list with one inline dropdown per date. Sticky Save bar with pending count.
+- **Optimistic preview**: pending edits in the panel render immediately in the main grid via a shared `pendingEdits` map. Save commits via existing `bulk-fill` (per shift) + `deleteAssignment`. Cancel rolls everything back without an API call.
+- **Cell focus indicator**: clicked cell gets a heavier violet ring while panel is open with that cell focused.
+- **Coral dot merged meaning**: same indicator now signals both "unsaved" and "unpublished".
+
+### Changed
+- `<RosterGrid>` API: `onCellClick` → `onCellOpen({employee_id, date})`; new props `onRowOpen`, `pendingEdits`, `focusedEmployeeId`, `focusedDate`.
+- `<RosterCell>` API: new `focused?: boolean` and `pendingEdit?: boolean` props.
+- Pattern Apply still uses the existing `bulk-pattern` endpoint, but commits server-side immediately (with confirm dialog and a "discard N drafts" warning if pending edits exist).
+
+### Removed
+- `<CellPopover>` component + tests — replaced by `<RowEditPanel>`. Cover-up flow continues to use `window.prompt` (proper picker remains v1.5).
+
+### Frontend tests
+~162 (was 145; +12 RowEditPanel + 2 RosterCell + 2 RosterGrid + 1 RosterPage − 3 CellPopover deletion).
+
+### Backend tests
+559 passed (no backend changes; pre-existing attendance failure carried).
+
 ## [1.4.0] - 2026-05-02
 
 **Roster redesign — unified Week/Month planning page on the v1.1.0 theme.**
