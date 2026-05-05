@@ -10,6 +10,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from common.feature_flags.decorators import requires_feature
+from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
 
 from .models import Certification, TrainingAssignment, TrainingPlan, TrainingProgress
@@ -84,10 +85,22 @@ class CertificationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
-        """Return own certifications."""
+        """Return own certifications.
+
+        Certification.employee_id is an Employee.id (per seed_demo_data),
+        not a User.id — resolve the User → Employee link first, then filter.
+        Mirrors the PayslipViewSet.me pattern. Returns [] if the user has no
+        linked Employee (e.g., admin demo accounts).
+        """
+        emp = Employee.all_objects.filter(
+            user_id=request.user.id,
+            deleted_at__isnull=True,
+        ).first()
+        if emp is None:
+            return Response([])
         qs = Certification.all_objects.filter(
             org_id=request.user.org_id,
-            employee_id=request.user.id,
+            employee_id=emp.id,
             deleted_at__isnull=True,
         ).order_by("expires_on")
         serializer = CertificationSerializer(qs, many=True)
@@ -190,11 +203,22 @@ class TrainingAssignmentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
-        """Return own training assignments."""
+        """Return own training assignments.
+
+        TrainingAssignment.employee_id is an Employee.id (per seed_demo_data),
+        not a User.id — resolve User → Employee first. Returns [] if the user
+        has no linked Employee row.
+        """
+        emp = Employee.all_objects.filter(
+            user_id=request.user.id,
+            deleted_at__isnull=True,
+        ).first()
+        if emp is None:
+            return Response([])
         qs = (
             TrainingAssignment.all_objects.filter(
                 org_id=request.user.org_id,
-                employee_id=request.user.id,
+                employee_id=emp.id,
                 deleted_at__isnull=True,
             )
             .prefetch_related("progress")
