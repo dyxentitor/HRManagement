@@ -4,6 +4,51 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-05-06
+
+**Module visibility + per-role API fixes — non-admin users now see the same
+disabled-modules state admins configured.**
+
+### Fixed
+- **Sidebar / command palette correctly hide disabled modules for every
+  role** (not just `org_admin`). `GET /api/v1/org/feature-flags/` was gated
+  on `org:feature_flag:read`; non-admin users got 403, the
+  `FeaturesProvider` caught the error and fail-opened (treating every flag
+  as enabled), and disabled modules' nav links stayed visible. The endpoint
+  now requires only authentication; PATCH still requires
+  `org:feature_flag:write`. Flags describe org-level UI state, not secrets.
+  (`apps/api/common/feature_flags/views.py`)
+- **`GET /api/v1/certifications/me/`** filtered by
+  `employee_id=request.user.id`, but the FK target is `Employee.id` (per
+  `seed_demo_data.py:1207`). Real seeded employees got an empty list
+  instead of their own certifications. Now resolves User → Employee first,
+  matching the `PayslipViewSet.me` pattern; returns `[]` if the user has no
+  linked Employee. Latent in v1.4.0/v1.4.1 because the certification module
+  was disabled (decorator returned 403 before the bad filter ever ran).
+  (`apps/api/modules/certification/views.py`)
+- **`GET /api/v1/training/assignments/me/`** — same bug pattern, same fix.
+
+### Backend tests
+565 passed (was 559) + 3 pre-existing skipped (postgres-only).
+Added 3 regression tests:
+- `feature_flags::test_list_visible_to_any_authenticated_user`
+- `certification::test_my_certifications_empty_when_user_has_no_employee`
+- `certification::test_my_assignments_empty_when_user_has_no_employee`
+Plus the existing `test_my_certifications` and `test_my_assignments` were
+updated to mirror production seed semantics (Cert/TrainingAssignment
+`employee_id` is `Employee.id`, not `User.id`).
+
+### Frontend tests
+162 passed (unchanged — no frontend code changes).
+
+### Notes
+- This is a security-neutral perm change. Feature-flag state describes
+  which UI surfaces a given org has enabled. It is not secret data and is
+  already implicitly visible (a 403 from `@requires_feature` reveals the
+  same information). The PATCH endpoint remains gated.
+- Audit reproduction record: `docs/audits/2026-05-06-module-visibility.md`
+  (local-only — `docs/` is gitignored).
+
 ## [1.4.1] - 2026-05-02
 
 **Roster UX polish — per-employee side panel replaces the cell popover.**
