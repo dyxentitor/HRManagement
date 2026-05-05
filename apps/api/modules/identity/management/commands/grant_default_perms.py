@@ -22,6 +22,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from modules.identity.models import Permission, Role, RolePermission
+from modules.identity.services.permissions import invalidate_role_users
 from modules.organization.models import Organization
 
 
@@ -78,6 +79,11 @@ class Command(BaseCommand):
                         [RolePermission(role=role, permission_id=pid) for pid in missing],
                         ignore_conflicts=True,
                     )
+                    # bulk_create skips signals; the perm-set cache (60-300s
+                    # TTL) would keep returning stale sets to logged-in users
+                    # of this role until expiry. Invalidate now so the new
+                    # perms take effect on the next request.
+                    invalidate_role_users(role.id)
                     total_added += len(missing)
                     self.stdout.write(f"  {role.code} (org {org_id}): added {len(missing)} perms")
 
