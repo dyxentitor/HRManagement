@@ -135,7 +135,11 @@ export const NAV: NavGroup[] = [
 				to: "/payroll/admin",
 				icon: Wallet,
 				perm: "payroll:run:create",
-				module: "payroll",
+				// Backend uses @requires_feature("payslip") for PayrollPeriodViewSet
+				// and PayrollRunViewSet. Module key must match the registry key —
+				// "payroll" was a typo that fell into useFeature's unknown-key=enabled
+				// branch, so disabled-payslip orgs still saw the Payroll sidebar link.
+				module: "payslip",
 			},
 			{
 				label: "Reports",

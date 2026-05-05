@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 	user: { email: "admin@provintell.demo" } as { email: string } | null,
 	roles: ["org_admin"],
 	logout: vi.fn(),
+	flags: {} as Record<string, boolean>, // missing key = enabled (matches useFeature behavior)
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -28,6 +29,9 @@ vi.mock("@/lib/auth", () => ({
 }));
 vi.mock("@/lib/perm", () => ({
 	useCan: (perm: string) => mocks.perms.has(perm),
+}));
+vi.mock("@/lib/feature-flags", () => ({
+	useFeature: (key: string) => mocks.flags[key] !== false,
 }));
 
 describe("Sidebar", () => {
@@ -73,6 +77,7 @@ describe("Sidebar", () => {
 
 	it("shows the Admin group when an admin perm is granted", () => {
 		mocks.perms = new Set(["employee:read:org"]);
+		mocks.flags = {};
 		render(
 			<MemoryRouter>
 				<Sidebar />
@@ -82,5 +87,32 @@ describe("Sidebar", () => {
 		expect(
 			screen.getByRole("link", { name: /employees/i }),
 		).toBeInTheDocument();
+	});
+
+	it("hides Payroll when the payslip feature flag is disabled, even if perm is granted", () => {
+		// Payroll endpoints are gated by @requires_feature("payslip") on the
+		// backend (PayrollPeriodViewSet, PayrollRunViewSet). The sidebar item
+		// must use the same key so it hides in lockstep.
+		mocks.perms = new Set(["payroll:run:create"]);
+		mocks.flags = { payslip: false };
+		render(
+			<MemoryRouter>
+				<Sidebar />
+			</MemoryRouter>,
+		);
+		expect(
+			screen.queryByRole("link", { name: /payroll/i }),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows Payroll when the payslip feature flag is enabled and perm is granted", () => {
+		mocks.perms = new Set(["payroll:run:create"]);
+		mocks.flags = { payslip: true };
+		render(
+			<MemoryRouter>
+				<Sidebar />
+			</MemoryRouter>,
+		);
+		expect(screen.getByRole("link", { name: /payroll/i })).toBeInTheDocument();
 	});
 });
