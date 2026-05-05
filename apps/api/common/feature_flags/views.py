@@ -18,9 +18,16 @@ def _has_perm(user, code: str) -> bool:
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def feature_flags_list_view(request):
-    """GET /api/v1/org/feature-flags/ — list all 15 entries with state."""
-    if not _has_perm(request.user, "org:feature_flag:read"):
-        return Response({"detail": "Permission denied"}, status=403)
+    """GET /api/v1/org/feature-flags/ — list all 15 entries with state.
+
+    Read access is open to any authenticated user belonging to the org.
+    The frontend FeaturesProvider relies on this to hide disabled modules
+    in the sidebar / command palette for non-admin roles. Flags describe
+    org-level UI visibility, not secrets — gating the read on
+    org:feature_flag:read caused the v1.4.1-regression where disabled
+    modules stayed visible to managers/employees (admin's UI worked).
+    Write access (PATCH below) still requires org:feature_flag:write.
+    """
     entries = list_for_org(request.user.org_id)
     return Response(FeatureFlagSerializer(entries, many=True).data)
 

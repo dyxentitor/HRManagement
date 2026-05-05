@@ -80,3 +80,18 @@ def test_employee_cannot_patch(org):
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'e@x.com')}")
     resp = client.patch("/api/v1/org/feature-flags/claims/", {"enabled": False}, format="json")
     assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_list_visible_to_any_authenticated_user(org):
+    """Non-admin authenticated users must read flag state so the UI can hide
+    disabled modules. Flags describe org-level UI visibility, not secrets."""
+    emp = User.objects.create_user(
+        email="reader@x.com", password="x", org_id=org.id
+    )  # pragma: allowlist secret
+    UserRole.objects.create(user=emp, role=Role.objects.get(org_id=org.id, code="employee"))
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'reader@x.com')}")
+    resp = client.get("/api/v1/org/feature-flags/")
+    assert resp.status_code == 200
+    assert len(resp.json()) == 15
