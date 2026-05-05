@@ -4,6 +4,53 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-05-06
+
+**Sidebar Payroll item now hides in lockstep with the `payslip` feature flag.**
+
+### Fixed
+- `<Sidebar>` Payroll nav item declared `module: "payroll"` — but `payroll`
+  is not a key in the backend feature-flag registry. The actual key for
+  the payroll backend is `payslip`: `PayrollPeriodViewSet` and
+  `PayrollRunViewSet` (`apps/api/modules/payslip/views.py`) are both
+  wrapped in `@requires_feature("payslip")`.
+
+  Because `useFeature(key)` returns `true` for unknown keys (intentional —
+  newly added flags shouldn't blank-screen the UI before the registry
+  catches up), the typo silently bypassed the flag check. Roles with
+  `payroll:run:create` (org_admin, hr_manager, finance) saw the Payroll
+  link regardless of `payslip` state. Click → backend 403 module_disabled
+  → page renders the literal text `GET /api/v1/payroll/periods/ failed`.
+
+  After v1.4.2 fixed feature-flag READ for non-admin users, this sidebar
+  mismatch became the next-most-visible UX bug.
+
+  (`apps/web/src/components/shell/sidebar-nav.ts`)
+
+### Frontend tests
+164 passed (was 162). Added 2 Sidebar regression tests:
+- "hides Payroll when the payslip feature flag is disabled, even if perm is granted"
+- "shows Payroll when the payslip feature flag is enabled and perm is granted"
+
+The existing Sidebar tests now also explicitly mock `useFeature` so the
+flag-vs-perm matrix is locked in.
+
+### Backend tests
+565 passed, 3 skipped (postgres-only — unchanged, no backend code changes).
+
+### Notes
+- 5-of-7 default roles re-verified via Playwright after the fix: org_admin,
+  hr_manager, finance now hide Payroll when payslip is disabled (matches
+  manager/employee, which already did via lacking the perm). Confirmed the
+  symmetric "show on toggle ON" behavior with a live admin flag flip.
+  `team_lead` and `auditor` have no demo accounts; sidebar logic is the
+  same code path so no new risk.
+- Audit reproduction record: `docs/audits/2026-05-06-module-key-mismatches.md`
+  (local-only — `docs/` is gitignored).
+- Defense-in-depth follow-up tracked for v1.5: a generic "module disabled"
+  empty-state component for direct-URL navigation to disabled-module
+  pages, instead of rendering a raw `GET /api/v1/X failed` string.
+
 ## [1.4.2] - 2026-05-06
 
 **Module visibility + per-role API fixes — non-admin users now see the same
