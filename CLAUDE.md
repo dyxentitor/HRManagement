@@ -8,7 +8,7 @@
 
 - **Stack** — Django 5 + DRF (`apps/api`) · React 18 + Vite + TS + Tailwind (`apps/web`) · Postgres 16 · Redis · Celery · MinIO/S3 · Docker Compose
 - **Layout** — `apps/api`, `apps/web`, `packages/contracts` (generated OpenAPI → TS types), `deploy/`, `docs/` (specs, plans, audits, runbooks), `References/` (design + ops notes)
-- **Current version** — `v1.4.3` on `master` (tag dated 2026-05-06). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
+- **Current version** — `v1.5.0` on `master` (tag dated 2026-05-06). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
 - **Mission** — Phase 1 web HRMS for Provintell (own-office deployment first). Phase 2 = SaaS, Phase 3 = mobile.
 - **Tenancy / locale** — multi-tenant-ready schema, `Asia/Kuala_Lumpur`, `en-MY`, MYR.
 - **Day-one demo logins** — see `References/KEY.md`. Do not commit changes that break them.
@@ -46,26 +46,30 @@ All shipped. Each row is anchored on a real git tag.
 | `v1.4.1` | 2026-05-04 | Roster UX polish — `RowEditPanel` per-employee drawer, optimistic preview, focus ring, pattern apply 1/2/3 months | `2026-05-02-roster-ux-polish.md` | `2026-05-02-roster-ux-polish.md` |
 | `v1.4.2` | 2026-05-06 | Module visibility — non-admin roles now hide admin-disabled modules in sidebar / command palette; cert/me + training/me filter by Employee.id (latent bug) | (no spec — bugfix) | (no plan — direct fix) |
 | `v1.4.3` | 2026-05-06 | Sidebar Payroll module-key typo — was `module: "payroll"`, must match backend's `@requires_feature("payslip")`. Affected org_admin / hr_manager / finance | (no spec — typo fix) | (no plan — one-liner) |
+| `v1.5.0` | 2026-05-06 | Phase 1 cleanup — manager/finance/team_lead/auditor can now file own leave; `grant_default_perms` now busts perm cache; older audit rows verified-fixed and closed | (no spec — bugfix) | (no plan — one-liner) |
 
-### 2.3 Test counts at HEAD (v1.4.3)
+### 2.3 Test counts at HEAD (v1.5.0)
 
-- Backend: **565 passed** + 3 skipped (postgres-only triggers). No backend changes since v1.4.2.
-- Frontend: **164 passed** (was 162 at v1.4.2; +2 Sidebar feature-flag regression tests)
-- Permission codes: **109** (105 at v1.0.0 → +2 `org:feature_flag:*` in v1.3.0 → +2 `team:*` in v1.4.0)
+- Backend: **569 passed** + 3 skipped (postgres-only triggers). +4 from v1.4.3 (parametrized perm-coverage regressions for manager/finance/team_lead/auditor).
+- Frontend: **164 passed** (no frontend changes in v1.5.0).
+- Permission codes: **109** (no new codes; the v1.5.0 fix is purely a role-grants change — adds `leave:request:create:self` and `leave:request:cancel:self` to 4 existing roles).
 
 ### 2.4 In-flight / next up
 
 - **Working tree at HEAD** — only `apps/api/uv.lock` modified; untracked `.claude/` and `.playwright-mcp/`. No half-finished feature branches.
-- **Local tags not pushed** — `v1.4.1`, `v1.4.2`, `v1.4.3` are local-only on `master`. Confirm with the user before `git push origin master --tags`.
-- **Audit-driven backlog** (audits live under `docs/audits/`, which is gitignored — they're scratch records, see §4):
-  - `2026-04-29-system-state.md` — Bug #1 (employee payslip detail 403) is **FIXED** (`apps/api/modules/payslip/views.py:39-47` matches the audit's recommendation). Bug #2 (payroll CSV null token), Bug #3 (worker encryption-key drift), Bug #4 (cert/training celery-beat tasks unscheduled) — verify before fixing in v1.5.
-  - `2026-04-29-ui-quality.md` — "FAIL" rows: MyCertificationsPage, MyTrainingPage, AdminCertPage, MySchedulePage, KpiAdminPage, MyClaimsPage, MyPayslipsPage. Cosmetic, candidates for v1.5.
-  - `2026-05-06-module-visibility.md` — module-visibility + cert/training filter audit driving v1.4.2 — both bugs **FIXED**.
-  - `2026-05-06-module-key-mismatches.md` — Payroll sidebar key typo audit driving v1.4.3 — **FIXED**.
-- **Deferred to v1.5**:
-  - Generic "module disabled" empty-state component for direct-URL navigation to disabled pages (currently shows raw `GET /api/v1/X failed`)
-  - `manager` role lacks `leave:request:create:self` — managers can't apply for their own leave (perm-catalogue gap, surfaced during v1.4.3 sweep)
-  - Drag-and-drop in roster, panel keyboard shortcuts, mobile redesign, proper cover-up picker (currently `window.prompt`)
+- **Local tags not pushed** — `v1.4.1`, `v1.4.2`, `v1.4.3`, `v1.5.0` are local-only on `master`. Confirm with the user before `git push origin master --tags`.
+- **Audit closure status**:
+  - `2026-04-29-system-state.md` — Bug #1 (payslip detail 403): **FIXED**. Bug #2 (payroll CSV null token): **FIXED**. Bug #4 (cert/training beat tasks): **FIXED**. Bug #3 (encryption-key drift): **DEFERRED** to a dedicated key-management session before first prod deployment — both `api`/`worker` containers share `5rrM…` but `.env` and `References/KEY.md` document `usD5…`; data-loss risk if mishandled, needs rotation playbook walkthrough not a code-only fix.
+  - `2026-04-29-ui-quality.md` — "FAIL" rows still pending; cosmetic; v1.5.2–v1.5.8 candidates.
+  - `2026-05-06-module-visibility.md` — driving v1.4.2 — **FIXED**.
+  - `2026-05-06-module-key-mismatches.md` — driving v1.4.3 + v1.5.0 (Class D leave-perm row) — **FIXED**.
+- **Pending — explicit interactive design needed** (don't ship solo):
+  - **v1.5.1: Module-disabled empty-state component** + route-level guard, replacing raw "GET /api/v1/X failed" text on direct-URL navigation. Brainstorm with user first.
+  - **v1.5.1: Cover-up picker** replacing `window.prompt` in roster cover-up flow.
+- **Pending — mechanical, can ship anytime**:
+  - **v1.5.2–v1.5.8** (one per page): UI-quality cosmetic rewrites — PageHeader / `toLocaleDateString` / StatusPill template applied to MyCertificationsPage, MyTrainingPage, AdminCertPage, MySchedulePage, KpiAdminPage, MyClaimsPage, MyPayslipsPage. ~2h per page.
+- **Pending — needs spec before implementation**:
+  - Roster drag-and-drop, panel keyboard shortcuts, proper mobile redesign — each its own brainstorm + spec + plan cycle.
 - **Phase 2 / Phase 3** — separate engagements: SaaS billing + plan-based gating; React Native mobile.
 
 ## 3. Code change hygiene
