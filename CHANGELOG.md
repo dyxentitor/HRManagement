@@ -4,6 +4,100 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-05-06
+
+**Phase 1 cleanup release — closes the perm-catalogue gap surfaced by the
+v1.4.3 sweep, plus verification + documentation of the older audit items
+that were already silently fixed.**
+
+This release was scoped down from the original v1.5.0 punch list once
+verification showed two of the four prior-audit items are already
+addressed in the codebase. The remaining bigger items (empty-state
+component, cover-up picker, UI quality cosmetic rewrites) require an
+interactive design pass and ship in dedicated follow-up releases.
+
+### Fixed
+- **`manager`, `finance`, `team_lead`, `auditor` roles can now file and
+  cancel their own leave.** Surfaced by the v1.4.3 5-role Playwright
+  sweep. None of the four roles had `leave:request:create:self` or
+  `leave:request:cancel:self` — so users with only one of those roles
+  saw the Leave sidebar item hidden and got 403 from
+  `POST /api/v1/leave/requests/`. M3 perm-catalogue gap, not a design
+  decision. Added the two perms to all four roles in
+  `default_roles.yaml`. Existing rows in the Provintell org backfilled
+  via `grant_default_perms` (8 perm links added).
+  (`apps/api/modules/identity/fixtures/default_roles.yaml`)
+
+- **`grant_default_perms` now invalidates the per-user perm cache** after
+  the `bulk_create` that adds new perms. Previously, the cache (60–300 s
+  TTL) held the stale perm set so the backfill appeared to have no effect
+  for ~5 minutes after running. Uses the existing
+  `invalidate_role_users()` helper.
+  (`apps/api/modules/identity/management/commands/grant_default_perms.py`)
+
+### Verified-already-fixed (documented for closure)
+The 2026-04-29 system-state audit listed four bugs. Two of them were
+already resolved in later commits but the audit row was never closed:
+
+- **Bug #1 — employee payslip detail 403** — fixed in v1.1.0/v1.2.0
+  cycle. `PayslipViewSet.required_perms` (`apps/api/modules/payslip/views.py:39-47`)
+  now returns `payslip:read:self` for `me`, `retrieve`, and `list`,
+  matching the audit's recommended fix.
+- **Bug #2 — payroll CSV upload null token** — fixed.
+  `apps/web/src/modules/payslip/api.ts:91-92` now uses
+  `tokenStorage.getAccess()`.
+- **Bug #4 — cert/training celery beat unscheduled** — fixed.
+  `apps/api/hrms_api/celery.py:20-30` schedules
+  `detect-certification-expiry` (02:00) and `detect-training-overdue`
+  (02:15) daily.
+
+### Deferred (deliberately, with reasons)
+
+- **Bug #3 — `HRMS_FIELD_ENCRYPTION_KEY` consolidation.** Both `api` and
+  `worker` containers now share the same key (`5rrM…`). However, repo-root
+  `.env` has a different unused key (`usD5…`), and `References/KEY.md`
+  documents `usD5…` as the canonical key. The drift carries data-loss
+  risk if mishandled (data encrypted under one key cannot be decrypted
+  with the other). Deferred to a dedicated **key-management session**
+  before first production deployment, where the user and Claude
+  walk the rotation playbook (`docs/runbooks/rotate-encryption-keys.md`)
+  together. Not a code-only fix.
+
+- **Empty-state component for module-disabled pages** (Class C1 in the
+  v1.5.0 prompt). After v1.4.2/4.3 fixes, sidebar/⌘K never link to a
+  disabled-module page. The only remaining trigger is direct-URL
+  navigation, where the page renders raw `GET /api/v1/X failed`. A
+  proper empty-state component requires an interactive design pass.
+  Tracked for v1.5.1.
+
+- **Cover-up picker** (`window.prompt` replacement, Class C2). Same
+  reason — UX surface needs design discussion, not a solo
+  implementation. Tracked for v1.5.1.
+
+- **UI-quality cosmetic rewrites** (Class D1). 7 pages in
+  `2026-04-29-ui-quality.md` need PageHeader / ISO-date / StatusPill
+  template applied. ~2h per page. Better as 7 atomic releases (v1.5.2
+  through v1.5.8) than one mega-PR.
+
+- **Roster v1.5 deferrals** (drag-and-drop, panel keyboard shortcuts,
+  mobile redesign). Each needs its own spec. Phase 3 / future work.
+
+### Backend tests
+569 passed, 3 skipped (postgres-only). +4 from v1.4.3 (parametrized
+`test_non_employee_roles_can_apply_for_own_leave` for manager / finance /
+team_lead / auditor).
+
+### Frontend tests
+164 passed (no frontend changes in v1.5.0).
+
+### Notes
+- Per-user perm cache (`get_user_perms`) reads through Redis with 5-minute
+  TTL. The cache-invalidation fix in `grant_default_perms` is the right
+  general-case fix; mass-invalidation tools that bypass `bulk_create`
+  signals should follow the same pattern.
+- Audit reproduction record: `docs/audits/2026-05-06-module-key-mismatches.md`
+  (Class D row updated in-place, since `docs/` is gitignored).
+
 ## [1.4.3] - 2026-05-06
 
 **Sidebar Payroll item now hides in lockstep with the `payslip` feature flag.**
