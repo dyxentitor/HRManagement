@@ -8,7 +8,7 @@
 
 - **Stack** — Django 5 + DRF (`apps/api`) · React 18 + Vite + TS + Tailwind (`apps/web`) · Postgres 16 · Redis · Celery · MinIO/S3 · Docker Compose
 - **Layout** — `apps/api`, `apps/web`, `packages/contracts` (generated OpenAPI → TS types), `deploy/`, `docs/` (specs, plans, audits, runbooks), `References/` (design + ops notes)
-- **Current version** — `v1.4.1` on `master` (tag dated 2026-05-04). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
+- **Current version** — `v1.4.2` on `master` (tag dated 2026-05-06). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
 - **Mission** — Phase 1 web HRMS for Provintell (own-office deployment first). Phase 2 = SaaS, Phase 3 = mobile.
 - **Tenancy / locale** — multi-tenant-ready schema, `Asia/Kuala_Lumpur`, `en-MY`, MYR.
 - **Day-one demo logins** — see `References/KEY.md`. Do not commit changes that break them.
@@ -44,21 +44,24 @@ All shipped. Each row is anchored on a real git tag.
 | `v1.3.0` | 2026-04-30 | Admin tools — per-user roles, per-role perm matrix, per-org feature flags | `2026-04-30-hrms-admin-tools.md` | `hrms-admin-{roadmap,A-backend-roles,B-backend-flags,C-frontend,D-polish}.md` |
 | `v1.4.0` | 2026-05-02 | Roster redesign — unified Week/Month grid, Team model, `Shift.code`, `ShiftAssignment.covering_for`, calendar/bulk-fill/cover-up endpoints | `2026-05-02-roster-redesign.md` | `hrms-roster-{roadmap,A-data,B-endpoints,C-frontend,D-polish}.md` |
 | `v1.4.1` | 2026-05-04 | Roster UX polish — `RowEditPanel` per-employee drawer, optimistic preview, focus ring, pattern apply 1/2/3 months | `2026-05-02-roster-ux-polish.md` | `2026-05-02-roster-ux-polish.md` |
+| `v1.4.2` | 2026-05-06 | Module visibility — non-admin roles now hide admin-disabled modules in sidebar / command palette; cert/me + training/me filter by Employee.id (latent bug) | (no spec — bugfix) | (no plan — direct fix) |
 
-### 2.3 Test counts at HEAD (v1.4.1)
+### 2.3 Test counts at HEAD (v1.4.2)
 
-- Backend: **559 passed** + 1 pre-existing failure carried forward (`test_clock_out_completes_record`)
-- Frontend: **162 passed** (was 145 at v1.4.0; +12 RowEditPanel, +2 RosterCell, +2 RosterGrid, +1 RosterPage, −3 deleted CellPopover)
+- Backend: **565 passed** + 3 skipped (postgres-only triggers). The v1.4.1
+  pre-existing `test_clock_out_completes_record` failure is no longer
+  present in the suite output — treat as resolved unless it returns.
+- Frontend: **162 passed** (no frontend changes in v1.4.2)
 - Permission codes: **109** (105 at v1.0.0 → +2 `org:feature_flag:*` in v1.3.0 → +2 `team:*` in v1.4.0)
 
 ### 2.4 In-flight / next up
 
 - **Working tree at HEAD** — only `apps/api/uv.lock` modified; untracked `.claude/` and `.playwright-mcp/`. No half-finished feature branches.
-- **Local tag not pushed** — `v1.4.1` is local-only on `master`. Confirm with the user before `git push origin master --tags`.
-- **Memory marker drift** — `~/.claude/projects/.../memory/hrms_milestone_progress.md` still says v1.4.0 / 17 tags. Update on next memory pass.
-- **Audit-driven backlog** (from `docs/audits/`):
-  - `docs/audits/2026-04-29-system-state.md` — 4 bugs flagged. Bug #1 (employee payslip detail 403), Bug #2 (payroll CSV null token), Bug #3 (worker encryption-key drift) and Bug #4 (cert/training celery-beat tasks unscheduled). Some appear fixed in later commits; verify before re-fixing.
-  - `docs/audits/2026-04-29-ui-quality.md` — per-page L1–L7 scorecard. PreferencesPage, PayrollAdminPage, MyKpiPage, KpiManagerPage marked FIXED. The "FAIL" rows (MyCertificationsPage, MyTrainingPage, AdminCertPage, MySchedulePage, KpiAdminPage, MyClaimsPage, MyPayslipsPage) remain candidates.
+- **Local tags not pushed** — `v1.4.1` and `v1.4.2` are local-only on `master`. Confirm with the user before `git push origin master --tags`.
+- **Audit-driven backlog** (audits live under `docs/audits/`, which is gitignored — they're scratch records, see §4):
+  - `2026-04-29-system-state.md` — Bug #1 (employee payslip detail 403) is **FIXED** (`apps/api/modules/payslip/views.py:39-47` matches the audit's recommendation). Bug #2 (payroll CSV null token), Bug #3 (worker encryption-key drift), Bug #4 (cert/training celery-beat tasks unscheduled) — verify before fixing in v1.5.
+  - `2026-04-29-ui-quality.md` — "FAIL" rows: MyCertificationsPage, MyTrainingPage, AdminCertPage, MySchedulePage, KpiAdminPage, MyClaimsPage, MyPayslipsPage. Cosmetic, candidates for v1.5.
+  - `2026-05-06-module-visibility.md` — module-visibility + cert/training filter audit driving v1.4.2 — both bugs **FIXED**.
 - **Deferred to v1.5** — drag-and-drop in roster, panel keyboard shortcuts, mobile redesign, proper cover-up picker (currently `window.prompt`).
 - **Phase 2 / Phase 3** — separate engagements: SaaS billing + plan-based gating; React Native mobile.
 
@@ -158,7 +161,56 @@ All shipped. Each row is anchored on a real git tag.
 - If you find unfamiliar files (`.claude/`, `.playwright-mcp/`, half-written branches), investigate before deleting — they may be the user's in-progress work.
 - For risky / hard-to-reverse operations: state intent, ask, then act.
 
-### 3.14 Memory hygiene
+### 3.14 Feature-flag READ contract (added v1.4.2)
+
+- `GET /api/v1/org/feature-flags/` is open to **any authenticated user** in
+  the org. The frontend `FeaturesProvider` relies on this to hide disabled
+  modules in sidebar / command palette. Gating it on `org:feature_flag:read`
+  caused the v1.4.1 regression where managers / employees saw disabled
+  modules and clicked into 403s.
+- `PATCH /api/v1/org/feature-flags/{key}/` stays gated on
+  `org:feature_flag:write` (org_admin only).
+- Flags describe **org-level UI visibility, not secrets.** A 403 from
+  `@requires_feature` already reveals the same information. Reading the
+  full list is no more disclosure than that.
+- **Frontend pattern:** `FeaturesProvider` fail-opens on fetch error
+  (treats every flag as enabled). This is correct UX given flags aren't
+  secret; do not change to fail-closed without re-thinking the whole story
+  — fail-closed would hide every nav item including admin's during slow
+  networks.
+
+### 3.15 Test fixture realism (added v1.4.2)
+
+When a model has a UUID column that's *meant* to be an FK to another
+model but lacks the DB-level constraint (e.g., `Certification.employee_id`
+= `models.UUIDField()` not `ForeignKey(Employee)`), tests **must** mirror
+production seed semantics. The cert/me filter bug existed for a year
+because the test fixture put `User.id` directly into `Certification.employee_id`,
+matching the buggy view filter. The bug only surfaced once tests were
+rewritten to use a real `Employee` row.
+
+Rule of thumb: if `seed_provintell.py` or `seed_demo_data.py` writes
+`employee_id=emp.id` (Employee row), the tests must do the same — never
+shortcut by reusing the User UUID.
+
+### 3.16 Per-role smoke check before shipping RBAC-touching changes
+
+Any change that touches feature flags, permission gates, or sidebar /
+command-palette visibility logic must be verified against **all 6 default
+roles**, not just `org_admin`. Demo creds in `References/KEY.md`. The fast
+loop:
+
+1. `curl POST /api/v1/auth/login` for each role → grab JWT.
+2. `curl GET` the headline endpoints (feature-flags + the `/me` endpoints
+   for each module) and capture status codes.
+3. If any non-admin role gets a different visibility outcome than admin,
+   stop and treat it as a bug.
+
+Skip the Playwright sweep for known-good RBAC changes; use it when the
+fix touches sidebar / command-palette wiring directly (where the broken
+state has to be seen, not just measured at the API).
+
+### 3.17 Memory hygiene
 
 - Auto-memory lives at `~/.claude/projects/-home-universal-Claude-HR-Management/memory/`.
 - After every release, update `hrms_milestone_progress.md` (current tag, tag count, test counts, headline scope).
@@ -166,12 +218,12 @@ All shipped. Each row is anchored on a real git tag.
 
 ## 4. Pointers
 
-- Specs — `docs/superpowers/specs/`
-- Plans — `docs/superpowers/plans/`
-- Audits — `docs/audits/` (system-state, ui-quality, bug-followup)
-- Runbooks — `docs/runbooks/` (deploy, rollback, restore, key rotation, ledger verify, monitoring, parallel run)
-- Design references — `References/Design/`, `References/Schdedules_Design/`
-- Ops references — `References/KEY.md`, `References/Pormpt_tostart.md` (note the typo — that's the actual filename)
+- Specs — `docs/superpowers/specs/` (committed only when ancient — `docs/` is gitignored as of commit `3766194`; new specs and plans live there as session-local scratch unless you copy them somewhere tracked)
+- Plans — `docs/superpowers/plans/` (same gitignore note)
+- Audits — `docs/audits/` (system-state, ui-quality, bug-followup, module-visibility) — gitignored, but they're the durable record of investigation work between sessions on this machine. The CHANGELOG entry is the user-facing record; the audit doc is the post-mortem
+- Runbooks — `docs/runbooks/` (deploy, rollback, restore, key rotation, ledger verify, monitoring, parallel run) — also gitignored
+- Design references — `References/Design/`, `References/Schdedules_Design/` (gitignored, local-only)
+- Ops references — `References/KEY.md` (demo creds), `References/Pormpt_tostart.md` (note the typo — that's the actual filename), `References/Prompt_*.md` (one-shot agent prompts)
 - Memory index — `~/.claude/projects/-home-universal-Claude-HR-Management/memory/MEMORY.md`
 - Changelog — `CHANGELOG.md`
 - Make targets — `make help` (dev, test, migrate, contracts, lint, build, seed-provintell, verify-backup)
