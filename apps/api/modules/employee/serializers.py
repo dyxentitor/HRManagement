@@ -34,6 +34,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
     """Full HR view — all fields readable; encrypted fields write-through."""
 
     full_name = serializers.CharField(read_only=True)
+    photo_url = serializers.SerializerMethodField()
+
+    def get_photo_url(self, obj: Employee) -> str | None:
+        if not obj.photo_s3_key:
+            return None
+        from .services.avatar import presigned_get_url
+
+        return presigned_get_url(obj.photo_s3_key, expires_in=3600)
 
     class Meta:
         model = Employee
@@ -84,6 +92,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "status",
             "timezone",
             "locale",
+            "photo_url",
             "created_at",
             "updated_at",
         )
@@ -92,6 +101,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "org_id",
             "ic_last4",
             "bank_account_last4",
+            "photo_url",
             "created_at",
             "updated_at",
         )

@@ -155,3 +155,14 @@ def test_get_me_when_no_employee_profile(org: Organization) -> None:
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {login['access_token']}")
     resp = client.get("/api/v1/employees/me/")
     assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_me_get_includes_photo_url_null_when_no_photo(employee_with_user) -> None:
+    """v1.7.0: GET /me/ returns photo_url. Null when photo_s3_key is empty."""
+    _, _emp, client = employee_with_user
+    resp = client.get("/api/v1/employees/me/")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "photo_url" in body
+    assert body["photo_url"] is None
