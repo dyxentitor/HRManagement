@@ -169,4 +169,48 @@ describe("RowEditPanel", () => {
 		expect(pattern).toEqual({ mon: "s1" });
 		expect(months).toBe(1);
 	});
+
+	it("renders a ⤿ cover-up toggle for each day-row that has an existing assignment", () => {
+		const existingAssignments = [
+			{
+				id: "a1",
+				employee_id: "e1",
+				work_date: "2026-03-03",
+				shift_id: "s1",
+				shift_code: "M",
+				covering_for_id: null,
+				covering_for_name: null,
+				is_published: true,
+				notes: "",
+			},
+		];
+		render(
+			<RowEditPanel {...baseProps} existingAssignments={existingAssignments} />,
+		);
+		expect(
+			screen.getByRole("button", { name: /cover-up for/i }),
+		).toBeInTheDocument();
+	});
+
+	it("expands the day-row with CoverUpPicker when ⤿ is clicked", async () => {
+		const existingAssignments = [
+			{
+				id: "a1",
+				employee_id: "e1",
+				work_date: "2026-03-03",
+				shift_id: "s1",
+				shift_code: "M",
+				covering_for_id: null,
+				covering_for_name: null,
+				is_published: true,
+				notes: "",
+			},
+		];
+		render(
+			<RowEditPanel {...baseProps} existingAssignments={existingAssignments} />,
+		);
+		const toggle = screen.getByRole("button", { name: /cover-up for/i });
+		await userEvent.click(toggle);
+		expect(screen.getByLabelText(/covering for/i)).toBeInTheDocument();
+	});
 });

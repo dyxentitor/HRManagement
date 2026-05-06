@@ -2,14 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import type {
-	CalendarAssignment,
-	CalendarEmployee,
-	CalendarHoliday,
-	CalendarLeave,
-	CalendarShift,
+import {
+	type CalendarAssignment,
+	type CalendarEmployee,
+	type CalendarHoliday,
+	type CalendarLeave,
+	type CalendarShift,
+	scheduleApi,
 } from "../api";
 import { resolveCellTone } from "../lib/cell-tone";
+
+import { CoverUpPicker } from "./CoverUpPicker";
 
 const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 type Weekday = (typeof WEEKDAYS)[number];
@@ -29,6 +32,11 @@ interface Props {
 	onCommit: () => Promise<void>;
 	onPatternApply: (pattern: WeekdayPattern, months: 1 | 2 | 3) => Promise<void>;
 	onClose: () => void;
+	/** Org-wide active employees, used to populate the cover-up picker.
+	 *  Optional so older callers compile without changes. */
+	teammates?: CalendarEmployee[];
+	/** Called after a cover-up is saved or cleared so the parent can refresh. */
+	onCoverUpChange?: () => void;
 }
 
 function buildDateRange(from: string, to: string): string[] {
@@ -84,6 +92,8 @@ export function RowEditPanel(props: Props) {
 		onCommit,
 		onPatternApply,
 		onClose,
+		teammates = [],
+		onCoverUpChange,
 	} = props;
 
 	const [pattern, setPattern] = useState<WeekdayPattern>({});
@@ -92,6 +102,7 @@ export function RowEditPanel(props: Props) {
 		null,
 	);
 	const [saving, setSaving] = useState(false);
+	const [expandedCoverUp, setExpandedCoverUp] = useState<string | null>(null);
 	const listRef = useRef<HTMLUListElement | null>(null);
 
 	const dates = useMemo(
@@ -287,44 +298,93 @@ export function RowEditPanel(props: Props) {
 					});
 					const disabled = isInactive || isOnLeave;
 					const focused = scrollToDate === d;
+					const canCoverUp = !!server && !disabled;
+					const isCoverUpExpanded = expandedCoverUp === server?.id;
 					return (
 						<li
 							key={d}
 							data-date={d}
 							className={cn(
-								"flex items-center justify-between gap-2 px-2 py-1.5 rounded",
+								"px-2 py-1.5 rounded",
 								holiday && "ring-1 ring-yellow/40",
 								focused && "ring-2 ring-accent-500/60",
 							)}
 						>
-							<div className="text-small text-text-secondary">
-								{formatDay(d)}
-								{holiday && (
-									<span className="ml-1 text-xs text-yellow">
-										· {holiday.name}
-									</span>
-								)}
-								{isOnLeave && (
-									<span className="ml-1 text-xs text-mint">· on leave</span>
-								)}
+							<div className="flex items-center justify-between gap-2">
+								<div className="text-small text-text-secondary flex items-center gap-1.5 min-w-0">
+									<span>{formatDay(d)}</span>
+									{holiday && (
+										<span className="text-xs text-yellow truncate">
+											· {holiday.name}
+										</span>
+									)}
+									{isOnLeave && (
+										<span className="text-xs text-mint">· on leave</span>
+									)}
+									{server?.covering_for_id && !isCoverUpExpanded && (
+										<span className="text-xs text-coral truncate">
+											· covering {server.covering_for_name ?? "—"}
+										</span>
+									)}
+								</div>
+								<div className="flex items-center gap-1 shrink-0">
+									<select
+										aria-label={formatDay(d)}
+										value={effectiveShiftId ?? ""}
+										disabled={disabled}
+										onChange={(e) => setDateShift(d, e.target.value || null)}
+										className={cn(
+											"text-xs px-2 py-1 rounded border-0",
+											TONE_BG[tone.tone] ?? "bg-canvas",
+										)}
+									>
+										<option value="">Off</option>
+										{shifts.map((s) => (
+											<option key={s.id} value={s.id}>
+												{s.code} — {s.name}
+											</option>
+										))}
+									</select>
+									{canCoverUp && (
+										<button
+											type="button"
+											aria-label={`Cover-up for ${formatDay(d)}`}
+											onClick={() =>
+												setExpandedCoverUp(
+													isCoverUpExpanded ? null : server?.id ?? null,
+												)
+											}
+											className={cn(
+												"text-xs px-1.5 py-1 rounded border",
+												isCoverUpExpanded
+													? "border-coral/60 text-coral"
+													: server?.covering_for_id
+														? "border-coral/40 text-coral hover:bg-coral/10"
+														: "border-border-subtle text-text-tertiary hover:text-text-primary",
+											)}
+										>
+											⤿
+										</button>
+									)}
+								</div>
 							</div>
-							<select
-								aria-label={formatDay(d)}
-								value={effectiveShiftId ?? ""}
-								disabled={disabled}
-								onChange={(e) => setDateShift(d, e.target.value || null)}
-								className={cn(
-									"text-xs px-2 py-1 rounded border-0",
-									TONE_BG[tone.tone] ?? "bg-canvas",
-								)}
-							>
-								<option value="">Off</option>
-								{shifts.map((s) => (
-									<option key={s.id} value={s.id}>
-										{s.code} — {s.name}
-									</option>
-								))}
-							</select>
+							{canCoverUp && isCoverUpExpanded && server && (
+								<CoverUpPicker
+									assignment={server}
+									teammates={teammates}
+									onSave={async (coveringForId) => {
+										await scheduleApi.coverUp(server.id, coveringForId);
+										setExpandedCoverUp(null);
+										onCoverUpChange?.();
+									}}
+									onClear={async () => {
+										await scheduleApi.coverUp(server.id, null);
+										setExpandedCoverUp(null);
+										onCoverUpChange?.();
+									}}
+									onCancel={() => setExpandedCoverUp(null)}
+								/>
+							)}
 						</li>
 					);
 				})}

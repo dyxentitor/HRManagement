@@ -254,6 +254,11 @@ export default function RosterPage() {
 		[payload, panel.employeeId],
 	);
 
+	const teammates = useMemo(
+		() => payload?.teams.flatMap((t) => t.members) ?? [],
+		[payload],
+	);
+
 	return (
 		<div className="space-y-3">
 			<PageHeader breadcrumb="Schedule" title="Roster" />
@@ -320,6 +325,8 @@ export default function RosterPage() {
 					onCommit={commitPanel}
 					onPatternApply={applyPanelPattern}
 					onClose={closePanel}
+					teammates={teammates}
+					onCoverUpChange={refresh}
 				/>
 			)}
 
