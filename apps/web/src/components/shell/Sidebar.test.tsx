@@ -115,4 +115,28 @@ describe("Sidebar", () => {
 		);
 		expect(screen.getByRole("link", { name: /payroll/i })).toBeInTheDocument();
 	});
+
+	it("shows Teams admin link with team:write perm", () => {
+		mocks.perms = new Set(["team:write"]);
+		mocks.flags = {};
+		render(
+			<MemoryRouter>
+				<Sidebar />
+			</MemoryRouter>,
+		);
+		expect(screen.getByRole("link", { name: /^teams$/i })).toBeInTheDocument();
+	});
+
+	it("hides Teams admin link without team:write perm", () => {
+		mocks.perms = new Set(["employee:read:org"]);
+		mocks.flags = {};
+		render(
+			<MemoryRouter>
+				<Sidebar />
+			</MemoryRouter>,
+		);
+		expect(
+			screen.queryByRole("link", { name: /^teams$/i }),
+		).not.toBeInTheDocument();
+	});
 });

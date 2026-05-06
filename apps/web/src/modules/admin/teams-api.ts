@@ -21,4 +21,28 @@ export const teamApi = {
 		if (error) throw new Error("Could not load teams");
 		return ((data ?? []) as unknown as Team[]) ?? [];
 	},
+	create: async (payload: TeamWritePayload): Promise<Team> => {
+		const { data, error } = await api.POST("/api/v1/teams/", {
+			body: payload,
+		});
+		if (error) throw error;
+		return data as unknown as Team;
+	},
+	update: async (
+		id: string,
+		payload: Partial<TeamWritePayload>,
+	): Promise<Team> => {
+		const { data, error } = await api.PATCH("/api/v1/teams/{id}/", {
+			params: { path: { id } },
+			body: payload,
+		});
+		if (error) throw error;
+		return data as unknown as Team;
+	},
+	archive: async (id: string): Promise<void> => {
+		const { error } = await api.DELETE("/api/v1/teams/{id}/", {
+			params: { path: { id } },
+		});
+		if (error) throw error;
+	},
 };

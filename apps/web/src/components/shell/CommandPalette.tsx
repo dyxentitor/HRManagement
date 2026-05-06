@@ -97,6 +97,12 @@ const PAGES = [
 		perm: "role:read",
 	},
 	{
+		label: "Teams",
+		to: "/admin/teams",
+		icon: Users,
+		perm: "team:write",
+	},
+	{
 		label: "Modules",
 		to: "/admin/modules",
 		icon: Settings,
