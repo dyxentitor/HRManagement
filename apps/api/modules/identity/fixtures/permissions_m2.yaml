@@ -11,3 +11,4 @@
 - { code: "employee:bank:write", description: Edit employee bank account details (HR) }
 - { code: "employee:salary:read", description: Read employee salary fields }
 - { code: "employee:salary:write", description: Edit employee salary fields }
+- { code: "employee:assign:team", description: Assign an employee to a team (without broader edit access) }

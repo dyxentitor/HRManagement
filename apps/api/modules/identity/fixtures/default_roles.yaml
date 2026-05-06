@@ -35,6 +35,7 @@
     - employee:write:org
     - employee:create
     - employee:archive
+    - "employee:assign:team"
     - "employee:bank:read"
     - "employee:bank:write"
     - employee:salary:read
@@ -133,6 +134,7 @@
     - department:read
     - department:write
     - team:read
+    - team:write
     - org:settings:read
     - audit:read:org
     - "audit:payroll-ledger:read:org"
@@ -143,6 +145,7 @@
     - employee:write:org
     - employee:create
     - employee:archive
+    - "employee:assign:team"
     - "employee:bank:read"
     - "employee:bank:write"
     - employee:salary:read
@@ -280,6 +283,7 @@
     - team:read
     - employee:read:self
     - employee:read:team
+    - "employee:assign:team"
     - "leave:request:create:self"
     - "leave:request:cancel:self"
     - "leave:request:read:self"
@@ -340,6 +344,7 @@
     - team:read
     - employee:read:self
     - employee:read:team
+    - "employee:assign:team"
     - "leave:request:create:self"
     - "leave:request:cancel:self"
     - "leave:request:read:self"
