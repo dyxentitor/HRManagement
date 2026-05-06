@@ -120,6 +120,9 @@ class Employee(TenantBaseModel):
     emergency_contact_relationship = models.CharField(max_length=50)
     emergency_contact_phone = models.CharField(max_length=32)
 
+    # Profile photo (post-resize thumbnail key in MinIO; empty = no photo)
+    photo_s3_key = models.CharField(max_length=255, blank=True, default="")
+
     # Ops
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="active")
     timezone = models.CharField(max_length=64, blank=True)
