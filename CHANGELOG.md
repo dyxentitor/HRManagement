@@ -34,6 +34,71 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
   rotation is ever needed, both pieces must be implemented first.
   Tracked for whichever release schedules a key rotation.
 
+## [1.6.0] - 2026-05-07
+
+**Employee CRUD UI + Team CRUD page + perm-narrow team-assignment.**
+
+### Added
+- **Employee CRUD UI.** `/employees/new` and `/employees/:id/edit` use
+  a shared collapsible-section form (`<EmployeeForm>`) with five
+  sections: Identity, Employment, Personal, Address, Banking & Tax IDs.
+- **Encrypted PII edit flow.** `<EncryptedFieldInput>` shows a masked
+  summary (`🔒 IC ending in •••5475` when a `_last4` companion exists,
+  `🔒 Encrypted` otherwise for LHDN/EPF/SOCSO/EIS) with a Replace
+  modal. Current value is never displayed. Bank-field replace on edit
+  prompts for fresh MFA before save (header `X-MFA-Code`).
+- **`<ManagerPicker>`.** cmdk-based typeahead with `excludeIds` for
+  client-side cycle protection (backend `Employee.full_clean()`
+  enforces canonically).
+- **`/admin/teams`.** Full team CRUD: list with parent / sort_order /
+  min_headcount / member-count, create + edit modal sharing one schema,
+  archive with confirm.
+- **New permission `employee:assign:team`.** Carves a narrow PATCH lane
+  on `/api/v1/employees/{id}/`: holders may PATCH only `team` (or
+  `team_id`); mixed-write or other-field PATCHes return 403. Granted by
+  default to org_admin, hr_manager, manager, team_lead.
+- **Sidebar + command palette Teams entry**, gated on `team:write`.
+- **EmployeesPage** now wires the New employee button to navigate to
+  `/employees/new` and gates correctly on `employee:create` (was
+  checking the non-existent code `employee:write` — button never
+  appeared).
+- **EmployeeDetailPage** gains Edit (link, perm `employee:write:org`)
+  and Archive (two-step armed button, perm `employee:archive`)
+  actions.
+
+### Changed
+- **`team:write` is now a default grant for `hr_manager`** (was
+  org_admin only) so HR can manage teams from the new UI without an
+  admin override.
+- **`EmployeeViewSet.partial_update`** now branches on perm + body
+  shape: `employee:write:org` → full edit (existing behaviour);
+  `employee:assign:team` + body within `{team, team_id}` → narrow
+  edit via `EmployeeAssignmentSerializer`; otherwise 403.
+- **`required_perms` for `partial_update`** returns `[]` so the inline
+  branch logic owns the perm check; auth + tenant scope still enforced
+  by `HRMSPermission`.
+
+### Tests
+- Backend: 580 passed + 3 skipped (was 569 + 3 at v1.5.1; +11 new across
+  `test_assign_team.py` (4) and `test_assign_team_perm_seeded.py` (7)).
+- Frontend: 207 passed (was 180 at v1.5.1; +27 across
+  EncryptedFieldInput, ManagerPicker, EmployeeForm, EmployeeFormPage,
+  AdminTeamsPage, plus extensions to EmployeeDetailPage, EmployeesPage,
+  Sidebar).
+- Permission codes: 110 (was 109; +1 = `employee:assign:team`).
+
+### Migration
+- No schema migrations.
+- New permission code lands via `seed_permission_catalogue`. Existing
+  orgs pick up the `employee:assign:team` and `team:write` grants on
+  next `grant_default_perms` run; the v1.5.0 cache-bust means
+  logged-in users see the change without re-login.
+
+### Out of scope (deferred)
+- Bulk operations (move N employees → 1 team in one click).
+- CSV import/export, employee photo upload, approval workflows.
+- No widening of the `/api/v1/employees/me` self-edit allowlist.
+
 ## [1.5.1] - 2026-05-06
 
 **Module-disabled empty-state + cover-up picker.**
