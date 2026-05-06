@@ -240,6 +240,7 @@
     - department:read
     - employee:read:self
     - employee:read:team
+    - employee:write:self
     - "employee:bank:read"
     - employee:salary:read
     - "leave:request:create:self"
@@ -283,6 +284,7 @@
     - team:read
     - employee:read:self
     - employee:read:team
+    - employee:write:self
     - "employee:assign:team"
     - "leave:request:create:self"
     - "leave:request:cancel:self"
@@ -344,6 +346,7 @@
     - team:read
     - employee:read:self
     - employee:read:team
+    - employee:write:self
     - "employee:assign:team"
     - "leave:request:create:self"
     - "leave:request:cancel:self"
@@ -448,6 +451,7 @@
     - employee:read:self
     - employee:read:team
     - employee:read:org
+    - employee:write:self
     - "employee:bank:read"
     - employee:salary:read
     - "leave:request:create:self"
