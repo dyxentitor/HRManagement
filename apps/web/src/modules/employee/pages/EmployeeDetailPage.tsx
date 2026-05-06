@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -8,6 +8,58 @@ import { cn } from "@/lib/utils";
 import { RolesCard } from "@/modules/admin/components/RolesCard";
 
 import { type Employee, type ReportingChainEntry, employeeApi } from "../api";
+
+function ArchiveButton({ employee }: { employee: Employee }) {
+	const [armed, setArmed] = useState(false);
+	const [busy, setBusy] = useState(false);
+	const navigate = useNavigate();
+
+	if (busy) {
+		return <span className="text-small text-text-tertiary">Archiving…</span>;
+	}
+
+	if (!armed) {
+		return (
+			<button
+				type="button"
+				onClick={() => setArmed(true)}
+				className="text-small px-3 py-1 rounded border border-coral text-coral hover:bg-coral/10"
+			>
+				Archive
+			</button>
+		);
+	}
+
+	return (
+		<div className="flex items-center gap-2">
+			<span className="text-small text-coral">
+				Archive {employee.full_name}?
+			</span>
+			<button
+				type="button"
+				onClick={async () => {
+					setBusy(true);
+					try {
+						await employeeApi.archive(employee.id);
+						navigate("/employees");
+					} finally {
+						setBusy(false);
+					}
+				}}
+				className="text-small px-2 py-0.5 rounded bg-coral text-white"
+			>
+				Confirm
+			</button>
+			<button
+				type="button"
+				onClick={() => setArmed(false)}
+				className="text-small text-text-secondary"
+			>
+				Cancel
+			</button>
+		</div>
+	);
+}
 
 function tenureFromHireDate(hireDate?: string): string {
 	if (!hireDate) return "—";
@@ -53,6 +105,8 @@ function Section({ title, fields }: { title: string; fields: Field[] }) {
 export default function EmployeeDetailPage() {
 	const { id } = useParams<{ id: string }>();
 	const canReadOrg = useCan("employee:read:org");
+	const canEdit = useCan("employee:write:org");
+	const canArchive = useCan("employee:archive");
 
 	const [employee, setEmployee] = useState<Employee | null>(null);
 	const [chain, setChain] = useState<ReportingChainEntry[]>([]);
@@ -119,12 +173,23 @@ export default function EmployeeDetailPage() {
 				breadcrumb="Employees"
 				title={employee.full_name}
 				actions={
-					<a
-						href="/employees"
-						className="text-small text-accent-200 hover:text-accent-50"
-					>
-						← All employees
-					</a>
+					<div className="flex items-center gap-2">
+						<a
+							href="/employees"
+							className="text-small text-accent-200 hover:text-accent-50"
+						>
+							← All employees
+						</a>
+						{canEdit && (
+							<a
+								href={`/employees/${employee.id}/edit`}
+								className="text-small px-3 py-1 rounded bg-accent-500 text-white hover:bg-accent-600"
+							>
+								Edit
+							</a>
+						)}
+						{canArchive && <ArchiveButton employee={employee} />}
+					</div>
 				}
 			/>
 

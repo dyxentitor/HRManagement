@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const employees = [
 	{
@@ -28,13 +28,17 @@ const employees = [
 
 const mocks = vi.hoisted(() => ({
 	list: vi.fn(),
-	can: () => true,
+	can: (): boolean => true,
 }));
 
 vi.mock("@/lib/perm", () => ({ useCan: () => mocks.can() }));
 vi.mock("../api", () => ({ employeeApi: { list: mocks.list } }));
 
 import EmployeesPage from "./EmployeesPage";
+
+beforeEach(() => {
+	mocks.can = () => true;
+});
 
 function renderPage() {
 	return render(
@@ -81,5 +85,15 @@ describe("EmployeesPage", () => {
 		await waitFor(() => {
 			expect(screen.getByText(/No employees here/i)).toBeInTheDocument();
 		});
+	});
+
+	it("hides the Add employee button without employee:create perm", async () => {
+		mocks.can = () => false;
+		mocks.list.mockResolvedValue(employees);
+		renderPage();
+		await waitFor(() => screen.getByText("Ops Lead"));
+		expect(
+			screen.queryByRole("button", { name: /add employee/i }),
+		).not.toBeInTheDocument();
 	});
 });

@@ -36,7 +36,7 @@ const tableColumns: Column<Employee>[] = [
 ];
 
 export default function EmployeesPage() {
-	const canAdd = useCan("employee:write");
+	const canAdd = useCan("employee:create");
 	const navigate = useNavigate();
 	const [employees, setEmployees] = useState<Employee[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -93,7 +93,11 @@ export default function EmployeesPage() {
 				}
 				actions={
 					canAdd ? (
-						<Button className="bg-accent-500 hover:bg-accent-600 text-white">
+						<Button
+							type="button"
+							onClick={() => navigate("/employees/new")}
+							className="bg-accent-500 hover:bg-accent-600 text-white"
+						>
 							<Plus className="size-4 mr-1" /> Add employee
 						</Button>
 					) : null

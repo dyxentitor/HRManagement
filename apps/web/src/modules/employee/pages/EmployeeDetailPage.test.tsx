@@ -123,4 +123,34 @@ describe("EmployeeDetailPage", () => {
 		await waitFor(() => screen.getByText("Carol Wong"));
 		expect(screen.getByText(/Direct reports/)).toBeInTheDocument();
 	});
+
+	it("shows Edit and Archive buttons with employee:write:org and employee:archive", async () => {
+		mocks.can.mockReturnValue(true);
+		mocks.retrieve.mockResolvedValue(mockEmployee);
+		mocks.getReportingChain.mockResolvedValue([]);
+		mocks.getDirectReports.mockResolvedValue([]);
+
+		renderPage();
+		await waitFor(() => screen.getByText("Engineering"));
+		expect(screen.getByRole("link", { name: /^edit$/i })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /^archive$/i }),
+		).toBeInTheDocument();
+	});
+
+	it("hides Edit/Archive buttons without perms", async () => {
+		mocks.can.mockReturnValue(false);
+		mocks.retrieve.mockResolvedValue(mockEmployee);
+		mocks.getReportingChain.mockResolvedValue([]);
+		mocks.getDirectReports.mockResolvedValue([]);
+
+		renderPage();
+		await waitFor(() => screen.getByText("PVT-001"));
+		expect(
+			screen.queryByRole("link", { name: /^edit$/i }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /^archive$/i }),
+		).not.toBeInTheDocument();
+	});
 });
