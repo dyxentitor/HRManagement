@@ -21,6 +21,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="$REPO_ROOT/deploy/docker-compose.yml"
+# Compose v2 looks for .env next to the compose file by default. Our .env
+# lives at the repo root, so make the path explicit. Without this, compose
+# would fail at HRMS_FIELD_ENCRYPTION_KEY resolution (the :? guard in the
+# compose file requires the var to be set; no silent fallback).
+ENV_FILE="$REPO_ROOT/.env"
 
 # ----- pretty logging -----
 log()  { printf "\033[1;34m[start]\033[0m %s\n" "$*"; }
@@ -53,14 +58,14 @@ run_docker() {
 
 run_compose() {
     if [[ -z "$SG_PREFIX" ]]; then
-        docker compose -f "$COMPOSE_FILE" "$@"
+        docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
     else
         # quote everything so the inner shell sees the args correctly
         local quoted=""
         for arg in "$@"; do
             quoted+=" $(printf '%q' "$arg")"
         done
-        sg docker -c "docker compose -f $COMPOSE_FILE$quoted"
+        sg docker -c "docker compose --env-file $ENV_FILE -f $COMPOSE_FILE$quoted"
     fi
 }
 

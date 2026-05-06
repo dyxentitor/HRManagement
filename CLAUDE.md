@@ -60,7 +60,7 @@ All shipped. Each row is anchored on a real git tag.
 - **Working tree at HEAD** — only `apps/api/uv.lock` modified; untracked `.claude/` and `.playwright-mcp/`. No half-finished feature branches.
 - **Local tags not pushed** — `v1.4.1`, `v1.4.2`, `v1.4.3`, `v1.5.0`, `v1.5.1` are local-only on `master`. Confirm with the user before `git push origin master --tags`.
 - **Audit closure status**:
-  - `2026-04-29-system-state.md` — Bug #1 (payslip detail 403): **FIXED**. Bug #2 (payroll CSV null token): **FIXED**. Bug #4 (cert/training beat tasks): **FIXED**. Bug #3 (encryption-key drift): **DEFERRED** to a dedicated key-management session before first prod deployment — both `api`/`worker` containers share `5rrM…` but `.env` and `References/KEY.md` document `usD5…`; data-loss risk if mishandled, needs rotation playbook walkthrough not a code-only fix.
+  - `2026-04-29-system-state.md` — Bug #1 (payslip detail 403): **FIXED**. Bug #2 (payroll CSV null token): **FIXED**. Bug #3 (encryption-key drift): **FIXED** (config consolidation 2026-05-06; `.env` and `References/KEY.md` now match the runtime key `5rrM…`; `:?` guard in compose prevents future silent drift; runbook rotation infrastructure — `PREV_KEY` + `reencrypt_sensitive_fields` cmd — still needs to be built when rotation is actually scheduled). Bug #4 (cert/training beat tasks): **FIXED**.
   - `2026-04-29-ui-quality.md` — "FAIL" rows still pending; cosmetic; v1.5.2–v1.5.8 candidates.
   - `2026-05-06-module-visibility.md` — driving v1.4.2 — **FIXED**.
   - `2026-05-06-module-key-mismatches.md` — driving v1.4.3 + v1.5.0 (Class D leave-perm row) — **FIXED**.

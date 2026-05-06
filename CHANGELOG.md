@@ -4,6 +4,36 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+### Fixed (config + docs — no behaviour change)
+- **`HRMS_FIELD_ENCRYPTION_KEY` consolidation.** Closes the deploy
+  blocker flagged in `2026-04-29-system-state.md` Bug #3 and
+  `2026-05-06-system-state-analysis.md` action #1.
+  - `.env` was documented as `usD5…` but containers actually ran with
+    `5rrM…` (the silent docker-compose fallback). Verified existing
+    encrypted PII (e.g., PVT-DEMO-005 IC `910214…5475`) decrypts under
+    `5rrM…`, so that key is the canonical dev key.
+  - Aligned `.env`, `References/KEY.md` to `5rrM…`, with explicit
+    "DEV key — do NOT use in production" guidance and a Fernet
+    generation snippet.
+  - Tightened `deploy/docker-compose.yml` — `:?` guard replaces the
+    silent fallback. Compose now fails fast if `HRMS_FIELD_ENCRYPTION_KEY`
+    is unset, preventing future silent drift.
+  - `start.sh` and `Makefile` now pass `--env-file .env` explicitly so
+    compose picks up the repo-root `.env` regardless of cwd (compose v2
+    looks next to the compose file by default, which is `deploy/`).
+  - Improved `.env.example` with Fernet generation instructions and
+    a "lose this key = unrecoverable PII" warning.
+- Verified post-change: api/worker/beat recreated cleanly,
+  `/health/ready` 200, encrypted-field decrypt still works.
+
+### Known runbook gaps (tracked, not fixed in this change)
+- `docs/runbooks/rotate-encryption-keys.md` describes a 2-key window
+  using `HRMS_FIELD_ENCRYPTION_PREV_KEY` and a
+  `reencrypt_sensitive_fields` management command. Neither exists in
+  the codebase yet. The runbook is forward-looking documentation; if
+  rotation is ever needed, both pieces must be implemented first.
+  Tracked for whichever release schedules a key rotation.
+
 ## [1.5.1] - 2026-05-06
 
 **Module-disabled empty-state + cover-up picker.**

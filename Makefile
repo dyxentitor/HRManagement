@@ -1,8 +1,8 @@
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
-COMPOSE := docker compose -f deploy/docker-compose.yml
-COMPOSE_PROD := docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml
+COMPOSE := docker compose --env-file .env -f deploy/docker-compose.yml
+COMPOSE_PROD := docker compose --env-file .env -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml
 
 .PHONY: help dev dev-down dev-logs migrate makemigrations shell test test-api test-web \
         contracts lint lint-fix typecheck build seed seed-provintell seed-provintell-prod \

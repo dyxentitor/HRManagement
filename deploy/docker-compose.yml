@@ -15,7 +15,12 @@ x-api-env: &api-env
   S3_BUCKET: hrms
   SMTP_HOST: mailhog
   SMTP_PORT: "1025"
-  HRMS_FIELD_ENCRYPTION_KEY: ${HRMS_FIELD_ENCRYPTION_KEY:-5rrMC5h9nasS2Zt9vFYxZcVN8pd8o_niIzfNXD3afa8=}
+  # No fallback — this MUST come from the environment / .env. Compose will fail
+  # to start if HRMS_FIELD_ENCRYPTION_KEY is unset, which is the right behaviour:
+  # silently encrypting under the wrong key = unrecoverable data. See
+  # docs/runbooks/rotate-encryption-keys.md for rotation; .env.example for
+  # generation instructions.
+  HRMS_FIELD_ENCRYPTION_KEY: ${HRMS_FIELD_ENCRYPTION_KEY:?HRMS_FIELD_ENCRYPTION_KEY must be set in .env}
 
 services:
   postgres:
