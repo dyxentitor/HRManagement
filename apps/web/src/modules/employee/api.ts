@@ -34,6 +34,7 @@ export interface Employee {
 	manager?: string | null;
 	bank_name?: string;
 	bank_account_last4?: string;
+	photo_url?: string | null;
 	/** Auth user linked to this employee record, if any. */
 	user_id?: string;
 	/** Role codes currently assigned to the linked user. */
@@ -223,7 +224,89 @@ export const employeeApi = {
 		});
 		if (!resp.ok) throw new Error("Assign-team failed");
 	},
+	updateMe: async (
+		payload: Partial<EmployeeWritePayload>,
+		mfaCode?: string,
+	): Promise<void> => {
+		const extra: Record<string, string> = {
+			"Content-Type": "application/json",
+		};
+		if (mfaCode) extra["X-MFA-Code"] = mfaCode;
+		const headers = await authHeaders(extra);
+		const resp = await fetch(`${BASE_URL}/api/v1/employees/me/`, {
+			method: "PATCH",
+			headers,
+			body: JSON.stringify(payload),
+		});
+		if (!resp.ok) {
+			const body = await resp.json().catch(() => ({}));
+			throw Object.assign(new Error("Update failed"), {
+				body,
+				status: resp.status,
+			});
+		}
+	},
+	uploadMyPhoto: async (file: File): Promise<void> => {
+		await uploadPhotoCore("/api/v1/employees/me/photo", file);
+	},
+	deleteMyPhoto: async (): Promise<void> => {
+		const headers = await authHeaders();
+		const resp = await fetch(`${BASE_URL}/api/v1/employees/me/photo/`, {
+			method: "DELETE",
+			headers,
+		});
+		if (!resp.ok && resp.status !== 204) {
+			throw new Error("Delete photo failed");
+		}
+	},
+	uploadEmployeePhoto: async (id: string, file: File): Promise<void> => {
+		await uploadPhotoCore(`/api/v1/employees/${id}/photo`, file);
+	},
+	deleteEmployeePhoto: async (id: string): Promise<void> => {
+		const headers = await authHeaders();
+		const resp = await fetch(`${BASE_URL}/api/v1/employees/${id}/photo/`, {
+			method: "DELETE",
+			headers,
+		});
+		if (!resp.ok && resp.status !== 204) {
+			throw new Error("Delete photo failed");
+		}
+	},
 };
+
+async function uploadPhotoCore(basePath: string, file: File): Promise<void> {
+	const headers = await authHeaders({ "Content-Type": "application/json" });
+
+	const presignResp = await fetch(`${BASE_URL}${basePath}/presigned-upload/`, {
+		method: "POST",
+		headers,
+		body: JSON.stringify({ filename: file.name, content_type: file.type }),
+	});
+	if (!presignResp.ok) throw new Error("Presigned upload failed");
+	const { presigned_url, s3_key } = (await presignResp.json()) as {
+		presigned_url: string;
+		s3_key: string;
+		max_size_bytes: number;
+	};
+
+	const putResp = await fetch(presigned_url, {
+		method: "PUT",
+		headers: { "Content-Type": file.type },
+		body: file,
+	});
+	if (!putResp.ok) throw new Error("S3 upload failed");
+
+	const regResp = await fetch(`${BASE_URL}${basePath}/`, {
+		method: "POST",
+		headers,
+		body: JSON.stringify({
+			s3_key,
+			content_type: file.type,
+			size_bytes: file.size,
+		}),
+	});
+	if (!regResp.ok) throw new Error("Register photo failed");
+}
 
 export const departmentApi = {
 	list: async (): Promise<DepartmentRef[]> => {
