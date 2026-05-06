@@ -4,6 +4,64 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-05-06
+
+**Module-disabled empty-state + cover-up picker.**
+
+### Added
+- **`<ModuleDisabled>` empty-state component**
+  (`apps/web/src/components/hrms/ModuleDisabled.tsx`).
+  Renders a calm per-module message when a user lands on a disabled-module
+  page. Org admins (anyone with `org:feature_flag:write`) see an "Enable
+  <Module> →" deep-link to `/admin/modules?focus=<key>`; everyone else
+  gets the same passive copy without a CTA.
+
+- **`<RequireFeature>` route-level guard + `withFeature(flag, routes)`
+  helper** (`apps/web/src/lib/feature-flags.tsx`). Wraps each module's
+  route array in `App.tsx` so direct URL navigation to a disabled-module
+  page renders `<ModuleDisabled>` instead of the raw `GET /api/v1/X failed`
+  text. Optimistic during initial flag load — never flashes "disabled"
+  while flags are fetching.
+
+- **`/admin/modules?focus=<key>` deep-link**
+  (`apps/web/src/modules/admin/pages/AdminModulesPage.tsx`).
+  Reading the `?focus=` param scrolls the matching toggle row into view
+  and highlights it for 2 seconds. Used by the Enable CTA.
+
+- **`<CoverUpPicker>` inline component**
+  (`apps/web/src/modules/schedule/components/CoverUpPicker.tsx`).
+  Teammate dropdown (same-team first, alphabetical), Save / Cancel /
+  Clear. Excludes the row's own employee and filters out non-active
+  staff. Pre-fills with the existing covering teammate when one is set.
+
+- **RowEditPanel `⤿` cover-up toggle**. Each day-row in the right-docked
+  drawer with an existing assignment gains a small toggle that expands
+  `<CoverUpPicker>` inline. Save and Clear commit immediately via the
+  existing `scheduleApi.coverUp` endpoint. When a cover-up exists, the
+  collapsed row shows a "covering <name>" hint in coral so users see
+  state at a glance.
+
+### Frontend tests
+180 passed (was 164; +16):
+- ModuleDisabled — 4
+- RequireFeature — 4
+- AdminModulesPage `?focus=` — 1
+- CoverUpPicker — 5
+- RowEditPanel ⤿ wiring — 2
+
+### Backend tests
+569 passed, 3 skipped (postgres-only). No backend changes.
+
+### Notes
+- No backend changes. The `cover-up` endpoint already exists; v1.5.1 just
+  builds the missing UI for it.
+- Notes on cover-up are not supported in v1.5.1 — the backend endpoint
+  doesn't store a `notes` field on cover-up requests. Tracked as a v1.5.2
+  candidate.
+- Verified end-to-end via Playwright: empty-state renders for both admin
+  (with Enable CTA → deep-link works) and non-admin (no CTA); cover-up
+  Save → coral hint appears; Clear → hint disappears.
+
 ## [1.5.0] - 2026-05-06
 
 **Phase 1 cleanup release — closes the perm-catalogue gap surfaced by the
