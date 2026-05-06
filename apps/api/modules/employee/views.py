@@ -43,8 +43,13 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             if self.request.method == "GET":
                 return ["employee:read:self"]
             return ["employee:write:self"]
-        if action in ("list", "retrieve", "reporting_chain", "direct_reports", "probation_status"):
+        if action in ("list", "reporting_chain", "direct_reports", "probation_status"):
             return ["employee:read:org"]
+        if action == "retrieve":
+            # Either `employee:read:org` (HR view) OR `employee:assign:team`
+            # (team_lead/manager view-to-assign so the v1.6.0 narrow-PATCH UI
+            # can pre-fill). Inline check below in `retrieve()`.
+            return []
         if action == "create":
             return ["employee:create"]
         if action == "update":
@@ -59,6 +64,16 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(org_id=self.request.user.org_id)
+
+    def retrieve(self, request, *args, **kwargs):
+        from rest_framework.exceptions import PermissionDenied
+
+        from modules.identity.services.permissions import get_user_perms
+
+        perms = get_user_perms(request.user)
+        if not (perms & {"employee:read:org", "employee:assign:team"}):
+            raise PermissionDenied("You do not have permission to view this employee.")
+        return super().retrieve(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         from rest_framework.exceptions import PermissionDenied

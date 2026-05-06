@@ -162,3 +162,22 @@ def test_team_lead_can_clear_team(org, dept, team):
 
     emp.refresh_from_db()
     assert emp.team_id is None
+
+
+@pytest.mark.django_db
+def test_team_lead_can_retrieve_employee_for_form_prefill(org, dept):
+    """Holders of employee:assign:team can GET /employees/{id}/ so the v1.6.0
+    edit form pre-fills the read-only fields (v1.6.1). Without this, the
+    narrow-PATCH UI flow breaks: team_lead/manager opens the edit page and
+    sees an empty form because retrieve 403s."""
+    client = _team_lead_client(org)
+    emp = _employee(org, dept)
+
+    resp = client.get(f"/api/v1/employees/{emp.id}/")
+    assert resp.status_code == 200, resp.content
+    body = resp.json()
+    assert body["first_name"] == "Wei"
+    # Encrypted fields stay hidden (write_only on the serializer); only
+    # the non-secret fields and *_last4 masks come through.
+    assert "ic_number" not in body
+    assert "bank_account_number" not in body
