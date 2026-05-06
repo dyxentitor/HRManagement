@@ -34,6 +34,32 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
   rotation is ever needed, both pieces must be implemented first.
   Tracked for whichever release schedules a key rotation.
 
+## [1.7.1] - 2026-05-07
+
+**v1.7.0 follow-up — unblock self-edit for manager/finance/team_lead/auditor.**
+
+### Fixed
+- **`employee:write:self` granted to `manager`, `finance`, `team_lead`,
+  and `auditor` roles** in `default_roles.yaml`. v1.7.0's Playwright
+  sweep surfaced that PATCH `/api/v1/employees/me/` 403'd for these
+  roles — they had `employee:read:self` but never received the
+  matching write perm. The new inline-section editing UI on
+  `/me/profile` is now usable for everyone with a linked Employee
+  record, not just `org_admin` / `hr_manager` / `employee` role
+  holders.
+- Existing orgs pick up the grant via `grant_default_perms` (admin
+  customisations preserved; same pattern as v1.5.0's leave-self fix).
+
+### Tests
+- 593 backend + 227 frontend (no test changes — pre-existing tests
+  granted `employee:write:self` explicitly to test users; the gap
+  only surfaced against real demo accounts).
+- Permission codes: 110 (no change).
+
+### Migration
+- Run `python manage.py grant_default_perms` after deploy. No schema
+  migrations.
+
 ## [1.7.0] - 2026-05-07
 
 **Profile pictures + employee self-edit.**
