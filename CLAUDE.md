@@ -8,7 +8,7 @@
 
 - **Stack** — Django 5 + DRF (`apps/api`) · React 18 + Vite + TS + Tailwind (`apps/web`) · Postgres 16 · Redis · Celery · MinIO/S3 · Docker Compose
 - **Layout** — `apps/api`, `apps/web`, `packages/contracts` (generated OpenAPI → TS types), `deploy/`, `docs/` (specs, plans, audits, runbooks), `References/` (design + ops notes)
-- **Current version** — `v1.6.2` on `master` (tag dated 2026-05-07). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
+- **Current version** — `v1.7.0` on `master` (tag dated 2026-05-07). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
 - **Mission** — Phase 1 web HRMS for Provintell (own-office deployment first). Phase 2 = SaaS, Phase 3 = mobile.
 - **Tenancy / locale** — multi-tenant-ready schema, `Asia/Kuala_Lumpur`, `en-MY`, MYR.
 - **Day-one demo logins** — see `References/KEY.md`. Do not commit changes that break them.
@@ -51,17 +51,18 @@ All shipped. Each row is anchored on a real git tag.
 | `v1.6.0` | 2026-05-07 | Employee CRUD UI (/employees/new + /employees/:id/edit shared form, encrypted-field "Replace" modal, MFA on bank edit) + Team CRUD page (/admin/teams) + new `employee:assign:team` perm-narrow PATCH lane for team_lead/manager re-team without broader edit access | `2026-05-07-v1.6.0-employee-team-crud.md` | `2026-05-07-v1.6.0-employee-team-crud.md` |
 | `v1.6.1` | 2026-05-07 | Backend follow-up to v1.6.0 — `GET /employees/{id}/` now also accepts `employee:assign:team` so team_lead/manager's edit page pre-fills (closes spec §9.1 #4 gap surfaced by Playwright sweep). Encrypted PII still hidden via write-only serializer fields | (no spec — bugfix) | (no plan — one-liner) |
 | `v1.6.2` | 2026-05-07 | `<ManagerPicker>` rebuilt as a Popover-based combobox — dropdown now closes on selection / Escape / outside-click. v1.6.0 had cmdk's `<Command>` inline as an always-open list. Prop contract unchanged | `Prompt_v1.6.2_manager_picker_dropdown_fix.md` | (no plan — single-component) |
+| `v1.7.0` | 2026-05-07 | Employee self-edit on /me/profile (inline-section editing wires the long-stubbed Edit buttons to PATCH /me/) + Profile pictures for everyone (presigned-PUT to MinIO + Celery resize to 512x512 WebP + EXIF strip; HR can upload-on-behalf on /employees/:id/edit). Adds `Employee.photo_s3_key` and 6 photo endpoints. Shared `<MfaPrompt>` extracted. No new perm codes. | `2026-05-07-v1.7.0-self-edit-and-photos.md` | `2026-05-07-v1.7.0-self-edit-and-photos.md` |
 
-### 2.3 Test counts at HEAD (v1.6.2)
+### 2.3 Test counts at HEAD (v1.7.0)
 
-- Backend: **581 passed** + 3 skipped (postgres-only triggers). v1.6.2 frontend-only.
-- Frontend: **213 passed** (was 207 at v1.6.1; +6 in `ManagerPicker.test.tsx` for the popover rebuild).
-- Permission codes: **110** (no change since v1.6.0).
+- Backend: **593 passed** + 3 skipped (postgres-only triggers). +12 from v1.6.2 across `test_avatar_endpoints.py` (8), `test_avatar_task.py` (3), and a `photo_url` regression in `test_views_me.py`.
+- Frontend: **227 passed** (was 213 at v1.6.2; +14 across MfaPrompt (3), AvatarUpload (5), MyProfilePage (+6)).
+- Permission codes: **110** (no change since v1.6.0; v1.7.0 adds no perm codes).
 
 ### 2.4 In-flight / next up
 
 - **Working tree at HEAD** — only `apps/api/uv.lock` modified; untracked `.claude/` and `.playwright-mcp/`. No half-finished feature branches.
-- **Local tags not pushed** — `v1.6.2` is local-only on `master`. (Earlier tags v0.1.0-m0 through v1.6.1 were pushed to `origin = git@github.com:dyxentitor/HRManagement.git` in the v1.6.1 session.) Confirm with the user before `git push origin master --tags`.
+- **Local tags not pushed** — `v1.7.0` is local-only on `master`. (Earlier tags v0.1.0-m0 through v1.6.2 were pushed to `origin = git@github.com:dyxentitor/HRManagement.git`.) Confirm with the user before `git push origin master --tags`.
 - **Audit closure status**:
   - `2026-04-29-system-state.md` — Bug #1 (payslip detail 403): **FIXED**. Bug #2 (payroll CSV null token): **FIXED**. Bug #3 (encryption-key drift): **FIXED** (config consolidation 2026-05-06; `.env` and `References/KEY.md` now match the runtime key `5rrM…`; `:?` guard in compose prevents future silent drift; runbook rotation infrastructure — `PREV_KEY` + `reencrypt_sensitive_fields` cmd — still needs to be built when rotation is actually scheduled). Bug #4 (cert/training beat tasks): **FIXED**.
   - `2026-04-29-ui-quality.md` — "FAIL" rows still pending; cosmetic; v1.5.2–v1.5.8 candidates.
