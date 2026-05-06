@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +12,9 @@ export default function AdminModulesPage() {
 	const [busyKey, setBusyKey] = useState<string | null>(null);
 	const [err, setErr] = useState<string | null>(null);
 	const refreshGlobal = useFeaturesRefresh();
+	const [searchParams] = useSearchParams();
+	const focusKey = searchParams.get("focus");
+	const focusRef = useRef<HTMLLIElement | null>(null);
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -27,6 +31,19 @@ export default function AdminModulesPage() {
 	useEffect(() => {
 		void load();
 	}, [load]);
+
+	// After the flags load, if the URL has ?focus=<key>, scroll the matching
+	// row into view and add a 2-second violet ring. Used by the
+	// <ModuleDisabled> empty-state Enable CTA so admins land on the right toggle.
+	useEffect(() => {
+		if (!focusKey || loading || !focusRef.current) return;
+		focusRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
+		focusRef.current.classList.add("ring-2", "ring-accent-500");
+		const t = setTimeout(() => {
+			focusRef.current?.classList.remove("ring-2", "ring-accent-500");
+		}, 2000);
+		return () => clearTimeout(t);
+	}, [focusKey, loading]);
 
 	const onToggle = async (key: string, next: boolean) => {
 		setBusyKey(key);
@@ -60,7 +77,12 @@ export default function AdminModulesPage() {
 					<h2 className="text-h2 font-semibold mb-3">Modules</h2>
 					<ul className="space-y-3">
 						{togglable.map((f) => (
-							<li key={f.key} className="flex items-center justify-between">
+							<li
+								key={f.key}
+								data-testid={`module-row-${f.key}`}
+								ref={f.key === focusKey ? focusRef : undefined}
+								className="flex items-center justify-between rounded-md transition-shadow"
+							>
 								<span>{f.label}</span>
 								<Switch
 									aria-label={f.label}

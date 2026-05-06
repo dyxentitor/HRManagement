@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { featureFlagApi } from "../api";
 import AdminModulesPage from "./AdminModulesPage";
@@ -105,5 +105,35 @@ describe("AdminModulesPage", () => {
 		renderPage();
 		await waitFor(() => screen.getByText(/identity/i));
 		expect(screen.queryByRole("switch", { name: /identity/i })).toBeNull();
+	});
+
+	it("scrolls and highlights the row matching ?focus=<module>", async () => {
+		const scrollSpy = vi.fn();
+		Element.prototype.scrollIntoView = scrollSpy;
+
+		(featureFlagApi.list as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+			{
+				key: "payslip",
+				label: "Payslips",
+				enabled: false,
+				togglable: true,
+				critical: false,
+				derived: false,
+				depends_on: [],
+			},
+		]);
+
+		render(
+			<MemoryRouter initialEntries={["/admin/modules?focus=payslip"]}>
+				<Routes>
+					<Route path="/admin/modules" element={<AdminModulesPage />} />
+				</Routes>
+			</MemoryRouter>,
+		);
+
+		await waitFor(() => screen.getByText("Payslips"));
+		await waitFor(() => expect(scrollSpy).toHaveBeenCalled());
+		const row = screen.getByTestId("module-row-payslip");
+		expect(row.className).toContain("ring-accent-500");
 	});
 });
