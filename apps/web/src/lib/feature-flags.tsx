@@ -1,7 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import type { RouteObject } from "react-router-dom";
 
+import { ModuleDisabled } from "@/components/hrms/ModuleDisabled";
 import { featureFlagApi } from "@/modules/admin/api";
+
 import { useAuth } from "./auth";
 
 interface FeaturesContextValue {
@@ -64,4 +67,42 @@ export function useFeaturesRefresh(): () => Promise<void> {
 	const ctx = useContext(FeaturesContext);
 	if (!ctx) throw new Error("useFeaturesRefresh outside FeaturesProvider");
 	return ctx.refresh;
+}
+
+interface RequireFeatureProps {
+	flag: string;
+	children: ReactNode;
+}
+
+/**
+ * Route-level feature gate. Reads the flag map from FeaturesProvider:
+ *   - outside provider → fail-open (render children)
+ *   - flags still loading → fail-open (render children, no flicker)
+ *   - flag explicitly false → render <ModuleDisabled>
+ *   - flag missing or true → render children
+ *
+ * The "loading = render children" branch matches useFeature's existing
+ * optimistic contract and prevents a flash of "module disabled" while
+ * the flag list is fetching for legit users.
+ */
+export function RequireFeature({ flag, children }: RequireFeatureProps) {
+	const ctx = useContext(FeaturesContext);
+	if (!ctx) return <>{children}</>;
+	if (!ctx.loaded) return <>{children}</>;
+	if (ctx.flags[flag] === false) return <ModuleDisabled module={flag} />;
+	return <>{children}</>;
+}
+
+/**
+ * Apply a single feature gate to every route in `routes`. Used in App.tsx
+ * to wrap each module's route array without restructuring its routes.tsx.
+ */
+export function withFeature(
+	flag: string,
+	routes: RouteObject[],
+): RouteObject[] {
+	return routes.map((r) => ({
+		...r,
+		element: <RequireFeature flag={flag}>{r.element}</RequireFeature>,
+	}));
 }
