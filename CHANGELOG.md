@@ -34,6 +34,40 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
   rotation is ever needed, both pieces must be implemented first.
   Tracked for whichever release schedules a key rotation.
 
+## [1.6.2] - 2026-05-07
+
+**ManagerPicker dropdown close fix.**
+
+### Fixed
+- **`<ManagerPicker>` dropdown now closes on selection.** v1.6.0 mounted
+  cmdk's `<Command>` inline, producing an always-open list with no way
+  to close. Clicking a candidate fired `onChange` but left the list
+  expanded and showed no "selected" state on the form — only a row
+  highlight inside the list. Rebuilt as a Popover-based combobox: the
+  trigger is now a button showing the selected manager's name (or a
+  placeholder); the cmdk Command lives inside a portaled
+  `<PopoverContent>` and dismisses on select / Escape / outside-click.
+- Prop contract unchanged (`value` / `excludeIds` / `options` /
+  `onChange`); `EmployeeForm` consumer untouched.
+
+### Tests
+- Frontend: 213 passed (was 207 at v1.6.1; +6 in
+  `ManagerPicker.test.tsx`: list hidden by default, trigger shows
+  selected name, closes on select, closes on Escape, (No manager) →
+  null, existing 3 adapted to click-trigger-first).
+- Backend: 581 passed (no change).
+- Permission codes: 110 (no change).
+
+### Migration
+- No schema migrations. No backend changes. Frontend-only.
+
+### Known issues filed for v1.6.x
+- `EmployeeForm.tsx` doesn't disable the `<ManagerPicker>` for users
+  without `employee:write:org`. Ops.lead/team_lead can interact with
+  the picker through the UI; the backend's narrow-PATCH lane still
+  rejects any manager-field write at API level so the security model
+  holds, but the UI should match the perm gate.
+
 ## [1.6.1] - 2026-05-07
 
 **v1.6.0 follow-up — unblock team_lead/manager edit-page pre-fill.**
