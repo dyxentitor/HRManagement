@@ -127,3 +127,17 @@ class TeamSerializer(serializers.ModelSerializer):
         model = Team
         fields = ("id", "name", "parent_team", "sort_order", "min_headcount")
         read_only_fields = ("id",)
+
+
+class EmployeeAssignmentSerializer(serializers.ModelSerializer):
+    """Narrow serializer used by the `employee:assign:team` PATCH lane.
+
+    Only the `team` FK is writable. The PATCH path enforces that the
+    request body contains no other keys before delegating to this
+    serializer.
+    """
+
+    class Meta:
+        model = Employee
+        fields = ("id", "team")
+        read_only_fields = ("id",)

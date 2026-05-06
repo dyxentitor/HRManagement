@@ -13,7 +13,12 @@ from rest_framework.response import Response
 from modules.identity.permissions import HRMSPermission
 
 from .models import Employee, Team
-from .serializers import EmployeeMeSerializer, EmployeeSerializer, TeamSerializer
+from .serializers import (
+    EmployeeAssignmentSerializer,
+    EmployeeMeSerializer,
+    EmployeeSerializer,
+    TeamSerializer,
+)
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
@@ -22,6 +27,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     serializer_class = EmployeeSerializer
     permission_classes: ClassVar = [HRMSPermission]
     BANK_FIELDS: ClassVar[frozenset[str]] = frozenset({"bank_name", "bank_account_number"})
+    ASSIGN_SCOPE_KEYS: ClassVar[frozenset[str]] = frozenset({"team", "team_id"})
     # Use get_queryset() so TenantScopedManager re-evaluates org_id at request time.
     # A class-level queryset = Employee.objects.all() would capture org_id=None at
     # class-load time and always return empty results.
@@ -41,14 +47,47 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return ["employee:read:org"]
         if action == "create":
             return ["employee:create"]
-        if action in ("update", "partial_update"):
+        if action == "update":
             return ["employee:write:org"]
+        if action == "partial_update":
+            # Both perm branches handled inside `partial_update`. Returning []
+            # leaves auth + tenant-scope intact via HRMSPermission.
+            return []
         if action == "destroy":
             return ["employee:archive"]
         return []
 
     def perform_create(self, serializer):
         serializer.save(org_id=self.request.user.org_id)
+
+    def partial_update(self, request, *args, **kwargs):
+        from rest_framework.exceptions import PermissionDenied
+
+        from modules.identity.services.permissions import get_user_perms
+
+        user_perms = get_user_perms(request.user)
+        body_keys = set(request.data.keys())
+
+        if "employee:write:org" in user_perms:
+            return super().partial_update(request, *args, **kwargs)
+
+        if (
+            "employee:assign:team" in user_perms
+            and body_keys
+            and body_keys.issubset(self.ASSIGN_SCOPE_KEYS)
+        ):
+            instance = self.get_object()
+            ser = EmployeeAssignmentSerializer(
+                instance,
+                data=request.data,
+                partial=True,
+                context={"request": request},
+            )
+            ser.is_valid(raise_exception=True)
+            ser.save()
+            return Response(EmployeeSerializer(instance, context={"request": request}).data)
+
+        raise PermissionDenied("You do not have permission to edit this employee.")
 
     @action(detail=False, methods=["get", "patch"], url_path="me")
     def me(self, request, *args, **kwargs):
