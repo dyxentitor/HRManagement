@@ -4,7 +4,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { AppShell } from "./components/shell/AppShell";
 import { Toaster } from "./components/ui/sonner";
 import { AuthProvider } from "./lib/auth";
-import { FeaturesProvider } from "./lib/feature-flags";
+import { FeaturesProvider, withFeature } from "./lib/feature-flags";
 import { adminRoutes } from "./modules/admin/routes";
 import { approvalsRoutes } from "./modules/approvals/routes";
 import { authRoutes } from "./modules/auth/routes";
@@ -42,52 +42,52 @@ const router = createBrowserRouter([
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...leaveRoutes.map((r) => ({
+			...withFeature("leave", leaveRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...scheduleRoutes.map((r) => ({
+			...withFeature("schedule", scheduleRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...claimsRoutes.map((r) => ({
+			...withFeature("claims", claimsRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...payslipRoutes.map((r) => ({
+			...withFeature("payslip", payslipRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...kpiRoutes.map((r) => ({
+			...withFeature("kpi", kpiRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...certificationRoutes.map((r) => ({
+			...withFeature("certification", certificationRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...notificationsRoutes.map((r) => ({
+			...withFeature("notifications", notificationsRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...approvalsRoutes.map((r) => ({
+			...withFeature("approvals", approvalsRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...dashboardRoutes.map((r) => ({
+			...withFeature("dashboard", dashboardRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
-			...reportsRoutes.map((r) => ({
+			...withFeature("reports", reportsRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
