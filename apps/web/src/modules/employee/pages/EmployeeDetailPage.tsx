@@ -196,10 +196,18 @@ export default function EmployeeDetailPage() {
 			<div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4">
 				{/* Avatar card */}
 				<aside className="bg-surface-hover border border-border-subtle rounded-lg p-5 text-center">
-					<div
-						className="size-20 rounded-full bg-gradient-to-br from-lavender to-mint mx-auto mb-2 border-2 border-accent-500/30"
-						aria-hidden
-					/>
+					{employee.photo_url ? (
+						<img
+							src={employee.photo_url}
+							alt={`${employee.full_name} avatar`}
+							className="size-20 rounded-full object-cover mx-auto mb-2 border-2 border-accent-500/30"
+						/>
+					) : (
+						<div
+							className="size-20 rounded-full bg-gradient-to-br from-lavender to-mint mx-auto mb-2 border-2 border-accent-500/30"
+							aria-hidden
+						/>
+					)}
 					<h2 className="text-h2 text-text-primary">{employee.full_name}</h2>
 					{employee.role_title && (
 						<p className="text-small text-accent-200 inline-block bg-accent-500/15 rounded-full px-2.5 py-0.5 mt-1">

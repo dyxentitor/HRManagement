@@ -12,6 +12,7 @@ export interface EmployeeCardProps {
 		role_title?: string;
 		email?: string;
 		phone?: string;
+		photo_url?: string | null;
 	};
 	metric: { label: string; value: number; max?: number };
 	gradient?: [string, string];
@@ -50,14 +51,22 @@ export function EmployeeCard({
 
 	return (
 		<article className="bg-surface-hover border border-border-subtle rounded-lg p-4 text-center">
-			<div
-				className={cn(
-					"size-14 rounded-full mx-auto mb-2 bg-gradient-to-br border-2 border-accent-500/30",
-					`from-${from}`,
-					`to-${to}`,
-				)}
-				aria-hidden
-			/>
+			{employee.photo_url ? (
+				<img
+					src={employee.photo_url}
+					alt={`${employee.full_name} avatar`}
+					className="size-14 rounded-full object-cover mx-auto mb-2 border-2 border-accent-500/30"
+				/>
+			) : (
+				<div
+					className={cn(
+						"size-14 rounded-full mx-auto mb-2 bg-gradient-to-br border-2 border-accent-500/30",
+						`from-${from}`,
+						`to-${to}`,
+					)}
+					aria-hidden
+				/>
+			)}
 			<h3 className="text-h3 text-text-primary">{employee.full_name}</h3>
 			{employee.role_title && (
 				<span className="inline-block mt-1 mb-2 px-2 py-0.5 rounded-full bg-accent-500/15 text-accent-200 text-small">

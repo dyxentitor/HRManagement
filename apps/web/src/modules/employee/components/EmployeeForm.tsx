@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 
 import type { Employee, EmployeeWritePayload } from "../api";
 import { useFieldPerm } from "../lib/useFieldPerm";
+import { AvatarUpload } from "./AvatarUpload";
 import { EncryptedFieldInput } from "./EncryptedFieldInput";
 import { ManagerPicker } from "./ManagerPicker";
 
@@ -284,6 +285,18 @@ function renderSection(
 		case "identity":
 			return (
 				<>
+					{a.initial?.id && (
+						<div className="sm:col-span-2">
+							<AvatarUpload
+								photoUrl={a.initial.photo_url ?? null}
+								fullName={a.initial.full_name ?? "Employee"}
+								size="md"
+								uploadFor={{ kind: "employee", id: a.initial.id }}
+								onUploaded={() => {}}
+								onDeleted={() => {}}
+							/>
+						</div>
+					)}
 					{field(
 						"first_name",
 						"First name",
