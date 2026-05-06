@@ -7,7 +7,7 @@ from typing import Any
 from django.conf import settings
 from django.core.mail import send_mail
 
-from .models import Employee
+from ..models import Employee
 
 
 class EmployeeService:
@@ -19,7 +19,6 @@ class EmployeeService:
     def update(employee: Employee, **fields: Any) -> Employee:
         for k, v in fields.items():
             setattr(employee, k, v)
-        # Auto-compute the *_last4 helpers when bank/IC fields change
         if fields.get("bank_account_number"):
             employee.bank_account_last4 = fields["bank_account_number"][-4:]
         if fields.get("ic_number"):
@@ -45,5 +44,5 @@ class EmployeeService:
             ),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[recipient],
-            fail_silently=True,  # email failures must not block the API call
+            fail_silently=True,
         )

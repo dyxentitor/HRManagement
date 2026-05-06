@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+import uuid
 from typing import ClassVar
 
 from rest_framework import status, viewsets
@@ -60,6 +61,16 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return []
         if action == "destroy":
             return ["employee:archive"]
+        if action in ("me_photo_presigned_upload", "me_photo"):
+            # Same gate as the existing /me action: any authenticated user with
+            # a linked Employee record. Inline 404 in the action handles the
+            # "no linked Employee" case.
+            return []
+        if action in (
+            "employee_photo_presigned_upload",
+            "employee_photo",
+        ):
+            return ["employee:write:org"]
         return []
 
     def perform_create(self, serializer):
@@ -179,6 +190,109 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 "probation_end_date": end.isoformat(),
             }
         return Response(body)
+
+    # --- Photo upload (v1.7.0) ---
+
+    PHOTO_ALLOWED_TYPES: ClassVar[frozenset[str]] = frozenset(
+        {"image/jpeg", "image/png", "image/webp"}
+    )
+    PHOTO_MAX_SIZE_BYTES: ClassVar[int] = 5 * 1024 * 1024  # 5 MB
+
+    def _photo_ext(self, content_type: str) -> str:
+        return {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}.get(
+            content_type, "bin"
+        )
+
+    def _validate_photo_upload_body(self, request) -> tuple[str, str]:
+        filename = request.data.get("filename")
+        content_type = request.data.get("content_type")
+        if not filename or not content_type:
+            raise ValidationError({"detail": "filename and content_type are required."})
+        if content_type not in self.PHOTO_ALLOWED_TYPES:
+            raise ValidationError(
+                {"content_type": f"must be one of {sorted(self.PHOTO_ALLOWED_TYPES)}"}
+            )
+        return filename, content_type
+
+    def _validate_photo_register_body(self, request, employee: Employee) -> tuple[str, int]:
+        s3_key = request.data.get("s3_key")
+        content_type = request.data.get("content_type")
+        size_bytes = request.data.get("size_bytes")
+        if not s3_key or not content_type or size_bytes is None:
+            raise ValidationError({"detail": "s3_key, content_type, size_bytes required."})
+        if content_type not in self.PHOTO_ALLOWED_TYPES:
+            raise ValidationError({"content_type": "invalid"})
+        try:
+            size_int = int(size_bytes)
+        except (TypeError, ValueError):
+            raise ValidationError({"size_bytes": "must be an integer"}) from None
+        if size_int <= 0 or size_int > self.PHOTO_MAX_SIZE_BYTES:
+            raise ValidationError({"size_bytes": f"must be 1..{self.PHOTO_MAX_SIZE_BYTES}"})
+        expected_prefix = f"avatars/originals/{employee.id}/"
+        if not s3_key.startswith(expected_prefix):
+            raise ValidationError({"s3_key": f"must start with {expected_prefix}"})
+        return s3_key, size_int
+
+    def _do_presigned_upload(self, employee: Employee, request):
+        from .services.avatar import presigned_put_url
+
+        _filename, content_type = self._validate_photo_upload_body(request)
+        ext = self._photo_ext(content_type)
+        s3_key = f"avatars/originals/{employee.id}/{uuid.uuid4()}.{ext}"
+        url = presigned_put_url(s3_key, content_type, expires_in=300)
+        return Response(
+            {
+                "presigned_url": url,
+                "s3_key": s3_key,
+                "max_size_bytes": self.PHOTO_MAX_SIZE_BYTES,
+                "content_type": content_type,
+            }
+        )
+
+    def _do_register(self, employee: Employee, request):
+        from .tasks import process_avatar_upload
+
+        s3_key, _size = self._validate_photo_register_body(request, employee)
+        process_avatar_upload.delay(str(employee.id), s3_key)
+        return Response({"processing": True}, status=status.HTTP_202_ACCEPTED)
+
+    def _do_delete_photo(self, employee: Employee):
+        from .services.avatar import delete_object
+
+        old_key = employee.photo_s3_key
+        if old_key:
+            delete_object(old_key)
+        employee.photo_s3_key = ""
+        employee.save(update_fields=["photo_s3_key", "updated_at"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["post"], url_path="me/photo/presigned-upload")
+    def me_photo_presigned_upload(self, request):
+        emp = Employee.objects.filter(user_id=request.user.id).first()
+        if not emp:
+            raise NotFound("No employee profile linked to this user.")
+        return self._do_presigned_upload(emp, request)
+
+    @action(detail=False, methods=["post", "delete"], url_path="me/photo")
+    def me_photo(self, request):
+        emp = Employee.objects.filter(user_id=request.user.id).first()
+        if not emp:
+            raise NotFound("No employee profile linked to this user.")
+        if request.method == "POST":
+            return self._do_register(emp, request)
+        return self._do_delete_photo(emp)
+
+    @action(detail=True, methods=["post"], url_path="photo/presigned-upload")
+    def employee_photo_presigned_upload(self, request, pk=None):
+        emp = self.get_object()
+        return self._do_presigned_upload(emp, request)
+
+    @action(detail=True, methods=["post", "delete"], url_path="photo")
+    def employee_photo(self, request, pk=None):
+        emp = self.get_object()
+        if request.method == "POST":
+            return self._do_register(emp, request)
+        return self._do_delete_photo(emp)
 
 
 class TeamViewSet(viewsets.ModelViewSet):
