@@ -1,5 +1,6 @@
 export { ApprovalActionBar } from "./ApprovalActionBar";
 export type { ApprovalActionBarProps } from "./ApprovalActionBar";
+export { MfaPrompt } from "./MfaPrompt";
 export { AttendanceLogRow } from "./AttendanceLogRow";
 export type { AttendanceLogRowProps } from "./AttendanceLogRow";
 export { ClockInOutWidget } from "./ClockInOutWidget";
