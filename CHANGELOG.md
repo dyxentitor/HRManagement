@@ -34,6 +34,32 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
   rotation is ever needed, both pieces must be implemented first.
   Tracked for whichever release schedules a key rotation.
 
+## [1.6.1] - 2026-05-07
+
+**v1.6.0 follow-up — unblock team_lead/manager edit-page pre-fill.**
+
+### Fixed
+- **`GET /api/v1/employees/{id}/` now also accepts `employee:assign:team`**
+  in addition to `employee:read:org`. The v1.6.0 narrow-PATCH lane worked
+  at API level (4 endpoint tests passed; curl matrix matched), but the
+  Playwright sweep surfaced that team_lead/manager's edit page rendered
+  empty because the SPA's pre-fill GET 403'd. Spec §9.1 #4 expected
+  ops.lead to open an employee's edit page and see all fields read-only
+  except Team — that flow now works end-to-end.
+- No PII regression: encrypted fields (`ic_number`, `bank_account_number`,
+  `lhdn_tax_no`, `epf_no`, `socso_no`, `eis_no`) are write-only on
+  `EmployeeSerializer`, so a non-HR retrieve never sees plaintext PII —
+  only the `*_last4` masks already designed for that purpose.
+
+### Tests
+- Backend: 581 passed + 3 skipped (was 580 + 3 at v1.6.0; +1 in
+  `test_assign_team.py::test_team_lead_can_retrieve_employee_for_form_prefill`).
+- Frontend: 207 passed (no change).
+- Permission codes: 110 (no change).
+
+### Migration
+- No schema migrations. No fixture changes. Code-only.
+
 ## [1.6.0] - 2026-05-07
 
 **Employee CRUD UI + Team CRUD page + perm-narrow team-assignment.**
