@@ -34,6 +34,59 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
   rotation is ever needed, both pieces must be implemented first.
   Tracked for whichever release schedules a key rotation.
 
+## [1.7.0] - 2026-05-07
+
+**Profile pictures + employee self-edit.**
+
+### Added
+- **Employee self-edit on `/me/profile`.** Each section's "Edit" button
+  (no-op since v1.0.0) now toggles inline edit fields with Save/Cancel.
+  Backed by the existing `PATCH /api/v1/employees/me/` endpoint and
+  `SELF_EDIT_WHITELIST`. Bank-field saves trigger the shared
+  `<MfaPrompt>` (extracted from v1.6.0's inline component).
+- **Address section** on `/me/profile` (was missing despite address
+  fields being in the allowlist).
+- **Profile pictures for everyone.** New `<AvatarUpload>` component
+  drives a 3-step presigned upload (presign → PUT to MinIO → register).
+  Backend Celery task downscales to 512x512 WebP, strips EXIF, replaces
+  the prior thumbnail. Photos render on `/me/profile`,
+  `EmployeeDetailPage`, `EmployeeCard`, and the HR `EmployeeForm`
+  Identity section.
+- New `Employee.photo_s3_key` column (plain `CharField`, additive
+  migration `0003_employee_photo`).
+- Six new endpoints on `EmployeeViewSet` — three self
+  (`/me/photo/presigned-upload`, `/me/photo` POST/DELETE) and three HR
+  mirrors (`/employees/{id}/photo/...`).
+- `photo_url` (read-only, presigned-GET 1-hour TTL) on
+  `EmployeeSerializer` and `EmployeeMeSerializer` GET responses.
+
+### Changed
+- `<MfaPrompt>` extracted to `apps/web/src/components/hrms/MfaPrompt.tsx`
+  for reuse across `EmployeeFormPage` (v1.6.0 bank replace) and
+  `MyProfilePage` (v1.7.0 bank edit).
+- `services.py` refactored into a `services/` package so
+  `services/avatar.py` can live alongside `EmployeeService`.
+- `Employee.objects` → `Employee.all_objects` in the Celery resize
+  task (PK lookup; runs without request tenant context).
+
+### Tests
+- Backend: 593 passed + 3 skipped (was 581 + 3 at v1.6.2; +12 across
+  `test_avatar_endpoints.py` (8), `test_avatar_task.py` (3), and one
+  `photo_url` regression in `test_views_me.py`).
+- Frontend: 227 passed (was 213 at v1.6.2; +14 across `MfaPrompt` (3),
+  `AvatarUpload` (5), and `MyProfilePage` (+6)).
+- Permission codes: 110 (no change — no new perm codes).
+
+### Migration
+- `apps/api/modules/employee/migrations/0003_employee_photo.py` —
+  additive `AddField`. No data backfill needed.
+
+### Out of scope (deferred)
+- `CommandPalette` Employees results don't yet show small avatars.
+- `UserMenu` does not currently render an avatar; not added in v1.7.0.
+- `EmployeeForm` `<ManagerPicker>` not-disabled-for-non-write-org gap
+  (filed in v1.6.2). Backend safety still holds.
+
 ## [1.6.2] - 2026-05-07
 
 **ManagerPicker dropdown close fix.**
