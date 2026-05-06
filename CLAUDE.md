@@ -8,7 +8,7 @@
 
 - **Stack** — Django 5 + DRF (`apps/api`) · React 18 + Vite + TS + Tailwind (`apps/web`) · Postgres 16 · Redis · Celery · MinIO/S3 · Docker Compose
 - **Layout** — `apps/api`, `apps/web`, `packages/contracts` (generated OpenAPI → TS types), `deploy/`, `docs/` (specs, plans, audits, runbooks), `References/` (design + ops notes)
-- **Current version** — `v1.6.0` on `master` (tag dated 2026-05-07). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
+- **Current version** — `v1.6.1` on `master` (tag dated 2026-05-07). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
 - **Mission** — Phase 1 web HRMS for Provintell (own-office deployment first). Phase 2 = SaaS, Phase 3 = mobile.
 - **Tenancy / locale** — multi-tenant-ready schema, `Asia/Kuala_Lumpur`, `en-MY`, MYR.
 - **Day-one demo logins** — see `References/KEY.md`. Do not commit changes that break them.
@@ -49,17 +49,18 @@ All shipped. Each row is anchored on a real git tag.
 | `v1.5.0` | 2026-05-06 | Phase 1 cleanup — manager/finance/team_lead/auditor can now file own leave; `grant_default_perms` now busts perm cache; older audit rows verified-fixed and closed | (no spec — bugfix) | (no plan — one-liner) |
 | `v1.5.1` | 2026-05-06 | Module-disabled empty-state component + cover-up picker UI; route-level `<RequireFeature>` wrapper + `withFeature` helper; AdminModulesPage `?focus=` deep-link | `2026-05-06-v1.5.1-empty-state-and-coverup.md` | `2026-05-06-v1.5.1-empty-state-and-coverup.md` |
 | `v1.6.0` | 2026-05-07 | Employee CRUD UI (/employees/new + /employees/:id/edit shared form, encrypted-field "Replace" modal, MFA on bank edit) + Team CRUD page (/admin/teams) + new `employee:assign:team` perm-narrow PATCH lane for team_lead/manager re-team without broader edit access | `2026-05-07-v1.6.0-employee-team-crud.md` | `2026-05-07-v1.6.0-employee-team-crud.md` |
+| `v1.6.1` | 2026-05-07 | Backend follow-up to v1.6.0 — `GET /employees/{id}/` now also accepts `employee:assign:team` so team_lead/manager's edit page pre-fills (closes spec §9.1 #4 gap surfaced by Playwright sweep). Encrypted PII still hidden via write-only serializer fields | (no spec — bugfix) | (no plan — one-liner) |
 
-### 2.3 Test counts at HEAD (v1.6.0)
+### 2.3 Test counts at HEAD (v1.6.1)
 
-- Backend: **580 passed** + 3 skipped (postgres-only triggers). +11 from v1.5.1 across `test_assign_team.py` (4 endpoint tests) and `test_assign_team_perm_seeded.py` (7 grant tests).
-- Frontend: **207 passed** (was 180 at v1.5.1; +27 across EncryptedFieldInput, ManagerPicker, EmployeeForm, EmployeeFormPage, AdminTeamsPage, plus extensions to EmployeeDetailPage, EmployeesPage, Sidebar).
-- Permission codes: **110** (added `employee:assign:team` in v1.6.0).
+- Backend: **581 passed** + 3 skipped (postgres-only triggers). +12 from v1.5.1 (v1.6.0 added 11; v1.6.1 added 1 retrieve-pre-fill test).
+- Frontend: **207 passed** (was 180 at v1.5.1; +27 in v1.6.0; v1.6.1 backend-only).
+- Permission codes: **110** (`employee:assign:team` added in v1.6.0; v1.6.1 doesn't add codes).
 
 ### 2.4 In-flight / next up
 
 - **Working tree at HEAD** — only `apps/api/uv.lock` modified; untracked `.claude/` and `.playwright-mcp/`. No half-finished feature branches.
-- **Local tags not pushed** — `v1.4.1`, `v1.4.2`, `v1.4.3`, `v1.5.0`, `v1.5.1`, `v1.6.0` are local-only on `master`. Confirm with the user before `git push origin master --tags`.
+- **Local tags not pushed** — `v1.4.1`, `v1.4.2`, `v1.4.3`, `v1.5.0`, `v1.5.1`, `v1.6.0`, `v1.6.1` are local-only on `master`. Confirm with the user before `git push origin master --tags`.
 - **Audit closure status**:
   - `2026-04-29-system-state.md` — Bug #1 (payslip detail 403): **FIXED**. Bug #2 (payroll CSV null token): **FIXED**. Bug #3 (encryption-key drift): **FIXED** (config consolidation 2026-05-06; `.env` and `References/KEY.md` now match the runtime key `5rrM…`; `:?` guard in compose prevents future silent drift; runbook rotation infrastructure — `PREV_KEY` + `reencrypt_sensitive_fields` cmd — still needs to be built when rotation is actually scheduled). Bug #4 (cert/training beat tasks): **FIXED**.
   - `2026-04-29-ui-quality.md` — "FAIL" rows still pending; cosmetic; v1.5.2–v1.5.8 candidates.
