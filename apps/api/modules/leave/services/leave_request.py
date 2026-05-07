@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime
 
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from common.workflow import (
     Decision,
@@ -34,8 +35,71 @@ def is_user_on_approved_leave(user: User, on_date: datetime.date) -> bool:
 
 class LeaveRequestService:
     @staticmethod
+    def _validate_eligibility(request: LeaveRequest) -> None:
+        """v1.8.0 statutory eligibility checks.
+
+        - requires_service_months: hire_date must be at least N months ago
+        - notice_days_required:    start_date must be at least N days from today
+        - max_per_lifetime_events: count of past approved requests of this type
+                                   for this employee must be < cap
+        """
+        from modules.employee.models import Employee
+
+        lt = request.leave_type
+        today = timezone.localdate()
+        emp = Employee.all_objects.get(id=request.employee_id)
+
+        if lt.requires_service_months and lt.requires_service_months > 0:
+            min_hire_date = today - datetime.timedelta(days=int(lt.requires_service_months) * 30)
+            if emp.hire_date > min_hire_date:
+                raise ValidationError(
+                    {
+                        "leave_type": (
+                            f"{lt.name} requires "
+                            f"{lt.requires_service_months} months of continuous service."
+                        )
+                    },
+                )
+
+        if lt.notice_days_required and lt.notice_days_required > 0:
+            min_start = today + datetime.timedelta(days=int(lt.notice_days_required))
+            if request.start_date < min_start:
+                raise ValidationError(
+                    {
+                        "start_date": (
+                            f"{lt.name} requires "
+                            f"{lt.notice_days_required} days of advance notice."
+                        )
+                    },
+                )
+
+        if lt.max_per_lifetime_events and lt.max_per_lifetime_events > 0:
+            past_count = (
+                LeaveRequest.all_objects.filter(
+                    org_id=request.org_id,
+                    employee_id=request.employee_id,
+                    leave_type=lt,
+                    status="approved",
+                    deleted_at__isnull=True,
+                )
+                .exclude(id=request.id)
+                .count()
+            )
+            if past_count >= lt.max_per_lifetime_events:
+                term = "confinements" if lt.code in ("MATERNITY", "PATERNITY") else "events"
+                raise ValidationError(
+                    {
+                        "leave_type": (
+                            f"Maximum {lt.max_per_lifetime_events} {term} reached "
+                            f"for {lt.name}."
+                        )
+                    },
+                )
+
+    @staticmethod
     def submit(request: LeaveRequest, actor: User) -> LeaveRequest:
         """Engine.submit + hold balance pending."""
+        LeaveRequestService._validate_eligibility(request)  # v1.8.0
         engine = WorkflowEngine(is_on_leave_lookup=is_user_on_approved_leave)
         engine.submit(request, chain=LEAVE_DEFAULT)
         request.submitted_at = timezone.now()
