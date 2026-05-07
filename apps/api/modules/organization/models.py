@@ -56,6 +56,9 @@ class CountryLeaveTypeDefault(models.Model):
     default_days = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     statutory = models.BooleanField(default=False)
     accrual_type = models.CharField(max_length=16, choices=ACCRUAL_TYPES)
+    # v1.8.0 — copied verbatim into the org's default LeavePolicy.tenure_brackets
+    # at seed time. Shape: [{"min_years": int, "days": number}, ...]
+    tenure_brackets = models.JSONField(default=list, blank=True)
 
     class Meta:
         unique_together = (("country_code", "code"),)

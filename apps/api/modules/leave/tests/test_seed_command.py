@@ -25,10 +25,12 @@ def test_seed_loads_my_leave_types(org_my: Organization) -> None:
     call_command("seed_country_reference_data", "--country", "MY")
     call_command("seed_leave_types_from_country", "--org-id", str(org_my.id))
     codes = set(LeaveType.all_objects.filter(org_id=org_my.id).values_list("code", flat=True))
-    # 7 statutory MY types from M1a fixture
+    # 8 statutory MY types as of v1.8.0 (post-2022 §60F amendment splits HOSPITALIZATION
+    # off MEDICAL into its own balance).
     assert codes == {
         "ANNUAL",
         "MEDICAL",
+        "HOSPITALIZATION",
         "MATERNITY",
         "PATERNITY",
         "COMPASSIONATE",

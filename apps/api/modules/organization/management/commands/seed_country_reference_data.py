@@ -70,6 +70,7 @@ class Command(BaseCommand):
                         "default_days": fields["default_days"],
                         "statutory": fields["statutory"],
                         "accrual_type": fields["accrual_type"],
+                        "tenure_brackets": fields.get("tenure_brackets", []),
                     },
                 )
                 n_leavetypes += 1

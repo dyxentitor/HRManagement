@@ -6,9 +6,39 @@
     default_timezone: Asia/Kuala_Lumpur
 
 - model: organization.countryleavetypedefault
-  fields: { country_code: MY, code: ANNUAL,        name: Annual Leave,        default_days: 14, statutory: true,  accrual_type: annual }
+  fields:
+    country_code: MY
+    code: ANNUAL
+    name: Annual Leave
+    default_days: 8
+    statutory: true
+    accrual_type: annual
+    tenure_brackets:
+      - {min_years: 0, days: 8}
+      - {min_years: 2, days: 12}
+      - {min_years: 5, days: 16}
 - model: organization.countryleavetypedefault
-  fields: { country_code: MY, code: MEDICAL,       name: Medical Leave,       default_days: 14, statutory: true,  accrual_type: annual }
+  fields:
+    country_code: MY
+    code: MEDICAL
+    name: Sick Leave
+    default_days: 14
+    statutory: true
+    accrual_type: annual
+    tenure_brackets:
+      - {min_years: 0, days: 14}
+      - {min_years: 2, days: 18}
+      - {min_years: 5, days: 22}
+# Post-2022 §60F amendment: hospitalization is now SEPARATE from outpatient sick.
+- model: organization.countryleavetypedefault
+  fields:
+    country_code: MY
+    code: HOSPITALIZATION
+    name: Hospitalization Leave
+    default_days: 60
+    statutory: true
+    accrual_type: annual
+    tenure_brackets: []
 - model: organization.countryleavetypedefault
   fields: { country_code: MY, code: MATERNITY,     name: Maternity Leave,     default_days: 98, statutory: true,  accrual_type: event_based }
 - model: organization.countryleavetypedefault
