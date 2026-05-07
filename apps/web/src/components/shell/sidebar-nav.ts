@@ -137,6 +137,13 @@ export const NAV: NavGroup[] = [
 				perm: "org:feature_flag:read",
 			},
 			{
+				label: "Leave types",
+				to: "/admin/leave-types",
+				icon: Calendar,
+				perm: "leave:type:write",
+				module: "leave",
+			},
+			{
 				label: "Payroll",
 				to: "/payroll/admin",
 				icon: Wallet,
