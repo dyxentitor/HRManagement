@@ -92,7 +92,7 @@ def stack():
 @pytest.mark.django_db
 @freeze_time("2026-05-01 06:00:00")
 def test_holiday_clockin_does_not_credit_hospitalization(stack):
-    org, emp = stack
+    _org, emp = stack
     AttendanceService.clock_in(employee=emp, source="web")
 
     # REPLACEMENT got the credit (existing tested behaviour)

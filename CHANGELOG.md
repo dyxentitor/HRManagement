@@ -34,6 +34,136 @@ All notable changes documented here. Format: [Keep a Changelog](https://keepacha
   rotation is ever needed, both pieces must be implemented first.
   Tracked for whichever release schedules a key rotation.
 
+## [1.8.0] - 2026-05-08
+
+**Leave module enhancement — admin-configurable tenure-tier entitlement,
+carry-forward expiry, per-employee override, and Celery year-rollover jobs.
+Seeds Malaysian Employment Act 1955 (post-2022) statutory minimums.**
+
+### Added
+
+- Admin page `/admin/leave-types` with master-detail layout and three tabs:
+  - **General** — code, name, accrual type, paid/statutory/attachment flags,
+    gender restriction, plus a Statutory Eligibility group
+    (`requires_service_months`, `notice_days_required`, `max_per_lifetime_events`).
+  - **Tenure tiers** — composes a reusable `<TenureBracketEditor>` per
+    `LeavePolicy` (add/remove rows of `{min_years, days}`).
+  - **Carry-forward** — 4-mode radio (no carry / capped no expiry /
+    capped + expiry / unlimited) → backend payload mapping, with the
+    statute-max hint at 12 months.
+- `EmployeeLeaveOverride` model + per-employee override editor on
+  `/employees/:id/edit` (HR-only, gated by `leave:balance:adjust:org`).
+  Override history preserved by soft-delete + optional `effective_to`.
+- `compute_entitlement` resolver: override > LeavePolicy.tenure_brackets >
+  LeaveType.default_days (reuses M3 PolicyService for tenure-bracket math).
+- `prorate_for_hire_date`: §60E by-month proration for new joiners
+  (months_remaining / 12 of entitlement, rounded to nearest 0.5).
+- Three idempotent Celery jobs keyed on UUID5(employee, leave_type, year):
+  - `year_rollover` (Jan 1 01:00 KL): per-org `run_year_end_carry_forward`
+    then `run_year_start_accrual`.
+  - `carry_forward_expiry_sweep` (daily 02:30 KL): debits unused carried
+    days at their expiry date (FIFO model — carried days consumed first).
+- `/api/v1/leave/policies/` CRUD with bracket-shape validation
+  (ascending `min_years`, non-decreasing `days`).
+- `/api/v1/leave/employee-overrides/` nested viewset (HR write, self/HR read).
+- `/api/v1/admin/leave/accrue/`, `.../carry-forward/`, `.../expire-carry/`
+  manual trigger endpoints (HR-only, supports `dry_run`).
+- `/api/v1/leave/balances/me/` payload now includes
+  `carried_forward_expires_at` and `ledger_recent` (last 10 entries).
+- `MyLeavePage` entitlement breakdown grid: one card per leave type with
+  Granted / Used / Pending / Carried / Available stats, expiry pill
+  (orange within 30 days, violet otherwise), and an expandable
+  "Show recent activity" panel.
+- Statutory eligibility validators in `LeaveRequestService.submit`:
+  - `requires_service_months` (paternity §60FA: 12 months)
+  - `notice_days_required` (paternity §60FA: 30 days)
+  - `max_per_lifetime_events` (maternity §37 / paternity §60FA: 5
+    confinements; approximated as past approved request count since HRMS
+    doesn't track child-status data).
+- Schema additions (all additive migrations):
+  - `LeaveType` columns: `carry_forward_expiry_months`,
+    `requires_service_months`, `notice_days_required`,
+    `max_per_lifetime_events`.
+  - `LeaveBalance.carried_forward_expires_at` (date, nullable).
+  - `EmployeeLeaveOverride` table.
+  - `CountryLeaveTypeDefault.tenure_brackets` (JSON).
+- MY country fixture upgraded:
+  - ANNUAL: 8 / 12 / 16 by tenure (§60E).
+  - MEDICAL: 14 / 18 / 22 by tenure (§60F outpatient).
+  - **HOSPITALIZATION: new leave type, 60 days flat** (post-2022 §60F
+    amendment that separates hospitalization from outpatient sick leave).
+  - Maternity 98 / paternity 7 unchanged.
+
+### Changed
+
+- `LeaveTypeViewSet` widened from `ReadOnlyModelViewSet` to
+  `ModelViewSet`; write actions gated by existing `leave:type:write`.
+- `seed_leave_types_from_country` now also creates a default org-wide
+  `LeavePolicy` with the country fixture's `tenure_brackets`, plus
+  applies statute-level field defaults per leave-type code (paternity
+  service prerequisite + notice + lifetime cap, maternity lifetime cap,
+  ANNUAL carry-forward expiry hint = 12 months).
+- Maternity / paternity LeaveType seeds now carry the appropriate
+  `gender_restriction`.
+
+### Permissions
+
+- **No new permission codes.** All gating uses existing M3 codes
+  (`leave:type:write`, `leave:policy:write`, `leave:balance:adjust:org`).
+  Permission count stays at 110.
+
+### Test counts
+
+- Backend: **643 passed** + 3 skipped (postgres-only triggers).
+  Was 593 at v1.7.1 — +50 across compute_entitlement (5), prorate (7),
+  year-start job (3), carry-forward job (4), expiry job (3), replacement
+  regression (1), validators (4), seed (3), endpoints v1.8 (12), models
+  v1.8 (8 across LeaveType / EmployeeLeaveOverride / LeaveBalance).
+- Frontend: **243 passed**. Was 227 at v1.7.1 — +16 across
+  TenureBracketEditor (4), LeaveTypeCarryForwardTab (4),
+  AdminLeaveTypesPage (2), LeaveOverrideEditor (2), EntitlementCard (4).
+
+### Known approximations / risks
+
+- "5 surviving children" cap (§37 / §60FA) is approximated as
+  "5 confinements" (count of past approved leave requests of this type).
+  HRMS does not track child status; HR can override via
+  `manual_adjustment` ledger entry.
+- Carry-forward uses a FIFO model: when computing the unused-carry
+  remainder at expiry, carried days are deemed consumed before entitled
+  days. (Otherwise 100% of carries would always expire, which would
+  defeat the carry-forward feature.)
+- Mid-year edits to `tenure_brackets` apply at the next year-start grant,
+  not retroactively. Existing balances stay as granted.
+- REPLACEMENT auto-credit (existing M3 + M4 path) fires on attendance
+  `clock_in` for shift workers on holiday work. If the attendance is
+  later disputed and cancelled, the credit is not auto-rescinded — HR
+  must do that manually via the `manual_adjustment` ledger reason.
+  Tracked as a v1.8.x follow-up.
+- Year-start job iterates the org's employees in one Celery task. Fine
+  for Provintell (~50 staff); a Phase 2 SaaS deployment will need
+  chunking.
+
+### Out of scope (deferred)
+
+- Anniversary-based leave year (Q5 alternative; calendar year stays).
+- Pro-rata by working day (Q4 alternative; by-month stays).
+- Emergency-paternity escape hatch for the 30-day notice rule.
+- Sabah/Sarawak state-specific leave variants (Peninsular MY only).
+- Phase 2 SaaS multi-tenant year-start chunking.
+
+### Migration
+
+- `python manage.py migrate` to pick up the four additive migrations
+  (leave 0003/0004/0005, organization 0004).
+- `python manage.py seed_country_reference_data --country MY` to refresh
+  MY fixture (ANNUAL 8/12/16, MEDICAL 14/18/22, new HOSPITALIZATION).
+- `python manage.py seed_leave_types_from_country --org-id <uuid>` per
+  org to apply tenure_brackets to LeavePolicy + statute fields to
+  LeaveType.
+- For existing balances, run the manual `POST /api/v1/admin/leave/accrue/`
+  (or wait for the Jan 1 01:00 beat) to issue v1.8.0-aware entitlements.
+
 ## [1.7.1] - 2026-05-07
 
 **v1.7.0 follow-up — unblock self-edit for manager/finance/team_lead/auditor.**
