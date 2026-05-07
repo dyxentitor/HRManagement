@@ -92,6 +92,8 @@ class LeaveBalance(TenantBaseModel):
     taken = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
     pending = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
     carried_forward = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0"))
+    # v1.8.0 — date when carried_forward expires (set by year-end carry job, debited daily)
+    carried_forward_expires_at = models.DateField(null=True, blank=True)
 
     class Meta:
         db_table = "leave_balance"
