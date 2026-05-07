@@ -28,4 +28,15 @@ app.conf.beat_schedule = {
         "task": "modules.certification.tasks.detect_training_overdue",
         "schedule": crontab(hour=2, minute=15),
     },
+    "leave-year-rollover": {
+        # Jan 1 01:00 KL: per-org carry-forward(year-1) then year-start(year).
+        # Both jobs are idempotent on UUID5 keys.
+        "task": "modules.leave.tasks.year_rollover",
+        "schedule": crontab(minute=0, hour=1, day_of_month=1, month_of_year=1),
+    },
+    "leave-carry-forward-expiry": {
+        # Daily 02:30 KL: debits unused carried_forward at expiry date.
+        "task": "modules.leave.tasks.carry_forward_expiry_sweep",
+        "schedule": crontab(hour=2, minute=30),
+    },
 }
