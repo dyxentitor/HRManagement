@@ -231,3 +231,38 @@ class LeaveApproval(models.Model):
 
     def __str__(self) -> str:
         return f"LeaveApproval(req={self.leave_request_id}, level={self.level}, {self.status})"
+
+
+class EmployeeLeaveOverride(TenantBaseModel):
+    """Per-employee custom entitlement that overrides the tenure-tier policy.
+
+    Resolution priority at year-start accrual: override (this) > LeavePolicy.tenure_brackets
+    > LeaveType.default_days. History is preserved by soft-delete + (optional) effective_to.
+    """
+
+    employee_id = models.UUIDField()
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.PROTECT, related_name="overrides")
+    days_override = models.DecimalField(max_digits=5, decimal_places=2)
+    effective_from = models.DateField()
+    effective_to = models.DateField(null=True, blank=True)
+    note = models.TextField(blank=True)
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "employee_leave_override"
+        constraints: ClassVar[list] = [
+            models.UniqueConstraint(
+                fields=["employee_id", "leave_type", "effective_from"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="emp_leave_override_unique",
+            ),
+        ]
+        indexes: ClassVar[list] = [
+            models.Index(fields=["employee_id", "leave_type"]),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"Override(emp={self.employee_id}, {self.leave_type.code}, "
+            f"{self.days_override}d, from {self.effective_from})"
+        )
