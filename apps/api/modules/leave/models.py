@@ -44,6 +44,11 @@ class LeaveType(TenantBaseModel):
     gender_restriction = models.CharField(
         max_length=8, choices=GENDER_RESTRICTION_CHOICES, default="any"
     )
+    # v1.8.0 additions
+    carry_forward_expiry_months = models.IntegerField(null=True, blank=True)
+    requires_service_months = models.IntegerField(default=0)
+    notice_days_required = models.IntegerField(default=0)
+    max_per_lifetime_events = models.IntegerField(null=True, blank=True)
 
     class Meta:
         db_table = "leave_type"
