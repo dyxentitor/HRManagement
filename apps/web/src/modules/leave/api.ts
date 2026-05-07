@@ -8,17 +8,27 @@ export type LeaveType = {
 	is_statutory: boolean;
 };
 
+export type LeaveLedgerEntry = {
+	ts: string;
+	delta: string;
+	reason: string;
+	reference_type: string | null;
+};
+
 export type LeaveBalance = {
 	id: string;
 	leave_type: string;
 	leave_type_code: string;
+	leave_type_name?: string;
 	year: number;
 	entitled: string;
 	accrued: string;
 	taken: string;
 	pending: string;
 	carried_forward: string;
+	carried_forward_expires_at?: string | null;
 	available: string;
+	ledger_recent?: LeaveLedgerEntry[];
 };
 
 export type LeaveRequestStatus =

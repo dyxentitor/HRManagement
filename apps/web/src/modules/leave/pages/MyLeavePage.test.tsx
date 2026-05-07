@@ -87,7 +87,9 @@ describe("MyLeavePage", () => {
 		});
 		expect(screen.getByText("Approved")).toBeInTheDocument();
 		expect(screen.getByText("Rejected")).toBeInTheDocument();
-		expect(screen.getByText("Pending")).toBeInTheDocument();
+		// "Pending" appears in both the KPI tile and the EntitlementCard stat row;
+		// use getAllByText to assert presence (>= 1 occurrence).
+		expect(screen.getAllByText("Pending").length).toBeGreaterThanOrEqual(1);
 	});
 
 	it("renders the requests in a table", async () => {

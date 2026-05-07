@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 
 import { type LeaveBalance, type LeaveRequest, leaveApi } from "../api";
+import { EntitlementCard } from "../components/EntitlementCard";
 
 const TYPE_TONE: Record<
 	string,
@@ -180,9 +181,9 @@ export default function MyLeavePage() {
 				)}
 			</div>
 
-			{balances.length > 0 && (
-				<div className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-					<h2 className="text-h3 text-text-primary mb-3">Balances</h2>
+			{balances.length > 0 ? (
+				<div className="space-y-3">
+					<h2 className="text-h3 text-text-primary">Balances</h2>
 					<div className="flex flex-wrap gap-2">
 						{balances.map((b) => (
 							<StatusPill
@@ -192,8 +193,13 @@ export default function MyLeavePage() {
 							/>
 						))}
 					</div>
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+						{balances.map((b) => (
+							<EntitlementCard key={`card-${b.id}`} balance={b} />
+						))}
+					</div>
 				</div>
-			)}
+			) : null}
 
 			<DetailPanel
 				open={selected !== null}
