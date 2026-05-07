@@ -2,7 +2,15 @@
 
 from rest_framework import serializers
 
-from .models import LeaveApproval, LeaveBalance, LeaveRequest, LeaveType
+from .models import (
+    EmployeeLeaveOverride,
+    LeaveApproval,
+    LeaveBalance,
+    LeaveBalanceLedger,
+    LeavePolicy,
+    LeaveRequest,
+    LeaveType,
+)
 
 
 class LeaveTypeSerializer(serializers.ModelSerializer):
@@ -18,14 +26,72 @@ class LeaveTypeSerializer(serializers.ModelSerializer):
             "requires_attachment",
             "max_consecutive_days",
             "min_advance_notice_days",
+            "carry_forward_max",
             "is_statutory",
             "gender_restriction",
+            # v1.8.0 additions
+            "carry_forward_expiry_months",
+            "requires_service_months",
+            "notice_days_required",
+            "max_per_lifetime_events",
         )
+
+
+class LeavePolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeavePolicy
+        fields = (
+            "id",
+            "leave_type",
+            "applies_to_role_id",
+            "applies_to_department_id",
+            "days_per_year",
+            "tenure_brackets",
+            "effective_from",
+            "effective_to",
+        )
+
+    def validate_tenure_brackets(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError("tenure_brackets must be a list.")
+        prev_min = -1
+        prev_days = -1.0
+        for entry in value:
+            if not isinstance(entry, dict) or "min_years" not in entry or "days" not in entry:
+                raise serializers.ValidationError(
+                    "Each entry must be {min_years: int, days: number}."
+                )
+            if entry["min_years"] <= prev_min:
+                raise serializers.ValidationError("min_years must be strictly ascending.")
+            if float(entry["days"]) < prev_days:
+                raise serializers.ValidationError("days must be non-decreasing across tiers.")
+            prev_min = entry["min_years"]
+            prev_days = float(entry["days"])
+        return value
+
+
+class EmployeeLeaveOverrideSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmployeeLeaveOverride
+        fields = (
+            "id",
+            "employee_id",
+            "leave_type",
+            "days_override",
+            "effective_from",
+            "effective_to",
+            "note",
+            "created_by",
+            "created_at",
+        )
+        read_only_fields = ("created_by", "created_at", "employee_id")
 
 
 class LeaveBalanceSerializer(serializers.ModelSerializer):
     leave_type_code = serializers.CharField(source="leave_type.code", read_only=True)
+    leave_type_name = serializers.CharField(source="leave_type.name", read_only=True)
     available = serializers.DecimalField(max_digits=6, decimal_places=2, read_only=True)
+    ledger_recent = serializers.SerializerMethodField()
 
     class Meta:
         model = LeaveBalance
@@ -34,21 +100,47 @@ class LeaveBalanceSerializer(serializers.ModelSerializer):
             "employee_id",
             "leave_type",
             "leave_type_code",
+            "leave_type_name",
             "year",
             "entitled",
             "accrued",
             "taken",
             "pending",
             "carried_forward",
+            "carried_forward_expires_at",
             "available",
+            "ledger_recent",
         )
         read_only_fields = fields
+
+    def get_ledger_recent(self, obj) -> list[dict]:
+        rows = LeaveBalanceLedger.objects.filter(
+            employee_id=obj.employee_id,
+            leave_type=obj.leave_type,
+        ).order_by("-ts")[:10]
+        return [
+            {
+                "ts": r.ts.isoformat(),
+                "delta": str(r.delta),
+                "reason": r.reason,
+                "reference_type": r.reference_type,
+            }
+            for r in rows
+        ]
 
 
 class LeaveApprovalSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveApproval
-        fields = ("id", "level", "approver_id", "status", "comment", "acted_at", "delegated_to")
+        fields = (
+            "id",
+            "level",
+            "approver_id",
+            "status",
+            "comment",
+            "acted_at",
+            "delegated_to",
+        )
 
 
 class LeaveRequestSerializer(serializers.ModelSerializer):

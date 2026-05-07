@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/api/v1/admin/leave/accrue/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Manual accrual / carry-forward / expiry triggers (HR escape hatches). */
+        post: operations["admin_leave_accrue_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/leave/carry-forward/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Manual accrual / carry-forward / expiry triggers (HR escape hatches). */
+        post: operations["admin_leave_carry_forward_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/leave/expire-carry/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Manual accrual / carry-forward / expiry triggers (HR escape hatches). */
+        post: operations["admin_leave_expire_carry_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/approvals/inbox": {
         parameters: {
             query?: never;
@@ -360,7 +411,14 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Return own certifications. */
+        /**
+         * @description Return own certifications.
+         *
+         *     Certification.employee_id is an Employee.id (per seed_demo_data),
+         *     not a User.id — resolve the User → Employee link first, then filter.
+         *     Mirrors the PayslipViewSet.me pattern. Returns [] if the user has no
+         *     linked Employee (e.g., admin demo accounts).
+         */
         get: operations["certifications_me_retrieve"];
         put?: never;
         post?: never;
@@ -681,6 +739,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/employees/{id}/photo/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description HR-facing employee CRUD. */
+        post: operations["employees_photo_create"];
+        /** @description HR-facing employee CRUD. */
+        delete: operations["employees_photo_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/photo/presigned-upload/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description HR-facing employee CRUD. */
+        post: operations["employees_photo_presigned_upload_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/employees/{id}/probation-status/": {
         parameters: {
             query?: never;
@@ -731,6 +824,41 @@ export interface paths {
         head?: never;
         /** @description HR-facing employee CRUD. */
         patch: operations["employees_me_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/employees/me/photo/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description HR-facing employee CRUD. */
+        post: operations["employees_me_photo_create"];
+        /** @description HR-facing employee CRUD. */
+        delete: operations["employees_me_photo_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/me/photo/presigned-upload/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description HR-facing employee CRUD. */
+        post: operations["employees_me_photo_presigned_upload_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/kpi/assignments/": {
@@ -995,6 +1123,112 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leave/employee-overrides/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description CRUD for per-employee leave overrides.
+         *
+         *     Endpoint: /api/v1/leave/employee-overrides/?employee={uuid}
+         *     Read: leave:balance:adjust:org OR self (own employee).
+         *     Write: leave:balance:adjust:org only.
+         */
+        get: operations["leave_employee_overrides_list"];
+        put?: never;
+        /**
+         * @description CRUD for per-employee leave overrides.
+         *
+         *     Endpoint: /api/v1/leave/employee-overrides/?employee={uuid}
+         *     Read: leave:balance:adjust:org OR self (own employee).
+         *     Write: leave:balance:adjust:org only.
+         */
+        post: operations["leave_employee_overrides_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/employee-overrides/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description CRUD for per-employee leave overrides.
+         *
+         *     Endpoint: /api/v1/leave/employee-overrides/?employee={uuid}
+         *     Read: leave:balance:adjust:org OR self (own employee).
+         *     Write: leave:balance:adjust:org only.
+         */
+        get: operations["leave_employee_overrides_retrieve"];
+        /**
+         * @description CRUD for per-employee leave overrides.
+         *
+         *     Endpoint: /api/v1/leave/employee-overrides/?employee={uuid}
+         *     Read: leave:balance:adjust:org OR self (own employee).
+         *     Write: leave:balance:adjust:org only.
+         */
+        put: operations["leave_employee_overrides_update"];
+        post?: never;
+        /**
+         * @description CRUD for per-employee leave overrides.
+         *
+         *     Endpoint: /api/v1/leave/employee-overrides/?employee={uuid}
+         *     Read: leave:balance:adjust:org OR self (own employee).
+         *     Write: leave:balance:adjust:org only.
+         */
+        delete: operations["leave_employee_overrides_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description CRUD for per-employee leave overrides.
+         *
+         *     Endpoint: /api/v1/leave/employee-overrides/?employee={uuid}
+         *     Read: leave:balance:adjust:org OR self (own employee).
+         *     Write: leave:balance:adjust:org only.
+         */
+        patch: operations["leave_employee_overrides_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/leave/policies/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_policies_list"];
+        put?: never;
+        post: operations["leave_policies_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/leave/policies/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["leave_policies_retrieve"];
+        put: operations["leave_policies_update"];
+        post?: never;
+        delete: operations["leave_policies_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["leave_policies_partial_update"];
+        trace?: never;
+    };
     "/api/v1/leave/requests/": {
         parameters: {
             query?: never;
@@ -1116,7 +1350,7 @@ export interface paths {
         };
         get: operations["leave_types_list"];
         put?: never;
-        post?: never;
+        post: operations["leave_types_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1131,12 +1365,12 @@ export interface paths {
             cookie?: never;
         };
         get: operations["leave_types_retrieve"];
-        put?: never;
+        put: operations["leave_types_update"];
         post?: never;
-        delete?: never;
+        delete: operations["leave_types_destroy"];
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["leave_types_partial_update"];
         trace?: never;
     };
     "/api/v1/notifications": {
@@ -1215,7 +1449,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/v1/org/feature-flags/ — list all 15 entries with state. */
+        /**
+         * @description GET /api/v1/org/feature-flags/ — list all 15 entries with state.
+         *
+         *     Read access is open to any authenticated user belonging to the org.
+         *     The frontend FeaturesProvider relies on this to hide disabled modules
+         *     in the sidebar / command palette for non-admin roles. Flags describe
+         *     org-level UI visibility, not secrets — gating the read on
+         *     org:feature_flag:read caused the v1.4.1-regression where disabled
+         *     modules stayed visible to managers/employees (admin's UI worked).
+         *     Write access (PATCH below) still requires org:feature_flag:write.
+         */
         get: operations["org_feature_flags_retrieve"];
         put?: never;
         post?: never;
@@ -2046,7 +2290,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Return own training assignments. */
+        /**
+         * @description Return own training assignments.
+         *
+         *     TrainingAssignment.employee_id is an Employee.id (per seed_demo_data),
+         *     not a User.id — resolve User → Employee first. Returns [] if the user
+         *     has no linked Employee row.
+         */
         get: operations["training_assignments_me_retrieve"];
         put?: never;
         post?: never;
@@ -2552,10 +2802,41 @@ export interface components {
             status?: components["schemas"]["EmployeeStatusEnum"];
             timezone?: string;
             locale?: string;
+            readonly photo_url: string | null;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        EmployeeLeaveOverride: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly employee_id: string;
+            /** Format: uuid */
+            leave_type: string;
+            /** Format: decimal */
+            days_override: string;
+            /** Format: date */
+            effective_from: string;
+            /** Format: date */
+            effective_to?: string | null;
+            note?: string;
+            /** Format: uuid */
+            readonly created_by: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        EmployeeLeaveOverrideRequest: {
+            /** Format: uuid */
+            leave_type: string;
+            /** Format: decimal */
+            days_override: string;
+            /** Format: date */
+            effective_from: string;
+            /** Format: date */
+            effective_to?: string | null;
+            note?: string;
         };
         /** @description Full HR view — all fields readable; encrypted fields write-through. */
         EmployeeRequest: {
@@ -2821,6 +3102,7 @@ export interface components {
             /** Format: uuid */
             readonly leave_type: string;
             readonly leave_type_code: string;
+            readonly leave_type_name: string;
             readonly year: number;
             /** Format: decimal */
             readonly entitled: string;
@@ -2832,8 +3114,45 @@ export interface components {
             readonly pending: string;
             /** Format: decimal */
             readonly carried_forward: string;
+            /** Format: date */
+            readonly carried_forward_expires_at: string | null;
             /** Format: decimal */
             readonly available: string;
+            readonly ledger_recent: {
+                [key: string]: unknown;
+            }[];
+        };
+        LeavePolicy: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            leave_type: string;
+            /** Format: uuid */
+            applies_to_role_id?: string | null;
+            /** Format: uuid */
+            applies_to_department_id?: string | null;
+            /** Format: decimal */
+            days_per_year: string;
+            tenure_brackets?: unknown;
+            /** Format: date */
+            effective_from: string;
+            /** Format: date */
+            effective_to?: string | null;
+        };
+        LeavePolicyRequest: {
+            /** Format: uuid */
+            leave_type: string;
+            /** Format: uuid */
+            applies_to_role_id?: string | null;
+            /** Format: uuid */
+            applies_to_department_id?: string | null;
+            /** Format: decimal */
+            days_per_year: string;
+            tenure_brackets?: unknown;
+            /** Format: date */
+            effective_from: string;
+            /** Format: date */
+            effective_to?: string | null;
         };
         LeaveRequest: {
             /** Format: uuid */
@@ -2907,8 +3226,33 @@ export interface components {
             requires_attachment?: boolean;
             max_consecutive_days?: number | null;
             min_advance_notice_days?: number;
+            /** Format: decimal */
+            carry_forward_max?: string;
             is_statutory?: boolean;
             gender_restriction?: components["schemas"]["GenderRestrictionEnum"];
+            carry_forward_expiry_months?: number | null;
+            requires_service_months?: number;
+            notice_days_required?: number;
+            max_per_lifetime_events?: number | null;
+        };
+        LeaveTypeRequest: {
+            code: string;
+            name: string;
+            accrual_type: components["schemas"]["AccrualTypeEnum"];
+            /** Format: decimal */
+            default_days?: string;
+            is_paid?: boolean;
+            requires_attachment?: boolean;
+            max_consecutive_days?: number | null;
+            min_advance_notice_days?: number;
+            /** Format: decimal */
+            carry_forward_max?: string;
+            is_statutory?: boolean;
+            gender_restriction?: components["schemas"]["GenderRestrictionEnum"];
+            carry_forward_expiry_months?: number | null;
+            requires_service_months?: number;
+            notice_days_required?: number;
+            max_per_lifetime_events?: number | null;
         };
         /**
          * @description * `single` - Single
@@ -3017,6 +3361,17 @@ export interface components {
             /** Format: uuid */
             head_employee_id?: string | null;
         };
+        PatchedEmployeeLeaveOverrideRequest: {
+            /** Format: uuid */
+            leave_type?: string;
+            /** Format: decimal */
+            days_override?: string;
+            /** Format: date */
+            effective_from?: string;
+            /** Format: date */
+            effective_to?: string | null;
+            note?: string;
+        };
         /** @description Full HR view — all fields readable; encrypted fields write-through. */
         PatchedEmployeeRequest: {
             /** Format: uuid */
@@ -3104,6 +3459,21 @@ export interface components {
             /** Format: uuid */
             applies_to_dept_id?: string | null;
         };
+        PatchedLeavePolicyRequest: {
+            /** Format: uuid */
+            leave_type?: string;
+            /** Format: uuid */
+            applies_to_role_id?: string | null;
+            /** Format: uuid */
+            applies_to_department_id?: string | null;
+            /** Format: decimal */
+            days_per_year?: string;
+            tenure_brackets?: unknown;
+            /** Format: date */
+            effective_from?: string;
+            /** Format: date */
+            effective_to?: string | null;
+        };
         PatchedLeaveRequestRequest: {
             /** Format: uuid */
             leave_type?: string;
@@ -3118,6 +3488,25 @@ export interface components {
             reason?: string;
             /** Format: uri */
             attachment_url?: string;
+        };
+        PatchedLeaveTypeRequest: {
+            code?: string;
+            name?: string;
+            accrual_type?: components["schemas"]["AccrualTypeEnum"];
+            /** Format: decimal */
+            default_days?: string;
+            is_paid?: boolean;
+            requires_attachment?: boolean;
+            max_consecutive_days?: number | null;
+            min_advance_notice_days?: number;
+            /** Format: decimal */
+            carry_forward_max?: string;
+            is_statutory?: boolean;
+            gender_restriction?: components["schemas"]["GenderRestrictionEnum"];
+            carry_forward_expiry_months?: number | null;
+            requires_service_months?: number;
+            notice_days_required?: number;
+            max_per_lifetime_events?: number | null;
         };
         PatchedOrgSettingsRequest: {
             name?: string;
@@ -3582,6 +3971,60 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    admin_leave_accrue_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    admin_leave_carry_forward_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    admin_leave_expire_carry_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     approvals_inbox_retrieve: {
         parameters: {
             query?: never;
@@ -5043,6 +5486,81 @@ export interface operations {
             };
         };
     };
+    employees_photo_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_photo_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employees_photo_presigned_upload_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
     employees_probation_status_retrieve: {
         parameters: {
             query?: never;
@@ -5117,6 +5635,72 @@ export interface operations {
             content: {
                 "application/json": components["schemas"]["PatchedEmployeeRequest"];
                 "multipart/form-data": components["schemas"]["PatchedEmployeeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_me_photo_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_me_photo_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    employees_me_photo_presigned_upload_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeRequest"];
             };
         };
         responses: {
@@ -5679,6 +6263,278 @@ export interface operations {
             };
         };
     };
+    leave_employee_overrides_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeLeaveOverride"][];
+                };
+            };
+        };
+    };
+    leave_employee_overrides_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeLeaveOverrideRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeLeaveOverrideRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeLeaveOverride"];
+                };
+            };
+        };
+    };
+    leave_employee_overrides_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeLeaveOverride"];
+                };
+            };
+        };
+    };
+    leave_employee_overrides_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeLeaveOverrideRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeLeaveOverrideRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeLeaveOverride"];
+                };
+            };
+        };
+    };
+    leave_employee_overrides_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    leave_employee_overrides_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmployeeLeaveOverrideRequest"];
+                "multipart/form-data": components["schemas"]["PatchedEmployeeLeaveOverrideRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeLeaveOverride"];
+                };
+            };
+        };
+    };
+    leave_policies_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeavePolicy"][];
+                };
+            };
+        };
+    };
+    leave_policies_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeavePolicyRequest"];
+                "multipart/form-data": components["schemas"]["LeavePolicyRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeavePolicy"];
+                };
+            };
+        };
+    };
+    leave_policies_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeavePolicy"];
+                };
+            };
+        };
+    };
+    leave_policies_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeavePolicyRequest"];
+                "multipart/form-data": components["schemas"]["LeavePolicyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeavePolicy"];
+                };
+            };
+        };
+    };
+    leave_policies_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    leave_policies_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLeavePolicyRequest"];
+                "multipart/form-data": components["schemas"]["PatchedLeavePolicyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeavePolicy"];
+                };
+            };
+        };
+    };
     leave_requests_list: {
         parameters: {
             query?: never;
@@ -5964,6 +6820,30 @@ export interface operations {
             };
         };
     };
+    leave_types_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveTypeRequest"];
+                "multipart/form-data": components["schemas"]["LeaveTypeRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveType"];
+                };
+            };
+        };
+    };
     leave_types_retrieve: {
         parameters: {
             query?: never;
@@ -5974,6 +6854,78 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveType"];
+                };
+            };
+        };
+    };
+    leave_types_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveTypeRequest"];
+                "multipart/form-data": components["schemas"]["LeaveTypeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveType"];
+                };
+            };
+        };
+    };
+    leave_types_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    leave_types_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLeaveTypeRequest"];
+                "multipart/form-data": components["schemas"]["PatchedLeaveTypeRequest"];
+            };
+        };
         responses: {
             200: {
                 headers: {
