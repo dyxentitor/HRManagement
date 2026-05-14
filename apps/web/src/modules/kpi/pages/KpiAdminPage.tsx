@@ -1,6 +1,37 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { type KpiCycle, type KpiTemplate, kpiApi } from "../api";
+import { StatusPill } from "@/components/hrms";
+import { PageHeader } from "@/components/shell/PageHeader";
+
+import {
+	type KpiCycle,
+	type KpiCycleStatus,
+	type KpiTemplate,
+	kpiApi,
+} from "../api";
+
+const STATUS_TONE: Record<
+	KpiCycleStatus,
+	"yellow" | "sky" | "lavender" | "mint"
+> = {
+	upcoming: "yellow",
+	self_review: "sky",
+	manager_review: "lavender",
+	closed: "mint",
+};
+
+const STATUS_LABEL: Record<KpiCycleStatus, string> = {
+	upcoming: "Upcoming",
+	self_review: "Self review",
+	manager_review: "Manager review",
+	closed: "Closed",
+};
+
+const CYCLE_TYPE_LABEL: Record<KpiCycle["type"], string> = {
+	quarterly: "Quarterly",
+	semi_annual: "Semi-annual",
+	annual: "Annual",
+};
 
 export default function KpiAdminPage() {
 	const [cycles, setCycles] = useState<KpiCycle[]>([]);
@@ -9,7 +40,6 @@ export default function KpiAdminPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState<string | null>(null);
 
-	// New cycle form state
 	const [showNewCycle, setShowNewCycle] = useState(false);
 	const [newCycleName, setNewCycleName] = useState("");
 	const [newCycleType, setNewCycleType] = useState<
@@ -78,35 +108,53 @@ export default function KpiAdminPage() {
 		}
 	}
 
-	if (loading) return <p>Loading…</p>;
+	if (loading)
+		return <p className="text-text-tertiary p-4">Loading KPI data…</p>;
 
 	return (
-		<div className="space-y-8 max-w-4xl">
-			<h1 className="text-2xl font-bold">KPI Admin</h1>
+		<div className="space-y-8 max-w-5xl mx-auto">
+			<PageHeader
+				breadcrumb="KPI"
+				title="KPI Admin"
+				actions={
+					<button
+						type="button"
+						onClick={() => setShowNewCycle(!showNewCycle)}
+						className="bg-accent-500 text-white px-4 py-2 rounded text-sm hover:bg-accent-600"
+					>
+						{showNewCycle ? "Cancel" : "+ New Cycle"}
+					</button>
+				}
+			/>
+
 			{error && (
-				<p role="alert" className="text-coral">
+				<p role="alert" className="text-coral text-small">
 					{error}
 				</p>
 			)}
-			{success && <p className="text-mint">{success}</p>}
+			{success && (
+				<p className="text-mint text-small" role="status">
+					{success}
+				</p>
+			)}
 
-			{/* Templates section */}
-			<section>
-				<h2 className="text-lg font-semibold mb-2">
+			<section className="space-y-3">
+				<h2 className="text-h2 text-text-primary">
 					Templates ({templates.length})
 				</h2>
 				{templates.length === 0 ? (
-					<p className="text-text-secondary text-sm">No templates yet.</p>
+					<div className="bg-surface-hover border border-border-subtle rounded-lg p-8 text-center">
+						<p className="text-text-secondary">No templates yet.</p>
+					</div>
 				) : (
-					<ul className="space-y-1">
+					<ul className="bg-surface-hover border border-border-subtle rounded-lg overflow-hidden divide-y divide-border-subtle">
 						{templates.map((t) => (
-							<li
-								key={t.id}
-								className="text-sm border-b border-border-subtle py-1"
-							>
-								<span className="font-medium">{t.name}</span>
+							<li key={t.id} className="py-3 px-4">
+								<span className="text-body text-text-primary font-medium">
+									{t.name}
+								</span>
 								{t.definitions.length > 0 && (
-									<span className="text-text-secondary ml-2">
+									<span className="text-small text-text-secondary ml-2">
 										({t.definitions.length} KPIs)
 									</span>
 								)}
@@ -116,28 +164,23 @@ export default function KpiAdminPage() {
 				)}
 			</section>
 
-			{/* Cycles section */}
-			<section>
-				<div className="flex items-center justify-between mb-2">
-					<h2 className="text-lg font-semibold">Cycles</h2>
-					<button
-						type="button"
-						onClick={() => setShowNewCycle(!showNewCycle)}
-						className="text-sm text-sky hover:underline"
-					>
-						{showNewCycle ? "Cancel" : "+ New Cycle"}
-					</button>
-				</div>
+			<section className="space-y-3">
+				<h2 className="text-h2 text-text-primary">Cycles</h2>
 
 				{showNewCycle && (
 					<form
 						onSubmit={handleCreateCycle}
-						className="border border-border-subtle rounded p-4 space-y-3 mb-4 bg-surface"
+						className="border border-border-subtle rounded-lg p-4 space-y-3 bg-surface-hover"
 						aria-label="new-cycle-form"
 					>
-						<h3 className="font-medium">New Cycle</h3>
+						<h3 className="text-body text-text-primary font-medium">
+							New Cycle
+						</h3>
 						<div>
-							<label htmlFor="cycle-name" className="block text-sm">
+							<label
+								htmlFor="cycle-name"
+								className="block text-small text-text-secondary mb-1"
+							>
 								Name
 							</label>
 							<input
@@ -146,11 +189,14 @@ export default function KpiAdminPage() {
 								value={newCycleName}
 								onChange={(e) => setNewCycleName(e.target.value)}
 								required
-								className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
+								className="border border-border-subtle rounded px-3 py-2 w-full bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label htmlFor="cycle-type" className="block text-sm">
+							<label
+								htmlFor="cycle-type"
+								className="block text-small text-text-secondary mb-1"
+							>
 								Type
 							</label>
 							<select
@@ -161,7 +207,7 @@ export default function KpiAdminPage() {
 										e.target.value as "quarterly" | "semi_annual" | "annual",
 									)
 								}
-								className="border border-border-subtle rounded px-2 py-1 bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
+								className="border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 							>
 								<option value="quarterly">Quarterly</option>
 								<option value="semi_annual">Semi-annual</option>
@@ -170,7 +216,10 @@ export default function KpiAdminPage() {
 						</div>
 						<div className="grid grid-cols-2 gap-3">
 							<div>
-								<label htmlFor="cycle-starts" className="block text-sm">
+								<label
+									htmlFor="cycle-starts"
+									className="block text-small text-text-secondary mb-1"
+								>
 									Starts On
 								</label>
 								<input
@@ -179,11 +228,14 @@ export default function KpiAdminPage() {
 									value={newCycleStartsOn}
 									onChange={(e) => setNewCycleStartsOn(e.target.value)}
 									required
-									className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
+									className="border border-border-subtle rounded px-3 py-2 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 								/>
 							</div>
 							<div>
-								<label htmlFor="cycle-ends" className="block text-sm">
+								<label
+									htmlFor="cycle-ends"
+									className="block text-small text-text-secondary mb-1"
+								>
 									Ends On
 								</label>
 								<input
@@ -192,11 +244,14 @@ export default function KpiAdminPage() {
 									value={newCycleEndsOn}
 									onChange={(e) => setNewCycleEndsOn(e.target.value)}
 									required
-									className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
+									className="border border-border-subtle rounded px-3 py-2 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 								/>
 							</div>
 							<div>
-								<label htmlFor="cycle-review-opens" className="block text-sm">
+								<label
+									htmlFor="cycle-review-opens"
+									className="block text-small text-text-secondary mb-1"
+								>
 									Review Opens
 								</label>
 								<input
@@ -205,11 +260,14 @@ export default function KpiAdminPage() {
 									value={newCycleReviewOpens}
 									onChange={(e) => setNewCycleReviewOpens(e.target.value)}
 									required
-									className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
+									className="border border-border-subtle rounded px-3 py-2 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 								/>
 							</div>
 							<div>
-								<label htmlFor="cycle-review-closes" className="block text-sm">
+								<label
+									htmlFor="cycle-review-closes"
+									className="block text-small text-text-secondary mb-1"
+								>
 									Review Closes
 								</label>
 								<input
@@ -218,14 +276,14 @@ export default function KpiAdminPage() {
 									value={newCycleReviewCloses}
 									onChange={(e) => setNewCycleReviewCloses(e.target.value)}
 									required
-									className="border border-border-subtle rounded px-2 py-1 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
+									className="border border-border-subtle rounded px-3 py-2 w-full bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 								/>
 							</div>
 						</div>
 						<button
 							type="submit"
 							disabled={!newCycleName}
-							className="bg-accent-500 text-white px-4 py-2 rounded disabled:opacity-50 hover:bg-accent-600"
+							className="bg-accent-500 text-white px-4 py-2 rounded text-sm disabled:opacity-50 hover:bg-accent-600"
 						>
 							Create Cycle
 						</button>
@@ -233,66 +291,85 @@ export default function KpiAdminPage() {
 				)}
 
 				{cycles.length === 0 ? (
-					<p className="text-text-secondary text-sm">No cycles yet.</p>
+					<div className="bg-surface-hover border border-border-subtle rounded-lg p-8 text-center">
+						<p className="text-text-secondary">No cycles yet.</p>
+					</div>
 				) : (
-					<table className="w-full text-sm border-collapse">
-						<thead>
-							<tr className="border-b border-border-subtle">
-								<th className="text-left py-2 text-text-secondary">Name</th>
-								<th className="text-left py-2 text-text-secondary">Type</th>
-								<th className="text-left py-2 text-text-secondary">Status</th>
-								<th className="text-left py-2 text-text-secondary">Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							{cycles.map((c) => (
-								<tr
-									key={c.id}
-									className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
-								>
-									<td className="py-2">{c.name}</td>
-									<td className="py-2 capitalize">
-										{c.type.replace("_", " ")}
-									</td>
-									<td className="py-2 capitalize">
-										{c.status.replace("_", " ")}
-									</td>
-									<td className="py-2 flex gap-2">
-										{c.status === "upcoming" && (
-											<button
-												type="button"
-												onClick={() => handleTransition(c.id, "self")}
-												className="text-sky hover:underline text-xs"
-											>
-												Open Self Review
-											</button>
-										)}
-										{c.status === "self_review" && (
-											<button
-												type="button"
-												onClick={() => handleTransition(c.id, "manager")}
-												className="text-sky hover:underline text-xs"
-											>
-												Open Manager Review
-											</button>
-										)}
-										{c.status === "manager_review" && (
-											<button
-												type="button"
-												onClick={() => handleTransition(c.id, "close")}
-												className="text-sky hover:underline text-xs"
-											>
-												Close Cycle
-											</button>
-										)}
-										{c.status === "closed" && (
-											<span className="text-text-tertiary text-xs">Closed</span>
-										)}
-									</td>
+					<div className="bg-surface-hover border border-border-subtle rounded-lg overflow-hidden">
+						<table className="w-full text-sm border-collapse">
+							<thead>
+								<tr className="border-b border-border-subtle bg-surface-hover">
+									<th className="text-left py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
+										Name
+									</th>
+									<th className="text-left py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
+										Type
+									</th>
+									<th className="text-left py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
+										Status
+									</th>
+									<th className="text-left py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
+										Actions
+									</th>
 								</tr>
-							))}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{cycles.map((c) => (
+									<tr
+										key={c.id}
+										className="border-b border-border-subtle last:border-0 hover:bg-surface-hover transition-colors"
+									>
+										<td className="py-3 px-4 text-body text-text-primary font-medium">
+											{c.name}
+										</td>
+										<td className="py-3 px-4 text-body text-text-secondary">
+											{CYCLE_TYPE_LABEL[c.type]}
+										</td>
+										<td className="py-3 px-4">
+											<StatusPill
+												tone={STATUS_TONE[c.status]}
+												label={STATUS_LABEL[c.status]}
+											/>
+										</td>
+										<td className="py-3 px-4 flex gap-2">
+											{c.status === "upcoming" && (
+												<button
+													type="button"
+													onClick={() => handleTransition(c.id, "self")}
+													className="text-small text-accent-200 hover:text-accent-50 hover:underline"
+												>
+													Open Self Review
+												</button>
+											)}
+											{c.status === "self_review" && (
+												<button
+													type="button"
+													onClick={() => handleTransition(c.id, "manager")}
+													className="text-small text-accent-200 hover:text-accent-50 hover:underline"
+												>
+													Open Manager Review
+												</button>
+											)}
+											{c.status === "manager_review" && (
+												<button
+													type="button"
+													onClick={() => handleTransition(c.id, "close")}
+													className="text-small text-accent-200 hover:text-accent-50 hover:underline"
+												>
+													Close Cycle
+												</button>
+											)}
+											{c.status === "closed" && (
+												<span className="text-small text-text-tertiary">
+													Closed
+												</span>
+											)}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 				)}
 			</section>
 		</div>

@@ -2,6 +2,86 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.10.0] — 2026-05-14
+
+UI quality sweep — closes the seven `FAIL` pages from
+`docs/audits/2026-04-29-ui-quality.md` in a single batched release.
+Mechanical work: same canonical template (`PageHeader` + human-formatted
+dates + `StatusPill`) applied to each page. Zero backend changes, no new
+permission codes, no new endpoints. Plan in
+`docs/superpowers/plans/2026-05-14-v1.10.0-ui-quality-sweep.md`.
+
+### Changed
+
+- **MyCertificationsPage** (`/certifications/me`). Added `PageHeader`
+  with "Add Certification" action slot. `issued_on` / `expires_on` now
+  render as "15 Mar 2026" via `toLocaleDateString`. Cert status moved
+  from `capitalize` text to `<StatusPill>` (active→mint, expired/revoked
+  →coral). Expiry-window color flag retained on the date cell. Outer
+  container bumped to `max-w-5xl mx-auto` for consistency.
+
+- **MyTrainingPage** (`/training/me`). `PageHeader` replaces bare h1.
+  Inline `statusBadge` helper deleted; status now `<StatusPill>`
+  (assigned→yellow, in_progress→sky, completed→mint, overdue→coral).
+  `due_date` formatted human-readable.
+
+- **AdminCertPage** (`/certifications/admin`). `PageHeader` replaces
+  bare h1. Employee UUID column truncates to `xxxxxxxx…` with full UUID
+  available on hover (`title=` attribute) — no employee-name lookup
+  endpoint exists yet; truncation matches the elsewhere-used pattern.
+  `expires_on` formatted human-readable. Status → `<StatusPill>`. Table
+  rows wrapped in card surface.
+
+- **MySchedulePage** (`/schedule/me`). `PageHeader` replaces bare h1 in
+  both happy-path and `NotLinkedEmptyState` branches. Today heading now
+  reads `Today — 14 May 2026` (was `Today — 2026-05-14`). Week heading
+  shows the full range (`Week of 12 May 2026 – 18 May 2026`). Attendance
+  status moved into a `<StatusPill>` with attendance-tone mapping
+  (present/clocked_in/on_duty→mint, late→yellow, absent→coral, no
+  record→peach). Day-of-week table headers show numeric day (`Mon 12`)
+  instead of mm-dd (`Mon 05-12`).
+
+- **KpiAdminPage** (`/kpi/admin`). `PageHeader` replaces bare h1; the
+  "+ New Cycle" toggle moves into the header `actions` slot.
+  `KpiCycleStatus` → `<StatusPill>` (upcoming→yellow, self_review→sky,
+  manager_review→lavender, closed→mint). Cycle type column gets a
+  proper label map (`semi_annual` → "Semi-annual") instead of an
+  underscore-replace string. Existing `KpiAdminPage.test.tsx` still
+  asserts the heading via `getByRole("heading", { name: /kpi admin/i })`
+  — title text unchanged, so no test churn.
+
+- **MyClaimsPage** (`/claims/me`). `PageHeader` replaces bare h1;
+  "Submit a claim" link moves into the header `actions` slot. Local
+  `StatusBadge` component deleted; status now `<StatusPill>` with a
+  per-`ClaimStatus` tone map (draft→yellow, submitted→sky,
+  manager/finance_approved→lavender, reimbursed→mint, rejected→coral,
+  cancelled→peach). `expense_date` formatted human-readable.
+
+- **MyPayslipsPage** (`/payslips/me`). `PageHeader` replaces bare h1.
+  `published_at` formatted human-readable. New `<StatusPill>` next to
+  the date subtitle for `PayslipRecord.status` (draft→yellow,
+  published/sent→mint). List items moved onto `bg-surface-hover` card
+  surface for visual consistency with the rest of the sweep.
+
+### Deferred
+
+- **L5 biome config inconsistency** — still its own focused PR, as
+  documented in v1.9.2.
+
+- **Other minor cosmetic items** flagged in the audit's §4 ("Minor
+  fixes that are single-line changes"): `LeaveApplyPage` and
+  `ClaimSubmitPage` `PageHeader` wrap, `EmployeeDetailPage` hire_date
+  formatting, `MyLeavePage` date columns. One-liners; bundle into a
+  later patch release.
+
+### Test counts at HEAD
+
+- Backend: **689 passed** + 3 skipped (unchanged from v1.9.2).
+- Frontend: **270 passed** (unchanged — no new tests added or removed;
+  the rewrites are template substitutions that keep the existing
+  assertions passing).
+- Permission codes: **110** (unchanged).
+
 ## [1.9.2] — 2026-05-14
 
 Second polish pass against the post-v1.9.0 audit

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { StatusPill } from "@/components/hrms";
 import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
+import { PageHeader } from "@/components/shell/PageHeader";
 
 import {
 	ApiError,
@@ -12,8 +14,8 @@ import { RosterCell } from "../components/RosterCell";
 import { resolveCellTone } from "../lib/cell-tone";
 
 function startOfWeekISO(d: Date): string {
-	const day = d.getDay(); // 0=Sun..6=Sat
-	const diff = (day + 6) % 7; // turn into days-since-Monday
+	const day = d.getDay();
+	const diff = (day + 6) % 7;
 	const monday = new Date(d);
 	monday.setDate(d.getDate() - diff);
 	return monday.toISOString().slice(0, 10);
@@ -23,6 +25,35 @@ function addDaysISO(iso: string, days: number): string {
 	const d = new Date(iso);
 	d.setDate(d.getDate() + days);
 	return d.toISOString().slice(0, 10);
+}
+
+function formatDate(iso: string | null | undefined): string {
+	if (!iso) return "—";
+	return new Date(iso).toLocaleDateString(undefined, {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+	});
+}
+
+function dayOfMonth(iso: string): string {
+	return String(new Date(`${iso}T00:00:00Z`).getUTCDate());
+}
+
+type AttendanceTone = "mint" | "yellow" | "coral" | "peach";
+
+function attendanceTone(status: string | null | undefined): AttendanceTone {
+	if (!status) return "peach";
+	const s = status.toLowerCase();
+	if (s === "present" || s === "clocked_in" || s === "on_duty") return "mint";
+	if (s === "late") return "yellow";
+	if (s === "absent") return "coral";
+	return "peach";
+}
+
+function attendanceLabel(status: string | null | undefined): string {
+	if (!status) return "No record";
+	return status.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
 export default function MySchedulePage() {
@@ -87,41 +118,47 @@ export default function MySchedulePage() {
 
 	if (noEmployee) {
 		return (
-			<div className="space-y-4 max-w-4xl">
-				<h1 className="text-h1 text-text-primary">My Schedule</h1>
+			<div className="space-y-6 max-w-5xl mx-auto">
+				<PageHeader breadcrumb="Schedule" title="My Schedule" />
 				<NotLinkedEmptyState scope="schedule" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-4 max-w-4xl">
-			<h1 className="text-2xl font-bold">My Schedule</h1>
+		<div className="space-y-6 max-w-5xl mx-auto">
+			<PageHeader breadcrumb="Schedule" title="My Schedule" />
 
 			{error && (
-				<p role="alert" className="text-coral">
+				<p role="alert" className="text-coral text-small">
 					{error}
 				</p>
 			)}
 
-			<section className="bg-surface border border-border-subtle rounded p-4">
-				<h2 className="font-semibold mb-3">Today — {todayIso}</h2>
-				<p className="text-sm text-text-secondary mb-2">
+			<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+				<div className="flex items-center justify-between gap-3 mb-3">
+					<h2 className="text-h2 text-text-primary">
+						Today — {formatDate(todayIso)}
+					</h2>
+					<StatusPill
+						tone={attendanceTone(todayRec?.status)}
+						label={attendanceLabel(todayRec?.status)}
+					/>
+				</div>
+				<p className="text-small text-text-secondary mb-3">
 					Clock-in:{" "}
-					<strong>
+					<strong className="text-text-primary">
 						{todayRec?.clock_in
 							? new Date(todayRec.clock_in).toLocaleTimeString()
 							: "—"}
 					</strong>
 					{"  •  "}
 					Clock-out:{" "}
-					<strong>
+					<strong className="text-text-primary">
 						{todayRec?.clock_out
 							? new Date(todayRec.clock_out).toLocaleTimeString()
 							: "—"}
 					</strong>
-					{"  •  "}
-					Status: <strong>{todayRec?.status ?? "no_record"}</strong>
 					{todayRec?.is_holiday_work && (
 						<span className="ml-2 text-yellow">• Holiday work</span>
 					)}
@@ -146,10 +183,12 @@ export default function MySchedulePage() {
 				</div>
 			</section>
 
-			<section className="bg-surface border border-border-subtle rounded p-4">
-				<div className="flex items-center justify-between mb-3">
-					<h2 className="font-semibold">Week of {weekStart}</h2>
-					<div className="space-x-2 text-sm">
+			<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+				<div className="flex items-center justify-between mb-3 gap-3">
+					<h2 className="text-h2 text-text-primary">
+						Week of {formatDate(weekStart)} – {formatDate(weekEnd)}
+					</h2>
+					<div className="space-x-2 text-small">
 						<button
 							type="button"
 							onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
@@ -167,11 +206,14 @@ export default function MySchedulePage() {
 					</div>
 				</div>
 				<table className="w-full text-sm">
-					<thead className="text-left text-text-secondary border-b border-border-subtle">
+					<thead className="text-left text-text-tertiary border-b border-border-subtle">
 						<tr>
 							{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => (
-								<th key={d} className="py-1">
-									{d} {days[i].slice(5)}
+								<th
+									key={d}
+									className="py-2 text-label uppercase font-semibold tracking-wide"
+								>
+									{d} {dayOfMonth(days[i])}
 								</th>
 							))}
 						</tr>

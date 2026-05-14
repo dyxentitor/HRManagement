@@ -1,6 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { StatusPill } from "@/components/hrms";
+import { PageHeader } from "@/components/shell/PageHeader";
+
 import { type PayslipRecord, payslipApi } from "../api";
+
+type PayslipStatus = PayslipRecord["status"];
+
+const STATUS_TONE: Record<PayslipStatus, "yellow" | "mint"> = {
+	draft: "yellow",
+	published: "mint",
+	sent: "mint",
+};
+
+const STATUS_LABEL: Record<PayslipStatus, string> = {
+	draft: "Draft",
+	published: "Published",
+	sent: "Sent",
+};
+
+function formatDate(iso: string | null | undefined): string {
+	if (!iso) return "—";
+	return new Date(iso).toLocaleDateString(undefined, {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+	});
+}
 
 export default function MyPayslipsPage() {
 	const [payslips, setPayslips] = useState<PayslipRecord[]>([]);
@@ -36,51 +62,66 @@ export default function MyPayslipsPage() {
 		}
 	}
 
-	if (loading) return <p>Loading…</p>;
+	if (loading)
+		return <p className="text-text-tertiary p-4">Loading payslips…</p>;
 
 	return (
-		<div className="space-y-4 max-w-4xl">
-			<h1 className="text-2xl font-bold">My Payslips</h1>
+		<div className="space-y-6 max-w-5xl mx-auto">
+			<PageHeader breadcrumb="Payslips" title="My Payslips" />
+
 			{error && (
-				<p role="alert" className="text-coral">
+				<p role="alert" className="text-coral text-small">
 					{error}
 				</p>
 			)}
+
 			{payslips.length === 0 ? (
-				<p className="text-text-secondary">No payslips available yet.</p>
+				<div className="bg-surface-hover border border-border-subtle rounded-lg p-8 text-center">
+					<p className="text-text-secondary">No payslips available yet.</p>
+				</div>
 			) : (
-				<ul className="space-y-2">
-					{payslips.map((ps) => (
-						<li
-							key={ps.id}
-							className="bg-surface border border-border-subtle rounded p-3"
-						>
-							<div className="flex items-center justify-between">
-								<div className="text-sm">
-									<div className="font-semibold">
-										{ps.currency_code} {ps.net}{" "}
-										<span className="text-text-tertiary font-normal">
-											(gross {ps.gross})
-										</span>
+				<ul className="space-y-3">
+					{payslips.map((ps) => {
+						const isPublished =
+							ps.status === "published" || ps.status === "sent";
+						return (
+							<li
+								key={ps.id}
+								className="bg-surface-hover border border-border-subtle rounded-lg p-4"
+							>
+								<div className="flex items-center justify-between gap-3">
+									<div>
+										<div className="flex items-center gap-2 mb-1">
+											<span className="text-body text-text-primary font-semibold">
+												{ps.currency_code} {ps.net}
+											</span>
+											<span className="text-small text-text-tertiary">
+												(gross {ps.gross})
+											</span>
+										</div>
+										<div className="flex items-center gap-2 text-small text-text-secondary">
+											<StatusPill
+												tone={STATUS_TONE[ps.status]}
+												label={STATUS_LABEL[ps.status]}
+											/>
+											{isPublished && (
+												<span>Published {formatDate(ps.published_at)}</span>
+											)}
+										</div>
 									</div>
-									<div className="text-text-secondary">
-										{ps.status === "published" || ps.status === "sent"
-											? `Published ${ps.published_at?.slice(0, 10) ?? ""}`
-											: "Draft"}
-									</div>
+									{isPublished && (
+										<button
+											type="button"
+											onClick={() => openPdf(ps.id)}
+											className="bg-accent-500 text-white py-1.5 px-3 rounded text-sm hover:bg-accent-600"
+										>
+											View PDF
+										</button>
+									)}
 								</div>
-								{(ps.status === "published" || ps.status === "sent") && (
-									<button
-										type="button"
-										onClick={() => openPdf(ps.id)}
-										className="text-sm bg-accent-500 text-white py-1 px-3 rounded hover:bg-accent-600"
-									>
-										View PDF
-									</button>
-								)}
-							</div>
-						</li>
-					))}
+							</li>
+						);
+					})}
 				</ul>
 			)}
 		</div>

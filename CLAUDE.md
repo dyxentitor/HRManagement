@@ -54,25 +54,27 @@ All shipped. Each row is anchored on a real git tag.
 | `v1.7.0` | 2026-05-07 | Employee self-edit on /me/profile (inline-section editing wires the long-stubbed Edit buttons to PATCH /me/) + Profile pictures for everyone (presigned-PUT to MinIO + Celery resize to 512x512 WebP + EXIF strip; HR can upload-on-behalf on /employees/:id/edit). Adds `Employee.photo_s3_key` and 6 photo endpoints. Shared `<MfaPrompt>` extracted. No new perm codes. | `2026-05-07-v1.7.0-self-edit-and-photos.md` | `2026-05-07-v1.7.0-self-edit-and-photos.md` |
 | `v1.7.1` | 2026-05-07 | Backend follow-up to v1.7.0 — `employee:write:self` granted to manager/finance/team_lead/auditor (pre-existing M2 gap surfaced by Playwright sweep: those roles had `read:self` but never `write:self`, so v1.7.0's new `/me/profile` editing 403'd for them). Fixture-only change. | (no spec — bugfix) | (no plan — one-liner) |
 | `v1.8.0` | 2026-05-08 | Leave module enhancement — admin `/admin/leave-types` page (General + Tenure tiers + Carry-forward tabs), per-employee `EmployeeLeaveOverride` (HR-only), idempotent Celery year-rollover (Jan 1) + daily expiry-sweep (02:30 KL), §60E by-month proration, statutory eligibility validators (paternity 12-mo service + 30-d notice + 5-confinement cap), MY country fixture upgraded to 8/12/16 annual + 14/18/22 sick + new HOSPITALIZATION 60d leave type (post-2022 §60F separation). No new perm codes. | `2026-05-07-v1.8.0-leave-module-enhancement.md` | `2026-05-07-v1.8.0-leave-module-enhancement.md` |
+| `v1.10.0` | 2026-05-14 | UI quality sweep — `PageHeader` + `toLocaleDateString` + `StatusPill` template applied to 7 FAIL pages from `2026-04-29-ui-quality.md`: MyCertifications, MyTraining, AdminCert, MySchedule, KpiAdmin, MyClaims, MyPayslips. Zero backend changes, no new perm codes. (v1.9.0–v1.9.2 rows tracked in `CHANGELOG.md`; git tags authoritative.) | `2026-05-14-v1.10.0-ui-quality-sweep.md` | `2026-05-14-v1.10.0-ui-quality-sweep.md` |
 
-### 2.3 Test counts at HEAD (v1.7.0)
+### 2.3 Test counts at HEAD (v1.10.0)
 
-- Backend: **593 passed** + 3 skipped (postgres-only triggers). +12 from v1.6.2 across `test_avatar_endpoints.py` (8), `test_avatar_task.py` (3), and a `photo_url` regression in `test_views_me.py`.
-- Frontend: **227 passed** (was 213 at v1.6.2; +14 across MfaPrompt (3), AvatarUpload (5), MyProfilePage (+6)).
-- Permission codes: **110** (no change since v1.6.0; v1.7.0 adds no perm codes).
+- Backend: **689 passed** + 3 skipped (postgres-only triggers). Unchanged from v1.9.2 — v1.10.0 is frontend-only.
+- Frontend: **270 passed**. Unchanged from v1.9.2 — the 7 page rewrites are template substitutions that keep existing assertions passing; no new tests added.
+- Permission codes: **110** (no change).
 
 ### 2.4 In-flight / next up
 
 - **Working tree at HEAD** — only `apps/api/uv.lock` modified; untracked `.claude/` and `.playwright-mcp/`. No half-finished feature branches.
-- **Local tags not pushed** — `v1.7.1` is local-only on `master`. (v1.7.0 and earlier already pushed to `origin = git@github.com:dyxentitor/HRManagement.git`.) Confirm with the user before `git push`.
+- **Local tags not pushed** — `v1.10.0` is local-only on `master`. (v1.9.2 and earlier already pushed to `origin = git@github.com:dyxentitor/HRManagement.git`.) Confirm with the user before `git push`.
 - **Audit closure status**:
   - `2026-04-29-system-state.md` — Bug #1 (payslip detail 403): **FIXED**. Bug #2 (payroll CSV null token): **FIXED**. Bug #3 (encryption-key drift): **FIXED** (config consolidation 2026-05-06; `.env` and `References/KEY.md` now match the runtime key `5rrM…`; `:?` guard in compose prevents future silent drift; runbook rotation infrastructure — `PREV_KEY` + `reencrypt_sensitive_fields` cmd — still needs to be built when rotation is actually scheduled). Bug #4 (cert/training beat tasks): **FIXED**.
-  - `2026-04-29-ui-quality.md` — "FAIL" rows still pending; cosmetic; v1.5.2–v1.5.8 candidates.
+  - `2026-04-29-ui-quality.md` — 7 FAIL pages now PASS via v1.10.0; minor §4 single-liners (LeaveApplyPage / ClaimSubmitPage / EmployeeDetail hire_date / MyLeavePage date columns) deferred.
   - `2026-05-06-module-visibility.md` — driving v1.4.2 — **FIXED**.
   - `2026-05-06-module-key-mismatches.md` — driving v1.4.3 + v1.5.0 (Class D leave-perm row) — **FIXED**.
 - **Pending — mechanical, can ship anytime**:
-  - **v1.5.2: Notes on cover-up** — small backend change to accept + persist `notes` on `PATCH /shift-assignments/{id}/cover-up/`, plus a notes textarea in `<CoverUpPicker>`. Spec-deferred from v1.5.1 because the backend endpoint doesn't currently store notes.
-  - **v1.5.3–v1.5.9** (one per page): UI-quality cosmetic rewrites — PageHeader / `toLocaleDateString` / StatusPill template applied to MyCertificationsPage, MyTrainingPage, AdminCertPage, MySchedulePage, KpiAdminPage, MyClaimsPage, MyPayslipsPage. ~2h per page.
+  - **Cover-up notes** — small backend change to accept + persist `notes` on `PATCH /shift-assignments/{id}/cover-up/`, plus a notes textarea in `<CoverUpPicker>`. Spec-deferred from v1.5.1 because the backend endpoint doesn't currently store notes.
+  - **L5 biome config inconsistency** — own focused PR, deferred from v1.9.2.
+  - **UI audit §4 single-liners** — `LeaveApplyPage` and `ClaimSubmitPage` `PageHeader` wrap, `EmployeeDetailPage` hire_date formatting, `MyLeavePage` date columns. Bundle into a future patch.
 - **Pending — needs spec before implementation**:
   - Roster drag-and-drop, panel keyboard shortcuts, proper mobile redesign — each its own brainstorm + spec + plan cycle.
 - **Phase 2 / Phase 3** — separate engagements: SaaS billing + plan-based gating; React Native mobile.
