@@ -2,6 +2,82 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.2] — 2026-05-14
+
+Second polish pass against the post-v1.9.0 audit
+(`docs/audits/2026-05-14-v1.9.0-code-analysis.md`). Closes the
+remaining mediums and most low/info items. M3 deferred by request
+(only matters in Phase 2 multi-tenant SaaS). L5 deferred — turned out
+to be a project-wide biome config inconsistency rather than a v1.9.0
+files issue; will be its own focused PR.
+
+### Changed
+
+- **(M1) Bulk-query auto-suggest in link manager.**
+  `apps/api/modules/employee/views_link_manager.py` —
+  `UnlinkedUsersView.get_serializer_context()` and
+  `UnlinkedEmployeesView.get_serializer_context()` now precompute a
+  `{lower_email -> row}` dict once per request and inject via serializer
+  context. The per-row `email__iexact` lookup is replaced by a dict
+  `.get(...)`. One extra SELECT instead of N. Legacy single-query path
+  preserved as a fallback for callers that build the serializer outside
+  a view (unit tests, scripts).
+
+- **(M2) Settings Overview cached for 60s per org.**
+  `apps/api/modules/identity/views_admin_overview.py` — Django's default
+  cache backend now backs `/admin/settings-overview/` with a 60s TTL,
+  keyed `settings_overview:v1:{org_id}`. Reduces ~8 SQL count queries
+  per request to a single cache hit on warm paths.
+
+- **(L7) Settings Overview reads write an audit log row.**
+  `admin.overview_viewed` action, kept outside the cached path so every
+  view is captured (not just cache misses).
+
+- **(L1) Magic-byte image validation in `process_org_logo`.**
+  `apps/api/modules/organization/tasks.py` — sniffs the leading bytes
+  before calling `Image.open()` to fail fast on non-image content with
+  a clear log line instead of a Pillow exception. Recognizes PNG, JPEG,
+  and WebP (RIFF container). Non-image content is cleaned up from S3
+  and the task returns `""`.
+
+- **(info) `<UsersLinkingPage>` dropdowns use the Popover primitive.**
+  Replaces the hand-rolled `<div>`-based open/close state with the
+  project's Radix-based `Popover` (mirrors the v1.6.2 ManagerPicker
+  fix). Outside-click close, Escape-to-close, focus trap, and proper
+  aria attributes come for free.
+
+- **(info) `<OrganizationSettingsPage>` Cancel resets from local state.**
+  No longer triggers a server refetch — eliminates the brief loading
+  flash. Refresh on save still works as before.
+
+### Test counts at HEAD
+
+- Backend: **689 passed** + 3 skipped (postgres-only). +3 from v1.9.1
+  (audit-log write test + cache-stability test + magic-byte rejection
+  test).
+- Frontend: **270 passed** (unchanged).
+- Permission codes: **110** (unchanged).
+
+### Deferred (intentional)
+
+- **M3** — `Permission.objects.count()` global vs. per-org. Currently
+  correct on single-tenant Provintell; relabel or rescope when Phase 2
+  SaaS lands.
+- **L5** — biome format drift on v1.9.0 frontend files. Root cause is
+  project-wide: `biome.json` declares `formatter.indentStyle: "space" /
+  semicolons: "asNeeded"` but the rest of the codebase uses tabs +
+  always-semicolons. Running biome `--write` here would diverge from
+  every other file in the repo. Needs its own PR that either updates
+  `biome.json` to match the de-facto style (lower risk) or
+  reformats the entire codebase (high churn).
+- **info** — drag-to-reparent in DepartmentsAdminPage (v1.10.0 feature
+  scope) · NEW pill auto-clear (just delete in v1.10.0).
+
+### Not pushed
+
+- Local-only tag `v1.9.2`. Run `git push origin master --tags` after
+  user approval.
+
 ## [1.9.1] — 2026-05-14
 
 Patch release closing the medium-and-low items from the post-v1.9.0
