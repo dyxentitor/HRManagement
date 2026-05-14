@@ -36,14 +36,22 @@ class UnlinkedUserSerializer(serializers.ModelSerializer):
         return list(obj.user_roles.values_list("role__code", flat=True))
 
     def get_suggested_employee(self, obj: User) -> dict | None:
+        # v1.9.2 (M1): use the bulk-precomputed map injected by the view via
+        # context, instead of firing one query per row (N+1 fix).
         if not obj.email:
             return None
-        match = Employee.objects.filter(
-            org_id=obj.org_id,
-            user_id__isnull=True,
-            deleted_at__isnull=True,
-            email__iexact=obj.email,
-        ).first()
+        by_email: dict[str, Employee] | None = self.context.get("unlinked_employees_by_email")
+        if by_email is None:
+            # Fallback: the legacy single-query path. Used in unit tests that
+            # instantiate the serializer outside the view (no context).
+            match = Employee.objects.filter(
+                org_id=obj.org_id,
+                user_id__isnull=True,
+                deleted_at__isnull=True,
+                email__iexact=obj.email,
+            ).first()
+        else:
+            match = by_email.get(obj.email.lower())
         return _SuggestedEmployeeSerializer(match).data if match else None
 
 
@@ -66,13 +74,18 @@ class UnlinkedEmployeeSerializer(serializers.ModelSerializer):
         )
 
     def get_suggested_user(self, obj: Employee) -> dict | None:
+        # v1.9.2 (M1): same bulk-precompute pattern as UnlinkedUserSerializer.
         if not obj.email:
             return None
-        match = User.objects.filter(
-            org_id=obj.org_id,
-            email__iexact=obj.email,
-            employee_profile__isnull=True,
-        ).first()
+        by_email: dict[str, User] | None = self.context.get("unlinked_users_by_email")
+        if by_email is None:
+            match = User.objects.filter(
+                org_id=obj.org_id,
+                email__iexact=obj.email,
+                employee_profile__isnull=True,
+            ).first()
+        else:
+            match = by_email.get(obj.email.lower())
         return _SuggestedUserSerializer(match).data if match else None
 
 
@@ -88,6 +101,18 @@ class UnlinkedUsersView(ListAPIView):
             org_id=self.request.user.org_id, employee_profile__isnull=True
         ).order_by("email")
 
+    def get_serializer_context(self):
+        """v1.9.2 (M1): precompute a {lower_email -> Employee} map once per
+        request, replacing the per-row email-match query. One extra SELECT
+        instead of N."""
+        ctx = super().get_serializer_context()
+        org_id = self.request.user.org_id
+        candidates = Employee.objects.filter(
+            org_id=org_id, user_id__isnull=True, deleted_at__isnull=True
+        ).exclude(email="")
+        ctx["unlinked_employees_by_email"] = {e.email.lower(): e for e in candidates if e.email}
+        return ctx
+
 
 class UnlinkedEmployeesView(ListAPIView):
     """GET /api/v1/admin/unlinked-employees/ — employees in this org with no User."""
@@ -102,3 +127,14 @@ class UnlinkedEmployeesView(ListAPIView):
             user_id__isnull=True,
             deleted_at__isnull=True,
         ).order_by("first_name", "last_name")
+
+    def get_serializer_context(self):
+        """v1.9.2 (M1): symmetric to UnlinkedUsersView — bulk-fetch all users
+        in this org that lack an employee_profile, keyed by lowercase email."""
+        ctx = super().get_serializer_context()
+        org_id = self.request.user.org_id
+        candidates = User.objects.filter(org_id=org_id, employee_profile__isnull=True).exclude(
+            email=""
+        )
+        ctx["unlinked_users_by_email"] = {u.email.lower(): u for u in candidates if u.email}
+        return ctx
