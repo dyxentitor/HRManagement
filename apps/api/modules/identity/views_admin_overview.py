@@ -8,16 +8,23 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.audit.models import AuditLog
+from common.audit.service import append as audit_append
 from common.feature_flags.models import FeatureFlag
 from common.feature_flags.registry import CRITICAL_MODULES, TOGGLABLE_MODULES
 from modules.employee.models import Employee
 from modules.identity.models import Permission, Role, User
 from modules.identity.permissions import HRMSPermission
 from modules.organization.models import Department
+
+# v1.9.2 (M2): cache the overview payload for 60s. Worst case is 60s of
+# staleness on an admin-only page, which is acceptable; saves ~8 SQL count
+# queries per request.
+OVERVIEW_CACHE_TTL = 60
 
 ADMIN_ACTIONS: tuple[str, ...] = (
     "role.granted",
@@ -67,6 +74,15 @@ def _summarize(log: AuditLog) -> str:
 class SettingsOverviewView(APIView):
     """GET /api/v1/admin/settings-overview/ — single roll-up for the
     Settings hub Overview page.
+
+    v1.9.2:
+    - **M2** payload cached per-org for 60s; reduces ~8 SQL count queries
+      per request to one cache hit. Cache is keyed only on org_id, not on
+      actor, because the data isn't actor-specific. Bust via cache.delete()
+      from `settings_overview_cache_key(org_id)` if a future call site needs
+      live freshness.
+    - **L7** writes one `admin.overview_viewed` audit log row per request.
+      Adds minimal storage cost; gives a who-looked-at-admin trail.
     """
 
     permission_classes: ClassVar = [HRMSPermission]
@@ -75,43 +91,62 @@ class SettingsOverviewView(APIView):
     def get(self, request):
         org_id = request.user.org_id
 
+        # L7: audit the read (kept outside the cache so we capture every view,
+        # not just the cache-miss path).
+        audit_append(
+            org_id=org_id,
+            action="admin.overview_viewed",
+            entity="organization",
+            entity_id=org_id,
+        )
+
+        cache_key = settings_overview_cache_key(org_id)
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         flags = list(FeatureFlag.objects.filter(org_id=org_id))
         modules_total = len(TOGGLABLE_MODULES) + len(CRITICAL_MODULES)
         toggleable_enabled = sum(1 for f in flags if f.enabled)
         modules_enabled = toggleable_enabled + len(CRITICAL_MODULES)
 
-        return Response(
-            {
-                "stats": {
-                    "employees_active": Employee.objects.filter(
-                        org_id=org_id, deleted_at__isnull=True
-                    ).count(),
-                    "employees_archived": Employee.all_objects.filter(
-                        org_id=org_id, deleted_at__isnull=False
-                    ).count(),
-                    "departments": Department.objects.filter(org_id=org_id).count(),
-                    "modules_enabled": modules_enabled,
-                    "modules_total": modules_total,
-                    "roles": Role.objects.filter(org_id=org_id).count(),
-                    "perm_codes": Permission.objects.count(),
-                },
-                "attention": {
-                    "unlinked_users_count": User.objects.filter(
-                        org_id=org_id, employee_profile__isnull=True
-                    ).count(),
-                    "unlinked_employees_count": Employee.objects.filter(
-                        org_id=org_id, user_id__isnull=True, deleted_at__isnull=True
-                    ).count(),
-                },
-                "recent_activity": [
-                    {
-                        "action": log.action,
-                        "summary": _summarize(log),
-                        "occurred_at": log.ts.isoformat(),
-                    }
-                    for log in AuditLog.objects.filter(
-                        org_id=org_id, action__in=ADMIN_ACTIONS
-                    ).order_by("-ts")[:5]
-                ],
-            }
-        )
+        payload = {
+            "stats": {
+                "employees_active": Employee.objects.filter(
+                    org_id=org_id, deleted_at__isnull=True
+                ).count(),
+                "employees_archived": Employee.all_objects.filter(
+                    org_id=org_id, deleted_at__isnull=False
+                ).count(),
+                "departments": Department.objects.filter(org_id=org_id).count(),
+                "modules_enabled": modules_enabled,
+                "modules_total": modules_total,
+                "roles": Role.objects.filter(org_id=org_id).count(),
+                "perm_codes": Permission.objects.count(),
+            },
+            "attention": {
+                "unlinked_users_count": User.objects.filter(
+                    org_id=org_id, employee_profile__isnull=True
+                ).count(),
+                "unlinked_employees_count": Employee.objects.filter(
+                    org_id=org_id, user_id__isnull=True, deleted_at__isnull=True
+                ).count(),
+            },
+            "recent_activity": [
+                {
+                    "action": log.action,
+                    "summary": _summarize(log),
+                    "occurred_at": log.ts.isoformat(),
+                }
+                for log in AuditLog.objects.filter(
+                    org_id=org_id, action__in=ADMIN_ACTIONS
+                ).order_by("-ts")[:5]
+            ],
+        }
+        cache.set(cache_key, payload, timeout=OVERVIEW_CACHE_TTL)
+        return Response(payload)
+
+
+def settings_overview_cache_key(org_id) -> str:
+    """Stable cache key for the Settings Overview payload, scoped per org."""
+    return f"settings_overview:v1:{org_id}"

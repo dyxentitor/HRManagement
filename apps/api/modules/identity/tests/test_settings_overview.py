@@ -135,3 +135,62 @@ def test_overview_requires_role_read(org) -> None:
     client = _setup_user(org, ["employee:read:org"])  # no role:read
     resp = client.get("/api/v1/admin/settings-overview/")
     assert resp.status_code == 403
+
+
+# ---- v1.9.2 additions: M2 cache + L7 audit-log writes ----
+
+
+@pytest.mark.django_db
+def test_overview_writes_audit_log_on_view(org) -> None:
+    """L7: every successful Overview view writes one audit log row."""
+    client = _setup_user(org, ["role:read"])
+    before = AuditLog.objects.filter(action="admin.overview_viewed").count()
+    client.get("/api/v1/admin/settings-overview/")
+    after = AuditLog.objects.filter(action="admin.overview_viewed").count()
+    assert after == before + 1
+
+
+@pytest.mark.django_db
+def test_overview_cache_returns_stable_payload_within_ttl(org, dept) -> None:
+    """M2: a second GET within the TTL window returns the cached payload
+    (verified by adding a new employee and confirming the count doesn't
+    move on the second call)."""
+    import datetime
+
+    from django.core.cache import cache
+
+    cache.clear()  # isolate from other tests
+    _make_emp(org, dept, "BEFORE")
+    client = _setup_user(org, ["role:read"])
+    first = client.get("/api/v1/admin/settings-overview/").json()
+    first_count = first["stats"]["employees_active"]
+
+    # Mutate underneath the cache; second call should still return cached.
+    Employee.all_objects.create(
+        org_id=org.id,
+        employee_code="MUTATE",
+        first_name="Mu",
+        last_name="X",
+        email="mu@x.com",
+        phone="+60123456789",
+        date_of_birth=datetime.date(1990, 1, 1),
+        gender="other",
+        nationality="MY",
+        marital_status="single",
+        address_line1="x",
+        city="KL",
+        state="KL",
+        postcode="50000",
+        country_code="MY",
+        department=dept,
+        role_title="Engineer",
+        employment_type="fulltime",
+        hire_date=datetime.date(2024, 1, 1),
+        bank_name="Maybank",
+        emergency_contact_name="X",
+        emergency_contact_relationship="father",
+        emergency_contact_phone="+60123456789",
+        status="active",
+    )
+    second = client.get("/api/v1/admin/settings-overview/").json()
+    assert second["stats"]["employees_active"] == first_count
