@@ -59,6 +59,17 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         # org_id derived from the authenticated user's context
         serializer.save(org_id=self.request.user.org_id)
 
+    def perform_destroy(self, instance):
+        # v1.9.0 — refuse to delete a department that still has active members.
+        # Soft-deleted employees do NOT block; HR should reassign or restore them.
+        from modules.employee.models import Employee
+
+        if Employee.objects.filter(department_id=instance.id, deleted_at__isnull=True).exists():
+            raise ValidationError(
+                {"detail": "Department has active employees; reassign before deleting."}
+            )
+        super().perform_destroy(instance)
+
 
 class OrgSettingsView(RetrieveModelMixin, UpdateModelMixin, GenericAPIView):
     """GET/PATCH the current user's organization settings."""
