@@ -95,3 +95,48 @@ def test_get_org_settings_unauthenticated() -> None:
     client = APIClient()
     resp = client.get("/api/v1/org/settings")
     assert resp.status_code == 401
+
+
+# ---- v1.9.0 additions: logo_url field + audit log on PATCH ----
+
+
+@pytest.mark.django_db
+def test_get_org_settings_returns_null_logo_url_when_unset(org: Organization) -> None:
+    client, _ = _setup_user(org, ["org:settings:read"])
+    resp = client.get("/api/v1/org/settings")
+    assert resp.status_code == 200
+    assert resp.json()["logo_url"] is None
+
+
+@pytest.mark.django_db
+def test_get_org_settings_returns_presigned_url_when_logo_set(org: Organization) -> None:
+    from unittest.mock import patch as _patch
+
+    org.logo_s3_key = f"org-logos/{org.id}/abc.webp"
+    org.save(update_fields=["logo_s3_key"])
+    client, _ = _setup_user(org, ["org:settings:read"])
+    with _patch(
+        "modules.organization.serializers.presigned_get_url",
+        return_value="https://minio.example/x?sig=abc",
+    ):
+        resp = client.get("/api/v1/org/settings")
+    assert resp.status_code == 200
+    assert resp.json()["logo_url"] == "https://minio.example/x?sig=abc"
+
+
+@pytest.mark.django_db
+def test_patch_org_settings_writes_audit_log(org: Organization) -> None:
+    from common.audit.models import AuditLog
+
+    client, _ = _setup_user(org, ["org:settings:read", "org:settings:write"])
+    resp = client.patch(
+        "/api/v1/org/settings",
+        {"name": "Provintell Rebrand"},
+        format="json",
+    )
+    assert resp.status_code == 200
+    log = AuditLog.objects.filter(
+        action="org.settings_updated", entity_id=org.id, org_id=org.id
+    ).first()
+    assert log is not None
+    assert "name" in (log.after or {}).get("changed_fields", [])

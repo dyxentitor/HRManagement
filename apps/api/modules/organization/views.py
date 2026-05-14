@@ -77,7 +77,29 @@ class OrgSettingsView(RetrieveModelMixin, UpdateModelMixin, GenericAPIView):
         return self.retrieve(request, *args, **kwargs)
 
     def patch(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)
+        instance = self.get_object()
+        before = {
+            f: getattr(instance, f)
+            for f in (
+                "name",
+                "default_currency",
+                "default_timezone",
+                "default_locale",
+                "settings",
+            )
+        }
+        response = self.partial_update(request, *args, **kwargs)
+        instance.refresh_from_db()
+        changed = [f for f, v in before.items() if getattr(instance, f) != v]
+        if changed:
+            audit_append(
+                org_id=instance.id,
+                action="org.settings_updated",
+                entity="organization",
+                entity_id=instance.id,
+                after={"changed_fields": changed},
+            )
+        return response
 
 
 class OrgLogoPresignedUploadView(APIView):

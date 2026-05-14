@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from modules.employee.services.avatar import presigned_get_url
+
 from .models import Department, Organization
 
 
@@ -30,6 +32,8 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class OrgSettingsSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Organization
         fields = (
@@ -42,5 +46,11 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
             "default_locale",
             "settings",
             "status",
+            "logo_url",
         )
-        read_only_fields = ("id", "slug", "status")
+        read_only_fields = ("id", "slug", "status", "logo_url")
+
+    def get_logo_url(self, obj: Organization) -> str | None:
+        if not obj.logo_s3_key:
+            return None
+        return presigned_get_url(obj.logo_s3_key, expires_in=3600)
