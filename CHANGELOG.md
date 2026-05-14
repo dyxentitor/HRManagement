@@ -2,6 +2,54 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.1] — 2026-05-14
+
+Patch release closing the medium-and-low items from the post-v1.9.0
+`/sc:analyze` audit (`docs/audits/2026-05-14-v1.9.0-code-analysis.md`).
+No new features, no schema changes, no perm changes.
+
+### Changed
+
+- **`settings-api.ts` retyped to use the typed openapi-fetch `api` client**
+  (audit M4 + L4). v1.9.0 shipped with a raw-fetch wrapper because the
+  new endpoints weren't yet in the generated OpenAPI schema. The v1.9.0
+  contracts regen (`e78c0b7`) added them, so the wrapper now goes through
+  `@/lib/api` and inherits the 401-refresh middleware transparently.
+  Drops the duplicated `BASE` constant. S3 PUT inside `LogoUploader`
+  stays as raw `fetch` because the presigned cross-origin URL must not
+  carry the bearer header.
+
+- **`SettingsNav.useEffect` gates the overview fetch on `useCan("role:read")`**
+  (audit M5). v1.9.0 fired `/admin/settings-overview/` for every user
+  landing on Settings, including manager-tier users who'd get a 403.
+  Now non-`role:read` users never hit the endpoint.
+
+- **`DepartmentsAdminPage` swaps `window.confirm` for the project's `Dialog`
+  primitive** (audit L2). Consistent with the v1.4.0 `AdminTeamsPage`
+  archive flow.
+
+- **`process_org_logo` uses `Organization.save(update_fields=...)` instead
+  of `Organization.objects.filter().update()`** (audit L3). `.update()`
+  bypasses Django signals — currently a no-op (Organization has no
+  signals), but a maintenance hazard if any are added later.
+
+- **`NotLinkedEmptyState` drops the unreachable `??` fallback**
+  (audit L6). TS already narrows `scope` to `keyof typeof COPY`.
+
+### Test counts at HEAD
+
+- Backend: **686 passed** + 3 skipped (postgres-only). +22 from v1.9.0
+  (most of the delta is fixture-side: existing tests are re-counted
+  when test discovery picks up the v1.9.0 test modules in different
+  bins; new behavioral coverage in v1.9.1 is 0 tests — refactors only).
+- Frontend: **270 passed** (unchanged from v1.9.0).
+- Permission codes: **110** (unchanged).
+
+### Not pushed
+
+- Local-only tag `v1.9.1`. Run `git push origin master --tags` after
+  user approval.
+
 ## [1.9.0] — 2026-05-14
 
 ### Added
