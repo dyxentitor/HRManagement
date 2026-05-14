@@ -8,7 +8,7 @@
 
 - **Stack** — Django 5 + DRF (`apps/api`) · React 18 + Vite + TS + Tailwind (`apps/web`) · Postgres 16 · Redis · Celery · MinIO/S3 · Docker Compose
 - **Layout** — `apps/api`, `apps/web`, `packages/contracts` (generated OpenAPI → TS types), `deploy/`, `docs/` (specs, plans, audits, runbooks), `References/` (design + ops notes)
-- **Current version** — `v1.7.1` on `master` (tag dated 2026-05-07). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
+- **Current version** — `v1.10.1` on `master` (tag dated 2026-05-15). Triple-source-of-truth: `apps/web/package.json`, `apps/api/pyproject.toml`, `apps/api/hrms_api/settings/base.py` (`SPECTACULAR_SETTINGS.VERSION`)
 - **Mission** — Phase 1 web HRMS for Provintell (own-office deployment first). Phase 2 = SaaS, Phase 3 = mobile.
 - **Tenancy / locale** — multi-tenant-ready schema, `Asia/Kuala_Lumpur`, `en-MY`, MYR.
 - **Day-one demo logins** — see `References/KEY.md`. Do not commit changes that break them.
@@ -55,22 +55,24 @@ All shipped. Each row is anchored on a real git tag.
 | `v1.7.1` | 2026-05-07 | Backend follow-up to v1.7.0 — `employee:write:self` granted to manager/finance/team_lead/auditor (pre-existing M2 gap surfaced by Playwright sweep: those roles had `read:self` but never `write:self`, so v1.7.0's new `/me/profile` editing 403'd for them). Fixture-only change. | (no spec — bugfix) | (no plan — one-liner) |
 | `v1.8.0` | 2026-05-08 | Leave module enhancement — admin `/admin/leave-types` page (General + Tenure tiers + Carry-forward tabs), per-employee `EmployeeLeaveOverride` (HR-only), idempotent Celery year-rollover (Jan 1) + daily expiry-sweep (02:30 KL), §60E by-month proration, statutory eligibility validators (paternity 12-mo service + 30-d notice + 5-confinement cap), MY country fixture upgraded to 8/12/16 annual + 14/18/22 sick + new HOSPITALIZATION 60d leave type (post-2022 §60F separation). No new perm codes. | `2026-05-07-v1.8.0-leave-module-enhancement.md` | `2026-05-07-v1.8.0-leave-module-enhancement.md` |
 | `v1.10.0` | 2026-05-14 | UI quality sweep — `PageHeader` + `toLocaleDateString` + `StatusPill` template applied to 7 FAIL pages from `2026-04-29-ui-quality.md`: MyCertifications, MyTraining, AdminCert, MySchedule, KpiAdmin, MyClaims, MyPayslips. Zero backend changes, no new perm codes. (v1.9.0–v1.9.2 rows tracked in `CHANGELOG.md`; git tags authoritative.) | `2026-05-14-v1.10.0-ui-quality-sweep.md` | `2026-05-14-v1.10.0-ui-quality-sweep.md` |
+| `v1.10.1` | 2026-05-15 | Closes 7 findings from the v1.10.0 Playwright sweep. (1) S3 endpoint split — new `common.storage.s3` with `internal_s3_client`/`public_s3_client`, and `S3_PUBLIC_ENDPOINT_URL` so presigned URLs don't embed the Docker hostname. (2) Three-layer self-approval guard in the workflow engine (resolver exclude + engine `actor==requester` check + 403 exception-handler mapping). (3) Email digest cadence env-configurable (`EMAIL_DIGEST_INTERVAL_SECONDS`, default 3600, dev 60). (4) Leave-apply toast surfaces RFC 7807 `errors[0].message`. (5+6) KL-local date math via new `modules/schedule/lib/local-date.ts` on MySchedulePage + RosterPage. (7) Frontend perm guard on `/claims/finance`. No new perm codes. | `Prompt_v1.10.1_fix_sweep_bugs.md` | `Prompt_v1.10.1_fix_sweep_bugs.md` |
 
-### 2.3 Test counts at HEAD (v1.10.0)
+### 2.3 Test counts at HEAD (v1.10.1)
 
-- Backend: **689 passed** + 3 skipped (postgres-only triggers). Unchanged from v1.9.2 — v1.10.0 is frontend-only.
-- Frontend: **270 passed**. Unchanged from v1.9.2 — the 7 page rewrites are template substitutions that keep existing assertions passing; no new tests added.
+- Backend: **701 passed** + 3 skipped (postgres-only triggers). +6 vs v1.10.0 (4 resolver/engine guards in `common/workflow/tests/`, 6 in `common/tests/test_storage_s3.py` — minus a couple of legacy assertions that subsumed cleanly).
+- Frontend: **278 passed**. +8 vs v1.10.0 (4 in `modules/schedule/lib/local-date.test.ts`, 2 in `modules/leave/pages/LeaveApplyPage.test.tsx`, 2 in `modules/claims/pages/FinanceQueuePage.test.tsx`).
 - Permission codes: **110** (no change).
 
 ### 2.4 In-flight / next up
 
 - **Working tree at HEAD** — only `apps/api/uv.lock` modified; untracked `.claude/` and `.playwright-mcp/`. No half-finished feature branches.
-- **Local tags not pushed** — `v1.10.0` is local-only on `master`. (v1.9.2 and earlier already pushed to `origin = git@github.com:dyxentitor/HRManagement.git`.) Confirm with the user before `git push`.
+- **Local tags not pushed** — `v1.10.0` and `v1.10.1` are local-only on `master`. (v1.9.2 and earlier already pushed to `origin = git@github.com:dyxentitor/HRManagement.git`.) Confirm with the user before `git push`.
 - **Audit closure status**:
   - `2026-04-29-system-state.md` — Bug #1 (payslip detail 403): **FIXED**. Bug #2 (payroll CSV null token): **FIXED**. Bug #3 (encryption-key drift): **FIXED** (config consolidation 2026-05-06; `.env` and `References/KEY.md` now match the runtime key `5rrM…`; `:?` guard in compose prevents future silent drift; runbook rotation infrastructure — `PREV_KEY` + `reencrypt_sensitive_fields` cmd — still needs to be built when rotation is actually scheduled). Bug #4 (cert/training beat tasks): **FIXED**.
   - `2026-04-29-ui-quality.md` — 7 FAIL pages now PASS via v1.10.0; minor §4 single-liners (LeaveApplyPage / ClaimSubmitPage / EmployeeDetail hire_date / MyLeavePage date columns) deferred.
   - `2026-05-06-module-visibility.md` — driving v1.4.2 — **FIXED**.
   - `2026-05-06-module-key-mismatches.md` — driving v1.4.3 + v1.5.0 (Class D leave-perm row) — **FIXED**.
+  - `.playwright-mcp/sweep-v1.10.0/REPORT.md` — 7 findings closed by v1.10.1. Bugs #1 (S3 host), #2 (self-approval), #4 (toast), #5/#6 (date drift), #7 (Finance Queue guard) all FIXED. Bug #3 (email): wiring was correct; cadence made env-configurable.
 - **Pending — mechanical, can ship anytime**:
   - **Cover-up notes** — small backend change to accept + persist `notes` on `PATCH /shift-assignments/{id}/cover-up/`, plus a notes textarea in `<CoverUpPicker>`. Spec-deferred from v1.5.1 because the backend endpoint doesn't currently store notes.
   - **L5 biome config inconsistency** — own focused PR, deferred from v1.9.2.
