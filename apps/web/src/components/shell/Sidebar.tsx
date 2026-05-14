@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
+import { OrgLogo } from "@/components/hrms/OrgLogo";
 import { useCommandPalette } from "@/lib/cmdk";
 import { useFeature } from "@/lib/feature-flags";
 import { useCan } from "@/lib/perm";
@@ -76,13 +77,7 @@ export function Sidebar() {
 	return (
 		<aside className="flex flex-col bg-surface rounded-lg p-3 w-[220px] shrink-0">
 			<div className="flex items-center gap-2 px-2.5 pt-1 pb-3">
-				<span
-					className="size-[22px] rounded-md bg-gradient-to-br from-accent-500 to-lavender"
-					aria-hidden
-				/>
-				<span className="text-h3 font-bold tracking-wider text-text-primary">
-					PROVINTELL
-				</span>
+				<OrgLogo />
 			</div>
 
 			<button
