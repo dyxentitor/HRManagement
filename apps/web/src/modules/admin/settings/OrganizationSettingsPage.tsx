@@ -55,6 +55,19 @@ export default function OrganizationSettingsPage() {
 		}
 	}
 
+	function resetForm() {
+		// v1.9.2 info-fix: Cancel restores fields from already-fetched org state,
+		// instead of triggering a server refetch (avoids the brief loading flash).
+		if (!org) return;
+		setForm({
+			name: org.name,
+			default_currency: org.default_currency,
+			default_timezone: org.default_timezone,
+			default_locale: org.default_locale,
+		});
+		setError(null);
+	}
+
 	if (!org) {
 		return <div className="text-text-secondary">Loading…</div>;
 	}
@@ -123,7 +136,7 @@ export default function OrganizationSettingsPage() {
 				<Button
 					type="button"
 					variant="ghost"
-					onClick={refresh}
+					onClick={resetForm}
 					disabled={saving}
 				>
 					Cancel

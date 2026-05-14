@@ -3,6 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 
 import {
 	type UnlinkedEmployee,
@@ -163,44 +168,45 @@ function UnlinkedUserRow({
 					{user.role_codes.join(", ") || "—"}
 				</div>
 			</div>
-			<div className="relative">
-				<Button type="button" size="sm" onClick={() => setOpen((o) => !o)}>
-					Link <ChevronDown className="size-3 ml-1" />
-				</Button>
-				{open && (
-					<div
-						data-testid="link-options"
-						className="absolute right-0 top-full mt-1 z-10 bg-surface-elevated border border-border-subtle rounded shadow-lg min-w-[260px] max-h-72 overflow-auto flex flex-col"
-					>
-						{options.length === 0 ? (
-							<div className="px-3 py-2 text-small text-text-tertiary">
-								No unlinked employees.
-							</div>
-						) : (
-							options.map((opt) => (
-								<button
-									type="button"
-									key={opt.id}
-									data-testid="link-option"
-									className="px-3 py-2 text-left hover:bg-accent-500/10 cursor-pointer text-small"
-									onClick={async () => {
-										setOpen(false);
-										await onLink(opt.id, user.id);
-									}}
-								>
-									{opt.label}{" "}
-									<span className="text-text-tertiary">· {opt.suffix}</span>
-									{opt.suggested && (
-										<span className="ml-2 text-[10px] uppercase font-bold text-accent-200">
-											suggested
-										</span>
-									)}
-								</button>
-							))
-						)}
-					</div>
-				)}
-			</div>
+			<Popover open={open} onOpenChange={setOpen}>
+				<PopoverTrigger asChild>
+					<Button type="button" size="sm">
+						Link <ChevronDown className="size-3 ml-1" />
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent
+					align="end"
+					data-testid="link-options"
+					className="p-0 min-w-[260px] max-h-72 overflow-auto bg-surface-elevated"
+				>
+					{options.length === 0 ? (
+						<div className="px-3 py-2 text-small text-text-tertiary">
+							No unlinked employees.
+						</div>
+					) : (
+						options.map((opt) => (
+							<button
+								type="button"
+								key={opt.id}
+								data-testid="link-option"
+								className="block w-full px-3 py-2 text-left hover:bg-accent-500/10 cursor-pointer text-small"
+								onClick={async () => {
+									setOpen(false);
+									await onLink(opt.id, user.id);
+								}}
+							>
+								{opt.label}{" "}
+								<span className="text-text-tertiary">· {opt.suffix}</span>
+								{opt.suggested && (
+									<span className="ml-2 text-[10px] uppercase font-bold text-accent-200">
+										suggested
+									</span>
+								)}
+							</button>
+						))
+					)}
+				</PopoverContent>
+			</Popover>
 		</div>
 	);
 }
@@ -237,44 +243,45 @@ function UnlinkedEmpRow({
 					{emp.employee_code} · {emp.email}
 				</div>
 			</div>
-			<div className="relative">
-				<Button type="button" size="sm" onClick={() => setOpen((o) => !o)}>
-					Link <ChevronDown className="size-3 ml-1" />
-				</Button>
-				{open && (
-					<div
-						data-testid="link-options"
-						className="absolute right-0 top-full mt-1 z-10 bg-surface-elevated border border-border-subtle rounded shadow-lg min-w-[260px] max-h-72 overflow-auto flex flex-col"
-					>
-						{options.length === 0 ? (
-							<div className="px-3 py-2 text-small text-text-tertiary">
-								No unlinked users.
-							</div>
-						) : (
-							options.map((opt) => (
-								<button
-									type="button"
-									key={opt.id}
-									data-testid="link-option"
-									className="px-3 py-2 text-left hover:bg-accent-500/10 cursor-pointer text-small"
-									onClick={async () => {
-										setOpen(false);
-										await onLink(emp.id, opt.id);
-									}}
-								>
-									{opt.label}{" "}
-									<span className="text-text-tertiary">· {opt.suffix}</span>
-									{opt.suggested && (
-										<span className="ml-2 text-[10px] uppercase font-bold text-accent-200">
-											suggested
-										</span>
-									)}
-								</button>
-							))
-						)}
-					</div>
-				)}
-			</div>
+			<Popover open={open} onOpenChange={setOpen}>
+				<PopoverTrigger asChild>
+					<Button type="button" size="sm">
+						Link <ChevronDown className="size-3 ml-1" />
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent
+					align="end"
+					data-testid="link-options"
+					className="p-0 min-w-[260px] max-h-72 overflow-auto bg-surface-elevated"
+				>
+					{options.length === 0 ? (
+						<div className="px-3 py-2 text-small text-text-tertiary">
+							No unlinked users.
+						</div>
+					) : (
+						options.map((opt) => (
+							<button
+								type="button"
+								key={opt.id}
+								data-testid="link-option"
+								className="block w-full px-3 py-2 text-left hover:bg-accent-500/10 cursor-pointer text-small"
+								onClick={async () => {
+									setOpen(false);
+									await onLink(emp.id, opt.id);
+								}}
+							>
+								{opt.label}{" "}
+								<span className="text-text-tertiary">· {opt.suffix}</span>
+								{opt.suggested && (
+									<span className="ml-2 text-[10px] uppercase font-bold text-accent-200">
+										suggested
+									</span>
+								)}
+							</button>
+						))
+					)}
+				</PopoverContent>
+			</Popover>
 		</div>
 	);
 }
