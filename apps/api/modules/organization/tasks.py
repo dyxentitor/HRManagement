@@ -63,8 +63,13 @@ def process_org_logo(self, org_id: str, raw_s3_key: str) -> str:
     new_key = f"org-logos/{org_id}/{uuid.uuid4()}.webp"
     s3.put_object(Bucket=bucket, Key=new_key, Body=thumb_bytes, ContentType="image/webp")
 
-    old_key = Organization.objects.filter(id=org_uuid).values_list("logo_s3_key", flat=True).first()
-    Organization.objects.filter(id=org_uuid).update(logo_s3_key=new_key)
+    # v1.9.1 (L3): use save() so any future pre_save / post_save signals on
+    # Organization (e.g. cache-invalidation) fire. .update() would silently
+    # skip them.
+    org = Organization.objects.get(id=org_uuid)
+    old_key = org.logo_s3_key
+    org.logo_s3_key = new_key
+    org.save(update_fields=["logo_s3_key", "updated_at"])
 
     delete_object(raw_s3_key)
     if old_key and old_key != new_key and old_key != raw_s3_key:
