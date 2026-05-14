@@ -56,9 +56,28 @@ export type LeaveRequest = {
 	decided_at: string | null;
 };
 
+/**
+ * Pull a user-readable message out of an RFC 7807 problem detail body.
+ * Backend shape (see common/exception_handler.py):
+ *   { type, title, status, detail, errors?: [{field, code, message}] }
+ */
+function _errorMessage(error: unknown, fallback: string): string {
+	if (!error || typeof error !== "object") return fallback;
+	const e = error as Record<string, unknown>;
+	const errs = e.errors;
+	if (Array.isArray(errs) && errs.length > 0) {
+		const first = errs[0] as Record<string, unknown>;
+		if (typeof first.message === "string" && first.message)
+			return first.message;
+	}
+	if (typeof e.detail === "string" && e.detail) return e.detail;
+	if (typeof e.title === "string" && e.title) return e.title;
+	return fallback;
+}
+
 async function _get<T>(url: string): Promise<T> {
 	const { data, error } = await api.GET(url as never);
-	if (error) throw new Error(`GET ${url} failed`);
+	if (error) throw new Error(_errorMessage(error, `GET ${url} failed`));
 	return data as T;
 }
 
@@ -66,7 +85,7 @@ async function _post<T>(url: string, body?: unknown): Promise<T> {
 	// Cast opts entirely to avoid openapi-fetch path-specific type constraints
 	const opts = (body ? { body } : undefined) as never;
 	const { data, error } = await api.POST(url as never, opts);
-	if (error) throw new Error(`POST ${url} failed`);
+	if (error) throw new Error(_errorMessage(error, `POST ${url} failed`));
 	return data as T;
 }
 
