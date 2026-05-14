@@ -2,6 +2,36 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.0] — 2026-05-14
+
+### Added
+- **Settings hub** at `/admin/settings` — a 2-pane shell with a 220px sub-nav on the left and the active sub-page on the right. Sub-nav items: Overview · Organization · Modules · Departments · Teams · Users & Linking · Archived · Roles & Perms · Leave Types. Filtered per-perm.
+- **Overview landing** — attention banner when there are unlinked users, 4 stat tiles (employees · departments · modules · roles), and a feed of the last 5 admin audit-log entries. Single endpoint `GET /api/v1/admin/settings-overview/` (gated on `role:read`).
+- **Organization settings page** at `/admin/settings/organization` — custom company logo upload (presign → MinIO PUT → register → Celery resize to 256-max-dim WebP) and identity fields (name / currency / timezone / locale). Reuses the v1.7.0 avatar pipeline shape but preserves aspect ratio (logos must not be square-cropped).
+- **Departments admin UI** at `/admin/settings/departments` — indented tree-view CRUD over the existing FK model. New / Edit / Delete with `DELETE` returning 400 + "reassign before deleting" when active employees still reference the department.
+- **Users & Linking page** at `/admin/settings/users` — side-by-side unlinked-users and unlinked-employees lists with case-insensitive email auto-suggest pinned to the top of the Link dropdown. New endpoints: `GET /admin/unlinked-users/`, `GET /admin/unlinked-employees/`, `POST /employees/{id}/link-user/`, `DELETE /employees/{id}/link-user/` (all gated on `employee:write:org`).
+- **Archived Employees page** at `/admin/settings/archived` with one-click restore. New endpoint `POST /employees/{id}/restore/` (gated on `employee:archive`, idempotent). Existing `GET /employees/` now accepts `?status=active|archived|all` (default `active`, unchanged).
+- **`<OrgLogo>`** sidebar header component — replaces hardcoded text. Reads `/org/settings`, renders the uploaded logo when present, falls back to gradient square + uppercase org-name.
+- **`<NotLinkedEmptyState>`** card on `/me/profile`, `/schedule/me`, `/leave/me`, `/claims/me` — replaces the inline "isn't linked" message with a shared composite. `scope` prop parameterizes per-page copy.
+- New `Organization.logo_s3_key` column (additive migration 0005).
+- New `process_org_logo` Celery task (mirrors `process_avatar_upload`, uses `Image.thumbnail` to preserve aspect).
+- 9 new audit-log actions: `employee.restored`, `employee.user_linked`, `employee.user_unlinked`, `department.created/updated/deleted` (via existing DepartmentViewSet writes), `org.logo_updated`, `org.logo_removed`, `org.settings_updated`.
+
+### Changed
+- **Main sidebar's Admin group** collapses 4 items (Roles · Teams · Modules · Leave Types) into a single **Settings** entry. `/admin/{roles,modules,teams,leave-types}` legacy routes redirect to `/admin/settings/*` via `<Navigate replace />` so deep links keep working.
+- **CommandPalette** gets `Settings · …` entries for each sub-page so palette nav still routes deep.
+- `GET /api/v1/org/settings` now returns a `logo_url` field (1h-presigned GET URL of the resized logo, or `null`).
+- `PATCH /api/v1/org/settings` now writes an `org.settings_updated` audit log capturing which fields changed.
+- `DELETE /api/v1/departments/{id}/` now returns 400 with a "reassign before deleting" message when active employees still reference the department. Soft-deleted employees don't block.
+
+### Test counts at HEAD
+- Backend: **664 passed** + 3 skipped (postgres-only triggers). +21 from v1.8.0 across `test_logo_endpoints.py` (9), `test_logo_task.py` (3), `test_archived_and_restore.py` (7), `test_link_manager.py` (14), `test_settings_overview.py` (3), `test_department_delete_guard.py` (3), `test_org_settings.py` (+3), `test_models.py` (+1).
+- Frontend: **270 passed**. +27 from v1.8.0 across SettingsShell (4), SettingsOverviewPage (4), OrganizationSettingsPage (4), DepartmentsAdminPage (4), UsersLinkingPage (3), ArchivedEmployeesPage (2), OrgLogo (3), NotLinkedEmptyState (3).
+- Permission codes: **110** (unchanged — `org:settings:write` already existed in fixtures pre-v1.9.0).
+
+### Not pushed
+- Local-only tag `v1.9.0`. Run `git push origin master --tags` after user approval.
+
 ## [Unreleased]
 
 ### Fixed (config + docs — no behaviour change)
