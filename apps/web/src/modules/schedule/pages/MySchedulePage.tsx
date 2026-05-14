@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
+
 import {
 	ApiError,
 	type AttendanceRecord,
@@ -87,16 +89,7 @@ export default function MySchedulePage() {
 		return (
 			<div className="space-y-4 max-w-4xl">
 				<h1 className="text-h1 text-text-primary">My Schedule</h1>
-				<div className="bg-surface-hover border border-dashed border-border-subtle rounded-lg p-8 text-center text-text-tertiary">
-					<div className="text-h2 mb-2">📋</div>
-					<h2 className="text-h3 text-text-primary">
-						No employee record linked
-					</h2>
-					<p className="text-body mt-1">
-						Your account isn't linked to an employee yet, so there's no schedule
-						or attendance to show. Ask HR to create your employee record.
-					</p>
-				</div>
+				<NotLinkedEmptyState scope="schedule" />
 			</div>
 		);
 	}

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { StatusPill } from "@/components/hrms";
 import { MfaPrompt } from "@/components/hrms/MfaPrompt";
+import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,17 +192,7 @@ export default function MyProfilePage() {
 		return (
 			<div className="space-y-6">
 				<PageHeader breadcrumb="Personal" title="My Profile" />
-				<div className="bg-surface-hover border border-dashed border-border-subtle rounded-lg p-8 text-center text-text-tertiary">
-					<div className="text-h2 mb-2">👤</div>
-					<h2 className="text-h3 text-text-primary">
-						No employee record linked
-					</h2>
-					<p className="text-body mt-1">
-						Your account isn't linked to an employee yet. Ask HR to create your
-						employee record before you can manage personal details, banking, or
-						emergency contacts here.
-					</p>
-				</div>
+				<NotLinkedEmptyState scope="profile" />
 			</div>
 		);
 

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
+
 import { employeeApi } from "@/modules/employee/api";
 import { type ClaimCategory, claimsApi } from "../api";
 
@@ -96,16 +98,7 @@ export default function ClaimSubmitPage() {
 		return (
 			<div className="space-y-4 max-w-xl">
 				<h1 className="text-2xl font-bold">Submit a Claim</h1>
-				<div className="bg-surface-hover border border-dashed border-border-subtle rounded-lg p-8 text-center text-text-tertiary">
-					<div className="text-h2 mb-2">🧾</div>
-					<h2 className="text-h3 text-text-primary">
-						No employee record linked
-					</h2>
-					<p className="text-body mt-1">
-						Your account isn't linked to an employee yet, so claims cannot be
-						submitted. Ask HR to create your employee record first.
-					</p>
-				</div>
+				<NotLinkedEmptyState scope="claims" />
 			</div>
 		);
 	}
