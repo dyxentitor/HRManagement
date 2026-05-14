@@ -35,7 +35,14 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.none()  # required by DRF router for basename detection
 
     def get_queryset(self):
-        return Employee.objects.all()
+        status_filter = (self.request.query_params.get("status") or "active").lower()
+        if status_filter == "archived":
+            return Employee.all_objects.filter(
+                org_id=self.request.user.org_id, deleted_at__isnull=False
+            )
+        if status_filter == "all":
+            return Employee.all_objects.filter(org_id=self.request.user.org_id)
+        return Employee.objects.all()  # default: active only (soft-delete filter)
 
     @property
     def required_perms(self) -> list[str]:
@@ -60,6 +67,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             # leaves auth + tenant-scope intact via HRMSPermission.
             return []
         if action == "destroy":
+            return ["employee:archive"]
+        if action == "restore":
             return ["employee:archive"]
         if action in ("me_photo_presigned_upload", "me_photo"):
             # Same gate as the existing /me action: any authenticated user with
@@ -161,6 +170,28 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         chain = OrgService().get_reporting_chain(emp.id)
         ser = self.get_serializer(chain, many=True)
         return Response(ser.data)
+
+    @action(detail=True, methods=["post"], url_path="restore")
+    def restore(self, request, pk=None):
+        """v1.9.0 — undo soft-delete. Idempotent (already-active = 200 no-op)."""
+        from rest_framework.exceptions import NotFound
+
+        from common.audit.service import append as audit_append
+
+        emp = Employee.all_objects.filter(pk=pk, org_id=request.user.org_id).first()
+        if emp is None:
+            raise NotFound("Employee not found.")
+        if emp.deleted_at is not None:
+            emp.deleted_at = None
+            emp.save(update_fields=["deleted_at", "updated_at"])
+            audit_append(
+                org_id=request.user.org_id,
+                action="employee.restored",
+                entity="employee",
+                entity_id=emp.id,
+                after={"employee_id": str(emp.id)},
+            )
+        return Response(self.get_serializer(emp).data)
 
     @action(detail=True, methods=["get"], url_path="direct-reports")
     def direct_reports(self, request, pk=None):
