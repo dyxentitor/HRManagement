@@ -1,20 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { useAuth } from "@/lib/auth";
+
 import { type ClaimRequest, claimsApi } from "../api";
 
+const FINANCE_PERM = "claim:approve:finance";
+
 export default function FinanceQueuePage() {
+	const { perms } = useAuth();
+	const allowed = perms.has(FINANCE_PERM);
 	const [queue, setQueue] = useState<ClaimRequest[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [reference, setReference] = useState<string>("");
 	const [acting, setActing] = useState<string | null>(null);
 
 	const refresh = useCallback(async () => {
+		if (!allowed) return;
 		try {
 			setQueue(await claimsApi.listFinanceQueue());
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed");
 		}
-	}, []);
+	}, [allowed]);
 
 	useEffect(() => {
 		refresh();
@@ -33,6 +40,26 @@ export default function FinanceQueuePage() {
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Reimburse failed");
 		}
+	}
+
+	if (!allowed) {
+		return (
+			<div className="space-y-4 max-w-4xl">
+				<h1 className="text-2xl font-bold">Finance Queue</h1>
+				<div
+					role="alert"
+					className="bg-surface border border-border-subtle rounded p-6 text-text-secondary"
+				>
+					<p className="text-text-primary font-semibold mb-1">
+						Finance access required
+					</p>
+					<p className="text-small">
+						The reimbursement queue is restricted to users with the finance
+						role. Ask your administrator if you should have access.
+					</p>
+				</div>
+			</div>
+		);
 	}
 
 	return (

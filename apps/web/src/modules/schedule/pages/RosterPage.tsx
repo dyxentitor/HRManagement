@@ -24,9 +24,7 @@ interface PanelState {
 	draft: Map<string, string | null>;
 }
 
-function isoDate(d: Date): string {
-	return d.toISOString().slice(0, 10);
-}
+import { isoLocalDate } from "../lib/local-date";
 
 function rangeFor(
 	viewMode: ViewMode,
@@ -40,16 +38,16 @@ function rangeFor(
 		const sunday = new Date(monday);
 		sunday.setDate(monday.getDate() + 6);
 		return {
-			from: isoDate(monday),
-			to: isoDate(sunday),
-			label: `Week of ${isoDate(monday)}`,
+			from: isoLocalDate(monday),
+			to: isoLocalDate(sunday),
+			label: `Week of ${isoLocalDate(monday)}`,
 		};
 	}
 	const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
 	const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
 	return {
-		from: isoDate(first),
-		to: isoDate(last),
+		from: isoLocalDate(first),
+		to: isoLocalDate(last),
 		label: anchor.toLocaleDateString("en-US", {
 			month: "long",
 			year: "numeric",
@@ -208,7 +206,7 @@ export default function RosterPage() {
 				employee_ids: [panel.employeeId],
 				pattern: cleanPattern,
 				date_from: from,
-				date_to: isoDate(end),
+				date_to: isoLocalDate(end),
 			});
 			setPanel((p) => ({ ...p, draft: new Map() }));
 			await refresh();

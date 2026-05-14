@@ -12,20 +12,11 @@ import {
 import { type ShiftAssignment, scheduleApi } from "../api";
 import { RosterCell } from "../components/RosterCell";
 import { resolveCellTone } from "../lib/cell-tone";
-
-function startOfWeekISO(d: Date): string {
-	const day = d.getDay();
-	const diff = (day + 6) % 7;
-	const monday = new Date(d);
-	monday.setDate(d.getDate() - diff);
-	return monday.toISOString().slice(0, 10);
-}
-
-function addDaysISO(iso: string, days: number): string {
-	const d = new Date(iso);
-	d.setDate(d.getDate() + days);
-	return d.toISOString().slice(0, 10);
-}
+import {
+	addDaysIso,
+	startOfWeekIsoLocal,
+	todayIsoLocal,
+} from "../lib/local-date";
 
 function formatDate(iso: string | null | undefined): string {
 	if (!iso) return "—";
@@ -57,9 +48,10 @@ function attendanceLabel(status: string | null | undefined): string {
 }
 
 export default function MySchedulePage() {
-	const today = new Date();
-	const [weekStart, setWeekStart] = useState<string>(startOfWeekISO(today));
-	const weekEnd = addDaysISO(weekStart, 6);
+	const [weekStart, setWeekStart] = useState<string>(() =>
+		startOfWeekIsoLocal(new Date()),
+	);
+	const weekEnd = addDaysIso(weekStart, 6);
 	const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
 	const [todayRec, setTodayRec] = useState<AttendanceRecord | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -113,8 +105,8 @@ export default function MySchedulePage() {
 		}
 	}
 
-	const days = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
-	const todayIso = today.toISOString().slice(0, 10);
+	const days = Array.from({ length: 7 }, (_, i) => addDaysIso(weekStart, i));
+	const todayIso = todayIsoLocal();
 
 	if (noEmployee) {
 		return (
@@ -191,14 +183,14 @@ export default function MySchedulePage() {
 					<div className="space-x-2 text-small">
 						<button
 							type="button"
-							onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
+							onClick={() => setWeekStart(addDaysIso(weekStart, -7))}
 							className="text-text-secondary hover:text-text-primary"
 						>
 							← Previous
 						</button>
 						<button
 							type="button"
-							onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
+							onClick={() => setWeekStart(addDaysIso(weekStart, 7))}
 							className="text-text-secondary hover:text-text-primary"
 						>
 							Next →
