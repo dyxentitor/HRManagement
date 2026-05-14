@@ -17,7 +17,8 @@ import { type Department, settingsApi, unwrapResults } from "./settings-api";
 type Modal =
 	| { kind: "closed" }
 	| { kind: "create" }
-	| { kind: "edit"; dept: Department };
+	| { kind: "edit"; dept: Department }
+	| { kind: "delete"; dept: Department };
 
 interface TreeNode extends Department {
 	children: TreeNode[];
@@ -46,13 +47,14 @@ export default function DepartmentsAdminPage() {
 
 	const tree = useMemo(() => buildTree(depts), [depts]);
 
-	async function onDelete(d: Department) {
-		if (!window.confirm(`Delete department "${d.name}"?`)) return;
+	async function confirmDelete(d: Department) {
 		setError(null);
 		try {
 			await settingsApi.deleteDepartment(d.id);
+			setModal({ kind: "closed" });
 			await refresh();
 		} catch (e: unknown) {
+			setModal({ kind: "closed" });
 			setError(e instanceof Error ? e.message : "Delete failed");
 		}
 	}
@@ -93,7 +95,7 @@ export default function DepartmentsAdminPage() {
 							key={node.id}
 							node={node}
 							onEdit={(d) => setModal({ kind: "edit", dept: d })}
-							onDelete={onDelete}
+							onDelete={(d) => setModal({ kind: "delete", dept: d })}
 						/>
 					))
 				)}
@@ -109,6 +111,37 @@ export default function DepartmentsAdminPage() {
 						await refresh();
 					}}
 				/>
+			)}
+
+			{modal.kind === "delete" && (
+				<Dialog open onOpenChange={(o) => !o && setModal({ kind: "closed" })}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Delete {modal.dept.name}?</DialogTitle>
+						</DialogHeader>
+						<p className="text-body text-text-secondary">
+							This permanently removes the department from the list. Active
+							employees still referencing it will block the delete — reassign
+							them first.
+						</p>
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="ghost"
+								onClick={() => setModal({ kind: "closed" })}
+							>
+								Cancel
+							</Button>
+							<Button
+								type="button"
+								onClick={() => confirmDelete(modal.dept)}
+								className="bg-coral text-white"
+							>
+								Delete
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			)}
 		</div>
 	);

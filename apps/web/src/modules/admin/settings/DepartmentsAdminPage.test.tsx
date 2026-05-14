@@ -64,20 +64,20 @@ describe("DepartmentsAdminPage", () => {
 	});
 
 	it("shows error on delete failure (e.g., active employees)", async () => {
-		const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
 		(
 			settingsApi.deleteDepartment as ReturnType<typeof vi.fn>
 		).mockRejectedValue(
-			new Error(
-				'{"detail":"Department has active employees; reassign before deleting."}',
-			),
+			new Error("Department has active employees; reassign before deleting."),
 		);
 		render(<DepartmentsAdminPage />);
 		await waitFor(() => screen.getByText("Engineering"));
+		// Open the confirm dialog by clicking the trash icon on the Engineering row.
 		await userEvent.click(screen.getByLabelText(/delete engineering/i));
+		// Modal should open with a Delete button — click it to fire the delete.
+		const confirmBtn = await screen.findByRole("button", { name: /^delete$/i });
+		await userEvent.click(confirmBtn);
 		await waitFor(() =>
 			expect(screen.getByRole("alert")).toHaveTextContent(/reassign/i),
 		);
-		confirmSpy.mockRestore();
 	});
 });

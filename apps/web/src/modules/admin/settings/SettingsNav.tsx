@@ -12,13 +12,18 @@ import {
 
 export function SettingsNav() {
 	const [overview, setOverview] = useState<SettingsOverview | null>(null);
+	const canSeeOverview = useCan("role:read");
 
 	useEffect(() => {
+		// v1.9.1 (M5): gate the overview fetch on the same perm that gates the
+		// endpoint, so manager-tier users who land on /admin/settings/* don't
+		// hit a 403 on every page mount.
+		if (!canSeeOverview) return;
 		settingsApi
 			.overview()
 			.then(setOverview)
 			.catch(() => undefined);
-	}, []);
+	}, [canSeeOverview]);
 
 	function badgeFor(badge?: string): number | null {
 		if (badge === "unlinked_users" && overview) {

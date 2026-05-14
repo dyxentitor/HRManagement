@@ -16,7 +16,7 @@ interface Props {
  * inline on those pages (v1.9.0).
  */
 export function NotLinkedEmptyState({ scope }: Props) {
-	const what = COPY[scope]?.what ?? "this page";
+	const what = COPY[scope].what;
 	return (
 		<div className="max-w-md mx-auto mt-12 p-6 rounded-lg border border-border-subtle bg-surface flex flex-col gap-3">
 			<div className="w-10 h-10 rounded-full bg-accent-500/15 flex items-center justify-center">
