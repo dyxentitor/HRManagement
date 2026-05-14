@@ -18,6 +18,7 @@ from .views import (
     role_permissions_view,
     role_reset_view,
 )
+from .views_admin_overview import SettingsOverviewView
 
 router = DefaultRouter()
 router.register(r"roles", RoleViewSet, basename="role")
@@ -37,5 +38,10 @@ urlpatterns = [
     path("roles/<str:code>/permissions/", role_permissions_view, name="role-permissions"),
     path("roles/<str:code>/reset-to-defaults/", role_reset_view, name="role-reset"),
     path("users/<uuid:user_id>/roles/", assign_user_roles_view, name="user-roles-assign"),
+    path(
+        "admin/settings-overview/",
+        SettingsOverviewView.as_view(),
+        name="admin-settings-overview",
+    ),
     *router.urls,
 ]
