@@ -1,37 +1,12 @@
 /**
- * v1.9.0 — raw-fetch wrappers for the new /admin/settings/* endpoints.
+ * v1.9.1 — typed wrappers for the v1.9.0 settings endpoints.
  *
- * Uses raw fetch instead of the typed openapi-fetch `api` client because
- * these endpoints aren't yet present in the generated OpenAPI schema.
- * The release task (Task 20) regenerates contracts; from then on these
- * helpers can be optionally retyped against `api.GET/POST/...` if desired.
+ * Switched from raw-fetch (v1.9.0) to the openapi-fetch `api` client so we
+ * inherit the auth + 401-refresh middleware in `@/lib/api`. The S3 PUT
+ * inside LogoUploader stays as raw `fetch` because the presigned URL is
+ * cross-origin and must not carry the bearer header.
  */
-import { tokenStorage } from "@/lib/token-storage";
-
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-
-async function rawFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-	const token = tokenStorage.getAccess();
-	const headers: Record<string, string> = {
-		...(init.headers as Record<string, string>),
-	};
-	if (token) headers.Authorization = `Bearer ${token}`;
-	if (init.body && !headers["Content-Type"])
-		headers["Content-Type"] = "application/json";
-
-	const resp = await fetch(`${BASE}${path}`, { ...init, headers });
-	if (!resp.ok) {
-		let detail: string;
-		try {
-			detail = JSON.stringify(await resp.json());
-		} catch {
-			detail = `${resp.status} ${resp.statusText}`;
-		}
-		throw new Error(detail);
-	}
-	if (resp.status === 204) return undefined as T;
-	return resp.json();
-}
+import { api } from "@/lib/api";
 
 export interface SettingsOverview {
 	stats: {
@@ -106,71 +81,151 @@ export interface OrgSettings {
 	logo_url: string | null;
 }
 
+function unwrapErr(error: unknown, fallback: string): never {
+	if (error && typeof error === "object" && "detail" in error) {
+		throw new Error(String((error as { detail: unknown }).detail));
+	}
+	if (error) throw new Error(JSON.stringify(error));
+	throw new Error(fallback);
+}
+
 export const settingsApi = {
-	overview: () =>
-		rawFetch<SettingsOverview>("/api/v1/admin/settings-overview/"),
-	getOrg: () => rawFetch<OrgSettings>("/api/v1/org/settings"),
-	patchOrg: (payload: Partial<OrgSettings>) =>
-		rawFetch<OrgSettings>("/api/v1/org/settings", {
-			method: "PATCH",
-			body: JSON.stringify(payload),
-		}),
-	presignLogo: (content_type: string) =>
-		rawFetch<{ presigned_url: string; s3_key: string }>(
+	overview: async (): Promise<SettingsOverview> => {
+		const { data, error } = await api.GET("/api/v1/admin/settings-overview/");
+		if (error) unwrapErr(error, "Failed to load overview");
+		return data as unknown as SettingsOverview;
+	},
+
+	getOrg: async (): Promise<OrgSettings> => {
+		const { data, error } = await api.GET("/api/v1/org/settings");
+		if (error) unwrapErr(error, "Failed to load org settings");
+		return data as unknown as OrgSettings;
+	},
+
+	patchOrg: async (payload: Partial<OrgSettings>): Promise<OrgSettings> => {
+		const { data, error } = await api.PATCH("/api/v1/org/settings", {
+			body: payload as never,
+		});
+		if (error) unwrapErr(error, "Failed to update org settings");
+		return data as unknown as OrgSettings;
+	},
+
+	presignLogo: async (
+		content_type: string,
+	): Promise<{ presigned_url: string; s3_key: string }> => {
+		const { data, error } = await api.POST(
 			"/api/v1/org/logo/presigned-upload",
-			{ method: "POST", body: JSON.stringify({ content_type }) },
-		),
-	registerLogo: (s3_key: string, content_type: string, size_bytes: number) =>
-		rawFetch<OrgSettings>("/api/v1/org/logo", {
-			method: "POST",
-			body: JSON.stringify({ s3_key, content_type, size_bytes }),
-		}),
-	deleteLogo: () => rawFetch<void>("/api/v1/org/logo", { method: "DELETE" }),
-	listUnlinkedUsers: () =>
-		rawFetch<UnlinkedUser[] | { results: UnlinkedUser[] }>(
-			"/api/v1/admin/unlinked-users/",
-		),
-	listUnlinkedEmployees: () =>
-		rawFetch<UnlinkedEmployee[] | { results: UnlinkedEmployee[] }>(
-			"/api/v1/admin/unlinked-employees/",
-		),
-	linkUser: (employeeId: string, userId: string) =>
-		rawFetch(`/api/v1/employees/${employeeId}/link-user/`, {
-			method: "POST",
-			body: JSON.stringify({ user_id: userId }),
-		}),
-	unlinkUser: (employeeId: string) =>
-		rawFetch(`/api/v1/employees/${employeeId}/link-user/`, {
-			method: "DELETE",
-		}),
-	listArchivedEmployees: () =>
-		rawFetch<ArchivedEmployee[] | { results: ArchivedEmployee[] }>(
-			"/api/v1/employees/?status=archived",
-		),
-	restoreEmployee: (id: string) =>
-		rawFetch(`/api/v1/employees/${id}/restore/`, {
-			method: "POST",
-			body: "{}",
-		}),
-	listDepartments: () =>
-		rawFetch<Department[] | { results: Department[] }>("/api/v1/departments/"),
-	createDepartment: (payload: { name: string; parent: string | null }) =>
-		rawFetch<Department>("/api/v1/departments/", {
-			method: "POST",
-			body: JSON.stringify(payload),
-		}),
-	updateDepartment: (
+			{
+				body: { content_type } as never,
+			},
+		);
+		if (error) unwrapErr(error, "Failed to presign logo upload");
+		return data as unknown as { presigned_url: string; s3_key: string };
+	},
+
+	registerLogo: async (
+		s3_key: string,
+		content_type: string,
+		size_bytes: number,
+	): Promise<OrgSettings> => {
+		const { data, error } = await api.POST("/api/v1/org/logo", {
+			body: { s3_key, content_type, size_bytes } as never,
+		});
+		if (error) unwrapErr(error, "Failed to register logo");
+		return data as unknown as OrgSettings;
+	},
+
+	deleteLogo: async (): Promise<void> => {
+		const { error } = await api.DELETE("/api/v1/org/logo");
+		if (error) unwrapErr(error, "Failed to delete logo");
+	},
+
+	listUnlinkedUsers: async (): Promise<UnlinkedUser[]> => {
+		const { data, error } = await api.GET("/api/v1/admin/unlinked-users/");
+		if (error) unwrapErr(error, "Failed to load unlinked users");
+		return ((data ?? []) as unknown as UnlinkedUser[]) ?? [];
+	},
+
+	listUnlinkedEmployees: async (): Promise<UnlinkedEmployee[]> => {
+		const { data, error } = await api.GET("/api/v1/admin/unlinked-employees/");
+		if (error) unwrapErr(error, "Failed to load unlinked employees");
+		return ((data ?? []) as unknown as UnlinkedEmployee[]) ?? [];
+	},
+
+	linkUser: async (employeeId: string, userId: string): Promise<void> => {
+		const { error } = await api.POST("/api/v1/employees/{id}/link-user/", {
+			params: { path: { id: employeeId } },
+			body: { user_id: userId } as never,
+		});
+		if (error) unwrapErr(error, "Failed to link user");
+	},
+
+	unlinkUser: async (employeeId: string): Promise<void> => {
+		const { error } = await api.DELETE("/api/v1/employees/{id}/link-user/", {
+			params: { path: { id: employeeId } },
+		});
+		if (error) unwrapErr(error, "Failed to unlink user");
+	},
+
+	listArchivedEmployees: async (): Promise<ArchivedEmployee[]> => {
+		const { data, error } = await api.GET("/api/v1/employees/", {
+			params: { query: { status: "archived" } as never },
+		});
+		if (error) unwrapErr(error, "Failed to load archived employees");
+		return ((data ?? []) as unknown as ArchivedEmployee[]) ?? [];
+	},
+
+	restoreEmployee: async (id: string): Promise<void> => {
+		const { error } = await api.POST("/api/v1/employees/{id}/restore/", {
+			params: { path: { id } },
+			body: {} as never,
+		});
+		if (error) unwrapErr(error, "Failed to restore employee");
+	},
+
+	listDepartments: async (): Promise<Department[]> => {
+		const { data, error } = await api.GET("/api/v1/departments/");
+		if (error) unwrapErr(error, "Failed to load departments");
+		const body = (data ?? []) as unknown as
+			| Department[]
+			| { results: Department[] };
+		return Array.isArray(body) ? body : body.results ?? [];
+	},
+
+	createDepartment: async (payload: {
+		name: string;
+		parent: string | null;
+	}): Promise<Department> => {
+		const { data, error } = await api.POST("/api/v1/departments/", {
+			body: payload as never,
+		});
+		if (error) unwrapErr(error, "Failed to create department");
+		return data as unknown as Department;
+	},
+
+	updateDepartment: async (
 		id: string,
 		payload: { name: string; parent: string | null },
-	) =>
-		rawFetch<Department>(`/api/v1/departments/${id}/`, {
-			method: "PATCH",
-			body: JSON.stringify(payload),
-		}),
-	deleteDepartment: (id: string) =>
-		rawFetch<void>(`/api/v1/departments/${id}/`, { method: "DELETE" }),
+	): Promise<Department> => {
+		const { data, error } = await api.PATCH("/api/v1/departments/{id}/", {
+			params: { path: { id } },
+			body: payload as never,
+		});
+		if (error) unwrapErr(error, "Failed to update department");
+		return data as unknown as Department;
+	},
+
+	deleteDepartment: async (id: string): Promise<void> => {
+		const { error } = await api.DELETE("/api/v1/departments/{id}/", {
+			params: { path: { id } },
+		});
+		if (error) unwrapErr(error, "Failed to delete department");
+	},
 };
 
+/** v1.9.0 callers can keep using `unwrapResults` even though the typed
+ * wrappers above already unwrap pagination — left here for backwards
+ * compatibility with the page components. Safe to inline-drop in v1.10.0. */
 export function unwrapResults<T>(body: T[] | { results: T[] }): T[] {
 	if (Array.isArray(body)) return body;
 	return body.results ?? [];
