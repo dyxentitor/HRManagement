@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import os
 import uuid
 
-import boto3
-from botocore.config import Config
 from django.db import transaction
 from django.utils import timezone
 
 from common.audit import append, append_payroll
+from common.storage.s3 import bucket as _bucket
+from common.storage.s3 import internal_s3_client
 from modules.employee.models import Employee
 from modules.organization.models import Organization
 
@@ -19,18 +18,8 @@ from .pdf_render import render_payslip_pdf
 
 
 def _s3():
-    return boto3.client(
-        "s3",
-        endpoint_url=os.environ.get("S3_ENDPOINT_URL") or None,
-        aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
-        aws_secret_access_key=os.environ.get("S3_SECRET_KEY"),
-        region_name=os.environ.get("S3_REGION", "us-east-1"),
-        config=Config(signature_version="s3v4"),
-    )
-
-
-def _bucket() -> str:
-    return os.environ.get("S3_BUCKET", "hrms")
+    """Back-compat shim — kept so existing tests can patch this name."""
+    return internal_s3_client()
 
 
 def publish_run(*, run: PayrollRun, actor_id: uuid.UUID) -> int:

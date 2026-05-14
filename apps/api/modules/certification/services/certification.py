@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import uuid
 
-from django.conf import settings
-
 
 def get_presigned_upload_url(cert_id: uuid.UUID, content_type: str = "application/pdf") -> dict:
     """Return a presigned S3 PUT URL for uploading a certification document.
@@ -14,20 +12,11 @@ def get_presigned_upload_url(cert_id: uuid.UUID, content_type: str = "applicatio
     """
     s3_key = f"certifications/{cert_id}/document.pdf"
     try:
-        import boto3
+        from common.storage.s3 import bucket, public_s3_client
 
-        s3 = boto3.client(
-            "s3",
-            endpoint_url=getattr(settings, "S3_ENDPOINT_URL", None),
-            aws_access_key_id=getattr(settings, "S3_ACCESS_KEY", None),
-            aws_secret_access_key=getattr(  # pragma: allowlist secret
-                settings, "S3_SECRET_KEY", None
-            ),
-        )
-        bucket = getattr(settings, "S3_BUCKET", "hrms-documents")
-        url = s3.generate_presigned_url(
+        url = public_s3_client().generate_presigned_url(
             "put_object",
-            Params={"Bucket": bucket, "Key": s3_key, "ContentType": content_type},
+            Params={"Bucket": bucket(), "Key": s3_key, "ContentType": content_type},
             ExpiresIn=3600,
         )
     except Exception:

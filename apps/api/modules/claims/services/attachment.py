@@ -11,31 +11,15 @@ Client flow:
 from __future__ import annotations
 
 import logging
-import os
 import uuid
 from typing import Any
 
-import boto3
-from botocore.config import Config
+from common.storage.s3 import bucket as _bucket
+from common.storage.s3 import internal_s3_client, public_s3_client
 
 from ..models import ClaimAttachment, ClaimRequest
 
 logger = logging.getLogger(__name__)
-
-
-def _s3_client():
-    return boto3.client(
-        "s3",
-        endpoint_url=os.environ.get("S3_ENDPOINT_URL") or None,
-        aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
-        aws_secret_access_key=os.environ.get("S3_SECRET_KEY"),  # pragma: allowlist secret
-        region_name=os.environ.get("S3_REGION", "us-east-1"),
-        config=Config(signature_version="s3v4"),
-    )
-
-
-def _bucket() -> str:
-    return os.environ.get("S3_BUCKET", "hrms")
 
 
 class AttachmentService:
@@ -46,7 +30,7 @@ class AttachmentService:
         *, claim: ClaimRequest, filename: str, content_type: str
     ) -> dict[str, Any]:
         s3_key = f"claims/{claim.id}/{uuid.uuid4()}_{filename}"
-        url = _s3_client().generate_presigned_url(
+        url = public_s3_client().generate_presigned_url(
             "put_object",
             Params={
                 "Bucket": _bucket(),
@@ -84,7 +68,7 @@ class AttachmentService:
 
     @staticmethod
     def presigned_get(*, attachment: ClaimAttachment) -> str:
-        return _s3_client().generate_presigned_url(
+        return public_s3_client().generate_presigned_url(
             "get_object",
             Params={"Bucket": _bucket(), "Key": attachment.s3_key},
             ExpiresIn=300,
@@ -93,7 +77,7 @@ class AttachmentService:
     @staticmethod
     def delete(*, attachment: ClaimAttachment) -> None:
         try:
-            _s3_client().delete_object(Bucket=_bucket(), Key=attachment.s3_key)
+            internal_s3_client().delete_object(Bucket=_bucket(), Key=attachment.s3_key)
         except Exception as exc:  # pragma: no cover
             logger.warning("S3 delete failed for %s: %s", attachment.s3_key, exc)
         attachment.delete()

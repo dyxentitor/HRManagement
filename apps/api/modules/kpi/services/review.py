@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import logging
-import os
 import uuid
 from typing import Any
 
-import boto3
-from botocore.config import Config
-
 from common import audit
+from common.storage.s3 import bucket as _bucket
+from common.storage.s3 import public_s3_client
 from common.workflow.exceptions import InvalidTransition
 
 from ..models import KpiAssignment, KpiReview, KpiReviewIteration
@@ -67,18 +65,8 @@ def _notify_employee_for_review(assignment: KpiAssignment, notif_type: str) -> N
 
 
 def _s3_client():
-    return boto3.client(
-        "s3",
-        endpoint_url=os.environ.get("S3_ENDPOINT_URL") or None,
-        aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
-        aws_secret_access_key=os.environ.get("S3_SECRET_KEY"),  # pragma: allowlist secret
-        region_name=os.environ.get("S3_REGION", "us-east-1"),
-        config=Config(signature_version="s3v4"),
-    )
-
-
-def _bucket() -> str:
-    return os.environ.get("S3_BUCKET", "hrms")
+    """Back-compat shim — kept so existing tests can patch this name."""
+    return public_s3_client()
 
 
 def _next_iteration(assignment: KpiAssignment, stage: str) -> int:

@@ -10,6 +10,10 @@ x-api-env: &api-env
   CELERY_BROKER_URL: redis://redis:6379/1
   CELERY_RESULT_BACKEND: redis://redis:6379/2
   S3_ENDPOINT_URL: http://minio:9000
+  # S3_PUBLIC_ENDPOINT_URL is the host the browser uses to follow presigned
+  # URLs. In dev that's the host's localhost (MinIO is published on :9000).
+  # In prod, leave unset so the public client falls back to S3_ENDPOINT_URL.
+  S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
   S3_ACCESS_KEY: hrms
   S3_SECRET_KEY: hrms-dev-secret
   S3_BUCKET: hrms

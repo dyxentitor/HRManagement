@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import os
 from typing import ClassVar
 
-import boto3
-from botocore.config import Config
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.feature_flags.decorators import requires_feature
+from common.storage.s3 import bucket, public_s3_client
 from modules.identity.permissions import HRMSPermission
 
 from .models import ReportExportJob, SavedView
@@ -24,17 +22,9 @@ _PAGE_SIZE_MAX = 500
 
 
 def _s3_presign(s3_key: str) -> str:
-    client = boto3.client(
-        "s3",
-        endpoint_url=os.environ.get("S3_ENDPOINT_URL") or None,
-        aws_access_key_id=os.environ.get("S3_ACCESS_KEY"),
-        aws_secret_access_key=os.environ.get("S3_SECRET_KEY"),
-        region_name=os.environ.get("S3_REGION", "us-east-1"),
-        config=Config(signature_version="s3v4"),
-    )
-    return client.generate_presigned_url(
+    return public_s3_client().generate_presigned_url(
         "get_object",
-        Params={"Bucket": os.environ.get("S3_BUCKET", "hrms"), "Key": s3_key},
+        Params={"Bucket": bucket(), "Key": s3_key},
         ExpiresIn=3600,
     )
 
