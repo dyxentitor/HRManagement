@@ -55,6 +55,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/settings-overview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /api/v1/admin/settings-overview/ — single roll-up for the
+         *     Settings hub Overview page.
+         */
+        get: operations["admin_settings_overview_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/unlinked-employees/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/admin/unlinked-employees/ — employees in this org with no User. */
+        get: operations["admin_unlinked_employees_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/unlinked-users/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/admin/unlinked-users/ — users in this org with no Employee. */
+        get: operations["admin_unlinked_users_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/approvals/inbox": {
         parameters: {
             query?: never;
@@ -739,6 +793,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/employees/{id}/link-user/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description v1.9.0 — link/unlink a User to this Employee (admin).
+         *
+         *     POST {user_id}: set Employee.user_id (must be in same org, not already
+         *     linked). Writes employee.user_linked audit log.
+         *     DELETE: clear Employee.user_id. Writes employee.user_unlinked audit log.
+         */
+        post: operations["employees_link_user_create"];
+        /**
+         * @description v1.9.0 — link/unlink a User to this Employee (admin).
+         *
+         *     POST {user_id}: set Employee.user_id (must be in same org, not already
+         *     linked). Writes employee.user_linked audit log.
+         *     DELETE: clear Employee.user_id. Writes employee.user_unlinked audit log.
+         */
+        delete: operations["employees_link_user_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/employees/{id}/photo/": {
         parameters: {
             query?: never;
@@ -802,6 +886,23 @@ export interface paths {
         get: operations["employees_reporting_chain_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/employees/{id}/restore/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description v1.9.0 — undo soft-delete. Idempotent (already-active = 200 no-op). */
+        post: operations["employees_restore_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1484,6 +1585,41 @@ export interface paths {
         head?: never;
         /** @description PATCH /api/v1/org/feature-flags/{key}/ — toggle enabled. */
         patch: operations["org_feature_flags_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/org/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/v1/org/logo (register) + DELETE /api/v1/org/logo (clear). */
+        post: operations["org_logo_create"];
+        /** @description POST /api/v1/org/logo (register) + DELETE /api/v1/org/logo (clear). */
+        delete: operations["org_logo_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/org/logo/presigned-upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/v1/org/logo/presigned-upload — returns {presigned_url, s3_key}. */
+        post: operations["org_logo_presigned_upload_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/org/settings": {
@@ -3294,6 +3430,7 @@ export interface components {
             default_locale: string;
             settings?: unknown;
             readonly status: components["schemas"]["StatusEe8Enum"];
+            readonly logo_url: string | null;
         };
         Organization: {
             /** Format: uuid */
@@ -3940,6 +4077,31 @@ export interface components {
             progress_pct?: string;
             notes?: string;
         };
+        UnlinkedEmployee: {
+            /** Format: uuid */
+            readonly id: string;
+            first_name: string;
+            last_name: string;
+            employee_code: string;
+            /** Format: email */
+            email: string;
+            readonly department_name: string | null;
+            readonly suggested_user: {
+                [key: string]: unknown;
+            } | null;
+        };
+        UnlinkedUser: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: email */
+            email: string;
+            readonly role_codes: string[];
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly suggested_employee: {
+                [key: string]: unknown;
+            } | null;
+        };
         WorkSchedule: {
             /** Format: uuid */
             readonly id: string;
@@ -4022,6 +4184,62 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    admin_settings_overview_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    admin_unlinked_employees_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnlinkedEmployee"][];
+                };
+            };
+        };
+    };
+    admin_unlinked_users_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnlinkedUser"][];
+                };
             };
         };
     };
@@ -5486,6 +5704,54 @@ export interface operations {
             };
         };
     };
+    employees_link_user_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_link_user_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     employees_photo_create: {
         parameters: {
             query?: never;
@@ -5594,6 +5860,33 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    employees_restore_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this employee. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeRequest"];
+                "multipart/form-data": components["schemas"]["EmployeeRequest"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -7057,6 +7350,60 @@ export interface operations {
             path: {
                 key: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_logo_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_logo_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_logo_presigned_upload_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;

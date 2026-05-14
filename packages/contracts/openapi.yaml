@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.8.0
+  version: 1.9.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -37,6 +37,54 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/admin/settings-overview/:
+    get:
+      operationId: admin_settings_overview_retrieve
+      description: |-
+        GET /api/v1/admin/settings-overview/ — single roll-up for the
+        Settings hub Overview page.
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/admin/unlinked-employees/:
+    get:
+      operationId: admin_unlinked_employees_list
+      description: GET /api/v1/admin/unlinked-employees/ — employees in this org with
+        no User.
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnlinkedEmployee'
+          description: ''
+  /api/v1/admin/unlinked-users/:
+    get:
+      operationId: admin_unlinked_users_list
+      description: GET /api/v1/admin/unlinked-users/ — users in this org with no Employee.
+      tags:
+      - admin
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnlinkedUser'
+          description: ''
   /api/v1/approvals/inbox:
     get:
       operationId: approvals_inbox_retrieve
@@ -1394,6 +1442,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/Employee'
           description: ''
+  /api/v1/employees/{id}/link-user/:
+    post:
+      operationId: employees_link_user_create
+      description: |-
+        v1.9.0 — link/unlink a User to this Employee (admin).
+
+        POST {user_id}: set Employee.user_id (must be in same org, not already
+        linked). Writes employee.user_linked audit log.
+        DELETE: clear Employee.user_id. Writes employee.user_unlinked audit log.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    delete:
+      operationId: employees_link_user_destroy
+      description: |-
+        v1.9.0 — link/unlink a User to this Employee (admin).
+
+        POST {user_id}: set Employee.user_id (must be in same org, not already
+        linked). Writes employee.user_linked audit log.
+        DELETE: clear Employee.user_id. Writes employee.user_unlinked audit log.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/employees/{id}/photo/:
     post:
       operationId: employees_photo_create
@@ -1513,6 +1621,38 @@ paths:
         required: true
       tags:
       - employees
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/v1/employees/{id}/restore/:
+    post:
+      operationId: employees_restore_create
+      description: v1.9.0 — undo soft-delete. Idempotent (already-active = 200 no-op).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this employee.
+        required: true
+      tags:
+      - employees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -2923,6 +3063,39 @@ paths:
         schema:
           type: string
         required: true
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/org/logo:
+    post:
+      operationId: org_logo_create
+      description: POST /api/v1/org/logo (register) + DELETE /api/v1/org/logo (clear).
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: org_logo_destroy
+      description: POST /api/v1/org/logo (register) + DELETE /api/v1/org/logo (clear).
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/org/logo/presigned-upload:
+    post:
+      operationId: org_logo_presigned_upload_create
+      description: POST /api/v1/org/logo/presigned-upload — returns {presigned_url,
+        s3_key}.
       tags:
       - org
       security:
@@ -6842,12 +7015,17 @@ components:
           allOf:
           - $ref: '#/components/schemas/StatusEe8Enum'
           readOnly: true
+        logo_url:
+          type: string
+          nullable: true
+          readOnly: true
       required:
       - country_code
       - default_currency
       - default_locale
       - default_timezone
       - id
+      - logo_url
       - name
       - slug
       - status
@@ -8299,6 +8477,74 @@ components:
           type: string
       required:
       - assignment
+    UnlinkedEmployee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        employee_code:
+          type: string
+          maxLength: 32
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        department_name:
+          type: string
+          readOnly: true
+          nullable: true
+        suggested_user:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+      required:
+      - department_name
+      - email
+      - employee_code
+      - first_name
+      - id
+      - last_name
+      - suggested_user
+    UnlinkedUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role_codes:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        suggested_employee:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - id
+      - role_codes
+      - suggested_employee
     WorkSchedule:
       type: object
       properties:
