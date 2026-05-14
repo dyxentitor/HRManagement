@@ -251,3 +251,97 @@ def test_fallback_rejects_empty_init() -> None:
     """At least one inner resolver is required."""
     with pytest.raises(ValueError):
         FallbackResolver()
+
+
+# --- Self-approval exclusion (v1.10.1 sweep Bug #2) ------------------------
+
+
+class _FakeRequest:
+    """Stand-in subject used to feed the resolver a `request.employee`."""
+
+    def __init__(self, employee: Employee) -> None:
+        self.employee = employee
+
+
+@pytest.mark.django_db
+def test_department_head_resolver_excludes_requester(org: Organization, dept: Department) -> None:
+    """If the department head IS the requester, resolver returns None.
+
+    Regression guard for v1.10.1 Bug #2 (the ops.lead case): a solo manager
+    whose dept head_employee_id points at themselves must not be assigned
+    as their own approver.
+    """
+    user = _make_user(org, email="solo@x.com")
+    emp = _make_employee(org, dept, "SOLO", user=user)
+    dept.head_employee_id = emp.id
+    dept.save()
+    request = _FakeRequest(emp)
+
+    assert DepartmentHeadResolver().resolve(emp, request=request) is None
+
+
+@pytest.mark.django_db
+def test_role_resolver_excludes_requester(org: Organization, dept: Department) -> None:
+    """If the only user holding the role IS the requester, return None."""
+    user = _make_user(org, email="solo-hr@x.com")
+    role = Role.objects.create(org_id=org.id, code="hr_manager", name="HR", is_system=True)
+    UserRole.objects.create(user=user, role=role, granted_by=None)
+    emp = _make_employee(org, dept, "SOLO", user=user)
+    request = _FakeRequest(emp)
+
+    assert RoleResolver("hr_manager").resolve(emp, request=request) is None
+
+
+@pytest.mark.django_db
+def test_role_resolver_picks_other_user_when_requester_also_holds_role(
+    org: Organization, dept: Department
+) -> None:
+    """Requester holding the role does not block another user from being picked."""
+    requester_user = _make_user(org, email="req@x.com")
+    other_user = _make_user(org, email="other@x.com")
+    role = Role.objects.create(org_id=org.id, code="hr_manager", name="HR", is_system=True)
+    UserRole.objects.create(user=requester_user, role=role, granted_by=None)
+    UserRole.objects.create(user=other_user, role=role, granted_by=None)
+    requester_emp = _make_employee(org, dept, "REQ", user=requester_user)
+    request = _FakeRequest(requester_emp)
+
+    found = RoleResolver("hr_manager").resolve(requester_emp, request=request)
+    assert found is not None
+    assert found.id == other_user.id
+
+
+@pytest.mark.django_db
+def test_fallback_skips_requester_through_chain(org: Organization, dept: Department) -> None:
+    """End-to-end: solo manager + dept head=self + sole hr_manager=self → None.
+
+    With the inner resolvers self-aware, the fallback no longer paints the
+    requester as their own approver. Engine then raises NoApproverFound,
+    which is the correct error surface for "everyone in the chain is the
+    requester themselves".
+    """
+    user = _make_user(org, email="solo@x.com")
+    role = Role.objects.create(org_id=org.id, code="hr_manager", name="HR", is_system=True)
+    UserRole.objects.create(user=user, role=role, granted_by=None)
+    emp = _make_employee(org, dept, "SOLO", user=user)
+    dept.head_employee_id = emp.id
+    dept.save()
+    request = _FakeRequest(emp)
+
+    resolver = FallbackResolver(
+        DirectManagerResolver(),
+        DepartmentHeadResolver(),
+        RoleResolver("hr_manager"),
+    )
+    assert resolver.resolve(emp, request=request) is None
+
+
+@pytest.mark.django_db
+def test_resolvers_no_op_when_request_lacks_employee(org: Organization, dept: Department) -> None:
+    """Back-compat: tests/services that pass request=None must keep working."""
+    user = _make_user(org, email="head@x.com")
+    head_emp = _make_employee(org, dept, "HEAD", user=user)
+    dept.head_employee_id = head_emp.id
+    dept.save()
+    subject_emp = _make_employee(org, dept, "EMP")
+    found = DepartmentHeadResolver().resolve(subject_emp, request=None)
+    assert found is not None and found.id == user.id

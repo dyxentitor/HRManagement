@@ -104,6 +104,15 @@ class WorkflowEngine:
         if subject.status != "submitted":
             raise InvalidTransition(f"Cannot act on status='{subject.status}'")
 
+        # Defence-in-depth: even if a resolver picks the requester themselves
+        # (data drift, edge-case fixture), refuse self-approval here.
+        requester_user_id = getattr(getattr(subject, "employee", None), "user_id", None)
+        if requester_user_id is not None and actor.id == requester_user_id:
+            raise NotAuthorizedToAct(
+                f"User {actor.id} cannot approve their own request "
+                f"(chain={chain.code} level={subject.current_level})"
+            )
+
         expected_approver = self._resolve_step(subject, chain, level=subject.current_level)
         if expected_approver is None:
             raise NoApproverFound(

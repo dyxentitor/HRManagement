@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
 from .errors import ProblemDetails
+from .workflow.exceptions import InvalidTransition, NoApproverFound, NotAuthorizedToAct
 
 
 def _validation_error_to_field_list(exc: ValidationError) -> list[dict[str, Any]]:
@@ -78,6 +79,24 @@ def hrms_exception_handler(exc: Exception, context: dict[str, Any]) -> Response 
     if isinstance(exc, NotFound):
         body = {"type": "about:blank", "title": "Not found", "status": 404, "detail": str(exc)}
         return Response(body, status=404, content_type="application/problem+json")
+
+    if isinstance(exc, NotAuthorizedToAct):
+        body = {
+            "type": "about:blank",
+            "title": "Not authorized to act on this request",
+            "status": 403,
+            "detail": str(exc),
+        }
+        return Response(body, status=403, content_type="application/problem+json")
+
+    if isinstance(exc, InvalidTransition | NoApproverFound):
+        body = {
+            "type": "about:blank",
+            "title": "Invalid workflow transition",
+            "status": 400,
+            "detail": str(exc),
+        }
+        return Response(body, status=400, content_type="application/problem+json")
 
     if isinstance(exc, APIException):
         body = {

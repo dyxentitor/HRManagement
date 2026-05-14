@@ -235,3 +235,34 @@ class _GrandManagerResolver:
         if gm is None:
             return None
         return getattr(gm, "user", None)
+
+
+class _ReturnRequesterResolver:
+    """Test helper: always tries to assign the requester as their own approver.
+
+    Simulates the v1.10.1 sweep Bug #2 condition (a resolver that — due to
+    seed shape or chain order — names the requester themselves). The engine
+    must defend against it even if the resolver lets it slip through.
+    """
+
+    def resolve(self, subject_employee, request):
+        return getattr(subject_employee, "user", None)
+
+
+@pytest.mark.django_db
+def test_act_blocks_self_approval(employees) -> None:
+    """The requester acting on their own request raises NotAuthorizedToAct.
+
+    Regression guard for v1.10.1 sweep Bug #2: even when a resolver hands
+    back the requester themselves, the engine must refuse to advance the
+    request on the requester's own ``approve`` call.
+    """
+    _, _, emp_user, emp_employee, _ = employees
+    chain = WorkflowChain(
+        code="leave_default",
+        steps=[ApprovalStep(level=1, resolver=_ReturnRequesterResolver())],
+    )
+    subj = FakeSubject(employee=emp_employee, status="submitted", current_level=1)
+    engine = WorkflowEngine()
+    with pytest.raises(NotAuthorizedToAct):
+        engine.act(subj, chain=chain, actor=emp_user, decision=Decision.APPROVE)
