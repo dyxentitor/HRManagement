@@ -70,6 +70,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return ["employee:archive"]
         if action == "restore":
             return ["employee:archive"]
+        if action == "link_user":
+            return ["employee:write:org"]
         if action in ("me_photo_presigned_upload", "me_photo"):
             # Same gate as the existing /me action: any authenticated user with
             # a linked Employee record. Inline 404 in the action handles the
@@ -170,6 +172,63 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         chain = OrgService().get_reporting_chain(emp.id)
         ser = self.get_serializer(chain, many=True)
         return Response(ser.data)
+
+    @action(detail=True, methods=["post", "delete"], url_path="link-user")
+    def link_user(self, request, pk=None):
+        """v1.9.0 — link/unlink a User to this Employee (admin).
+
+        POST {user_id}: set Employee.user_id (must be in same org, not already
+        linked). Writes employee.user_linked audit log.
+        DELETE: clear Employee.user_id. Writes employee.user_unlinked audit log.
+        """
+        from rest_framework.exceptions import NotFound
+
+        from common.audit.service import append as audit_append
+        from modules.identity.models import User
+
+        emp = Employee.objects.filter(pk=pk, org_id=request.user.org_id).first()
+        if emp is None:
+            raise NotFound("Employee not found.")
+
+        if request.method == "DELETE":
+            prior = emp.user_id
+            if prior:
+                emp.user_id = None
+                emp.save(update_fields=["user_id", "updated_at"])
+                audit_append(
+                    org_id=request.user.org_id,
+                    action="employee.user_unlinked",
+                    entity="employee",
+                    entity_id=emp.id,
+                    before={"user_id": str(prior)},
+                )
+            return Response(self.get_serializer(emp).data)
+
+        # POST: link
+        user_id = request.data.get("user_id")
+        if not user_id:
+            raise ValidationError({"user_id": "user_id required"})
+        target = User.objects.filter(id=user_id, org_id=request.user.org_id).first()
+        if target is None:
+            raise NotFound("User not found in this org.")
+        # Reverse OneToOne accessor — Employee.user has related_name="employee_profile"
+        existing = Employee.objects.filter(user_id=target.id).first()
+        if existing is not None and existing.id != emp.id:
+            raise ValidationError({"detail": "User is already linked to another employee."})
+        suggested = bool(emp.email and target.email and emp.email.lower() == target.email.lower())
+        emp.user_id = target.id
+        emp.save(update_fields=["user_id", "updated_at"])
+        audit_append(
+            org_id=request.user.org_id,
+            action="employee.user_linked",
+            entity="employee",
+            entity_id=emp.id,
+            after={
+                "user_id": str(target.id),
+                "suggested": suggested,
+            },
+        )
+        return Response(self.get_serializer(emp).data)
 
     @action(detail=True, methods=["post"], url_path="restore")
     def restore(self, request, pk=None):
