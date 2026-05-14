@@ -2,6 +2,80 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.10.1] — 2026-05-15
+
+Closes the seven findings from the v1.10.0 Playwright sweep
+(`.playwright-mcp/sweep-v1.10.0/REPORT.md`). Spec + plan are bundled in
+`References/Prompt_v1.10.1_fix_sweep_bugs.md`. Bundle ordering: one
+focused commit per bug-class, then a release commit. No new permission
+codes, no fixture changes, no migrations.
+
+### Fixed
+
+- **Bug #1 (BLOCKER):** Claim attachment upload failed because presigned
+  URLs embedded the Docker-internal `http://minio:9000/` hostname. Split
+  the S3 client into `common.storage.s3.internal_s3_client` (server-side
+  ops via `S3_ENDPOINT_URL`) and `public_s3_client` (browser-facing
+  signed URLs via `S3_PUBLIC_ENDPOINT_URL`, falling back to the internal
+  URL when unset for prod parity). Rewired claim attachments, employee
+  avatars, payslip PDF download, KPI evidence, certification + training
+  presigned uploads, and reports presigned-get. Payslip publish + reports
+  export keep the internal client (`put_object`).
+- **Bug #2 (CRITICAL):** Three-layer self-approval guard for the
+  workflow engine. (a) Resolvers now exclude the requester from the
+  candidate pool. (b) `WorkflowEngine.act()` raises `NotAuthorizedToAct`
+  whenever `actor.id == subject.employee.user_id`, regardless of what
+  the resolver picked. (c) `NotAuthorizedToAct` maps to HTTP 403 in the
+  global exception handler (was 500). Same handler now also maps
+  `InvalidTransition` / `NoApproverFound` to 400 with an RFC 7807 body.
+- **Bug #3:** Approval emails fire on the hourly digest beat
+  (`send_pending_email_digests`), so the sweep's "MailHog stayed at 0"
+  was a false positive — the wiring at `modules/leave/signals.py:69`
+  was correct all along. Made the cadence env-configurable via
+  `EMAIL_DIGEST_INTERVAL_SECONDS` (default 3600, prod unchanged); dev
+  defaults to 60 s so approval emails land within a QA loop. Existing
+  regression test at `modules/leave/tests/test_workflow_integration.py:150`.
+- **Bug #4:** `/leave/apply` toast now renders the backend's
+  `errors[0].message` (RFC 7807) instead of `POST /api/v1/leave/...
+  failed`. Added a tiny `_errorMessage` helper to
+  `apps/web/src/modules/leave/api.ts` covering `errors[0].message →
+  detail → title → fallback URL`. Verified end-to-end with the
+  paternity 30-day-notice validator.
+- **Bugs #5 + #6:** §3.9 date-drift regressions on
+  `apps/web/src/modules/schedule/pages/MySchedulePage.tsx` and
+  `RosterPage.tsx`. Both called `.toISOString().slice(0,10)` on local-
+  time `Date` objects, which slips by a day between 00:00 and 08:00 KL.
+  New helper module `apps/web/src/modules/schedule/lib/local-date.ts`
+  exposes `isoLocalDate`, `todayIsoLocal`, `startOfWeekIsoLocal`, and
+  `addDaysIso`. All four call sites switched over. The `RosterGrid`
+  header keeps its UTC-anchored pattern (already correct per §3.9).
+- **Bug #7:** `/claims/finance` had no frontend perm gate. Non-finance
+  roles navigated in and saw an opaque "GET /api/v1/claims/?scope=
+  finance-queue failed" alert. `FinanceQueuePage` now reads
+  `useAuth().perms`, short-circuits when `claim:approve:finance` is
+  missing, and renders a "Finance access required" empty state — no
+  network call is made.
+
+### Test counts
+
+- Backend: **701 passed** + 3 skipped (postgres-only triggers). +6
+  resolver/engine/storage tests on top of v1.10.0's 689.
+- Frontend: **278 passed**. +8 (4 local-date helpers, 2 LeaveApplyPage
+  error-toast assertions, 2 FinanceQueuePage route-guard assertions).
+- Permission codes: **110** (no change).
+
+### Notes / deferred
+
+- The MinIO endpoint split adds `S3_PUBLIC_ENDPOINT_URL` to the api/
+  worker/beat container env via `deploy/docker-compose.yml` (default
+  `http://localhost:9000`). Prod deployments where the API and the
+  browser share a hostname can leave the var unset.
+- The email digest cadence (`EMAIL_DIGEST_INTERVAL_SECONDS`) default
+  is unchanged for prod; only the dev compose value drops to 60 s.
+- Carried forward from v1.10.0: §4 single-liners (LeaveApplyPage /
+  ClaimSubmitPage `PageHeader` wraps, EmployeeDetailPage hire_date,
+  MyLeavePage date columns) and L5 (biome config inconsistency).
+
 ## [1.10.0] — 2026-05-14
 
 UI quality sweep — closes the seven `FAIL` pages from
