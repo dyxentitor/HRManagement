@@ -11,11 +11,17 @@ app = Celery("hrms_api")
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
+# Email digest cadence. Default 3600 (hourly) matches existing prod behaviour;
+# dev can dial it down via EMAIL_DIGEST_INTERVAL_SECONDS in .env to observe
+# approval emails within a single QA loop (the v1.10.0 sweep flagged the
+# hourly delay as Bug #3 because Playwright didn't wait long enough).
+_EMAIL_DIGEST_INTERVAL = float(os.environ.get("EMAIL_DIGEST_INTERVAL_SECONDS", "3600"))
+
 app.conf.beat_schedule = {
     **getattr(app.conf, "beat_schedule", {}),
     "send-pending-email-digests": {
         "task": "modules.notification.tasks.send_pending_email_digests",
-        "schedule": 3600.0,  # hourly
+        "schedule": _EMAIL_DIGEST_INTERVAL,
     },
     "detect-certification-expiry": {
         # Nightly at 02:00 — flags certs expiring in 30/60/90 days,

@@ -19,6 +19,7 @@ x-api-env: &api-env
   S3_BUCKET: hrms
   SMTP_HOST: mailhog
   SMTP_PORT: "1025"
+  EMAIL_DIGEST_INTERVAL_SECONDS: ${EMAIL_DIGEST_INTERVAL_SECONDS:-60}
   # No fallback — this MUST come from the environment / .env. Compose will fail
   # to start if HRMS_FIELD_ENCRYPTION_KEY is unset, which is the right behaviour:
   # silently encrypting under the wrong key = unrecoverable data. See
