@@ -9,7 +9,6 @@ import {
 	LayoutDashboard,
 	Receipt,
 	Settings,
-	Shield,
 	Target,
 	UserCircle,
 	Users,
@@ -119,31 +118,6 @@ export const NAV: NavGroup[] = [
 				perm: "employee:read:org",
 			},
 			{
-				label: "Roles",
-				to: "/admin/roles",
-				icon: Shield,
-				perm: "role:read",
-			},
-			{
-				label: "Teams",
-				to: "/admin/teams",
-				icon: Users,
-				perm: "team:write",
-			},
-			{
-				label: "Modules",
-				to: "/admin/modules",
-				icon: Settings,
-				perm: "org:feature_flag:read",
-			},
-			{
-				label: "Leave types",
-				to: "/admin/leave-types",
-				icon: Calendar,
-				perm: "leave:type:write",
-				module: "leave",
-			},
-			{
 				label: "Payroll",
 				to: "/payroll/admin",
 				icon: Wallet,
@@ -167,6 +141,14 @@ export const NAV: NavGroup[] = [
 				icon: BarChart3,
 				perm: "kpi:cycle:write",
 				module: "kpi",
+			},
+			// v1.9.0: Roles / Teams / Modules / Leave Types collapsed into a
+			// single Settings entry that opens the new /admin/settings shell.
+			{
+				label: "Settings",
+				to: "/admin/settings",
+				icon: Settings,
+				perm: "role:read",
 			},
 		],
 	},

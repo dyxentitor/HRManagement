@@ -116,18 +116,20 @@ describe("Sidebar", () => {
 		expect(screen.getByRole("link", { name: /payroll/i })).toBeInTheDocument();
 	});
 
-	it("shows Teams admin link with team:write perm", () => {
-		mocks.perms = new Set(["team:write"]);
+	it("shows Settings link with role:read perm (v1.9.0: admin pages collapsed)", () => {
+		mocks.perms = new Set(["role:read"]);
 		mocks.flags = {};
 		render(
 			<MemoryRouter>
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(screen.getByRole("link", { name: /^teams$/i })).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: /^settings$/i }),
+		).toBeInTheDocument();
 	});
 
-	it("hides Teams admin link without team:write perm", () => {
+	it("hides Settings link without role:read perm", () => {
 		mocks.perms = new Set(["employee:read:org"]);
 		mocks.flags = {};
 		render(
@@ -136,7 +138,7 @@ describe("Sidebar", () => {
 			</MemoryRouter>,
 		);
 		expect(
-			screen.queryByRole("link", { name: /^teams$/i }),
+			screen.queryByRole("link", { name: /^settings$/i }),
 		).not.toBeInTheDocument();
 	});
 });
