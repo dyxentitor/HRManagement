@@ -88,3 +88,21 @@ def test_organization_slug_unique() -> None:
             default_timezone="Asia/Kuala_Lumpur",
             default_locale="en-MY",
         )
+
+
+@pytest.mark.django_db
+def test_organization_has_logo_s3_key_field() -> None:
+    """v1.9.0 — logo upload pipeline writes this key after Celery resize."""
+    org = Organization.objects.create(
+        name="Acme",
+        slug="acme-logo",
+        country_code="MY",
+        default_currency="MYR",
+        default_timezone="Asia/Kuala_Lumpur",
+        default_locale="en-MY",
+    )
+    assert org.logo_s3_key is None
+    org.logo_s3_key = "org-logos/xyz/abc.webp"
+    org.save()
+    org.refresh_from_db()
+    assert org.logo_s3_key == "org-logos/xyz/abc.webp"

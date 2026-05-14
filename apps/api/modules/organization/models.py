@@ -83,6 +83,7 @@ class Organization(BaseModel):
     settings = models.JSONField(default=dict, blank=True)
     plan_id = models.UUIDField(null=True, blank=True)  # Phase 2 stub
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="active")
+    logo_s3_key = models.CharField(max_length=512, blank=True, null=True)  # noqa: DJ001
 
     def __str__(self) -> str:
         return f"{self.slug} ({self.name})"
