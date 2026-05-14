@@ -18,6 +18,25 @@ logger = logging.getLogger(__name__)
 LOGO_MAX_DIM = 256
 LOGO_WEBP_QUALITY = 85
 
+# v1.9.2 (L1): magic-byte sniffer. The presigned PUT already binds the
+# content-type at signing time and Pillow rejects non-image bytes, but
+# checking the leading bytes lets us fail fast with a clear log message
+# instead of a deep traceback from PIL.
+_IMAGE_MAGIC: tuple[tuple[bytes, str], ...] = (
+    (b"\x89PNG\r\n\x1a\n", "image/png"),
+    (b"\xff\xd8\xff", "image/jpeg"),
+)
+
+
+def _detect_image_type(raw: bytes) -> str | None:
+    for sig, mime in _IMAGE_MAGIC:
+        if raw.startswith(sig):
+            return mime
+    # WebP is RIFF<size>WEBP — check the 4-byte container marker at offset 8.
+    if len(raw) >= 12 and raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
 def process_org_logo(self, org_id: str, raw_s3_key: str) -> str:
@@ -47,6 +66,19 @@ def process_org_logo(self, org_id: str, raw_s3_key: str) -> str:
 
     body = obj["Body"]
     raw = body.read() if hasattr(body, "read") else body
+
+    detected = _detect_image_type(raw)
+    if detected is None:
+        # Not an image. Clean up the raw upload so we don't leave junk in S3.
+        logger.warning(
+            "process_org_logo: rejecting non-image content for key=%s "
+            "(size=%d bytes, first 4 bytes=%r)",
+            raw_s3_key,
+            len(raw),
+            raw[:4] if raw else b"",
+        )
+        delete_object(raw_s3_key)
+        return ""
 
     img = Image.open(io.BytesIO(raw))
     img = ImageOps.exif_transpose(img)

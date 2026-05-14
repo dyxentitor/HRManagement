@@ -86,6 +86,31 @@ def test_process_org_logo_preserves_aspect_ratio(org: Organization) -> None:
 
 
 @pytest.mark.django_db
+def test_process_org_logo_rejects_non_image_content(org: Organization) -> None:
+    """v1.9.2 (L1): magic-byte sniff rejects non-image bytes (e.g. JS pretending
+    to be PNG). Raw key is cleaned up; no canonical key is written."""
+    raw_key = f"org-logos/raw/{org.id}/fake.png"
+    org.logo_s3_key = raw_key
+    org.save(update_fields=["logo_s3_key"])
+
+    s3 = MagicMock()
+    s3.get_object.return_value = {"Body": io.BytesIO(b"<script>alert(1)</script>")}
+
+    with (
+        patch("modules.organization.tasks.s3_client", return_value=s3),
+        patch("modules.organization.tasks.s3_bucket", return_value="hrms"),
+        patch("modules.organization.tasks.delete_object") as mock_del,
+    ):
+        result = process_org_logo(str(org.id), raw_key)
+
+    assert result == ""
+    s3.put_object.assert_not_called()
+    mock_del.assert_called_once_with(raw_key)
+    # Org's logo_s3_key still points at the raw (deleted) key — that's fine,
+    # the next register-step would either overwrite or DELETE clears it.
+
+
+@pytest.mark.django_db
 def test_process_org_logo_noop_when_org_missing() -> None:
     raw_key = "org-logos/raw/00000000-0000-0000-0000-000000000000/x.png"
 
