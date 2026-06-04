@@ -4,6 +4,19 @@ Phase 1 web HRMS for Provintell. Phase 2 SaaS, Phase 3 mobile.
 
 See [`docs/superpowers/specs/2026-04-27-hrms-design.md`](docs/superpowers/specs/2026-04-27-hrms-design.md) for the full design.
 
+## Fresh machine? One command
+
+```bash
+deploy/bootstrap.sh            # interactive: dependency doctor → .env → stack → seed menu → verify
+deploy/bootstrap.sh --help     # all flags
+deploy/bootstrap.sh --dev --seed=demo --yes   # unattended dev deploy
+```
+
+`bootstrap.sh` checks (and offers to install) missing dependencies, generates
+`.env` with a fresh encryption key, brings up the stack, migrates, lets you
+choose how much to seed (full demo / logins only / nothing), and verifies the
+result with a login smoke test. Idempotent — safe to re-run.
+
 ## Quick start (dev)
 
 Prerequisites: Docker, Docker Compose v2, GNU Make.
