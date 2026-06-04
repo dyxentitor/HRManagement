@@ -155,10 +155,18 @@ class Command(BaseCommand):
             action="store_true",
             help="Skip demo accounts; real users only.",
         )
+        parser.add_argument(
+            "--no-employees",
+            action="store_true",
+            help="Skip the 5 demo Employee rows and the leave-balance prefund. "
+            "Org, roles, holidays, leave types (and demo logins unless --prod) "
+            "are still created.",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
         is_prod = options["prod"]
+        no_employees = options["no_employees"]
 
         # 1. Country reference data (federal MY 2026 holidays + leave-type defaults)
         self.stdout.write("Loading MY country reference...")
@@ -188,86 +196,108 @@ class Command(BaseCommand):
         # 5. Demo users (skipped in --prod)
         if not is_prod:
             self.stdout.write("Creating demo accounts...")
+            # One login per default role so a per-role RBAC smoke check
+            # (CLAUDE.md §3.16) can exercise all 7 roles. employee/team_lead are
+            # linked to real Employee rows below so their self-service pages
+            # (leave, cert/me, training/me — filtered by Employee.id) show data.
             for email, role_code in [
                 ("admin@provintell.demo", "org_admin"),
                 ("hr@provintell.demo", "hr_manager"),
                 ("finance@provintell.demo", "finance"),
                 ("ops.lead@provintell.demo", "manager"),
                 ("eng.lead@provintell.demo", "manager"),
+                ("team.lead@provintell.demo", "team_lead"),
+                ("employee@provintell.demo", "employee"),
+                ("auditor@provintell.demo", "auditor"),
             ]:
                 _ensure_demo_user(org, email, "Demo!2026", role_code)
 
         # 6. 5 employees (manager hierarchy: ops_lead + eng_lead at top; 3 reports)
-        self.stdout.write("Creating Provintell employees...")
-        u_ops_lead = (
-            User.objects.filter(email="ops.lead@provintell.demo", org_id=org.id).first()
-            if not is_prod
-            else None
-        )
-        u_eng_lead = (
-            User.objects.filter(email="eng.lead@provintell.demo", org_id=org.id).first()
-            if not is_prod
-            else None
-        )
+        if no_employees:
+            self.stdout.write("Skipping demo employees (--no-employees).")
+        else:
+            self.stdout.write("Creating Provintell employees...")
+            u_ops_lead = (
+                User.objects.filter(email="ops.lead@provintell.demo", org_id=org.id).first()
+                if not is_prod
+                else None
+            )
+            u_eng_lead = (
+                User.objects.filter(email="eng.lead@provintell.demo", org_id=org.id).first()
+                if not is_prod
+                else None
+            )
+            u_employee = (
+                User.objects.filter(email="employee@provintell.demo", org_id=org.id).first()
+                if not is_prod
+                else None
+            )
+            u_team_lead = (
+                User.objects.filter(email="team.lead@provintell.demo", org_id=org.id).first()
+                if not is_prod
+                else None
+            )
 
-        ops_lead = _ensure_employee(
-            org,
-            depts["ops"],
-            "PVT-OPS-001",
-            first_name="Ops",
-            last_name="Lead",
-            role_title="SOC Lead",
-            user=u_ops_lead,
-            team=teams["lead"],
-        )
-        eng_lead = _ensure_employee(
-            org,
-            depts["eng"],
-            "PVT-ENG-001",
-            first_name="Eng",
-            last_name="Lead",
-            role_title="Engineering Lead",
-            user=u_eng_lead,
-            team=teams["l3"],
-        )
-        _ensure_employee(
-            org,
-            depts["ops"],
-            "PVT-OPS-002",
-            first_name="Analyst",
-            last_name="One",
-            manager=ops_lead,
-            schedule_type="shift",
-            role_title="SOC Analyst",
-            team=teams["focus"],
-        )
-        _ensure_employee(
-            org,
-            depts["ops"],
-            "PVT-OPS-003",
-            first_name="Analyst",
-            last_name="Two",
-            manager=ops_lead,
-            schedule_type="shift",
-            role_title="SOC Analyst",
-            team=teams["commitment"],
-        )
-        _ensure_employee(
-            org,
-            depts["eng"],
-            "PVT-ENG-002",
-            first_name="Dev",
-            last_name="One",
-            manager=eng_lead,
-            role_title="Software Engineer",
-            team=teams["l2"],
-        )
+            ops_lead = _ensure_employee(
+                org,
+                depts["ops"],
+                "PVT-OPS-001",
+                first_name="Ops",
+                last_name="Lead",
+                role_title="SOC Lead",
+                user=u_ops_lead,
+                team=teams["lead"],
+            )
+            eng_lead = _ensure_employee(
+                org,
+                depts["eng"],
+                "PVT-ENG-001",
+                first_name="Eng",
+                last_name="Lead",
+                role_title="Engineering Lead",
+                user=u_eng_lead,
+                team=teams["l3"],
+            )
+            _ensure_employee(
+                org,
+                depts["ops"],
+                "PVT-OPS-002",
+                first_name="Analyst",
+                last_name="One",
+                manager=ops_lead,
+                schedule_type="shift",
+                role_title="SOC Analyst",
+                team=teams["focus"],
+                user=u_employee,
+            )
+            _ensure_employee(
+                org,
+                depts["ops"],
+                "PVT-OPS-003",
+                first_name="Analyst",
+                last_name="Two",
+                manager=ops_lead,
+                schedule_type="shift",
+                role_title="SOC Analyst",
+                team=teams["commitment"],
+            )
+            _ensure_employee(
+                org,
+                depts["eng"],
+                "PVT-ENG-002",
+                first_name="Dev",
+                last_name="One",
+                manager=eng_lead,
+                role_title="Software Engineer",
+                team=teams["l2"],
+                user=u_team_lead,
+            )
 
-        # Department head links
-        depts["ops"].head_employee_id = ops_lead.id
-        depts["ops"].save()
-        depts["eng"].head_employee_id = eng_lead.id
-        depts["eng"].save()
+            # Department head links
+            depts["ops"].head_employee_id = ops_lead.id
+            depts["ops"].save()
+            depts["eng"].head_employee_id = eng_lead.id
+            depts["eng"].save()
 
         # 7. 2 shifts
         self.stdout.write("Seeding shifts...")
@@ -295,19 +325,24 @@ class Command(BaseCommand):
         )
 
         # 8. Pre-fund leave balances (annual 14 days for everyone in 2026)
-        self.stdout.write("Pre-funding annual leave balances...")
-        annual = LeaveType.all_objects.filter(org_id=org.id, code="ANNUAL").first()
-        if annual:
-            for emp in Employee.all_objects.filter(org_id=org.id, deleted_at__isnull=True):
-                BalanceService.accrue(
-                    org_id=org.id,
-                    employee_id=emp.id,
-                    leave_type=annual,
-                    year=2026,
-                    days=Decimal("14"),
-                    reason="accrual",
-                    reference_type="seed",
-                    reference_id=emp.id,
-                )
+        if not no_employees:
+            self.stdout.write("Pre-funding annual leave balances...")
+            annual = LeaveType.all_objects.filter(org_id=org.id, code="ANNUAL").first()
+            if annual:
+                for emp in Employee.all_objects.filter(org_id=org.id, deleted_at__isnull=True):
+                    BalanceService.accrue(
+                        org_id=org.id,
+                        employee_id=emp.id,
+                        leave_type=annual,
+                        year=2026,
+                        days=Decimal("14"),
+                        reason="accrual",
+                        reference_type="seed",
+                        reference_id=emp.id,
+                    )
 
-        self.stdout.write(self.style.SUCCESS(f"Provintell seed complete (prod={is_prod})."))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Provintell seed complete (prod={is_prod}, no_employees={no_employees})."
+            )
+        )
