@@ -62,26 +62,26 @@ export interface EmployeeWritePayload {
 	department: string;
 	team?: string | null;
 	manager?: string | null;
-	role_title: string;
+	role_title?: string;
 	employment_type: string;
 	schedule_type?: string;
 	hire_date: string;
 	status?: string;
 	// Personal
-	date_of_birth: string;
-	gender: string;
-	nationality: string;
-	marital_status: string;
+	date_of_birth?: string;
+	gender?: string;
+	nationality?: string;
+	marital_status?: string;
 	religion?: string;
 	ic_number?: string;
 	// Address
-	address_line1: string;
+	address_line1?: string;
 	address_line2?: string;
-	city: string;
-	state: string;
-	postcode: string;
-	country_code: string;
-	phone: string;
+	city?: string;
+	state?: string;
+	postcode?: string;
+	country_code?: string;
+	phone?: string;
 	alt_phone?: string;
 	// Banking & Tax IDs (encrypted; only sent if Replace was used)
 	bank_name?: string;
@@ -90,9 +90,9 @@ export interface EmployeeWritePayload {
 	epf_no?: string;
 	socso_no?: string;
 	eis_no?: string;
-	emergency_contact_name: string;
-	emergency_contact_relationship: string;
-	emergency_contact_phone: string;
+	emergency_contact_name?: string;
+	emergency_contact_relationship?: string;
+	emergency_contact_phone?: string;
 }
 
 export interface DepartmentRef {
