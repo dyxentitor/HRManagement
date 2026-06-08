@@ -40,6 +40,11 @@ const STATUS_TONE: Record<
 	draft: "sky",
 };
 
+function halfDayLabel(r: LeaveRequest): string | null {
+	if (!r.is_half_day) return null;
+	return r.half_day_period === "pm" ? "½ PM" : "½ AM";
+}
+
 export default function MyLeavePage() {
 	const [balances, setBalances] = useState<LeaveBalance[]>([]);
 	const [requests, setRequests] = useState<LeaveRequest[]>([]);
@@ -92,7 +97,19 @@ export default function MyLeavePage() {
 		{
 			key: "days",
 			header: "Days",
-			render: (r) => `${r.total_days}d`,
+			render: (r) => {
+				const half = halfDayLabel(r);
+				return (
+					<span className="inline-flex items-center justify-end gap-1.5">
+						{`${r.total_days}d`}
+						{half && (
+							<span className="text-label uppercase text-accent-200">
+								{half}
+							</span>
+						)}
+					</span>
+				);
+			},
 			align: "right",
 		},
 		{
@@ -238,7 +255,10 @@ export default function MyLeavePage() {
 						<dt className="text-label uppercase text-text-tertiary self-center">
 							Days
 						</dt>
-						<dd>{selected.total_days}</dd>
+						<dd>
+							{selected.total_days}
+							{halfDayLabel(selected) ? ` · ${halfDayLabel(selected)}` : ""}
+						</dd>
 						<dt className="text-label uppercase text-text-tertiary self-center">
 							Status
 						</dt>

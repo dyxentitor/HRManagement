@@ -102,6 +102,23 @@ describe("MyLeavePage", () => {
 		expect(screen.getByText("SICK")).toBeInTheDocument();
 	});
 
+	it("shows a ½ PM indicator for a half-day request", async () => {
+		mocks.myBalances.mockResolvedValue([]);
+		mocks.listMyRequests.mockResolvedValue([
+			{
+				...requests[1],
+				id: "lr3",
+				total_days: "0.5",
+				is_half_day: true,
+				half_day_period: "pm",
+			},
+		]);
+		renderPage();
+		await waitFor(() =>
+			expect(screen.getByText(/½ PM/i)).toBeInTheDocument(),
+		);
+	});
+
 	it("opens detail panel when a row is clicked", async () => {
 		const user = userEvent.setup();
 		mocks.myBalances.mockResolvedValue([]);
