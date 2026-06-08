@@ -12,6 +12,7 @@
 - { code: user:read:self, description: Read own user record }
 - { code: user:read:team, description: Read direct-reports user records }
 - { code: user:read:org,  description: Read any user record in the org }
+- { code: user:create,    description: Create a new user account (admin) }
 
 # role / permission
 - { code: role:read,        description: Read roles in the org }

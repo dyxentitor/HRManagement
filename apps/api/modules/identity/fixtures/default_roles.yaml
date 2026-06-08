@@ -9,6 +9,7 @@
     - auth:mfa:manage:self
     - user:invite
     - user:edit
+    - user:create
     - user:disable
     - user:delete
     - user:read:self
@@ -125,6 +126,7 @@
     - auth:mfa:manage:self
     - user:invite
     - user:edit
+    - user:create
     - user:disable
     - user:read:self
     - user:read:team
