@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { useCan } from "@/lib/perm";
 
 import {
 	type UnlinkedEmployee,
@@ -21,6 +23,7 @@ export default function UsersLinkingPage() {
 	const [emps, setEmps] = useState<UnlinkedEmployee[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
+	const canCreate = useCan("user:create");
 
 	const refresh = useCallback(async () => {
 		setLoading(true);
@@ -60,6 +63,13 @@ export default function UsersLinkingPage() {
 					loading
 						? "Loading…"
 						: `${users.length} unlinked user${users.length === 1 ? "" : "s"} · ${emps.length} unlinked employee${emps.length === 1 ? "" : "s"}`
+				}
+				actions={
+					canCreate ? (
+						<Button asChild size="sm">
+							<Link to="/admin/settings/users/new">New user</Link>
+						</Button>
+					) : undefined
 				}
 			/>
 

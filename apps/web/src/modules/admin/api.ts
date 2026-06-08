@@ -118,6 +118,24 @@ export const userRolesApi = {
 	},
 };
 
+export const userApi = {
+	create: async (body: {
+		email: string;
+		role_code: string;
+		credential_method: "invite" | "temp";
+		temp_password?: string;
+		employee?: Record<string, unknown>;
+	}): Promise<{ id: string }> => {
+		// The auth/user views lack @extend_schema, so the request body is
+		// untyped in the OpenAPI contract — cast at the call site.
+		const { data, error } = await api.POST("/api/v1/users/", {
+			body: body as never,
+		});
+		if (error) throw new Error("Could not create user");
+		return data as unknown as { id: string };
+	},
+};
+
 export const featureFlagApi = {
 	list: async (): Promise<FeatureFlag[]> => {
 		const { data, error } = await api.GET("/api/v1/org/feature-flags/");

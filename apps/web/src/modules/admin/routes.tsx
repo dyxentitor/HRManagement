@@ -18,6 +18,11 @@ const DepartmentsAdminPage = lazy(
 	() => import("./settings/DepartmentsAdminPage"),
 );
 const UsersLinkingPage = lazy(() => import("./settings/UsersLinkingPage"));
+const UserCreatePage = lazy(() =>
+	import("./settings/UserCreatePage").then((m) => ({
+		default: m.UserCreatePage,
+	})),
+);
 const ArchivedEmployeesPage = lazy(
 	() => import("./settings/ArchivedEmployeesPage"),
 );
@@ -58,6 +63,7 @@ export const adminRoutes: RouteObject[] = [
 			{ path: "departments", element: <DepartmentsAdminPage /> },
 			{ path: "teams", element: <AdminTeamsPage /> },
 			{ path: "users", element: <UsersLinkingPage /> },
+			{ path: "users/new", element: <UserCreatePage /> },
 			{ path: "archived", element: <ArchivedEmployeesPage /> },
 			{ path: "roles", element: <AdminRolesPage /> },
 			{ path: "roles/:code", element: <AdminRoleDetailPage /> },

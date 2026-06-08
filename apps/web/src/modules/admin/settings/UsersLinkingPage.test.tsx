@@ -1,9 +1,12 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import UsersLinkingPage from "./UsersLinkingPage";
 import { settingsApi } from "./settings-api";
+
+vi.mock("@/lib/perm", () => ({ useCan: () => true }));
 
 vi.mock("./settings-api", () => ({
 	settingsApi: {
@@ -51,13 +54,21 @@ beforeEach(() => {
 
 describe("UsersLinkingPage", () => {
 	it("renders both unlinked lists", async () => {
-		render(<UsersLinkingPage />);
+		render(
+			<MemoryRouter>
+				<UsersLinkingPage />
+			</MemoryRouter>,
+		);
 		await waitFor(() => screen.getByText("jane@x.com"));
 		expect(screen.getByText("Jane Tan")).toBeInTheDocument();
 	});
 
 	it("pins suggested option to top of dropdown", async () => {
-		render(<UsersLinkingPage />);
+		render(
+			<MemoryRouter>
+				<UsersLinkingPage />
+			</MemoryRouter>,
+		);
 		await waitFor(() => screen.getByText("jane@x.com"));
 		const userRow = screen
 			.getByText("jane@x.com")
@@ -74,7 +85,11 @@ describe("UsersLinkingPage", () => {
 
 	it("calls linkUser on selection", async () => {
 		(settingsApi.linkUser as ReturnType<typeof vi.fn>).mockResolvedValue({});
-		render(<UsersLinkingPage />);
+		render(
+			<MemoryRouter>
+				<UsersLinkingPage />
+			</MemoryRouter>,
+		);
 		await waitFor(() => screen.getByText("jane@x.com"));
 		const userRow = screen
 			.getByText("jane@x.com")
