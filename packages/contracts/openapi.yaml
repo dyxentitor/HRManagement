@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.9.0
+  version: 1.10.1
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -43,6 +43,15 @@ paths:
       description: |-
         GET /api/v1/admin/settings-overview/ — single roll-up for the
         Settings hub Overview page.
+
+        v1.9.2:
+        - **M2** payload cached per-org for 60s; reduces ~8 SQL count queries
+          per request to one cache hit. Cache is keyed only on org_id, not on
+          actor, because the data isn't actor-specific. Bust via cache.delete()
+          from `settings_overview_cache_key(org_id)` if a future call site needs
+          live freshness.
+        - **L7** writes one `admin.overview_viewed` audit log row per request.
+          Adds minimal storage cost; gives a who-looked-at-admin trail.
       tags:
       - admin
       security:
@@ -254,6 +263,16 @@ paths:
   /api/v1/auth/mfa/enable:
     post:
       operationId: auth_mfa_enable_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/password/change:
+    post:
+      operationId: auth_password_change_create
       tags:
       - auth
       security:
@@ -1296,7 +1315,15 @@ paths:
           description: ''
     post:
       operationId: employees_create
-      description: HR-facing employee CRUD.
+      description: |-
+        Create an employee, optionally provisioning + linking a login.
+
+        An optional `provision` object in the body =
+        {role_code, credential_method, temp_password?, email?}. When present,
+        a User is created and linked to the new Employee atomically — a
+        provisioning failure (e.g. duplicate email) rolls back the employee
+        insert. Provisioning requires the `user:create` perm in addition to
+        the `employee:create` perm enforced by `required_perms`.
       tags:
       - employees
       requestBody:
@@ -4882,6 +4909,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/TrainingProgressWrite'
           description: ''
+  /api/v1/users/:
+    post:
+      operationId: users_create
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/users/{user_id}/roles/:
     patch:
       operationId: users_roles_partial_update
@@ -5707,6 +5744,7 @@ components:
           maxLength: 254
         phone:
           type: string
+          nullable: true
           maxLength: 32
         alt_phone:
           type: string
@@ -5717,33 +5755,49 @@ components:
         date_of_birth:
           type: string
           format: date
+          nullable: true
         gender:
-          $ref: '#/components/schemas/GenderEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         nationality:
           type: string
+          nullable: true
           maxLength: 2
         marital_status:
-          $ref: '#/components/schemas/MaritalStatusEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MaritalStatusEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         religion:
           type: string
           maxLength: 32
         address_line1:
           type: string
+          nullable: true
           maxLength: 200
         address_line2:
           type: string
+          nullable: true
           maxLength: 200
         city:
           type: string
+          nullable: true
           maxLength: 100
         state:
           type: string
+          nullable: true
           maxLength: 100
         postcode:
           type: string
+          nullable: true
           maxLength: 20
         country_code:
           type: string
+          nullable: true
           maxLength: 2
         department:
           type: string
@@ -5754,6 +5808,7 @@ components:
           nullable: true
         role_title:
           type: string
+          nullable: true
           maxLength: 100
         employment_type:
           $ref: '#/components/schemas/EmploymentTypeEnum'
@@ -5776,18 +5831,22 @@ components:
           nullable: true
         bank_name:
           type: string
+          nullable: true
           maxLength: 100
         bank_account_last4:
           type: string
           readOnly: true
         emergency_contact_name:
           type: string
+          nullable: true
           maxLength: 100
         emergency_contact_relationship:
           type: string
+          nullable: true
           maxLength: 50
         emergency_contact_phone:
           type: string
+          nullable: true
           maxLength: 32
         status:
           $ref: '#/components/schemas/EmployeeStatusEnum'
@@ -5801,6 +5860,10 @@ components:
           type: string
           nullable: true
           readOnly: true
+        profile_completeness:
+          type: object
+          additionalProperties: {}
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -5810,35 +5873,21 @@ components:
           format: date-time
           readOnly: true
       required:
-      - address_line1
       - bank_account_last4
-      - bank_name
-      - city
-      - country_code
       - created_at
-      - date_of_birth
       - department
       - email
-      - emergency_contact_name
-      - emergency_contact_phone
-      - emergency_contact_relationship
       - employee_code
       - employment_type
       - first_name
       - full_name
-      - gender
       - hire_date
       - ic_last4
       - id
       - last_name
-      - marital_status
-      - nationality
       - org_id
-      - phone
       - photo_url
-      - postcode
-      - role_title
-      - state
+      - profile_completeness
       - updated_at
     EmployeeLeaveOverride:
       type: object
@@ -5937,7 +5986,7 @@ components:
           maxLength: 254
         phone:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 32
         alt_phone:
           type: string
@@ -5950,39 +5999,49 @@ components:
         date_of_birth:
           type: string
           format: date
+          nullable: true
         gender:
-          $ref: '#/components/schemas/GenderEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         nationality:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 2
         marital_status:
-          $ref: '#/components/schemas/MaritalStatusEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MaritalStatusEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         religion:
           type: string
           maxLength: 32
         address_line1:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 200
         address_line2:
           type: string
+          nullable: true
           maxLength: 200
         city:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         state:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         postcode:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 20
         country_code:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 2
         department:
           type: string
@@ -5993,7 +6052,7 @@ components:
           nullable: true
         role_title:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         employment_type:
           $ref: '#/components/schemas/EmploymentTypeEnum'
@@ -6016,7 +6075,7 @@ components:
           nullable: true
         bank_name:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         bank_account_number:
           type: string
@@ -6045,15 +6104,15 @@ components:
           nullable: true
         emergency_contact_name:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         emergency_contact_relationship:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 50
         emergency_contact_phone:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 32
         status:
           $ref: '#/components/schemas/EmployeeStatusEnum'
@@ -6064,28 +6123,13 @@ components:
           type: string
           maxLength: 10
       required:
-      - address_line1
-      - bank_name
-      - city
-      - country_code
-      - date_of_birth
       - department
       - email
-      - emergency_contact_name
-      - emergency_contact_phone
-      - emergency_contact_relationship
       - employee_code
       - employment_type
       - first_name
-      - gender
       - hire_date
       - last_name
-      - marital_status
-      - nationality
-      - phone
-      - postcode
-      - role_title
-      - state
     EmployeeStatusEnum:
       enum:
       - active
@@ -6984,6 +7028,9 @@ components:
       - priority
       - read_at
       - type
+    NullEnum:
+      enum:
+      - null
     OrgSettings:
       type: object
       properties:
@@ -7232,7 +7279,7 @@ components:
           maxLength: 254
         phone:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 32
         alt_phone:
           type: string
@@ -7245,39 +7292,49 @@ components:
         date_of_birth:
           type: string
           format: date
+          nullable: true
         gender:
-          $ref: '#/components/schemas/GenderEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         nationality:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 2
         marital_status:
-          $ref: '#/components/schemas/MaritalStatusEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MaritalStatusEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         religion:
           type: string
           maxLength: 32
         address_line1:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 200
         address_line2:
           type: string
+          nullable: true
           maxLength: 200
         city:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         state:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         postcode:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 20
         country_code:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 2
         department:
           type: string
@@ -7288,7 +7345,7 @@ components:
           nullable: true
         role_title:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         employment_type:
           $ref: '#/components/schemas/EmploymentTypeEnum'
@@ -7311,7 +7368,7 @@ components:
           nullable: true
         bank_name:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         bank_account_number:
           type: string
@@ -7340,15 +7397,15 @@ components:
           nullable: true
         emergency_contact_name:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 100
         emergency_contact_relationship:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 50
         emergency_contact_phone:
           type: string
-          minLength: 1
+          nullable: true
           maxLength: 32
         status:
           $ref: '#/components/schemas/EmployeeStatusEnum'

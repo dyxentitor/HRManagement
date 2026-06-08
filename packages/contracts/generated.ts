@@ -65,6 +65,15 @@ export interface paths {
         /**
          * @description GET /api/v1/admin/settings-overview/ — single roll-up for the
          *     Settings hub Overview page.
+         *
+         *     v1.9.2:
+         *     - **M2** payload cached per-org for 60s; reduces ~8 SQL count queries
+         *       per request to one cache hit. Cache is keyed only on org_id, not on
+         *       actor, because the data isn't actor-specific. Bust via cache.delete()
+         *       from `settings_overview_cache_key(org_id)` if a future call site needs
+         *       live freshness.
+         *     - **L7** writes one `admin.overview_viewed` audit log row per request.
+         *       Adds minimal storage cost; gives a who-looked-at-admin trail.
          */
         get: operations["admin_settings_overview_retrieve"];
         put?: never;
@@ -316,6 +325,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["auth_mfa_enable_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["auth_password_change_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -748,7 +773,16 @@ export interface paths {
         /** @description HR-facing employee CRUD. */
         get: operations["employees_list"];
         put?: never;
-        /** @description HR-facing employee CRUD. */
+        /**
+         * @description Create an employee, optionally provisioning + linking a login.
+         *
+         *     An optional `provision` object in the body =
+         *     {role_code, credential_method, temp_password?, email?}. When present,
+         *     a User is created and linked to the new Employee atomically — a
+         *     provisioning failure (e.g. duplicate email) rolls back the employee
+         *     insert. Provisioning requires the `user:create` perm in addition to
+         *     the `employee:create` perm enforced by `required_perms`.
+         */
         post: operations["employees_create"];
         delete?: never;
         options?: never;
@@ -2514,6 +2548,22 @@ export interface paths {
         patch: operations["training_progress_partial_update"];
         trace?: never;
     };
+    "/api/v1/users/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["users_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/{user_id}/roles/": {
         parameters: {
             query?: never;
@@ -2900,26 +2950,26 @@ export interface components {
             readonly full_name: string;
             /** Format: email */
             email: string;
-            phone: string;
+            phone?: string | null;
             alt_phone?: string;
             readonly ic_last4: string;
             /** Format: date */
-            date_of_birth: string;
-            gender: components["schemas"]["GenderEnum"];
-            nationality: string;
-            marital_status: components["schemas"]["MaritalStatusEnum"];
+            date_of_birth?: string | null;
+            gender?: (components["schemas"]["GenderEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            nationality?: string | null;
+            marital_status?: (components["schemas"]["MaritalStatusEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
             religion?: string;
-            address_line1: string;
-            address_line2?: string;
-            city: string;
-            state: string;
-            postcode: string;
-            country_code: string;
+            address_line1?: string | null;
+            address_line2?: string | null;
+            city?: string | null;
+            state?: string | null;
+            postcode?: string | null;
+            country_code?: string | null;
             /** Format: uuid */
             department: string;
             /** Format: uuid */
             manager?: string | null;
-            role_title: string;
+            role_title?: string | null;
             employment_type: components["schemas"]["EmploymentTypeEnum"];
             schedule_type?: components["schemas"]["ScheduleTypeEnum"];
             /** Format: date */
@@ -2930,15 +2980,18 @@ export interface components {
             contract_end_date?: string | null;
             /** Format: date-time */
             confirmed_at?: string | null;
-            bank_name: string;
+            bank_name?: string | null;
             readonly bank_account_last4: string;
-            emergency_contact_name: string;
-            emergency_contact_relationship: string;
-            emergency_contact_phone: string;
+            emergency_contact_name?: string | null;
+            emergency_contact_relationship?: string | null;
+            emergency_contact_phone?: string | null;
             status?: components["schemas"]["EmployeeStatusEnum"];
             timezone?: string;
             locale?: string;
             readonly photo_url: string | null;
+            readonly profile_completeness: {
+                [key: string]: unknown;
+            };
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -2984,27 +3037,27 @@ export interface components {
             preferred_name?: string;
             /** Format: email */
             email: string;
-            phone: string;
+            phone?: string | null;
             alt_phone?: string;
             /** Format: byte */
             ic_number?: string | null;
             /** Format: date */
-            date_of_birth: string;
-            gender: components["schemas"]["GenderEnum"];
-            nationality: string;
-            marital_status: components["schemas"]["MaritalStatusEnum"];
+            date_of_birth?: string | null;
+            gender?: (components["schemas"]["GenderEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            nationality?: string | null;
+            marital_status?: (components["schemas"]["MaritalStatusEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
             religion?: string;
-            address_line1: string;
-            address_line2?: string;
-            city: string;
-            state: string;
-            postcode: string;
-            country_code: string;
+            address_line1?: string | null;
+            address_line2?: string | null;
+            city?: string | null;
+            state?: string | null;
+            postcode?: string | null;
+            country_code?: string | null;
             /** Format: uuid */
             department: string;
             /** Format: uuid */
             manager?: string | null;
-            role_title: string;
+            role_title?: string | null;
             employment_type: components["schemas"]["EmploymentTypeEnum"];
             schedule_type?: components["schemas"]["ScheduleTypeEnum"];
             /** Format: date */
@@ -3015,7 +3068,7 @@ export interface components {
             contract_end_date?: string | null;
             /** Format: date-time */
             confirmed_at?: string | null;
-            bank_name: string;
+            bank_name?: string | null;
             /** Format: byte */
             bank_account_number?: string | null;
             /** Format: byte */
@@ -3026,9 +3079,9 @@ export interface components {
             socso_no?: string | null;
             /** Format: byte */
             eis_no?: string | null;
-            emergency_contact_name: string;
-            emergency_contact_relationship: string;
-            emergency_contact_phone: string;
+            emergency_contact_name?: string | null;
+            emergency_contact_relationship?: string | null;
+            emergency_contact_phone?: string | null;
             status?: components["schemas"]["EmployeeStatusEnum"];
             timezone?: string;
             locale?: string;
@@ -3419,6 +3472,8 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
         };
+        /** @enum {unknown} */
+        NullEnum: null;
         OrgSettings: {
             /** Format: uuid */
             readonly id: string;
@@ -3519,27 +3574,27 @@ export interface components {
             preferred_name?: string;
             /** Format: email */
             email?: string;
-            phone?: string;
+            phone?: string | null;
             alt_phone?: string;
             /** Format: byte */
             ic_number?: string | null;
             /** Format: date */
-            date_of_birth?: string;
-            gender?: components["schemas"]["GenderEnum"];
-            nationality?: string;
-            marital_status?: components["schemas"]["MaritalStatusEnum"];
+            date_of_birth?: string | null;
+            gender?: (components["schemas"]["GenderEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            nationality?: string | null;
+            marital_status?: (components["schemas"]["MaritalStatusEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
             religion?: string;
-            address_line1?: string;
-            address_line2?: string;
-            city?: string;
-            state?: string;
-            postcode?: string;
-            country_code?: string;
+            address_line1?: string | null;
+            address_line2?: string | null;
+            city?: string | null;
+            state?: string | null;
+            postcode?: string | null;
+            country_code?: string | null;
             /** Format: uuid */
             department?: string;
             /** Format: uuid */
             manager?: string | null;
-            role_title?: string;
+            role_title?: string | null;
             employment_type?: components["schemas"]["EmploymentTypeEnum"];
             schedule_type?: components["schemas"]["ScheduleTypeEnum"];
             /** Format: date */
@@ -3550,7 +3605,7 @@ export interface components {
             contract_end_date?: string | null;
             /** Format: date-time */
             confirmed_at?: string | null;
-            bank_name?: string;
+            bank_name?: string | null;
             /** Format: byte */
             bank_account_number?: string | null;
             /** Format: byte */
@@ -3561,9 +3616,9 @@ export interface components {
             socso_no?: string | null;
             /** Format: byte */
             eis_no?: string | null;
-            emergency_contact_name?: string;
-            emergency_contact_relationship?: string;
-            emergency_contact_phone?: string;
+            emergency_contact_name?: string | null;
+            emergency_contact_relationship?: string | null;
+            emergency_contact_phone?: string | null;
             status?: components["schemas"]["EmployeeStatusEnum"];
             timezone?: string;
             locale?: string;
@@ -4475,6 +4530,24 @@ export interface operations {
         };
     };
     auth_mfa_enable_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    auth_password_change_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -9275,6 +9348,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["TrainingProgressWrite"];
                 };
+            };
+        };
+    };
+    users_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
