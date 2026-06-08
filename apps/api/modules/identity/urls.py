@@ -20,6 +20,7 @@ from .views import (
     role_reset_view,
 )
 from .views_admin_overview import SettingsOverviewView
+from .views_user_admin import UserCreateView
 
 router = DefaultRouter()
 router.register(r"roles", RoleViewSet, basename="role")
@@ -39,6 +40,7 @@ urlpatterns = [
     path("auth/sessions/revoke-all", revoke_all_sessions_view, name="auth-sessions-revoke-all"),
     path("roles/<str:code>/permissions/", role_permissions_view, name="role-permissions"),
     path("roles/<str:code>/reset-to-defaults/", role_reset_view, name="role-reset"),
+    path("users/", UserCreateView.as_view(), name="user-create"),
     path("users/<uuid:user_id>/roles/", assign_user_roles_view, name="user-roles-assign"),
     path(
         "admin/settings-overview/",

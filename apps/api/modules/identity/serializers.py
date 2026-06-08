@@ -14,6 +14,22 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 
+class UserCreateSerializer(serializers.Serializer):
+    """User-first create payload (v1.11.0 Task 7).
+
+    The optional `employee` dict is validated by EmployeeSerializer inside the
+    view (atomically), not here.
+    """
+
+    email = serializers.EmailField()
+    role_code = serializers.CharField()
+    credential_method = serializers.ChoiceField(choices=["invite", "temp"])
+    temp_password = serializers.CharField(
+        required=False, allow_blank=True, write_only=True
+    )
+    employee = serializers.DictField(required=False)
+
+
 class LoginResponseSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
