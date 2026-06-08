@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 import type { Employee, EmployeeWritePayload } from "../api";
 import { useFieldPerm } from "../lib/useFieldPerm";
@@ -55,7 +56,17 @@ export interface EmployeeFormProps {
 	fieldErrors?: Record<string, string>;
 	topError?: string;
 	saving?: boolean;
+	roles?: { code: string; name: string }[];
+	canProvision?: boolean;
 }
+
+type ProvisionPayload = {
+	provision: {
+		role_code: string;
+		credential_method: "invite" | "temp";
+		temp_password?: string;
+	};
+};
 
 const REQUIRED_FIELDS_CREATE: (keyof EmployeeWritePayload)[] = [
 	"employee_code",
@@ -78,6 +89,8 @@ export function EmployeeForm({
 	fieldErrors = {},
 	topError,
 	saving = false,
+	roles = [],
+	canProvision = false,
 }: EmployeeFormProps) {
 	const writeOrg = useFieldPerm(null, "employee:write:org");
 	const assignTeam = useFieldPerm(null, "employee:assign:team");
@@ -122,6 +135,13 @@ export function EmployeeForm({
 	}));
 	const [replaced, setReplaced] = useState<Set<string>>(new Set());
 
+	const [provisionOn, setProvisionOn] = useState(false);
+	const [roleCode, setRoleCode] = useState("employee");
+	const [credMethod, setCredMethod] = useState<"invite" | "temp">("invite");
+	const [tempPw, setTempPw] = useState("");
+
+	const showProvision = mode === "create" && canProvision;
+
 	const set = <K extends keyof EmployeeWritePayload>(
 		k: K,
 		v: EmployeeWritePayload[K],
@@ -153,7 +173,15 @@ export function EmployeeForm({
 
 	function handleSave(e: React.FormEvent) {
 		e.preventDefault();
-		void onSubmit(draft, replaced);
+		const payload: Partial<EmployeeWritePayload> = { ...draft };
+		if (showProvision && provisionOn) {
+			(payload as Partial<EmployeeWritePayload> & ProvisionPayload).provision = {
+				role_code: roleCode,
+				credential_method: credMethod,
+				...(credMethod === "temp" ? { temp_password: tempPw } : {}),
+			};
+		}
+		void onSubmit(payload, replaced);
 	}
 
 	return (
@@ -221,6 +249,67 @@ export function EmployeeForm({
 					<LeaveOverrideEditor employeeId={initial.id} />
 				</section>
 			) : null}
+
+			{showProvision && (
+				<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+					<header className="flex items-center justify-between mb-3">
+						<h2 className="text-h3 text-text-primary">
+							Provision login account
+						</h2>
+						<Switch
+							aria-label="Provision login account"
+							checked={provisionOn}
+							onCheckedChange={(v) => setProvisionOn(v)}
+						/>
+					</header>
+					{provisionOn && (
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							{field(
+								"provision_role",
+								"Role",
+								<select
+									id="provision_role"
+									className="bg-canvas border border-border-subtle rounded px-2 py-1.5"
+									value={roleCode}
+									onChange={(e) => setRoleCode(e.target.value)}
+								>
+									{roles.map((r) => (
+										<option key={r.code} value={r.code}>
+											{r.name}
+										</option>
+									))}
+								</select>,
+							)}
+							{field(
+								"provision_method",
+								"Credential method",
+								<select
+									id="provision_method"
+									className="bg-canvas border border-border-subtle rounded px-2 py-1.5"
+									value={credMethod}
+									onChange={(e) =>
+										setCredMethod(e.target.value as "invite" | "temp")
+									}
+								>
+									<option value="invite">Send email invite</option>
+									<option value="temp">Set temporary password</option>
+								</select>,
+							)}
+							{credMethod === "temp" &&
+								field(
+									"provision_temp_password",
+									"Temporary password",
+									<Input
+										id="provision_temp_password"
+										type="text"
+										value={tempPw}
+										onChange={(e) => setTempPw(e.target.value)}
+									/>,
+								)}
+						</div>
+					)}
+				</section>
+			)}
 
 			<div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border-subtle p-4 flex items-center justify-end gap-2 shadow-lg">
 				<Button

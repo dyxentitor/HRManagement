@@ -4,6 +4,8 @@ import { toast } from "sonner";
 
 import { MfaPrompt } from "@/components/hrms/MfaPrompt";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { useCan } from "@/lib/perm";
+import { roleApi } from "@/modules/admin/api";
 import { teamApi } from "@/modules/admin/teams-api";
 
 import {
@@ -26,7 +28,9 @@ export default function EmployeeFormPage() {
 	const [managers, setManagers] = useState<
 		{ id: string; full_name: string; role_title?: string }[]
 	>([]);
+	const [roles, setRoles] = useState<{ code: string; name: string }[]>([]);
 	const [loading, setLoading] = useState(true);
+	const canProvision = useCan("user:create");
 	const [saving, setSaving] = useState(false);
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 	const [topError, setTopError] = useState<string | undefined>(undefined);
@@ -40,18 +44,20 @@ export default function EmployeeFormPage() {
 
 		(async () => {
 			try {
-				const [emp, depts, ts, ems] = await Promise.all([
+				const [emp, depts, ts, ems, rs] = await Promise.all([
 					mode === "edit" && id
 						? employeeApi.retrieve(id)
 						: Promise.resolve(null),
 					departmentApi.list().catch(() => []),
 					teamApi.list().catch(() => []),
 					employeeApi.list().catch(() => []),
+					roleApi.list().catch(() => []),
 				]);
 				if (cancelled) return;
 				setInitial(emp);
 				setDepartments(depts);
 				setTeams(ts.map((t) => ({ id: t.id, name: t.name })));
+				setRoles(rs.map((r) => ({ code: r.code, name: r.name })));
 				setManagers(
 					ems.map((e) => ({
 						id: e.id,
@@ -148,6 +154,8 @@ export default function EmployeeFormPage() {
 				departments={departments}
 				teams={teams}
 				managerOptions={managers}
+				roles={roles}
+				canProvision={canProvision}
 				onSubmit={handleSubmit}
 				onCancel={() =>
 					nav(mode === "edit" && id ? `/employees/${id}` : "/employees")

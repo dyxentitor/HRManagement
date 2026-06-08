@@ -166,7 +166,16 @@ export const employeeApi = {
 		if (!resp.ok) return [];
 		return resp.json() as Promise<Employee[]>;
 	},
-	create: async (payload: EmployeeWritePayload): Promise<{ id: string }> => {
+	create: async (
+		payload: EmployeeWritePayload & {
+			provision?: {
+				role_code: string;
+				credential_method: "invite" | "temp";
+				temp_password?: string;
+				email?: string;
+			};
+		},
+	): Promise<{ id: string }> => {
 		const headers = await authHeaders({ "Content-Type": "application/json" });
 		const resp = await fetch(`${BASE_URL}/api/v1/employees/`, {
 			method: "POST",
