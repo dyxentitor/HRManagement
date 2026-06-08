@@ -87,6 +87,52 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(org_id=self.request.user.org_id)
 
+    def create(self, request, *args, **kwargs):
+        """Create an employee, optionally provisioning + linking a login.
+
+        An optional `provision` object in the body =
+        {role_code, credential_method, temp_password?, email?}. When present,
+        a User is created and linked to the new Employee atomically — a
+        provisioning failure (e.g. duplicate email) rolls back the employee
+        insert. Provisioning requires the `user:create` perm in addition to
+        the `employee:create` perm enforced by `required_perms`.
+        """
+        from django.db import transaction
+        from rest_framework.exceptions import PermissionDenied
+
+        from common.audit.service import append as audit_append
+        from modules.identity.services.permissions import get_user_perms
+        from modules.identity.services.provisioning import provision_user
+
+        provision = request.data.get("provision")
+        # Perm gate BEFORE opening a transaction so a 403 doesn't start one.
+        if provision and "user:create" not in get_user_perms(request.user):
+            raise PermissionDenied("Provisioning a login requires user:create.")
+
+        with transaction.atomic():
+            response = super().create(request, *args, **kwargs)
+            if provision:
+                emp = Employee.objects.get(id=response.data["id"])
+                user = provision_user(
+                    org_id=request.user.org_id,
+                    email=provision.get("email") or emp.email,
+                    role_code=provision["role_code"],
+                    credential_method=provision["credential_method"],
+                    temp_password=provision.get("temp_password"),
+                    actor_id=request.user.id,
+                )
+                emp.user_id = user.id
+                emp.save(update_fields=["user_id", "updated_at"])
+                audit_append(
+                    org_id=request.user.org_id,
+                    action="employee.user_linked",
+                    entity="employee",
+                    entity_id=emp.id,
+                    after={"user_id": str(user.id), "provisioned": True},
+                )
+                response.data = self.get_serializer(emp).data
+        return response
+
     def retrieve(self, request, *args, **kwargs):
         from rest_framework.exceptions import PermissionDenied
 
