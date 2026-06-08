@@ -1,4 +1,4 @@
-import { Eye, Mail, Phone } from "lucide-react";
+import { Eye, Mail, Pencil, Phone } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ export interface EmployeeCardProps {
 	onView?: (id: string) => void;
 	onMail?: (email: string) => void;
 	onCall?: (phone: string) => void;
+	onEdit?: (id: string) => void;
 }
 
 const PALETTES: [string, string][] = [
@@ -44,6 +45,7 @@ export function EmployeeCard({
 	onView,
 	onMail,
 	onCall,
+	onEdit,
 }: EmployeeCardProps) {
 	const [from, to] = gradient ?? gradientFromName(employee.full_name);
 	const max = metric.max ?? 100;
@@ -73,36 +75,51 @@ export function EmployeeCard({
 					{employee.role_title}
 				</span>
 			)}
-			<div className="flex justify-center gap-2 mb-3">
+			<div className="flex flex-wrap justify-center gap-1.5 mb-3">
 				<Button
+					type="button"
 					variant="ghost"
-					size="icon"
-					className="size-6 rounded-full bg-canvas border border-border-subtle"
+					size="sm"
+					className="h-8 gap-1.5 rounded-md bg-canvas border border-border-subtle px-2.5 text-small text-text-secondary hover:text-accent-200"
 					aria-label="Email"
 					disabled={!employee.email}
 					onClick={() => employee.email && onMail?.(employee.email)}
 				>
-					<Mail className="size-3" />
+					<Mail /> Email
 				</Button>
 				<Button
+					type="button"
 					variant="ghost"
-					size="icon"
-					className="size-6 rounded-full bg-canvas border border-border-subtle"
+					size="sm"
+					className="h-8 gap-1.5 rounded-md bg-canvas border border-border-subtle px-2.5 text-small text-text-secondary hover:text-accent-200"
 					aria-label="Call"
 					disabled={!employee.phone}
 					onClick={() => employee.phone && onCall?.(employee.phone)}
 				>
-					<Phone className="size-3" />
+					<Phone /> Call
 				</Button>
 				<Button
+					type="button"
 					variant="ghost"
-					size="icon"
-					className="size-6 rounded-full bg-canvas border border-border-subtle"
+					size="sm"
+					className="h-8 gap-1.5 rounded-md bg-canvas border border-border-subtle px-2.5 text-small text-text-secondary hover:text-accent-200"
 					aria-label="View profile"
 					onClick={() => onView?.(employee.id)}
 				>
-					<Eye className="size-3" />
+					<Eye /> View
 				</Button>
+				{onEdit && (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="h-8 gap-1.5 rounded-md bg-canvas border border-border-subtle px-2.5 text-small text-text-secondary hover:text-accent-200"
+						aria-label="Edit"
+						onClick={() => onEdit(employee.id)}
+					>
+						<Pencil /> Edit
+					</Button>
+				)}
 			</div>
 			<ProgressBar
 				label={`${metric.label} · ${pct}%`}

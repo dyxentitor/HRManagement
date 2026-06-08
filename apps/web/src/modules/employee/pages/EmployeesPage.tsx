@@ -37,6 +37,7 @@ const tableColumns: Column<Employee>[] = [
 
 export default function EmployeesPage() {
 	const canAdd = useCan("employee:create");
+	const canEdit = useCan("employee:write:org");
 	const navigate = useNavigate();
 	const [employees, setEmployees] = useState<Employee[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -159,21 +160,27 @@ export default function EmployeesPage() {
 			) : view === "cards" ? (
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 					{filtered.map((e) => (
-						<button
+						<EmployeeCard
 							key={e.id}
-							type="button"
-							onClick={() => navigate(`/employees/${e.id}`)}
-							className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 rounded-xl"
-						>
-							<EmployeeCard
-								employee={e}
-								metric={{
-									label: "Attendance",
-									value: e.attendance_pct ?? 0,
-									max: 100,
-								}}
-							/>
-						</button>
+							employee={e}
+							metric={{
+								label: "Attendance",
+								value: e.attendance_pct ?? 0,
+								max: 100,
+							}}
+							onView={(id) => navigate(`/employees/${id}`)}
+							onMail={(email) => {
+								window.location.href = `mailto:${email}`;
+							}}
+							onCall={(phone) => {
+								window.location.href = `tel:${phone}`;
+							}}
+							onEdit={
+								canEdit
+									? (id) => navigate(`/employees/${id}/edit`)
+									: undefined
+							}
+						/>
 					))}
 				</div>
 			) : (

@@ -37,6 +37,42 @@ describe("EmployeeCard", () => {
 		expect(onView).toHaveBeenCalledWith(employee.id);
 	});
 
+	it("shows text labels next to the action icons", () => {
+		render(
+			<EmployeeCard
+				employee={employee}
+				metric={{ label: "Attendance", value: 98, max: 100 }}
+			/>,
+		);
+		expect(screen.getByText("Email")).toBeInTheDocument();
+		expect(screen.getByText("Call")).toBeInTheDocument();
+		expect(screen.getByText("View")).toBeInTheDocument();
+	});
+
+	it("shows an Edit button only when onEdit is provided", async () => {
+		const user = userEvent.setup();
+		const onEdit = vi.fn();
+		const { rerender } = render(
+			<EmployeeCard
+				employee={employee}
+				metric={{ label: "Attendance", value: 98, max: 100 }}
+			/>,
+		);
+		expect(
+			screen.queryByRole("button", { name: /edit/i }),
+		).not.toBeInTheDocument();
+
+		rerender(
+			<EmployeeCard
+				employee={employee}
+				metric={{ label: "Attendance", value: 98, max: 100 }}
+				onEdit={onEdit}
+			/>,
+		);
+		await user.click(screen.getByRole("button", { name: /edit/i }));
+		expect(onEdit).toHaveBeenCalledWith(employee.id);
+	});
+
 	it("renders metric label and value", () => {
 		render(
 			<EmployeeCard
