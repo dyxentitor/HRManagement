@@ -70,3 +70,36 @@ def test_missing_mandatory_field_invalid(dept: Department) -> None:
     ser = EmployeeSerializer(data=data)
     assert not ser.is_valid()
     assert "employee_code" in ser.errors
+
+
+@pytest.mark.django_db
+def test_duplicate_employee_code_invalid(org: Organization, dept: Department) -> None:
+    """A second employee with an existing code in the same org is rejected with
+    a clear, field-level message (not a DB IntegrityError / HTTP 500)."""
+    import datetime
+
+    from modules.employee.models import Employee
+
+    Employee.all_objects.create(
+        org_id=org.id,
+        employee_code="E-DUP",
+        first_name="First",
+        last_name="One",
+        email="one@x.co",
+        department=dept,
+        employment_type="fulltime",
+        hire_date=datetime.date(2026, 1, 1),
+    )
+    data = {
+        "employee_code": "E-DUP",
+        "first_name": "Second",
+        "last_name": "Two",
+        "email": "two@x.co",
+        "hire_date": "2026-01-02",
+        "department": str(dept.id),
+        "employment_type": "fulltime",
+    }
+    ser = EmployeeSerializer(data=data)
+    assert not ser.is_valid()
+    assert "employee_code" in ser.errors
+    assert "already exists" in str(ser.errors["employee_code"]).lower()

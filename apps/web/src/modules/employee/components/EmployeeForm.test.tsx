@@ -77,6 +77,30 @@ describe("EmployeeForm", () => {
 		expect(save).toBeEnabled();
 	});
 
+	it("omits blank optional fields from the create payload", async () => {
+		const user = userEvent.setup();
+		const onSubmit = vi.fn();
+		render(<EmployeeForm {...defaultProps} onSubmit={onSubmit} />);
+		await user.type(screen.getByLabelText(/employee code/i), "E100");
+		await user.type(screen.getByLabelText(/first name/i), "Ada");
+		await user.type(screen.getByLabelText(/last name/i), "Lovelace");
+		await user.type(screen.getByLabelText(/email/i), "ada@example.com");
+		await user.type(screen.getByLabelText(/hire date/i), "2026-01-01");
+		await user.selectOptions(screen.getByLabelText(/department/i), "d1");
+		await user.click(screen.getByRole("button", { name: /^save$/i }));
+
+		expect(onSubmit).toHaveBeenCalledTimes(1);
+		const payload = onSubmit.mock.calls[0][0];
+		// Blank optional date must NOT be sent as "" — DRF's DateField rejects it
+		// with a 400 ("Date has wrong format"), the original cause of this bug.
+		expect(payload.date_of_birth).toBeUndefined();
+		expect(payload.gender).toBeUndefined();
+		// Required + meaningful defaults are still present.
+		expect(payload.employee_code).toBe("E100");
+		expect(payload.employment_type).toBe("fulltime");
+		expect(payload.department).toBe("d1");
+	});
+
 	it("marks required fields with an asterisk legend", () => {
 		render(<EmployeeForm {...defaultProps} />);
 		expect(screen.getByText(/are required/i)).toBeInTheDocument();

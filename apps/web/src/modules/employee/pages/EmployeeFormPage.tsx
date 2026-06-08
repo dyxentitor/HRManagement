@@ -17,6 +17,44 @@ import {
 } from "../api";
 import { EmployeeForm } from "../components/EmployeeForm";
 
+/** Turn a "snake_case" API field name into a readable label. */
+function humanizeField(key: string): string {
+	if (!key || key === "non_field") return "Error";
+	return key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+}
+
+/**
+ * Normalise an API error body into per-field messages + a non-field summary.
+ *
+ * The backend emits RFC 7807 problem+json where `errors` is a LIST of
+ * `{ field, code, message }`. (A `field` of "non_field" means it isn't tied to
+ * a specific input.) A legacy `{ field: msg | msg[] }` dict shape is also
+ * tolerated so older responses keep working.
+ */
+function parseApiErrors(body: Record<string, unknown>): {
+	fieldErrs: Record<string, string>;
+	summary: string;
+} {
+	const fieldErrs: Record<string, string> = {};
+	let summary = "";
+	const append = (target: string, msg: string) => (target ? `${target} ${msg}` : msg);
+
+	const raw = body.errors;
+	if (Array.isArray(raw)) {
+		for (const item of raw as Array<{ field?: string; message?: string }>) {
+			const field = item.field ?? "non_field";
+			const msg = item.message ?? "Invalid value";
+			if (field === "non_field") summary = append(summary, msg);
+			else fieldErrs[field] = append(fieldErrs[field] ?? "", msg);
+		}
+	} else if (raw && typeof raw === "object") {
+		for (const [k, v] of Object.entries(raw as Record<string, string | string[]>)) {
+			fieldErrs[k] = Array.isArray(v) ? v.join(" ") : String(v);
+		}
+	}
+	return { fieldErrs, summary };
+}
+
 export default function EmployeeFormPage() {
 	const { id } = useParams<{ id: string }>();
 	const mode: "create" | "edit" = id ? "edit" : "create";
@@ -41,13 +79,10 @@ export default function EmployeeFormPage() {
 	useEffect(() => {
 		let cancelled = false;
 		setLoading(true);
-
 		(async () => {
 			try {
 				const [emp, depts, ts, ems, rs] = await Promise.all([
-					mode === "edit" && id
-						? employeeApi.retrieve(id)
-						: Promise.resolve(null),
+					mode === "edit" && id ? employeeApi.retrieve(id) : Promise.resolve(null),
 					departmentApi.list().catch(() => []),
 					teamApi.list().catch(() => []),
 					employeeApi.list().catch(() => []),
@@ -77,10 +112,7 @@ export default function EmployeeFormPage() {
 		};
 	}, [mode, id]);
 
-	async function performSave(
-		payload: Partial<EmployeeWritePayload>,
-		mfaCode?: string,
-	) {
+	async function performSave(payload: Partial<EmployeeWritePayload>, mfaCode?: string) {
 		setSaving(true);
 		setFieldErrors({});
 		setTopError(undefined);
@@ -97,25 +129,31 @@ export default function EmployeeFormPage() {
 		} catch (err) {
 			const e = err as { body?: Record<string, unknown> };
 			const body = e.body ?? {};
-			const errs = (body.errors ?? body) as Record<string, string | string[]>;
-			const flat: Record<string, string> = {};
-			for (const [k, v] of Object.entries(errs)) {
-				flat[k] = Array.isArray(v) ? v.join(" ") : String(v);
-			}
-			setFieldErrors(flat);
-			setTopError(
-				typeof body.detail === "string" ? body.detail : "Save failed",
-			);
-			toast.error("Could not save");
+			const { fieldErrs, summary } = parseApiErrors(body);
+			setFieldErrors(fieldErrs);
+
+			// Banner: prefer the non_field summary, then per-field messages, then
+			// the problem `detail`, then a generic fallback.
+			const fieldMsgs = Object.entries(fieldErrs).map(([k, m]) => `${humanizeField(k)}: ${m}`);
+			const banner =
+				summary ||
+				(fieldMsgs.length ? fieldMsgs.join(" • ") : "") ||
+				(typeof body.detail === "string" ? body.detail : "") ||
+				"Could not save. Please check the form and try again.";
+			setTopError(banner);
+
+			// Toast stays concise but specific when there's a single clear cause.
+			const firstMsg =
+				summary ||
+				fieldMsgs[0] ||
+				(typeof body.detail === "string" ? body.detail : "Could not save");
+			toast.error(firstMsg);
 		} finally {
 			setSaving(false);
 		}
 	}
 
-	function handleSubmit(
-		payload: Partial<EmployeeWritePayload>,
-		replaced: Set<string>,
-	) {
+	function handleSubmit(payload: Partial<EmployeeWritePayload>, replaced: Set<string>) {
 		const bankReplaced = replaced.has("bank_account_number");
 		if (mode === "edit" && bankReplaced) {
 			setPendingMfa({ payload });
@@ -126,9 +164,7 @@ export default function EmployeeFormPage() {
 
 	function submitMfa(code: string) {
 		if (!pendingMfa) return;
-		void performSave(pendingMfa.payload, code).finally(() =>
-			setPendingMfa(null),
-		);
+		void performSave(pendingMfa.payload, code).finally(() => setPendingMfa(null));
 	}
 
 	if (loading) return <p className="text-text-tertiary">Loading…</p>;
@@ -139,10 +175,7 @@ export default function EmployeeFormPage() {
 				breadcrumb="Employees"
 				title={mode === "create" ? "New employee" : "Edit employee"}
 				actions={
-					<a
-						href="/employees"
-						className="text-small text-accent-200 hover:text-accent-50"
-					>
+					<a href="/employees" className="text-small text-accent-200 hover:text-accent-50">
 						← All employees
 					</a>
 				}
@@ -157,17 +190,13 @@ export default function EmployeeFormPage() {
 				roles={roles}
 				canProvision={canProvision}
 				onSubmit={handleSubmit}
-				onCancel={() =>
-					nav(mode === "edit" && id ? `/employees/${id}` : "/employees")
-				}
+				onCancel={() => nav(mode === "edit" && id ? `/employees/${id}` : "/employees")}
 				fieldErrors={fieldErrors}
 				topError={topError}
 				saving={saving}
 			/>
 
-			{pendingMfa && (
-				<MfaPrompt onCancel={() => setPendingMfa(null)} onSubmit={submitMfa} />
-			)}
+			{pendingMfa && <MfaPrompt onCancel={() => setPendingMfa(null)} onSubmit={submitMfa} />}
 		</div>
 	);
 }

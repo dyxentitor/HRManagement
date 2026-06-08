@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -88,6 +88,72 @@ describe("EmployeeFormPage — create", () => {
 		renderAt("/employees/new");
 		await waitFor(() => screen.getByRole("button", { name: /^save$/i }));
 		expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled();
+	});
+
+	async function fillRequiredAndSave() {
+		const user = userEvent.setup();
+		await waitFor(() => screen.getByRole("button", { name: /^save$/i }));
+		await user.type(screen.getByLabelText(/employee code/i), "E100");
+		await user.type(screen.getByLabelText(/first name/i), "Ada");
+		await user.type(screen.getByLabelText(/last name/i), "Lovelace");
+		await user.type(screen.getByLabelText(/email/i), "ada@x.com");
+		await user.type(screen.getByLabelText(/hire date/i), "2026-01-01");
+		await user.selectOptions(screen.getByLabelText(/department/i), "d1");
+		await user.click(screen.getByRole("button", { name: /^save$/i }));
+	}
+
+	it("renders a field-level error from an RFC 7807 errors list", async () => {
+		mocks.create.mockRejectedValue(
+			Object.assign(new Error("Create failed"), {
+				status: 400,
+				body: {
+					type: "about:blank",
+					title: "Validation failed",
+					status: 400,
+					detail: "One or more fields failed validation.",
+					errors: [
+						{
+							field: "email",
+							code: "invalid",
+							message:
+								"A user with email ada@x.com already exists. Link instead.",
+						},
+					],
+				},
+			}),
+		);
+		renderAt("/employees/new");
+		await fillRequiredAndSave();
+		// The message binds inline to the offending field (not just the banner).
+		const emailBox = screen.getByLabelText(/email/i).closest("div");
+		await waitFor(() =>
+			expect(within(emailBox as HTMLElement).getByText(/already exists/i)).toBeInTheDocument(),
+		);
+	});
+
+	it("surfaces a non_field error in the top banner", async () => {
+		mocks.create.mockRejectedValue(
+			Object.assign(new Error("Create failed"), {
+				status: 400,
+				body: {
+					detail: "One or more fields failed validation.",
+					errors: [
+						{
+							field: "non_field",
+							code: "invalid",
+							message: "Department is required.",
+						},
+					],
+				},
+			}),
+		);
+		renderAt("/employees/new");
+		await fillRequiredAndSave();
+		await waitFor(() =>
+			expect(screen.getByRole("alert")).toHaveTextContent(
+				/department is required/i,
+			),
+		);
 	});
 });
 

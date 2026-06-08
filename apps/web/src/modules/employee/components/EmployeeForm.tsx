@@ -97,9 +97,7 @@ export function EmployeeForm({
 	const bank = useFieldPerm("employee:bank:read", "employee:bank:write");
 
 	const [collapsed, setCollapsed] = useState<Set<string>>(() =>
-		mode === "create"
-			? new Set(["personal", "address", "banking"])
-			: new Set(),
+		mode === "create" ? new Set(["personal", "address", "banking"]) : new Set(),
 	);
 	const [draft, setDraft] = useState<Partial<EmployeeWritePayload>>(() => ({
 		employee_code: initial?.employee_code ?? "",
@@ -142,10 +140,8 @@ export function EmployeeForm({
 
 	const showProvision = mode === "create" && canProvision;
 
-	const set = <K extends keyof EmployeeWritePayload>(
-		k: K,
-		v: EmployeeWritePayload[K],
-	) => setDraft((d) => ({ ...d, [k]: v }));
+	const set = <K extends keyof EmployeeWritePayload>(k: K, v: EmployeeWritePayload[K]) =>
+		setDraft((d) => ({ ...d, [k]: v }));
 
 	const setEncrypted = (field: string, v: string) => {
 		setReplaced((r) => new Set(r).add(field));
@@ -156,9 +152,7 @@ export function EmployeeForm({
 		if (mode === "edit") return true;
 		return REQUIRED_FIELDS_CREATE.every((k) => {
 			const v = draft[k];
-			return typeof v === "string"
-				? v.trim() !== ""
-				: v !== null && v !== undefined;
+			return typeof v === "string" ? v.trim() !== "" : v !== null && v !== undefined;
 		});
 	}, [draft, mode]);
 
@@ -173,7 +167,16 @@ export function EmployeeForm({
 
 	function handleSave(e: React.FormEvent) {
 		e.preventDefault();
-		const payload: Partial<EmployeeWritePayload> = { ...draft };
+		// Drop blank optional fields. An empty string sent for a nullable date /
+		// choice field (e.g. date_of_birth) makes DRF return a 400 ("Date has
+		// wrong format"), which is the root cause of the create failure. Omitting
+		// the key lets the backend apply null / its default instead. Required
+		// fields are guaranteed non-empty (Save is disabled otherwise).
+		const payload: Partial<EmployeeWritePayload> = {};
+		for (const [k, v] of Object.entries(draft)) {
+			if (v === "") continue;
+			(payload as Record<string, unknown>)[k] = v;
+		}
 		if (showProvision && provisionOn) {
 			(payload as Partial<EmployeeWritePayload> & ProvisionPayload).provision = {
 				role_code: roleCode,
@@ -194,8 +197,8 @@ export function EmployeeForm({
 
 			{mode === "create" && (
 				<p className="text-small text-text-tertiary">
-					Fields marked <span className="text-coral">*</span> are required. You
-					can complete the rest later.
+					Fields marked <span className="text-coral">*</span> are required. You can complete the
+					rest later.
 				</p>
 			)}
 
@@ -253,9 +256,7 @@ export function EmployeeForm({
 			{showProvision && (
 				<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
 					<header className="flex items-center justify-between mb-3">
-						<h2 className="text-h3 text-text-primary">
-							Provision login account
-						</h2>
+						<h2 className="text-h3 text-text-primary">Provision login account</h2>
 						<Switch
 							aria-label="Provision login account"
 							checked={provisionOn}
@@ -287,9 +288,7 @@ export function EmployeeForm({
 									id="provision_method"
 									className="bg-canvas border border-border-subtle rounded px-2 py-1.5"
 									value={credMethod}
-									onChange={(e) =>
-										setCredMethod(e.target.value as "invite" | "temp")
-									}
+									onChange={(e) => setCredMethod(e.target.value as "invite" | "temp")}
 								>
 									<option value="invite">Send email invite</option>
 									<option value="temp">Set temporary password</option>
@@ -312,18 +311,10 @@ export function EmployeeForm({
 			)}
 
 			<div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border-subtle p-4 flex items-center justify-end gap-2 shadow-lg">
-				<Button
-					type="button"
-					variant="ghost"
-					onClick={onCancel}
-					disabled={saving}
-				>
+				<Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
 					Cancel
 				</Button>
-				<Button
-					type="submit"
-					disabled={saving || (mode === "create" && !allRequiredFilled)}
-				>
+				<Button type="submit" disabled={saving || (mode === "create" && !allRequiredFilled)}>
 					{saving ? "Saving…" : "Save"}
 				</Button>
 			</div>
@@ -333,10 +324,7 @@ export function EmployeeForm({
 
 interface SectionRenderArgs {
 	draft: Partial<EmployeeWritePayload>;
-	set: <K extends keyof EmployeeWritePayload>(
-		k: K,
-		v: EmployeeWritePayload[K],
-	) => void;
+	set: <K extends keyof EmployeeWritePayload>(k: K, v: EmployeeWritePayload[K]) => void;
 	setEncrypted: (field: string, v: string) => void;
 	initial: Employee | null;
 	fieldErrors: Record<string, string>;
@@ -371,10 +359,7 @@ function field(
 	);
 }
 
-function renderSection(
-	id: Section["id"],
-	a: SectionRenderArgs,
-): React.ReactNode {
+function renderSection(id: Section["id"], a: SectionRenderArgs): React.ReactNode {
 	const ro = !a.writeOrg.canWrite;
 	switch (id) {
 		case "identity":
@@ -495,9 +480,7 @@ function renderSection(
 						</select>,
 					)}
 					<div className="sm:col-span-2">
-						<span className="text-label uppercase text-text-tertiary block mb-1">
-							Manager
-						</span>
+						<span className="text-label uppercase text-text-tertiary block mb-1">Manager</span>
 						<ManagerPicker
 							value={a.draft.manager ?? null}
 							excludeIds={a.initial?.id ? [a.initial.id] : []}
@@ -606,9 +589,7 @@ function renderSection(
 							maxLength={2}
 							readOnly={ro}
 							value={a.draft.nationality ?? ""}
-							onChange={(e) =>
-								a.set("nationality", e.target.value.toUpperCase())
-							}
+							onChange={(e) => a.set("nationality", e.target.value.toUpperCase())}
 						/>,
 					)}
 					{field(
@@ -639,9 +620,7 @@ function renderSection(
 						/>,
 					)}
 					<div>
-						<span className="text-label uppercase text-text-tertiary block mb-1">
-							IC number
-						</span>
+						<span className="text-label uppercase text-text-tertiary block mb-1">IC number</span>
 						<EncryptedFieldInput
 							label="IC"
 							last4={a.initial?.ic_last4 ?? null}
@@ -713,9 +692,7 @@ function renderSection(
 							maxLength={2}
 							readOnly={ro}
 							value={a.draft.country_code ?? ""}
-							onChange={(e) =>
-								a.set("country_code", e.target.value.toUpperCase())
-							}
+							onChange={(e) => a.set("country_code", e.target.value.toUpperCase())}
 						/>,
 					)}
 					{field(
@@ -764,21 +741,19 @@ function renderSection(
 							canWrite={a.bank.canWrite}
 						/>
 					</div>
-					{(["lhdn_tax_no", "epf_no", "socso_no", "eis_no"] as const).map(
-						(f) => (
-							<div key={f}>
-								<span className="text-label uppercase text-text-tertiary block mb-1">
-									{f.replace(/_/g, " ").replace(" no", "")}
-								</span>
-								<EncryptedFieldInput
-									label={f}
-									last4={null}
-									onReplace={(v) => a.setEncrypted(f, v)}
-									canWrite={a.bank.canWrite}
-								/>
-							</div>
-						),
-					)}
+					{(["lhdn_tax_no", "epf_no", "socso_no", "eis_no"] as const).map((f) => (
+						<div key={f}>
+							<span className="text-label uppercase text-text-tertiary block mb-1">
+								{f.replace(/_/g, " ").replace(" no", "")}
+							</span>
+							<EncryptedFieldInput
+								label={f}
+								last4={null}
+								onReplace={(v) => a.setEncrypted(f, v)}
+								canWrite={a.bank.canWrite}
+							/>
+						</div>
+					))}
 					{field(
 						"emergency_contact_name",
 						"Emergency contact name",
@@ -796,9 +771,7 @@ function renderSection(
 							id="emergency_contact_relationship"
 							readOnly={ro}
 							value={a.draft.emergency_contact_relationship ?? ""}
-							onChange={(e) =>
-								a.set("emergency_contact_relationship", e.target.value)
-							}
+							onChange={(e) => a.set("emergency_contact_relationship", e.target.value)}
 						/>,
 					)}
 					{field(

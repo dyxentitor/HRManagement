@@ -49,6 +49,23 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
         return profile_completeness(obj)
 
+    def validate_employee_code(self, value: str) -> str:
+        """Reject a duplicate code with a clear, field-level message.
+
+        The DB has a ``(org_id, employee_code)`` unique constraint, but
+        ``org_id`` is server-set (read-only here) so DRF can't auto-build a
+        UniqueTogetherValidator. Without this check a duplicate would surface
+        as a DB IntegrityError → HTTP 500 instead of a 400 the form can show.
+        ``Employee.objects`` is tenant-scoped (current org) and excludes
+        soft-deleted rows, so this is naturally org-local.
+        """
+        qs = Employee.objects.filter(employee_code=value)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(f"An employee with code '{value}' already exists.")
+        return value
+
     class Meta:
         model = Employee
         fields = (
