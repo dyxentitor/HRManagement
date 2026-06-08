@@ -116,8 +116,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 user = provision_user(
                     org_id=request.user.org_id,
                     email=provision.get("email") or emp.email,
-                    role_code=provision["role_code"],
-                    credential_method=provision["credential_method"],
+                    role_code=provision.get("role_code"),
+                    credential_method=provision.get("credential_method"),
                     temp_password=provision.get("temp_password"),
                     actor_id=request.user.id,
                 )

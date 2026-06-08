@@ -160,6 +160,42 @@ def test_create_employee_without_provision_unchanged(
 
 
 @pytest.mark.django_db
+def test_provision_missing_role_code_returns_400(
+    org: Organization, dept: Department
+) -> None:
+    client, _ = _admin_client(org)
+    body = {
+        **_employee_payload(dept),
+        "provision": {"credential_method": "invite"},  # no role_code
+    }
+    resp = client.post("/api/v1/employees/", body, format="json")
+    # Malformed client input must be a clean 400, never an unhandled 500.
+    assert resp.status_code == 400, resp.content
+    # Rollback: the employee insert must NOT have committed.
+    assert not Employee.all_objects.filter(
+        org_id=org.id, employee_code="PVT-200"
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_provision_missing_credential_method_returns_400(
+    org: Organization, dept: Department
+) -> None:
+    client, _ = _admin_client(org)
+    body = {
+        **_employee_payload(dept),
+        "provision": {"role_code": "employee"},  # no credential_method
+    }
+    resp = client.post("/api/v1/employees/", body, format="json")
+    # Malformed client input must be a clean 400, never an unhandled 500.
+    assert resp.status_code == 400, resp.content
+    # Rollback: the employee insert must NOT have committed.
+    assert not Employee.all_objects.filter(
+        org_id=org.id, employee_code="PVT-200"
+    ).exists()
+
+
+@pytest.mark.django_db
 def test_provision_requires_user_create_perm(
     org: Organization, dept: Department
 ) -> None:
