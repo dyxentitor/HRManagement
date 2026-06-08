@@ -2,6 +2,79 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.11.0] — 2026-06-08
+
+Unified user/employee creation. Makes onboarding a single coherent flow in
+both directions, lets HR save an employee with only the essentials and
+complete the rest later, and fills the previously-missing "create user"
+admin UI. The nullable `User`↔`Employee` OneToOne is unchanged — user-only
+(auditor / service account) and employee-only (record without login) both
+remain valid. Spec + plan: `References/Prompt_v1.11.0_unified_user_employee_creation.md`,
+`docs/superpowers/plans/2026-06-08-v1.11.0-unified-user-employee-creation.md`.
+
+### Added
+
+- **Progressive employee creation.** The employee create form now requires
+  only 7 fields — `employee_code`, `first_name`, `last_name`, `email`,
+  `hire_date`, `department`, `employment_type` — with required fields marked
+  `*` and the rest in collapsible "Complete later" sections. Backend made
+  the non-essential fields nullable (additive migration
+  `employee.0004_alter_employee_address_line1_and_more`; the DRF serializer
+  auto-relaxes `required` from the model).
+- **Employee-first login provisioning.** An optional "Provision login
+  account" section on `/employees/new` (role + credential method) creates +
+  links a `User` atomically in the same submit. Existing-email is rejected
+  with a "link instead" hint.
+- **User-first creation page.** New `/admin/settings/users/new` (there was
+  no user-creation UI before) with an optional "Also create an employee
+  record" toggle revealing the 7 minimal fields. Linked from the
+  Users linking page. Backend `POST /api/v1/users/` (`UserCreateView`).
+- **Shared `provision_user` service** (`modules/identity/services/provisioning.py`)
+  used by both paths: creates the user, assigns one role, writes a
+  `user.created` audit row, busts the perm cache, and either sends an email
+  invite (reusing the v1.2.0 reset flow — user with an unusable password
+  sets their own) or sets a temp password with `must_change_password=True`.
+- **Forced password change.** `User.must_change_password` flag (additive
+  migration `identity.0005_user_must_change_password`), surfaced in the
+  login + `/me` responses, enforced by a frontend gate
+  (`SignedOutGate`) that routes such users to a new
+  `/force-password-change` interstitial until they set a new password via
+  the authenticated `POST /api/v1/auth/password/change`.
+- **Profile-completeness indicator.** `profile_completeness`
+  (`{percent, missing[]}`) computed field on the employee serializer and a
+  non-blocking banner on the employee detail page linking to the edit form.
+- **Permission `user:create`** — granted to `org_admin` and `hr_manager`.
+  Permission codes **110 → 111**. Backfill existing orgs with
+  `python manage.py grant_default_perms` (idempotent; busts the perm cache).
+
+### Changed
+
+- Employee create payload accepts an optional `provision` block; malformed
+  or non-object `provision` returns RFC 7807 **400**, never 500.
+- `EmployeeWritePayload` (web) now types the now-optional fields as optional.
+- OpenAPI contract + generated TS regenerated.
+
+### Known limitations
+
+- `must_change_password` is a **client-side UX gate, not a backend security
+  boundary**: a temp-password user holds a valid JWT and could call APIs
+  directly before rotating. Acceptable for the intended flow (a temp
+  password handed to the legitimate new hire who immediately changes it). A
+  server-side middleware that 403s non-`/auth/password/change` requests
+  while the flag is set is a possible future hardening.
+- The auth views remain un-`@extend_schema`'d, so `must_change_password`
+  and the new endpoints' request/response bodies are not in the typed
+  contract — the SPA reads them via casts (pre-existing pattern).
+
+### Tests
+
+- Backend: **739 passed** (+38 vs v1.10.1). Pre-existing, unrelated failure
+  carried forward: `modules/attendance/tests/test_clock_flow.py::test_clock_out_completes_record`
+  (date-sensitive; fails identically on `master`, branch touches no
+  attendance code — to be fixed separately).
+- Frontend: **298 passed** (+20 vs v1.10.1).
+- Permission codes: **111**.
+
 ## [1.10.1] — 2026-05-15
 
 Closes the seven findings from the v1.10.0 Playwright sweep
