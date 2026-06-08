@@ -90,3 +90,9 @@ def test_uses_email_as_username_field(org_id: uuid.UUID) -> None:
     u = User.objects.create_user(email="g@example.com", password="x", org_id=org_id)
     assert u.USERNAME_FIELD == "email"
     assert u.get_username() == "g@example.com"
+
+
+@pytest.mark.django_db
+def test_must_change_password_defaults_false(org_id: uuid.UUID) -> None:
+    u = User.objects.create_user(email="a@b.co", password="Pw!23456", org_id=org_id)
+    assert u.must_change_password is False
