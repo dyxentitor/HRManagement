@@ -96,47 +96,104 @@ export default function LeaveApplyPage() {
 					</select>
 				</Field>
 
-				<div className="grid grid-cols-2 gap-3">
-					<Field label="Start date" required>
-						<input
-							type="date"
-							value={startDate}
-							onChange={(e) => setStartDate(e.target.value)}
-							required
-							className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-						/>
-					</Field>
-					<Field label="End date" required>
-						<input
-							type="date"
-							value={endDate}
-							onChange={(e) => setEndDate(e.target.value)}
-							required
-							className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-						/>
-					</Field>
+				<div>
+					<span className="block text-sm text-text-secondary mb-1">
+						Duration
+					</span>
+					<div className="flex gap-4 text-sm">
+						<label className="flex items-center gap-2">
+							<input
+								type="radio"
+								name="duration"
+								aria-label="Full day"
+								checked={!isHalfDay}
+								onChange={() => setIsHalfDay(false)}
+							/>
+							Full day
+						</label>
+						<label className="flex items-center gap-2">
+							<input
+								type="radio"
+								name="duration"
+								aria-label="Half day"
+								checked={isHalfDay}
+								onChange={() => {
+									setIsHalfDay(true);
+									setEndDate(startDate);
+								}}
+							/>
+							Half day
+						</label>
+					</div>
 				</div>
 
-				<Field label="Half day?">
-					<label className="flex items-center gap-2 text-sm">
-						<input
-							type="checkbox"
-							checked={isHalfDay}
-							onChange={(e) => setIsHalfDay(e.target.checked)}
-						/>
-						Half day
-					</label>
-					{isHalfDay && (
-						<select
-							value={halfDayPeriod}
-							onChange={(e) => setHalfDayPeriod(e.target.value)}
-							className="border border-border-subtle rounded px-2 py-1 ml-2 bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
-						>
-							<option value="am">AM</option>
-							<option value="pm">PM</option>
-						</select>
-					)}
-				</Field>
+				{isHalfDay ? (
+					<>
+						<Field label="Date" required>
+							<input
+								type="date"
+								aria-label="Date"
+								value={startDate}
+								onChange={(e) => {
+									setStartDate(e.target.value);
+									setEndDate(e.target.value);
+								}}
+								required
+								className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
+							/>
+						</Field>
+						<div>
+							<span className="block text-sm text-text-secondary mb-1">
+								Period <span className="text-coral">*</span>
+							</span>
+							<div className="flex gap-4 text-sm">
+								<label className="flex items-center gap-2">
+									<input
+										type="radio"
+										name="period"
+										aria-label="Morning (AM)"
+										checked={halfDayPeriod === "am"}
+										onChange={() => setHalfDayPeriod("am")}
+									/>
+									Morning (AM)
+								</label>
+								<label className="flex items-center gap-2">
+									<input
+										type="radio"
+										name="period"
+										aria-label="Afternoon (PM)"
+										checked={halfDayPeriod === "pm"}
+										onChange={() => setHalfDayPeriod("pm")}
+									/>
+									Afternoon (PM)
+								</label>
+							</div>
+						</div>
+					</>
+				) : (
+					<div className="grid grid-cols-2 gap-3">
+						<Field label="Start date" required>
+							<input
+								type="date"
+								aria-label="Start date"
+								value={startDate}
+								onChange={(e) => setStartDate(e.target.value)}
+								required
+								className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
+							/>
+						</Field>
+						<Field label="End date" required>
+							<input
+								type="date"
+								aria-label="End date"
+								value={endDate}
+								onChange={(e) => setEndDate(e.target.value)}
+								required
+								className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
+							/>
+						</Field>
+					</div>
+				)}
 
 				<Field label="Reason">
 					<textarea
