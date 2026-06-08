@@ -60,7 +60,12 @@ def login(email: str, password: str, ip: str | None, user_agent: str) -> dict:
 
     access, refresh = _issue_tokens(user)
     create_session(user, refresh_token=refresh, ip=ip, user_agent=user_agent)
-    return {"access_token": access, "refresh_token": refresh, "mfa_required": False}
+    return {
+        "access_token": access,
+        "refresh_token": refresh,
+        "mfa_required": False,
+        "must_change_password": user.must_change_password,
+    }
 
 
 def refresh_tokens(refresh_token: str, ip: str | None, user_agent: str) -> dict:
@@ -118,4 +123,11 @@ def complete_password_reset(token: str, new_password: str) -> None:
     user.set_password(new_password)
     user.save(update_fields=["password", "updated_at"])
     cache.delete(f"pwreset:{token}")
+    revoke_all_user_sessions(user)
+
+
+def change_own_password(*, user: User, new_password: str) -> None:
+    user.set_password(new_password)
+    user.must_change_password = False
+    user.save(update_fields=["password", "must_change_password", "updated_at"])
     revoke_all_user_sessions(user)

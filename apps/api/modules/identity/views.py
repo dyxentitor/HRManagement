@@ -11,6 +11,7 @@ from .serializers import (
     LoginSerializer,
     LogoutSerializer,
     MeSerializer,
+    PasswordChangeSerializer,
     PasswordForgotSerializer,
     PasswordResetSerializer,
     RefreshSerializer,
@@ -102,6 +103,17 @@ def password_reset_view(request) -> Response:
     return Response({"detail": "Password updated."})
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def password_change_view(request) -> Response:
+    s = PasswordChangeSerializer(data=request.data)
+    s.is_valid(raise_exception=True)
+    from modules.identity.services.auth import change_own_password
+
+    change_own_password(user=request.user, new_password=s.validated_data["new_password"])
+    return Response({"detail": "Password updated."})
+
+
 from .serializers import LoginMFASerializer, MFAConfirmSerializer  # noqa: E402
 from .services import mfa as mfa_service  # noqa: E402
 from .services.sessions import create_session  # noqa: E402
@@ -164,7 +176,13 @@ def login_mfa_view(request) -> Response:
         ip=_client_ip(request),
         user_agent=_ua(request),
     )
-    return Response({"access_token": str(refresh.access_token), "refresh_token": str(refresh)})
+    return Response(
+        {
+            "access_token": str(refresh.access_token),
+            "refresh_token": str(refresh),
+            "must_change_password": user.must_change_password,
+        }
+    )
 
 
 # --- Admin: role admin endpoints (Feature 2) -----------------------------

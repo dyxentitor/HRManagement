@@ -19,6 +19,7 @@ class LoginResponseSerializer(serializers.Serializer):
     refresh_token = serializers.CharField()
     mfa_required = serializers.BooleanField(default=False)
     mfa_token = serializers.CharField(required=False, allow_blank=True, default="")
+    must_change_password = serializers.BooleanField(default=False)
 
 
 class RefreshSerializer(serializers.Serializer):
@@ -41,6 +42,7 @@ class MeSerializer(serializers.ModelSerializer):
             "email",
             "status",
             "mfa_enabled",
+            "must_change_password",
             "preferences",
             "permissions",
             "role_codes",
@@ -59,6 +61,10 @@ class PasswordForgotSerializer(serializers.Serializer):
 
 class PasswordResetSerializer(serializers.Serializer):
     token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+
+class PasswordChangeSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True, min_length=8)
 
 
