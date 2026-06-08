@@ -118,6 +118,22 @@ export const userRolesApi = {
 	},
 };
 
+// Extract a human-readable reason from an RFC 7807 / DRF error body so the
+// UI can surface the real cause (duplicate email, bad role, etc.) instead of
+// a generic message. Mirrors settings-api.ts::unwrapErr, plus errors[0].message.
+function extractErrMessage(error: unknown, fallback: string): string {
+	if (error && typeof error === "object") {
+		const body = error as {
+			detail?: unknown;
+			errors?: Array<{ message?: unknown }>;
+		};
+		if (typeof body.detail === "string" && body.detail) return body.detail;
+		const first = body.errors?.[0]?.message;
+		if (typeof first === "string" && first) return first;
+	}
+	return fallback;
+}
+
 export const userApi = {
 	create: async (body: {
 		email: string;
@@ -131,7 +147,8 @@ export const userApi = {
 		const { data, error } = await api.POST("/api/v1/users/", {
 			body: body as never,
 		});
-		if (error) throw new Error("Could not create user");
+		if (error)
+			throw new Error(extractErrMessage(error, "Could not create user"));
 		return data as unknown as { id: string };
 	},
 };

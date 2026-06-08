@@ -115,6 +115,24 @@ describe("UserCreatePage", () => {
 		});
 	});
 
+	it("surfaces the backend error reason when create fails", async () => {
+		const reason = "A user with email x already exists. Link instead.";
+		(userApi.create as ReturnType<typeof vi.fn>).mockRejectedValue(
+			new Error(reason),
+		);
+		renderPage();
+		await waitFor(() => screen.getByLabelText(/^email/i));
+
+		await userEvent.type(screen.getByLabelText(/^email/i), "newhire@x.com");
+		await userEvent.selectOptions(
+			screen.getByLabelText(/^role/i),
+			"hr_manager",
+		);
+		await userEvent.click(screen.getByRole("button", { name: /create user/i }));
+
+		expect(await screen.findByText(reason)).toBeInTheDocument();
+	});
+
 	it("renders no-permission state without user:create", async () => {
 		canCreate = false;
 		renderPage();
