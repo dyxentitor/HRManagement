@@ -56,25 +56,25 @@ class Employee(TenantBaseModel):
     last_name = models.CharField(max_length=100)
     preferred_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField()
-    phone = models.CharField(max_length=32)
+    phone = models.CharField(max_length=32, null=True, blank=True)
     alt_phone = models.CharField(max_length=32, blank=True)
 
     # Personal (encrypted IC; last 4 plaintext for display)
     ic_number = EncryptedCharField(max_length=64, null=True, blank=True)
     ic_last4 = models.CharField(max_length=4, blank=True)
-    date_of_birth = models.DateField()
-    gender = models.CharField(max_length=16, choices=GENDER_CHOICES)
-    nationality = models.CharField(max_length=2)
-    marital_status = models.CharField(max_length=16, choices=MARITAL_CHOICES)
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=16, choices=GENDER_CHOICES, null=True, blank=True)
+    nationality = models.CharField(max_length=2, null=True, blank=True)
+    marital_status = models.CharField(max_length=16, choices=MARITAL_CHOICES, null=True, blank=True)
     religion = models.CharField(max_length=32, blank=True)
 
     # Address
-    address_line1 = models.CharField(max_length=200)
-    address_line2 = models.CharField(max_length=200, blank=True)
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    postcode = models.CharField(max_length=20)
-    country_code = models.CharField(max_length=2)
+    address_line1 = models.CharField(max_length=200, null=True, blank=True)
+    address_line2 = models.CharField(max_length=200, null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    state = models.CharField(max_length=100, null=True, blank=True)
+    postcode = models.CharField(max_length=20, null=True, blank=True)
+    country_code = models.CharField(max_length=2, null=True, blank=True)
 
     # Employment
     department = models.ForeignKey(
@@ -96,7 +96,7 @@ class Employee(TenantBaseModel):
         blank=True,
         related_name="members",
     )
-    role_title = models.CharField(max_length=100)
+    role_title = models.CharField(max_length=100, null=True, blank=True)
     employment_type = models.CharField(max_length=16, choices=EMPLOYMENT_TYPE_CHOICES)
     schedule_type = models.CharField(max_length=8, choices=SCHEDULE_TYPE_CHOICES, default="fixed")
     hire_date = models.DateField()
@@ -105,7 +105,7 @@ class Employee(TenantBaseModel):
     confirmed_at = models.DateTimeField(null=True, blank=True)
 
     # Bank (encrypted)
-    bank_name = models.CharField(max_length=100)
+    bank_name = models.CharField(max_length=100, null=True, blank=True)
     bank_account_number = EncryptedCharField(max_length=64, null=True, blank=True)
     bank_account_last4 = models.CharField(max_length=4, blank=True)
 
@@ -116,9 +116,9 @@ class Employee(TenantBaseModel):
     eis_no = EncryptedCharField(max_length=64, null=True, blank=True)
 
     # Emergency contact (single)
-    emergency_contact_name = models.CharField(max_length=100)
-    emergency_contact_relationship = models.CharField(max_length=50)
-    emergency_contact_phone = models.CharField(max_length=32)
+    emergency_contact_name = models.CharField(max_length=100, null=True, blank=True)
+    emergency_contact_relationship = models.CharField(max_length=50, null=True, blank=True)
+    emergency_contact_phone = models.CharField(max_length=32, null=True, blank=True)
 
     # Profile photo (post-resize thumbnail key in MinIO; empty = no photo)
     photo_s3_key = models.CharField(max_length=255, blank=True, default="")

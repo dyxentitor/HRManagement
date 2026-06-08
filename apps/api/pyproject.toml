@@ -53,6 +53,10 @@ ignore = ["S101"]  # allow `assert` in tests
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S", "N", "B"]
+# Progressive employee profiles: non-essential string fields are intentionally
+# nullable so DRF's ModelSerializer relaxes `required`. NULL means "not yet
+# provided" (distinct from an empty string), which is the desired semantics.
+"modules/employee/models.py" = ["DJ001"]
 
 [tool.ruff.format]
 quote-style = "double"
