@@ -35,19 +35,51 @@ beforeEach(() => {
 });
 
 describe("EmployeeForm", () => {
-	it("collapses and expands sections", async () => {
+	it("expands and collapses the employment section", async () => {
 		const user = userEvent.setup();
 		render(<EmployeeForm {...defaultProps} />);
-		const toggle = screen.getByRole("button", { name: /^toggle personal$/i });
-		expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
+		const toggle = screen.getByRole("button", {
+			name: /^toggle employment$/i,
+		});
+		expect(screen.getByLabelText(/hire date/i)).toBeInTheDocument();
 		await user.click(toggle);
+		expect(screen.queryByLabelText(/hire date/i)).not.toBeInTheDocument();
+	});
+
+	it("starts optional sections collapsed in create mode", async () => {
+		const user = userEvent.setup();
+		render(<EmployeeForm {...defaultProps} />);
+		// "personal" is collapsed by default in create mode → its fields hidden
 		expect(screen.queryByLabelText(/date of birth/i)).not.toBeInTheDocument();
+		const toggle = screen.getByRole("button", { name: /^toggle personal$/i });
+		await user.click(toggle);
+		expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
 	});
 
 	it("disables Save until required fields are present", () => {
 		render(<EmployeeForm {...defaultProps} />);
 		const save = screen.getByRole("button", { name: /^save$/i });
 		expect(save).toBeDisabled();
+	});
+
+	it("enables Save with only the 7 required fields filled (create mode)", async () => {
+		const user = userEvent.setup();
+		render(<EmployeeForm {...defaultProps} />);
+		// employment_type defaults to "fulltime" in the draft, so 6 to fill
+		await user.type(screen.getByLabelText(/employee code/i), "E100");
+		await user.type(screen.getByLabelText(/first name/i), "Ada");
+		await user.type(screen.getByLabelText(/last name/i), "Lovelace");
+		await user.type(screen.getByLabelText(/email/i), "ada@example.com");
+		await user.type(screen.getByLabelText(/hire date/i), "2026-01-01");
+		await user.selectOptions(screen.getByLabelText(/department/i), "d1");
+
+		const save = screen.getByRole("button", { name: /^save$/i });
+		expect(save).toBeEnabled();
+	});
+
+	it("marks required fields with an asterisk legend", () => {
+		render(<EmployeeForm {...defaultProps} />);
+		expect(screen.getByText(/are required/i)).toBeInTheDocument();
 	});
 
 	it("renders the manager picker", () => {

@@ -62,23 +62,9 @@ const REQUIRED_FIELDS_CREATE: (keyof EmployeeWritePayload)[] = [
 	"first_name",
 	"last_name",
 	"email",
-	"phone",
-	"date_of_birth",
-	"gender",
-	"nationality",
-	"marital_status",
-	"address_line1",
-	"city",
-	"state",
-	"postcode",
-	"country_code",
-	"department",
-	"role_title",
-	"employment_type",
 	"hire_date",
-	"emergency_contact_name",
-	"emergency_contact_relationship",
-	"emergency_contact_phone",
+	"department",
+	"employment_type",
 ];
 
 export function EmployeeForm({
@@ -97,7 +83,11 @@ export function EmployeeForm({
 	const assignTeam = useFieldPerm(null, "employee:assign:team");
 	const bank = useFieldPerm("employee:bank:read", "employee:bank:write");
 
-	const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+	const [collapsed, setCollapsed] = useState<Set<string>>(() =>
+		mode === "create"
+			? new Set(["personal", "address", "banking"])
+			: new Set(),
+	);
 	const [draft, setDraft] = useState<Partial<EmployeeWritePayload>>(() => ({
 		employee_code: initial?.employee_code ?? "",
 		first_name: initial?.first_name ?? "",
@@ -171,6 +161,13 @@ export function EmployeeForm({
 			{topError && (
 				<p role="alert" className="text-coral text-small">
 					{topError}
+				</p>
+			)}
+
+			{mode === "create" && (
+				<p className="text-small text-text-tertiary">
+					Fields marked <span className="text-coral">*</span> are required. You
+					can complete the rest later.
 				</p>
 			)}
 
@@ -267,11 +264,13 @@ function field(
 	label: string,
 	child: React.ReactNode,
 	err?: string,
+	required?: boolean,
 ) {
 	return (
 		<div className="flex flex-col gap-1">
 			<label htmlFor={id} className="text-label uppercase text-text-tertiary">
 				{label}
+				{required && <span className="text-coral"> *</span>}
 			</label>
 			{child}
 			{err && (
@@ -314,6 +313,7 @@ function renderSection(
 							onChange={(e) => a.set("first_name", e.target.value)}
 						/>,
 						a.fieldErrors.first_name,
+						true,
 					)}
 					{field(
 						"last_name",
@@ -325,6 +325,7 @@ function renderSection(
 							onChange={(e) => a.set("last_name", e.target.value)}
 						/>,
 						a.fieldErrors.last_name,
+						true,
 					)}
 					{field(
 						"preferred_name",
@@ -347,6 +348,7 @@ function renderSection(
 							onChange={(e) => a.set("email", e.target.value)}
 						/>,
 						a.fieldErrors.email,
+						true,
 					)}
 					{field(
 						"employee_code",
@@ -358,6 +360,7 @@ function renderSection(
 							onChange={(e) => a.set("employee_code", e.target.value)}
 						/>,
 						a.fieldErrors.employee_code,
+						true,
 					)}
 				</>
 			);
@@ -382,6 +385,7 @@ function renderSection(
 							))}
 						</select>,
 						a.fieldErrors.department,
+						true,
 					)}
 					{field(
 						"team",
@@ -438,6 +442,8 @@ function renderSection(
 							<option value="contract">Contract</option>
 							<option value="intern">Intern</option>
 						</select>,
+						a.fieldErrors.employment_type,
+						true,
 					)}
 					{field(
 						"hire_date",
@@ -450,6 +456,7 @@ function renderSection(
 							onChange={(e) => a.set("hire_date", e.target.value)}
 						/>,
 						a.fieldErrors.hire_date,
+						true,
 					)}
 					{field(
 						"status",
