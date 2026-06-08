@@ -39,6 +39,8 @@ export interface Employee {
 	user_id?: string;
 	/** Role codes currently assigned to the linked user. */
 	user_roles?: string[];
+	/** Profile completeness summary: percent filled + missing field groups. */
+	profile_completeness?: { percent: number; missing: string[] };
 }
 
 export interface ReportingChainEntry {

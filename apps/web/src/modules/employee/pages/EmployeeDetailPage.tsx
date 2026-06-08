@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { RolesCard } from "@/modules/admin/components/RolesCard";
 
 import { type Employee, type ReportingChainEntry, employeeApi } from "../api";
+import { ProfileCompletenessBanner } from "../components/ProfileCompletenessBanner";
 
 function ArchiveButton({ employee }: { employee: Employee }) {
 	const [armed, setArmed] = useState(false);
@@ -192,6 +193,8 @@ export default function EmployeeDetailPage() {
 					</div>
 				}
 			/>
+
+			<ProfileCompletenessBanner employee={employee} />
 
 			<div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4">
 				{/* Avatar card */}
