@@ -14,10 +14,12 @@ describe("FinanceQueuePage route guard (v1.10.1 sweep Bug #7)", () => {
 			perms: new Set<string>(), // no claim:approve:finance
 			roles: ["manager"],
 			loading: false,
+			mustChangePassword: false,
 			login: vi.fn(),
 			loginWithMFA: vi.fn(),
 			logout: vi.fn(),
 			refreshMe: vi.fn(),
+			clearMustChangePassword: vi.fn(),
 		});
 		const apiSpy = vi
 			.spyOn(claimsApiMod.claimsApi, "listFinanceQueue")
@@ -44,10 +46,12 @@ describe("FinanceQueuePage route guard (v1.10.1 sweep Bug #7)", () => {
 			perms: new Set<string>(["claim:approve:finance"]),
 			roles: ["finance"],
 			loading: false,
+			mustChangePassword: false,
 			login: vi.fn(),
 			loginWithMFA: vi.fn(),
 			logout: vi.fn(),
 			refreshMe: vi.fn(),
+			clearMustChangePassword: vi.fn(),
 		});
 		vi.spyOn(claimsApiMod.claimsApi, "listFinanceQueue").mockResolvedValue([]);
 

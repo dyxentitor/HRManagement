@@ -30,6 +30,7 @@ interface AuthState {
 
 interface AuthContextValue extends AuthState {
 	roles: string[];
+	mustChangePassword: boolean;
 	login: (
 		email: string,
 		password: string,
@@ -37,6 +38,7 @@ interface AuthContextValue extends AuthState {
 	loginWithMFA: (mfaToken: string, code: string) => Promise<void>;
 	logout: () => Promise<void>;
 	refreshMe: () => Promise<void>;
+	clearMustChangePassword: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -44,6 +46,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<AuthUser | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [mustChangePassword, setMustChangePassword] = useState(false);
 
 	const refreshMe = useCallback(async () => {
 		const token = tokenStorage.getAccess();
@@ -58,8 +61,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			tokenStorage.clear();
 		} else {
 			setUser(data as unknown as AuthUser);
+			// must_change_password is not in the typed contract (auth views lack
+			// @extend_schema), so read it via a cast.
+			setMustChangePassword(
+				(data as { must_change_password?: boolean }).must_change_password ===
+					true,
+			);
 		}
 		setLoading(false);
+	}, []);
+
+	const clearMustChangePassword = useCallback(() => {
+		setMustChangePassword(false);
 	}, []);
 
 	useEffect(() => {
@@ -79,11 +92,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				refresh_token: string;
 				mfa_required?: boolean;
 				mfa_token?: string;
+				// Not in the typed contract — read via cast.
+				must_change_password?: boolean;
 			};
 			if (body.mfa_required) {
 				return { mfaRequired: true, mfaToken: body.mfa_token };
 			}
 			tokenStorage.set(body.access_token, body.refresh_token);
+			setMustChangePassword(body.must_change_password === true);
 			await refreshMe();
 			return { mfaRequired: false };
 		},
@@ -116,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 		tokenStorage.clear();
 		setUser(null);
+		setMustChangePassword(false);
 	}, []);
 
 	const value = useMemo<AuthContextValue>(
@@ -124,12 +141,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			perms: new Set(user?.permissions || []),
 			roles: user?.role_codes ?? [],
 			loading,
+			mustChangePassword,
 			login,
 			loginWithMFA,
 			logout,
 			refreshMe,
+			clearMustChangePassword,
 		}),
-		[user, loading, login, loginWithMFA, logout, refreshMe],
+		[
+			user,
+			loading,
+			mustChangePassword,
+			login,
+			loginWithMFA,
+			logout,
+			refreshMe,
+			clearMustChangePassword,
+		],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
