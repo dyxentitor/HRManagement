@@ -35,6 +35,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     full_name = serializers.CharField(read_only=True)
     photo_url = serializers.SerializerMethodField()
+    profile_completeness = serializers.SerializerMethodField()
 
     def get_photo_url(self, obj: Employee) -> str | None:
         if not obj.photo_s3_key:
@@ -42,6 +43,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
         from .services.avatar import presigned_get_url
 
         return presigned_get_url(obj.photo_s3_key, expires_in=3600)
+
+    def get_profile_completeness(self, obj: Employee) -> dict:
+        from .services.completeness import profile_completeness
+
+        return profile_completeness(obj)
 
     class Meta:
         model = Employee
@@ -93,6 +99,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "timezone",
             "locale",
             "photo_url",
+            "profile_completeness",
             "created_at",
             "updated_at",
         )
@@ -102,6 +109,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "ic_last4",
             "bank_account_last4",
             "photo_url",
+            "profile_completeness",
             "created_at",
             "updated_at",
         )
