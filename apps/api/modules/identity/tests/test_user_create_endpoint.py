@@ -82,9 +82,7 @@ def _client_without_user_create(org: Organization) -> tuple[APIClient, User]:
     role = Role.objects.create(
         org_id=org.id, code="no_user_create", name="No User Create", is_system=False
     )
-    p, _ = Permission.objects.get_or_create(
-        code="employee:read:org", defaults={"description": ""}
-    )
+    p, _ = Permission.objects.get_or_create(code="employee:read:org", defaults={"description": ""})
     RolePermission.objects.create(role=role, permission=p)
     UserRole.objects.create(user=user, role=role, granted_by=None)
 
@@ -170,9 +168,7 @@ def test_create_user_duplicate_email_returns_400(org: Organization) -> None:
 
 
 @pytest.mark.django_db
-def test_create_user_with_invalid_employee_rolls_back(
-    org: Organization, dept: Department
-) -> None:
+def test_create_user_with_invalid_employee_rolls_back(org: Organization, dept: Department) -> None:
     client, _ = _admin_client(org)
     email = "rollback@example.com"
     emp = _employee_payload(dept, email)

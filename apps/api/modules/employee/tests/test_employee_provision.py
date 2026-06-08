@@ -142,15 +142,11 @@ def test_create_employee_provision_duplicate_email_rolls_back(
     resp = client.post("/api/v1/employees/", body, format="json")
     assert resp.status_code == 400, resp.content
     # Rollback: the employee insert must NOT have committed.
-    assert not Employee.all_objects.filter(
-        org_id=org.id, employee_code="PVT-200"
-    ).exists()
+    assert not Employee.all_objects.filter(org_id=org.id, employee_code="PVT-200").exists()
 
 
 @pytest.mark.django_db
-def test_create_employee_without_provision_unchanged(
-    org: Organization, dept: Department
-) -> None:
+def test_create_employee_without_provision_unchanged(org: Organization, dept: Department) -> None:
     client, _ = _admin_client(org)
     resp = client.post("/api/v1/employees/", _employee_payload(dept), format="json")
     assert resp.status_code == 201, resp.content
@@ -160,9 +156,7 @@ def test_create_employee_without_provision_unchanged(
 
 
 @pytest.mark.django_db
-def test_provision_missing_role_code_returns_400(
-    org: Organization, dept: Department
-) -> None:
+def test_provision_missing_role_code_returns_400(org: Organization, dept: Department) -> None:
     client, _ = _admin_client(org)
     body = {
         **_employee_payload(dept),
@@ -172,9 +166,7 @@ def test_provision_missing_role_code_returns_400(
     # Malformed client input must be a clean 400, never an unhandled 500.
     assert resp.status_code == 400, resp.content
     # Rollback: the employee insert must NOT have committed.
-    assert not Employee.all_objects.filter(
-        org_id=org.id, employee_code="PVT-200"
-    ).exists()
+    assert not Employee.all_objects.filter(org_id=org.id, employee_code="PVT-200").exists()
 
 
 @pytest.mark.django_db
@@ -190,15 +182,11 @@ def test_provision_missing_credential_method_returns_400(
     # Malformed client input must be a clean 400, never an unhandled 500.
     assert resp.status_code == 400, resp.content
     # Rollback: the employee insert must NOT have committed.
-    assert not Employee.all_objects.filter(
-        org_id=org.id, employee_code="PVT-200"
-    ).exists()
+    assert not Employee.all_objects.filter(org_id=org.id, employee_code="PVT-200").exists()
 
 
 @pytest.mark.django_db
-def test_provision_requires_user_create_perm(
-    org: Organization, dept: Department
-) -> None:
+def test_provision_requires_user_create_perm(org: Organization, dept: Department) -> None:
     client, _ = _creator_without_user_create(org)
     body = {
         **_employee_payload(dept),
@@ -207,6 +195,4 @@ def test_provision_requires_user_create_perm(
     resp = client.post("/api/v1/employees/", body, format="json")
     assert resp.status_code == 403, resp.content
     # The perm gate fires BEFORE the transaction opens — no employee row.
-    assert not Employee.all_objects.filter(
-        org_id=org.id, employee_code="PVT-200"
-    ).exists()
+    assert not Employee.all_objects.filter(org_id=org.id, employee_code="PVT-200").exists()

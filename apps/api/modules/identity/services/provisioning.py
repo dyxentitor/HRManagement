@@ -24,9 +24,7 @@ class UserAlreadyExists(ValidationError):  # noqa: N818 — name is part of the 
     """Raised when an active user with the given email already exists in the org."""
 
     def __init__(self, email: str):
-        super().__init__(
-            {"email": f"A user with email {email} already exists. Link instead."}
-        )
+        super().__init__({"email": f"A user with email {email} already exists. Link instead."})
 
 
 @transaction.atomic
@@ -45,9 +43,7 @@ def provision_user(
         UserAlreadyExists: an active (non-soft-deleted) user with this email exists.
         ValidationError: unknown role, bad credential_method, or missing temp_password.
     """
-    if User.objects.filter(
-        org_id=org_id, email__iexact=email, deleted_at__isnull=True
-    ).exists():
+    if User.objects.filter(org_id=org_id, email__iexact=email, deleted_at__isnull=True).exists():
         raise UserAlreadyExists(email)
 
     role = Role.objects.filter(org_id=org_id, code=role_code).first()
@@ -56,12 +52,8 @@ def provision_user(
 
     if credential_method == "temp":
         if not temp_password:
-            raise ValidationError(
-                {"temp_password": "Required for temp credential method."}
-            )
-        user = User.objects.create_user(
-            email=email, password=temp_password, org_id=org_id
-        )
+            raise ValidationError({"temp_password": "Required for temp credential method."})
+        user = User.objects.create_user(email=email, password=temp_password, org_id=org_id)
         user.must_change_password = True
         user.save(update_fields=["must_change_password", "updated_at"])
     elif credential_method == "invite":

@@ -24,9 +24,7 @@ class UserCreateSerializer(serializers.Serializer):
     email = serializers.EmailField()
     role_code = serializers.CharField()
     credential_method = serializers.ChoiceField(choices=["invite", "temp"])
-    temp_password = serializers.CharField(
-        required=False, allow_blank=True, write_only=True
-    )
+    temp_password = serializers.CharField(required=False, allow_blank=True, write_only=True)
     employee = serializers.DictField(required=False)
 
 

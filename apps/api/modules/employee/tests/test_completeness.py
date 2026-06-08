@@ -110,9 +110,7 @@ def test_fully_filled_employee_100(org: Organization, dept: Department) -> None:
 
 
 @pytest.mark.django_db
-def test_serializer_includes_completeness(
-    org: Organization, dept: Department
-) -> None:
+def test_serializer_includes_completeness(org: Organization, dept: Department) -> None:
     emp = _minimal_employee(org, dept)
     data = EmployeeSerializer(emp).data
     assert "profile_completeness" in data
