@@ -105,6 +105,10 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         from modules.identity.services.provisioning import provision_user
 
         provision = request.data.get("provision")
+        # Guard against malformed provision (string/list) before any .get() call
+        # below would raise AttributeError -> HTTP 500.
+        if provision and not isinstance(provision, dict):
+            raise ValidationError({"provision": "Must be an object."})
         # Perm gate BEFORE opening a transaction so a 403 doesn't start one.
         if provision and "user:create" not in get_user_perms(request.user):
             raise PermissionDenied("Provisioning a login requires user:create.")

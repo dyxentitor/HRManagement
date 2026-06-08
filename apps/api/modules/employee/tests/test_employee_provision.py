@@ -186,6 +186,20 @@ def test_provision_missing_credential_method_returns_400(
 
 
 @pytest.mark.django_db
+def test_provision_non_dict_returns_400(org: Organization, dept: Department) -> None:
+    client, _ = _admin_client(org)
+    body = {
+        **_employee_payload(dept),
+        "provision": "oops",  # a string, not an object
+    }
+    resp = client.post("/api/v1/employees/", body, format="json")
+    # Malformed provision must be a clean 400, never an unhandled 500.
+    assert resp.status_code == 400, resp.content
+    # No employee row created.
+    assert not Employee.all_objects.filter(org_id=org.id, employee_code="PVT-200").exists()
+
+
+@pytest.mark.django_db
 def test_provision_requires_user_create_perm(org: Organization, dept: Department) -> None:
     client, _ = _creator_without_user_create(org)
     body = {
