@@ -1,5 +1,7 @@
 """Leave module serializers."""
 
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from .models import (
@@ -146,6 +148,37 @@ class LeaveApprovalSerializer(serializers.ModelSerializer):
 class LeaveRequestSerializer(serializers.ModelSerializer):
     approvals = LeaveApprovalSerializer(many=True, read_only=True)
     leave_type_code = serializers.CharField(source="leave_type.code", read_only=True)
+
+    def validate(self, attrs):
+        """Enforce half-day rules and compute total_days server-side.
+
+        A half-day is exactly one date (start == end) + a period (am/pm) = 0.5
+        days. Full-day requests span inclusive calendar days. total_days is
+        always derived here, so a stale/wrong client value can't corrupt
+        balances.
+        """
+        start = attrs.get("start_date", getattr(self.instance, "start_date", None))
+        end = attrs.get("end_date", getattr(self.instance, "end_date", None))
+        is_half = attrs.get("is_half_day", getattr(self.instance, "is_half_day", False))
+        period = attrs.get("half_day_period", getattr(self.instance, "half_day_period", ""))
+        if start is None or end is None:
+            return attrs
+        if is_half:
+            if start != end:
+                raise serializers.ValidationError({"end_date": "Half day must be a single date."})
+            if period not in ("am", "pm"):
+                raise serializers.ValidationError(
+                    {"half_day_period": "Choose Morning (AM) or Afternoon (PM)."}
+                )
+            attrs["total_days"] = Decimal("0.5")
+        else:
+            if end < start:
+                raise serializers.ValidationError(
+                    {"end_date": "End date must be on or after the start date."}
+                )
+            attrs["half_day_period"] = ""
+            attrs["total_days"] = Decimal((end - start).days + 1)
+        return attrs
 
     class Meta:
         model = LeaveRequest
