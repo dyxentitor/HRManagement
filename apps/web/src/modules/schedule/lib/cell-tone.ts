@@ -4,6 +4,7 @@ import type {
 	CalendarHoliday,
 	CalendarLeave,
 } from "../api";
+import { SHIFT_CODE_TONE } from "./shift-tone";
 import { isWeekendIso } from "./weekday";
 
 export type Tone =
@@ -35,13 +36,6 @@ export interface CellInputs {
 	leaves: CalendarLeave[];
 	holidays: CalendarHoliday[];
 }
-
-const SHIFT_CODE_TONE: Record<string, Tone> = {
-	M: "accent",
-	D: "lavender",
-	N: "sky",
-	S: "yellow",
-};
 
 export function resolveCellTone(inp: CellInputs): CellTone {
 	if (inp.employee.status !== "active") {
