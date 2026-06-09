@@ -1,23 +1,30 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { StatusPill } from "@/components/hrms";
+import { KpiTile } from "@/components/hrms";
+import type { ClockState } from "@/components/hrms/ClockInOutWidget";
 import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
 import { PageHeader } from "@/components/shell/PageHeader";
-import { cn } from "@/lib/utils";
 
 import {
 	ApiError,
 	type AttendanceRecord,
 	attendanceApi,
 } from "@/modules/attendance/api";
-import { type CalendarHoliday, type ShiftAssignment, scheduleApi } from "../api";
-import { RosterCell } from "../components/RosterCell";
-import { resolveCellTone } from "../lib/cell-tone";
+import {
+	type CalendarHoliday,
+	type Shift,
+	type ShiftAssignment,
+	scheduleApi,
+} from "../api";
+import { ScheduleDayCard, type DayShift } from "../components/ScheduleDayCard";
+import { ScheduleTodayHero } from "../components/ScheduleTodayHero";
 import {
 	addDaysIso,
 	startOfWeekIsoLocal,
 	todayIsoLocal,
 } from "../lib/local-date";
+import { formatTimeRange, shiftHours } from "../lib/shift-hours";
+import { shiftCodeTone } from "../lib/shift-tone";
 import { isWeekendIso, weekdayLabel } from "../lib/weekday";
 
 function formatDate(iso: string | null | undefined): string {
@@ -29,8 +36,12 @@ function formatDate(iso: string | null | undefined): string {
 	});
 }
 
-function dayOfMonth(iso: string): string {
-	return String(new Date(`${iso}T00:00:00Z`).getUTCDate());
+function hhmm(iso: string): string {
+	return new Date(iso).toLocaleTimeString([], {
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	});
 }
 
 type AttendanceTone = "mint" | "yellow" | "coral" | "peach";
@@ -55,6 +66,7 @@ export default function MySchedulePage() {
 	);
 	const weekEnd = addDaysIso(weekStart, 6);
 	const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
+	const [shifts, setShifts] = useState<Shift[]>([]);
 	const [holidays, setHolidays] = useState<CalendarHoliday[]>([]);
 	const [todayRec, setTodayRec] = useState<AttendanceRecord | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -78,8 +90,15 @@ export default function MySchedulePage() {
 				setError(e instanceof Error ? e.message : "Failed to load");
 			}
 		}
-		// Holidays are decoupled (CLAUDE.md §3.7): the week must still render if
-		// this fails. A week can straddle a year boundary, so fetch both years.
+		// Shifts (for time ranges) are decoupled (§3.7): the week still renders if
+		// this fails — cards then show the shift name without a time range.
+		try {
+			setShifts(await scheduleApi.listShifts());
+		} catch {
+			setShifts([]);
+		}
+		// Holidays are decoupled too. A week can straddle a year boundary, so
+		// fetch both years.
 		try {
 			const years = [
 				...new Set([weekStart.slice(0, 4), weekEnd.slice(0, 4)]),
@@ -126,6 +145,55 @@ export default function MySchedulePage() {
 	const days = Array.from({ length: 7 }, (_, i) => addDaysIso(weekStart, i));
 	const todayIso = todayIsoLocal();
 	const holidayMap = new Map(holidays.map((h) => [h.date, h] as const));
+	const shiftById = new Map(shifts.map((s) => [s.id, s] as const));
+
+	function buildShift(a: ShiftAssignment | undefined): DayShift | null {
+		if (!a) return null;
+		const sh = shiftById.get(a.shift);
+		return {
+			name: a.shift_name,
+			tone: shiftCodeTone(a.shift_code),
+			timeRange: sh ? formatTimeRange(sh.start_time, sh.end_time) : "",
+			isCoverUp: a.covering_for !== null,
+			coveringForName: a.covering_for_name,
+			isDraft: !a.is_published,
+		};
+	}
+
+	const dayModels = days.map((iso) => {
+		const a = assignments.find((x) => x.work_date === iso);
+		return {
+			date: iso,
+			isToday: iso === todayIso,
+			isWeekend: isWeekendIso(iso),
+			holidayName: holidayMap.get(iso)?.name ?? null,
+			shift: buildShift(a),
+		};
+	});
+
+	const shiftsCount = dayModels.filter((d) => d.shift).length;
+	const totalHours = Math.round(
+		dayModels.reduce((sum, d) => {
+			const a = assignments.find((x) => x.work_date === d.date);
+			const sh = a ? shiftById.get(a.shift) : undefined;
+			return (
+				sum +
+				(sh ? shiftHours(sh.start_time, sh.end_time, sh.crosses_midnight) : 0)
+			);
+		}, 0),
+	);
+	const daysOff = 7 - shiftsCount;
+
+	const todayModel = dayModels.find((d) => d.isToday) ?? null;
+	const clockState: ClockState = !todayRec?.clock_in
+		? { status: "off" }
+		: todayRec.clock_out
+			? {
+					status: "out",
+					clockedIn: hhmm(todayRec.clock_in),
+					clockedOut: hhmm(todayRec.clock_out),
+				}
+			: { status: "in", since: todayRec.clock_in };
 
 	if (noEmployee) {
 		return (
@@ -146,53 +214,24 @@ export default function MySchedulePage() {
 				</p>
 			)}
 
-			<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-				<div className="flex items-center justify-between gap-3 mb-3">
-					<h2 className="text-h2 text-text-primary">
-						Today — {formatDate(todayIso)}
-					</h2>
-					<StatusPill
-						tone={attendanceTone(todayRec?.status)}
-						label={attendanceLabel(todayRec?.status)}
-					/>
-				</div>
-				<p className="text-small text-text-secondary mb-3">
-					Clock-in:{" "}
-					<strong className="text-text-primary">
-						{todayRec?.clock_in
-							? new Date(todayRec.clock_in).toLocaleTimeString()
-							: "—"}
-					</strong>
-					{"  •  "}
-					Clock-out:{" "}
-					<strong className="text-text-primary">
-						{todayRec?.clock_out
-							? new Date(todayRec.clock_out).toLocaleTimeString()
-							: "—"}
-					</strong>
-					{todayRec?.is_holiday_work && (
-						<span className="ml-2 text-yellow">• Holiday work</span>
-					)}
-				</p>
-				<div className="space-x-2">
-					<button
-						type="button"
-						onClick={clockIn}
-						disabled={busy || !!todayRec?.clock_in}
-						className="bg-accent-500 text-white py-1.5 px-3 rounded text-sm disabled:opacity-50 hover:bg-accent-600"
-					>
-						{busy ? "..." : "Clock in"}
-					</button>
-					<button
-						type="button"
-						onClick={clockOut}
-						disabled={busy || !todayRec?.clock_in || !!todayRec?.clock_out}
-						className="bg-canvas border border-border-subtle text-text-secondary py-1.5 px-3 rounded text-sm disabled:opacity-50 hover:bg-surface-hover"
-					>
-						{busy ? "..." : "Clock out"}
-					</button>
-				</div>
-			</section>
+			<ScheduleTodayHero
+				dateLabel={formatDate(todayIso)}
+				statusLabel={attendanceLabel(todayRec?.status)}
+				statusTone={attendanceTone(todayRec?.status)}
+				clockState={clockState}
+				isHolidayWork={!!todayRec?.is_holiday_work}
+				holidayName={todayModel?.holidayName ?? null}
+				shift={todayModel?.shift ?? null}
+				busy={busy}
+				onClockIn={clockIn}
+				onClockOut={clockOut}
+			/>
+
+			<div className="grid grid-cols-3 gap-3">
+				<KpiTile tone="sky" label="Shifts" value={shiftsCount} icon={shiftsCount} />
+				<KpiTile tone="lavender" label="Hours" value={`${totalHours}h`} icon="h" />
+				<KpiTile tone="mint" label="Days off" value={daysOff} icon={daysOff} />
+			</div>
 
 			<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
 				<div className="flex items-center justify-between mb-3 gap-3">
@@ -209,6 +248,13 @@ export default function MySchedulePage() {
 						</button>
 						<button
 							type="button"
+							onClick={() => setWeekStart(startOfWeekIsoLocal(new Date()))}
+							className="text-text-secondary hover:text-text-primary"
+						>
+							This week
+						</button>
+						<button
+							type="button"
 							onClick={() => setWeekStart(addDaysIso(weekStart, 7))}
 							className="text-text-secondary hover:text-text-primary"
 						>
@@ -216,81 +262,22 @@ export default function MySchedulePage() {
 						</button>
 					</div>
 				</div>
-				<table className="w-full text-sm">
-					<thead className="text-left text-text-tertiary border-b border-border-subtle">
-						<tr>
-							{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
-								(label, i) => {
-									const iso = days[i];
-									const hol = holidayMap.get(iso);
-									const isToday = iso === todayIso;
-									return (
-										<th
-											key={label}
-											title={hol?.name}
-											className={cn(
-												"py-2 text-label uppercase font-semibold tracking-wide",
-												isWeekendIso(iso) && !hol && "bg-surface-elevated",
-												hol && "bg-peach/10 text-peach",
-												isToday &&
-													"ring-1 ring-inset ring-accent-500/60 rounded",
-											)}
-										>
-											{label} {dayOfMonth(iso)}
-											{hol && <span aria-hidden> •</span>}
-										</th>
-									);
-								},
-							)}
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							{days.map((iso) => {
-								const a = assignments.find((x) => x.work_date === iso);
-								const adapted = a
-									? {
-											id: a.id,
-											employee_id: "self",
-											work_date: a.work_date,
-											shift_id: a.shift,
-											shift_code: a.shift_code,
-											covering_for_id: a.covering_for,
-											covering_for_name: a.covering_for_name,
-											is_published: a.is_published,
-											notes: a.notes,
-										}
-									: undefined;
-								const tone = resolveCellTone({
-									employee: { id: "self", status: "active" },
-									date: iso,
-									assignment: adapted,
-									leaves: [],
-									holidays: [],
-								});
-								return (
-									<td key={iso} className="px-0.5 py-0.5 align-top">
-										<RosterCell
-											viewMode="week"
-											tone={tone}
-											employeeName="Me"
-											date={iso}
-											shiftName={a?.shift_name ?? null}
-											startTime={null}
-											endTime={null}
-											selected={false}
-											isHoliday={holidayMap.has(iso)}
-											onClick={() => {}}
-											onShiftClick={() => {}}
-										/>
-									</td>
-								);
-							})}
-						</tr>
-					</tbody>
-				</table>
+
+				<div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+					{dayModels.map((d) => (
+						<ScheduleDayCard
+							key={d.date}
+							date={d.date}
+							isToday={d.isToday}
+							isWeekend={d.isWeekend}
+							holidayName={d.holidayName}
+							shift={d.shift}
+						/>
+					))}
+				</div>
+
 				{holidays.length > 0 && (
-					<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-tertiary mt-2">
+					<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-tertiary mt-3">
 						{holidays.map((h) => (
 							<span key={h.date} className="inline-flex items-center gap-1">
 								<span className="text-peach">●</span>

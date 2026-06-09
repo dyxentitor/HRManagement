@@ -6,6 +6,7 @@ import { addDaysIso, startOfWeekIsoLocal } from "../lib/local-date";
 
 const mocks = vi.hoisted(() => ({
 	myAssignments: vi.fn(),
+	listShifts: vi.fn(),
 	listHolidays: vi.fn(),
 	today: vi.fn(),
 	clockIn: vi.fn(),
@@ -25,6 +26,7 @@ vi.mock("@/modules/attendance/api", () => ({
 vi.mock("../api", () => ({
 	scheduleApi: {
 		myAssignments: mocks.myAssignments,
+		listShifts: mocks.listShifts,
 		listHolidays: mocks.listHolidays,
 	},
 }));
@@ -37,9 +39,21 @@ const holidayDate = addDaysIso(weekStart, 2);
 
 beforeEach(() => {
 	mocks.myAssignments.mockReset();
+	mocks.listShifts.mockReset();
 	mocks.listHolidays.mockReset();
 	mocks.today.mockReset();
 	mocks.myAssignments.mockResolvedValue([]);
+	mocks.listShifts.mockResolvedValue([
+		{
+			id: "sh1",
+			code: "M",
+			name: "Morning",
+			start_time: "09:00:00",
+			end_time: "17:00:00",
+			crosses_midnight: false,
+			color: "#7c5cff",
+		},
+	]);
 	mocks.today.mockResolvedValue(null);
 	mocks.listHolidays.mockResolvedValue([
 		{ id: "h1", date: holidayDate, name: "Test Holiday", type: "company" },
@@ -55,9 +69,36 @@ function renderPage() {
 }
 
 describe("MySchedulePage holidays", () => {
-	it("marks a public holiday in the header tooltip and the legend", async () => {
+	it("marks a public holiday in a day card and the legend", async () => {
 		renderPage();
 		expect(await screen.findByTitle("Test Holiday")).toBeInTheDocument();
 		expect(screen.getByText(/Test Holiday/)).toBeInTheDocument();
+	});
+});
+
+describe("MySchedulePage week summary", () => {
+	it("renders the KPI strip and a shift card with its time range", async () => {
+		mocks.myAssignments.mockResolvedValue([
+			{
+				id: "a1",
+				employee: "self",
+				employee_code: "",
+				shift: "sh1",
+				shift_name: "Morning",
+				shift_code: "M",
+				covering_for: null,
+				covering_for_name: null,
+				work_date: addDaysIso(weekStart, 0),
+				status: "scheduled",
+				published_at: null,
+				is_published: true,
+				notes: "",
+			},
+		]);
+		renderPage();
+		expect(await screen.findByText("Shifts")).toBeInTheDocument();
+		expect(screen.getByText("Hours")).toBeInTheDocument();
+		expect(screen.getByText("Days off")).toBeInTheDocument();
+		expect(await screen.findByText("09:00–17:00")).toBeInTheDocument();
 	});
 });
