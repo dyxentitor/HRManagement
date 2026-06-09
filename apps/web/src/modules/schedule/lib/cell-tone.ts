@@ -4,6 +4,7 @@ import type {
 	CalendarHoliday,
 	CalendarLeave,
 } from "../api";
+import { isWeekendIso } from "./weekday";
 
 export type Tone =
 	| "accent"
@@ -25,7 +26,7 @@ export type CellTone =
 	  }
 	| { kind: "shift"; letter: string; tone: Tone; isPublished: boolean }
 	| { kind: "off"; letter: "X"; tone: "surface" }
-	| { kind: "weekend"; letter: "X"; tone: "peach" };
+	| { kind: "weekend"; letter: "X"; tone: "weekend" };
 
 export interface CellInputs {
 	employee: Pick<CalendarEmployee, "id" | "status">;
@@ -69,14 +70,8 @@ export function resolveCellTone(inp: CellInputs): CellTone {
 			isPublished: inp.assignment.is_published,
 		};
 	}
-	if (isWeekend(inp.date)) {
-		return { kind: "weekend", letter: "X", tone: "peach" };
+	if (isWeekendIso(inp.date)) {
+		return { kind: "weekend", letter: "X", tone: "weekend" };
 	}
 	return { kind: "off", letter: "X", tone: "surface" };
-}
-
-function isWeekend(iso: string): boolean {
-	const d = new Date(`${iso}T00:00:00`);
-	const day = d.getDay();
-	return day === 0 || day === 6;
 }
