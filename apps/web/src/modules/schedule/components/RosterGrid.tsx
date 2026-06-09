@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { CalendarAssignment, CalendarPayload, CalendarTeam } from "../api";
+import { cn } from "@/lib/utils";
+
+import type {
+	CalendarAssignment,
+	CalendarHoliday,
+	CalendarPayload,
+	CalendarTeam,
+} from "../api";
 import { resolveCellTone } from "../lib/cell-tone";
+import { todayIsoLocal } from "../lib/local-date";
+import { isWeekendIso, weekdayLabel } from "../lib/weekday";
 
 import { RosterCell } from "./RosterCell";
 
@@ -64,6 +73,13 @@ export function RosterGrid({
 		() => buildDateRange(payload.range.from, payload.range.to),
 		[payload.range],
 	);
+
+	const holidaysByDate = useMemo(() => {
+		const m = new Map<string, CalendarHoliday>();
+		for (const h of payload.holidays) m.set(h.date, h);
+		return m;
+	}, [payload.holidays]);
+	const todayIso = todayIsoLocal();
 
 	const assignmentByKey = useMemo(() => {
 		const map = new Map<string, CalendarAssignment>();
@@ -144,14 +160,44 @@ export function RosterGrid({
 							<th className="text-left text-label uppercase text-text-tertiary px-2 py-1 sticky left-0 bg-canvas">
 								Employee
 							</th>
-							{dates.map((d) => (
-								<th
-									key={d}
-									className="text-label uppercase text-text-tertiary text-center px-1 py-1"
-								>
-									{new Date(`${d}T00:00:00Z`).getUTCDate()}
-								</th>
-							))}
+							{dates.map((d) => {
+								const holiday = holidaysByDate.get(d);
+								const weekend = isWeekendIso(d);
+								const isToday = d === todayIso;
+								return (
+									<th
+										key={d}
+										title={holiday?.name}
+										className={cn(
+											"text-label uppercase text-center px-1 py-1 align-bottom",
+											weekend && !holiday && "bg-surface-elevated",
+											holiday && "bg-peach/10",
+											isToday &&
+												"ring-1 ring-inset ring-accent-500/60 rounded",
+										)}
+									>
+										<span
+											className={cn(
+												"block text-[10px] leading-none",
+												holiday ? "text-peach" : "text-text-tertiary",
+											)}
+										>
+											{weekdayLabel(d, viewMode === "month" ? "narrow" : "short")}
+										</span>
+										<span
+											className={cn(
+												"block leading-tight",
+												holiday
+													? "text-peach font-semibold"
+													: "text-text-secondary",
+											)}
+										>
+											{new Date(`${d}T00:00:00Z`).getUTCDate()}
+											{holiday && <span aria-hidden> •</span>}
+										</span>
+									</th>
+								);
+							})}
 						</tr>
 					</thead>
 					<tbody>
@@ -162,6 +208,7 @@ export function RosterGrid({
 								collapsed={team.id !== null && collapsed.has(team.id)}
 								onToggle={() => team.id && toggleTeam(team.id)}
 								dates={dates}
+								holidayDates={holidaysByDate}
 								viewMode={viewMode}
 								payload={payload}
 								assignmentByKey={assignmentByKey}
@@ -177,6 +224,18 @@ export function RosterGrid({
 					</tbody>
 				</table>
 			</div>
+
+			{payload.holidays.length > 0 && (
+				<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-tertiary px-2">
+					{payload.holidays.map((h) => (
+						<span key={h.date} className="inline-flex items-center gap-1">
+							<span className="text-peach">●</span>
+							{weekdayLabel(h.date, "short")}{" "}
+							{new Date(`${h.date}T00:00:00Z`).getUTCDate()} — {h.name}
+						</span>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -186,6 +245,7 @@ interface TeamRowsProps {
 	collapsed: boolean;
 	onToggle: () => void;
 	dates: string[];
+	holidayDates: Map<string, CalendarHoliday>;
 	viewMode: "week" | "month";
 	payload: CalendarPayload;
 	assignmentByKey: Map<string, CalendarAssignment>;
@@ -279,6 +339,7 @@ function TeamRows(p: TeamRowsProps) {
 										selected={selected}
 										focused={focused}
 										pendingEdit={pendingEdit}
+										isHoliday={p.holidayDates.has(d)}
 										onClick={() =>
 											p.onCellOpen(
 												{ employee_id: emp.id, date: d },

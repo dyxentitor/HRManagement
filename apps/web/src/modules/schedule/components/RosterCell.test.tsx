@@ -111,6 +111,45 @@ describe("RosterCell", () => {
 		expect(btn.className).toContain("accent-500");
 	});
 
+	it("adds a peach ring when isHoliday, keeping the shift letter", () => {
+		render(
+			<RosterCell
+				viewMode="week"
+				tone={{ kind: "shift", letter: "M", tone: "accent", isPublished: true }}
+				employeeName="Ada"
+				date="2026-06-10"
+				shiftName="Morning"
+				startTime="09:00"
+				endTime="17:00"
+				selected={false}
+				isHoliday
+				onClick={() => {}}
+				onShiftClick={() => {}}
+			/>,
+		);
+		const btn = screen.getByRole("button");
+		expect(btn.className).toMatch(/ring-peach/);
+		expect(btn).toHaveTextContent("M");
+	});
+
+	it("has no peach ring without isHoliday", () => {
+		render(
+			<RosterCell
+				viewMode="week"
+				tone={{ kind: "shift", letter: "M", tone: "accent", isPublished: true }}
+				employeeName="Ada"
+				date="2026-06-10"
+				shiftName="Morning"
+				startTime="09:00"
+				endTime="17:00"
+				selected={false}
+				onClick={() => {}}
+				onShiftClick={() => {}}
+			/>,
+		);
+		expect(screen.getByRole("button").className).not.toMatch(/ring-peach/);
+	});
+
 	it("renders coral dot when pendingEdit=true regardless of isPublished", () => {
 		render(
 			<RosterCell

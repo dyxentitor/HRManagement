@@ -13,6 +13,7 @@ interface Props {
 	selected: boolean;
 	focused?: boolean;
 	pendingEdit?: boolean;
+	isHoliday?: boolean;
 	onClick: () => void;
 	onShiftClick: () => void;
 }
@@ -24,6 +25,7 @@ const TONE_BG: Record<string, string> = {
 	yellow: "bg-yellow/40 border border-yellow/60",
 	mint: "bg-mint/50 text-canvas font-semibold",
 	peach: "bg-peach/10 text-text-tertiary",
+	weekend: "bg-surface-elevated text-text-tertiary",
 	surface: "bg-surface-hover text-text-tertiary",
 	muted: "bg-canvas",
 };
@@ -40,6 +42,7 @@ export function RosterCell(props: Props) {
 		selected,
 		focused = false,
 		pendingEdit = false,
+		isHoliday = false,
 		onClick,
 		onShiftClick,
 	} = props;
@@ -66,6 +69,7 @@ export function RosterCell(props: Props) {
 		TONE_BG[tone.tone] ?? "",
 		inactiveStripe,
 		coverBorder,
+		isHoliday && "ring-1 ring-inset ring-peach/50",
 		selected && "outline outline-2 outline-accent-500/60",
 		focused && "outline outline-2 outline-accent-500 ring-2 ring-accent-500/30",
 		"hover:outline hover:outline-1 hover:outline-accent-500/40",

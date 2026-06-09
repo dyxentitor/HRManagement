@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -119,6 +119,21 @@ describe("RosterGrid", () => {
 		]);
 		render(<RosterGrid {...baseProps} pendingEdits={pendingEdits} />);
 		expect(screen.getAllByTestId("draft-dot").length).toBeGreaterThanOrEqual(1);
+	});
+
+	it("shows weekday labels and a holiday badge + legend", () => {
+		const withHoliday: CalendarPayload = {
+			...payload,
+			holidays: [{ date: "2026-03-04", name: "Test Holiday", type: "company" }],
+		};
+		render(<RosterGrid {...baseProps} payload={withHoliday} />);
+		// weekday for 2026-03-02 (Mon) appears in a header cell
+		expect(screen.getAllByText("Mon").length).toBeGreaterThan(0);
+		// holiday column header carries the name as a tooltip (title)
+		const holCell = screen.getByTitle("Test Holiday");
+		expect(within(holCell).getByText("4")).toBeInTheDocument();
+		// legend lists the holiday
+		expect(screen.getByText(/Test Holiday/)).toBeInTheDocument();
 	});
 
 	it("shift-click extends selection and shows toolbar", async () => {

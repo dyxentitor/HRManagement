@@ -304,7 +304,7 @@ export default function RosterPage() {
 						onRowOpen={openPanelForRow}
 						onSelectionApply={applySelection}
 					/>
-					<StatsFooter stats={payload.stats} />
+					<StatsFooter stats={payload.stats} holidays={payload.holidays} />
 				</div>
 			)}
 
