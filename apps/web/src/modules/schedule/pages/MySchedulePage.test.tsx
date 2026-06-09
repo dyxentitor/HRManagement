@@ -36,6 +36,8 @@ import MySchedulePage from "./MySchedulePage";
 // Place the holiday inside the week the page will actually render.
 const weekStart = startOfWeekIsoLocal(new Date());
 const holidayDate = addDaysIso(weekStart, 2);
+// ~2 months out — guaranteed a different calendar month than the viewed week.
+const outOfMonthDate = addDaysIso(weekStart, 60);
 
 beforeEach(() => {
 	mocks.myAssignments.mockReset();
@@ -69,10 +71,31 @@ function renderPage() {
 }
 
 describe("MySchedulePage holidays", () => {
-	it("marks a public holiday in a day card and the legend", async () => {
+	it("shows this-month holidays as cards and marks the day", async () => {
 		renderPage();
-		expect(await screen.findByTitle("Test Holiday")).toBeInTheDocument();
-		expect(screen.getByText(/Test Holiday/)).toBeInTheDocument();
+		expect(await screen.findByTitle("Test Holiday")).toBeInTheDocument(); // day-card dot
+		expect(screen.getByText(/Test Holiday/)).toBeInTheDocument(); // month card
+		expect(screen.getByText(/Holidays in/)).toBeInTheDocument(); // heading
+	});
+
+	it("excludes holidays from other months", async () => {
+		mocks.listHolidays.mockResolvedValue([
+			{ id: "in", date: holidayDate, name: "In Month", type: "federal" },
+			{ id: "out", date: outOfMonthDate, name: "Other Month", type: "federal" },
+		]);
+		renderPage();
+		expect(await screen.findByText("In Month")).toBeInTheDocument();
+		expect(screen.queryByText("Other Month")).not.toBeInTheDocument();
+	});
+
+	it("shows an empty state when the visible month has no holidays", async () => {
+		mocks.listHolidays.mockResolvedValue([
+			{ id: "out", date: outOfMonthDate, name: "Other Month", type: "federal" },
+		]);
+		renderPage();
+		expect(
+			await screen.findByText(/No public holidays in/),
+		).toBeInTheDocument();
 	});
 });
 

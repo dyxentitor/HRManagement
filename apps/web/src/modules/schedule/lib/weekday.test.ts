@@ -11,6 +11,9 @@ describe("weekdayLabel", () => {
 		expect(weekdayLabel("2026-06-08", "narrow")).toBe("M");
 		expect(weekdayLabel("2026-06-10", "narrow")).toBe("W");
 	});
+	it("returns full weekday names", () => {
+		expect(weekdayLabel("2026-06-13", "long")).toBe("Saturday");
+	});
 	it("handles a year boundary", () => {
 		expect(weekdayLabel("2027-01-01", "short")).toBe("Fri");
 	});

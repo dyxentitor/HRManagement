@@ -3,8 +3,11 @@
  * (CLAUDE.md §3.9 — avoids the Asia/KL midnight drift that bit v1.10.0).
  */
 
-/** "Mon" (short) or "M" (narrow) for a YYYY-MM-DD key, computed in UTC. */
-export function weekdayLabel(iso: string, variant: "short" | "narrow"): string {
+/** "Saturday" (long), "Mon" (short) or "M" (narrow) for a YYYY-MM-DD key, in UTC. */
+export function weekdayLabel(
+	iso: string,
+	variant: "long" | "short" | "narrow",
+): string {
 	return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
 		weekday: variant,
 		timeZone: "UTC",

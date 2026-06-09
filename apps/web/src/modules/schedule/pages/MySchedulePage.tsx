@@ -16,6 +16,7 @@ import {
 	type ShiftAssignment,
 	scheduleApi,
 } from "../api";
+import { HolidayCard } from "../components/HolidayCard";
 import { ScheduleDayCard, type DayShift } from "../components/ScheduleDayCard";
 import { ScheduleTodayHero } from "../components/ScheduleTodayHero";
 import {
@@ -25,7 +26,7 @@ import {
 } from "../lib/local-date";
 import { formatTimeRange, shiftHours } from "../lib/shift-hours";
 import { shiftCodeTone } from "../lib/shift-tone";
-import { isWeekendIso, weekdayLabel } from "../lib/weekday";
+import { isWeekendIso } from "../lib/weekday";
 
 function formatDate(iso: string | null | undefined): string {
 	if (!iso) return "—";
@@ -146,6 +147,23 @@ export default function MySchedulePage() {
 	const todayIso = todayIsoLocal();
 	const holidayMap = new Map(holidays.map((h) => [h.date, h] as const));
 	const shiftById = new Map(shifts.map((s) => [s.id, s] as const));
+
+	// Holidays for the calendar month(s) the visible week falls in (a straddle
+	// week shows both months), sorted by date.
+	const monthKeys = [...new Set(days.map((d) => d.slice(0, 7)))].sort();
+	const monthHolidays = holidays
+		.filter((h) => monthKeys.includes(h.date.slice(0, 7)))
+		.sort((a, b) => a.date.localeCompare(b.date));
+	const monthLabel = monthKeys
+		.map((k) => {
+			const [y, m] = k.split("-").map(Number);
+			return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-US", {
+				month: "long",
+				year: "numeric",
+				timeZone: "UTC",
+			});
+		})
+		.join(" – ");
 
 	function buildShift(a: ShiftAssignment | undefined): DayShift | null {
 		if (!a) return null;
@@ -276,17 +294,22 @@ export default function MySchedulePage() {
 					))}
 				</div>
 
-				{holidays.length > 0 && (
-					<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-tertiary mt-3">
-						{holidays.map((h) => (
-							<span key={h.date} className="inline-flex items-center gap-1">
-								<span className="text-peach">●</span>
-								{weekdayLabel(h.date, "short")}{" "}
-								{new Date(`${h.date}T00:00:00Z`).getUTCDate()} — {h.name}
-							</span>
-						))}
-					</div>
-				)}
+				<div className="mt-4 border-t border-border-subtle pt-4">
+					<h3 className="text-label uppercase text-text-tertiary mb-2">
+						Holidays in {monthLabel}
+					</h3>
+					{monthHolidays.length > 0 ? (
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+							{monthHolidays.map((h) => (
+								<HolidayCard key={h.date} holiday={h} />
+							))}
+						</div>
+					) : (
+						<p className="text-small text-text-tertiary">
+							No public holidays in {monthLabel}.
+						</p>
+					)}
+				</div>
 			</section>
 		</div>
 	);
