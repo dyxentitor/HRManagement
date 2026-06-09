@@ -3,13 +3,14 @@ import { useCallback, useEffect, useState } from "react";
 import { StatusPill } from "@/components/hrms";
 import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { cn } from "@/lib/utils";
 
 import {
 	ApiError,
 	type AttendanceRecord,
 	attendanceApi,
 } from "@/modules/attendance/api";
-import { type ShiftAssignment, scheduleApi } from "../api";
+import { type CalendarHoliday, type ShiftAssignment, scheduleApi } from "../api";
 import { RosterCell } from "../components/RosterCell";
 import { resolveCellTone } from "../lib/cell-tone";
 import {
@@ -17,6 +18,7 @@ import {
 	startOfWeekIsoLocal,
 	todayIsoLocal,
 } from "../lib/local-date";
+import { isWeekendIso, weekdayLabel } from "../lib/weekday";
 
 function formatDate(iso: string | null | undefined): string {
 	if (!iso) return "—";
@@ -53,6 +55,7 @@ export default function MySchedulePage() {
 	);
 	const weekEnd = addDaysIso(weekStart, 6);
 	const [assignments, setAssignments] = useState<ShiftAssignment[]>([]);
+	const [holidays, setHolidays] = useState<CalendarHoliday[]>([]);
 	const [todayRec, setTodayRec] = useState<AttendanceRecord | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [noEmployee, setNoEmployee] = useState<boolean>(false);
@@ -74,6 +77,21 @@ export default function MySchedulePage() {
 			} else {
 				setError(e instanceof Error ? e.message : "Failed to load");
 			}
+		}
+		// Holidays are decoupled (CLAUDE.md §3.7): the week must still render if
+		// this fails. A week can straddle a year boundary, so fetch both years.
+		try {
+			const years = [
+				...new Set([weekStart.slice(0, 4), weekEnd.slice(0, 4)]),
+			].map(Number);
+			const lists = await Promise.all(
+				years.map((y) => scheduleApi.listHolidays(y).catch(() => [])),
+			);
+			setHolidays(
+				lists.flat().map((h) => ({ date: h.date, name: h.name, type: h.type })),
+			);
+		} catch {
+			setHolidays([]);
 		}
 	}, [weekStart, weekEnd]);
 
@@ -107,6 +125,7 @@ export default function MySchedulePage() {
 
 	const days = Array.from({ length: 7 }, (_, i) => addDaysIso(weekStart, i));
 	const todayIso = todayIsoLocal();
+	const holidayMap = new Map(holidays.map((h) => [h.date, h] as const));
 
 	if (noEmployee) {
 		return (
@@ -200,14 +219,29 @@ export default function MySchedulePage() {
 				<table className="w-full text-sm">
 					<thead className="text-left text-text-tertiary border-b border-border-subtle">
 						<tr>
-							{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d, i) => (
-								<th
-									key={d}
-									className="py-2 text-label uppercase font-semibold tracking-wide"
-								>
-									{d} {dayOfMonth(days[i])}
-								</th>
-							))}
+							{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+								(label, i) => {
+									const iso = days[i];
+									const hol = holidayMap.get(iso);
+									const isToday = iso === todayIso;
+									return (
+										<th
+											key={label}
+											title={hol?.name}
+											className={cn(
+												"py-2 text-label uppercase font-semibold tracking-wide",
+												isWeekendIso(iso) && !hol && "bg-surface-elevated",
+												hol && "bg-peach/10 text-peach",
+												isToday &&
+													"ring-1 ring-inset ring-accent-500/60 rounded",
+											)}
+										>
+											{label} {dayOfMonth(iso)}
+											{hol && <span aria-hidden> •</span>}
+										</th>
+									);
+								},
+							)}
 						</tr>
 					</thead>
 					<tbody>
@@ -245,6 +279,7 @@ export default function MySchedulePage() {
 											startTime={null}
 											endTime={null}
 											selected={false}
+											isHoliday={holidayMap.has(iso)}
 											onClick={() => {}}
 											onShiftClick={() => {}}
 										/>
@@ -254,6 +289,17 @@ export default function MySchedulePage() {
 						</tr>
 					</tbody>
 				</table>
+				{holidays.length > 0 && (
+					<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-tertiary mt-2">
+						{holidays.map((h) => (
+							<span key={h.date} className="inline-flex items-center gap-1">
+								<span className="text-peach">●</span>
+								{weekdayLabel(h.date, "short")}{" "}
+								{new Date(`${h.date}T00:00:00Z`).getUTCDate()} — {h.name}
+							</span>
+						))}
+					</div>
+				)}
 			</section>
 		</div>
 	);

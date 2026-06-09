@@ -73,6 +73,7 @@ const TONE_BG: Record<string, string> = {
 	yellow: "bg-yellow/40 text-text-primary",
 	mint: "bg-mint/50 text-canvas font-semibold",
 	peach: "bg-peach/10 text-text-tertiary",
+	weekend: "bg-surface-elevated text-text-tertiary",
 	surface: "bg-surface-hover text-text-tertiary",
 	muted: "bg-canvas text-text-disabled",
 };
@@ -306,7 +307,7 @@ export function RowEditPanel(props: Props) {
 							data-date={d}
 							className={cn(
 								"px-2 py-1.5 rounded",
-								holiday && "ring-1 ring-yellow/40",
+								holiday && "ring-1 ring-peach/50",
 								focused && "ring-2 ring-accent-500/60",
 							)}
 						>
@@ -314,7 +315,7 @@ export function RowEditPanel(props: Props) {
 								<div className="text-small text-text-secondary flex items-center gap-1.5 min-w-0">
 									<span>{formatDay(d)}</span>
 									{holiday && (
-										<span className="text-xs text-yellow truncate">
+										<span className="text-xs text-peach truncate">
 											· {holiday.name}
 										</span>
 									)}
