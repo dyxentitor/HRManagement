@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "modules.certification",
     "modules.notification",
     "modules.dashboard",
+    "modules.announcements",
 ]
 
 AUTH_USER_MODEL = "identity.User"
