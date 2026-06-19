@@ -102,6 +102,7 @@ class Employee(TenantBaseModel):
     hire_date = models.DateField()
     probation_end_date = models.DateField(null=True, blank=True)
     contract_end_date = models.DateField(null=True, blank=True)
+    resignation_date = models.DateField(null=True, blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
 
     # Bank (encrypted)
