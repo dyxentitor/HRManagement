@@ -15,8 +15,9 @@ from common.workflow.exceptions import InvalidTransition
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
 
-from .models import PayrollPeriod, PayrollRun, PayslipRecord
+from .models import PayrollException, PayrollPeriod, PayrollRun, PayslipRecord
 from .serializers import (
+    PayrollExceptionSerializer,
     PayrollPeriodSerializer,
     PayrollRunSerializer,
     PayslipRecordSerializer,
@@ -229,3 +230,40 @@ class PayrollRunViewSet(viewsets.GenericViewSet):
         """Return row-level validation errors for this run."""
         run = self.get_object()
         return Response({"run_id": str(run.id), "errors": run.errors})
+
+
+@requires_feature("payslip")
+class PayrollExceptionViewSet(viewsets.ModelViewSet):
+    """Payroll exceptions — flagged issues needing resolution.
+
+    Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+    """
+
+    serializer_class = PayrollExceptionSerializer
+    permission_classes: ClassVar[list] = [HRMSPermission]
+
+    @property
+    def required_perms(self):
+        if self.action in ("list", "retrieve"):
+            return ["payroll:exception:read"]
+        return ["payroll:exception:write"]
+
+    def get_queryset(self):
+        return PayrollException.all_objects.filter(
+            org_id=self.request.user.org_id,
+            deleted_at__isnull=True,
+        ).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        serializer.save(org_id=self.request.user.org_id)
+
+    @action(detail=True, methods=["patch"], url_path="resolve")
+    def resolve(self, request, pk=None):
+        from django.utils import timezone
+
+        obj = self.get_object()
+        obj.status = "resolved"
+        obj.resolved_by = request.user.id
+        obj.resolved_at = timezone.now()
+        obj.save(update_fields=["status", "resolved_by", "resolved_at", "updated_at"])
+        return Response(self.get_serializer(obj).data)

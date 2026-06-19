@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import PayrollComponent, PayrollPeriod, PayrollRun, PayslipRecord
+from .models import (
+    PayrollComponent,
+    PayrollException,
+    PayrollPeriod,
+    PayrollRun,
+    PayslipRecord,
+)
 
 
 class PayrollPeriodSerializer(serializers.ModelSerializer):
@@ -90,6 +96,32 @@ class PayrollRunSerializer(serializers.ModelSerializer):
 
 class PayrollRunCreateSerializer(serializers.Serializer):
     period = serializers.PrimaryKeyRelatedField(queryset=PayrollPeriod.objects.none())
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+        if request:
+            self.fields["period"].queryset = PayrollPeriod.all_objects.filter(
+                org_id=request.user.org_id,
+                deleted_at__isnull=True,
+            )
+
+
+class PayrollExceptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollException
+        fields = (
+            "id",
+            "period",
+            "employee_id",
+            "kind",
+            "message",
+            "status",
+            "resolved_by",
+            "resolved_at",
+            "created_at",
+        )
+        read_only_fields = ("id", "status", "resolved_by", "resolved_at", "created_at")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

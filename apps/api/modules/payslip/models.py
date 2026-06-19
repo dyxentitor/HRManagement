@@ -143,3 +143,41 @@ class PayrollRun(TenantBaseModel):
 
     def __str__(self) -> str:
         return f"Run({self.period}, {self.status}, rows={self.row_count})"
+
+
+EXCEPTION_KINDS: ClassVar[tuple] = (
+    ("missing_bank", "Missing bank"),
+    ("negative_net", "Negative net"),
+    ("tax_mismatch", "Tax mismatch"),
+    ("other", "Other"),
+)
+EXCEPTION_STATUSES: ClassVar[tuple] = (
+    ("open", "Open"),
+    ("resolved", "Resolved"),
+)
+
+
+class PayrollException(TenantBaseModel):
+    """A flagged issue on a payroll period that needs human resolution.
+
+    Surfaced as the "Payroll exceptions" pending-task card on the dashboard.
+    """
+
+    period = models.ForeignKey(
+        PayrollPeriod, on_delete=models.PROTECT, related_name="exceptions"
+    )
+    employee_id = models.UUIDField(null=True, blank=True)
+    kind = models.CharField(max_length=16, choices=EXCEPTION_KINDS, default="other")
+    message = models.CharField(max_length=500)
+    status = models.CharField(max_length=16, choices=EXCEPTION_STATUSES, default="open")
+    resolved_by = models.UUIDField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "payroll_exception"
+        indexes: ClassVar[list] = [
+            models.Index(fields=["org_id", "status"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Exception({self.kind}, {self.status})"

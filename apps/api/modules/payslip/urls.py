@@ -5,11 +5,19 @@ from __future__ import annotations
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import PayrollPeriodViewSet, PayrollRunViewSet, PayslipViewSet
+from .views import (
+    PayrollExceptionViewSet,
+    PayrollPeriodViewSet,
+    PayrollRunViewSet,
+    PayslipViewSet,
+)
 
 router = DefaultRouter()
 router.register(r"payslips", PayslipViewSet, basename="payslip")
 router.register(r"payroll/periods", PayrollPeriodViewSet, basename="payroll-period")
+router.register(
+    r"payroll/exceptions", PayrollExceptionViewSet, basename="payroll-exception"
+)
 
 # PayrollRunViewSet uses GenericViewSet; register list/create/retrieve + custom actions
 run_list = PayrollRunViewSet.as_view({"get": "list", "post": "create"})
