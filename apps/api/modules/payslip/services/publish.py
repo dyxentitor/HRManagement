@@ -37,7 +37,7 @@ def publish_run(*, run: PayrollRun, actor_id: uuid.UUID) -> int:
         from common.workflow.exceptions import InvalidTransition
 
         raise InvalidTransition(f"Cannot publish run with status='{run.status}'")
-    if run.period.status == "published":
+    if run.period.status == "completed":
         from common.workflow.exceptions import InvalidTransition
 
         raise InvalidTransition(f"Period {run.period_id} is already published")
@@ -114,7 +114,8 @@ def publish_run(*, run: PayrollRun, actor_id: uuid.UUID) -> int:
         run.published_at = timezone.now()
         run.save(update_fields=["status", "published_at", "updated_at"])
 
-        run.period.status = "published"
-        run.period.save(update_fields=["status", "updated_at"])
+        run.period.status = "completed"
+        run.period.completed_at = timezone.now()
+        run.period.save(update_fields=["status", "completed_at", "updated_at"])
 
     return n_published

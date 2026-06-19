@@ -107,7 +107,7 @@ def test_publish_run_writes_ledger(setup):
     assert n == 1
     run.refresh_from_db()
     assert run.status == "published"
-    assert run.period.status == "published"
+    assert run.period.status == "completed"
     # Audit log + payroll ledger both have rows
     assert AuditLog.objects.filter(action="payslip.publish").count() == 1
     assert PayrollAuditLedger.objects.filter(action="payslip.publish").count() == 1
@@ -116,7 +116,7 @@ def test_publish_run_writes_ledger(setup):
 @pytest.mark.django_db
 def test_publish_already_published_period_rejected(setup):
     org, _, period, run, _ = setup
-    period.status = "published"
+    period.status = "completed"
     period.save()
     from common.workflow.exceptions import InvalidTransition
 

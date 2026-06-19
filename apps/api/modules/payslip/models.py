@@ -14,8 +14,10 @@ PERIOD_TYPES: ClassVar[tuple] = (
 )
 PERIOD_STATUSES: ClassVar[tuple] = (
     ("draft", "Draft"),
-    ("locked", "Locked"),
-    ("published", "Published"),
+    ("approved", "Approved"),
+    ("ready", "Ready"),
+    ("processing", "Processing"),
+    ("completed", "Completed"),
 )
 COMPONENT_TYPES: ClassVar[tuple] = (
     ("earning", "Earning"),
@@ -45,6 +47,10 @@ class PayrollPeriod(TenantBaseModel):
     period_type = models.CharField(max_length=16, choices=PERIOD_TYPES)
     pay_date = models.DateField()
     status = models.CharField(max_length=16, choices=PERIOD_STATUSES, default="draft")
+    approved_at = models.DateTimeField(null=True, blank=True)
+    ready_at = models.DateTimeField(null=True, blank=True)
+    processing_started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "payroll_period"
