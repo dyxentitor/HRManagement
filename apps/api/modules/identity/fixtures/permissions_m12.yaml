@@ -1,0 +1,7 @@
+# permissions_m12.yaml — operational dashboard (v1.12.0)
+- { code: "announcement:read",       description: Read company announcements }
+- { code: "announcement:write",      description: Create / edit / delete announcements }
+- { code: "onboarding:read",         description: Read onboarding checklists }
+- { code: "onboarding:write",        description: Create / update onboarding checklists }
+- { code: "payroll:exception:read",  description: Read payroll exceptions }
+- { code: "payroll:exception:write", description: Resolve payroll exceptions }

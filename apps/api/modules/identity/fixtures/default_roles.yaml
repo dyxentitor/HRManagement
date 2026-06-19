@@ -117,6 +117,12 @@
     - "report:run"
     - "report:export"
     - "report:saved_view:write"
+    - "announcement:read"
+    - "announcement:write"
+    - "onboarding:read"
+    - "onboarding:write"
+    - "payroll:exception:read"
+    - "payroll:exception:write"
 
 - code: hr_manager
   name: HR Manager
@@ -228,6 +234,11 @@
     - "report:run"
     - "report:export"
     - "report:saved_view:write"
+    - "announcement:read"
+    - "announcement:write"
+    - "onboarding:read"
+    - "onboarding:write"
+    - "payroll:exception:read"
 
 - code: finance
   name: Finance
@@ -272,6 +283,9 @@
     - "report:run"
     - "report:export"
     - "report:saved_view:write"
+    - "announcement:read"
+    - "payroll:exception:read"
+    - "payroll:exception:write"
 
 - code: manager
   name: Manager
@@ -334,6 +348,8 @@
     - "report:run"
     - "report:export"
     - "report:saved_view:write"
+    - "announcement:read"
+    - "onboarding:read"
 
 - code: team_lead
   name: Team Lead
@@ -396,6 +412,7 @@
     - "report:run"
     - "report:export"
     - "report:saved_view:write"
+    - "announcement:read"
 
 - code: employee
   name: Employee
@@ -434,6 +451,7 @@
     - "report:list"
     - "report:run"
     - "report:saved_view:write"
+    - "announcement:read"
 
 - code: auditor
   name: Auditor
@@ -497,3 +515,6 @@
     - "report:run"
     - "report:export"
     - "report:saved_view:write"
+    - "announcement:read"
+    - "onboarding:read"
+    - "payroll:exception:read"
