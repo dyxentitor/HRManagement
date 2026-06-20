@@ -2,6 +2,32 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.1] — 2026-06-20
+
+Two bug fixes from live testing.
+
+### Fixed
+
+- **Certifications** — adding a cert from *My Certifications* failed with
+  `400 — employee_id: Must be a valid UUID`. `POST /api/v1/certifications/` required a
+  client-supplied `employee_id`, but the self-service page can't know the user's
+  `Employee.id` and sent `""`. It's now **derived server-side** from the caller's linked
+  Employee (removed from the write serializer + frontend payload). A caller with no
+  linked Employee gets a clear 400. Also closes a latent hole where a `cert:write:self`
+  user could file a certification for *any* employee.
+- **Organization settings** — a non-admin who navigated directly to
+  `/admin/settings/organization` triggered a 403 XHR on `GET /api/v1/org/settings`
+  (the link is hidden in the settings nav, but the page fetched unconditionally). The
+  page now gates the fetch on `useCan("org:settings:read")` and shows a clean "no
+  permission" message instead.
+
+### Tests
+
+- Backend: **778 passed** (+1 net — replaced the on-behalf cert-create test with two
+  self-service tests: derive-from-user, and no-linked-employee → 400).
+- Frontend: **347 passed** (+1 — org-settings no-permission guard).
+- Contracts regenerated (`employee_id` removed from the cert POST schema).
+
 ## [1.13.0] — 2026-06-20
 
 Audit Log viewer — a dedicated admin/compliance page to track who changed what
