@@ -2,6 +2,38 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.13.0] — 2026-06-20
+
+Audit Log viewer — a dedicated admin/compliance page to track who changed what
+and when, reading the existing append-only `audit_log`.
+
+### Added
+
+- **Backend** `GET /api/v1/audit/logs` (`common/audit/views.py`), gated on
+  `audit:read:org` (org_admin / hr_manager / auditor). Read-only, **paginated**
+  (`page` / `page_size`, max 200) and **filterable** by entity, action, date range,
+  and free-text. Resolves the actor's name; returns the recorded `before` / `after`
+  diffs. **PII redaction:** salary keys are masked unless the caller holds
+  `employee:salary:read`; bank / national-id / tax keys unless `employee:bank:read`.
+  `?export=csv` streams the filtered set (capped 10k rows) as CSV.
+- **Frontend** `/admin/settings/audit` (Settings → Audit Log, gated
+  `audit:read:org`): filter bar (entity dropdown · date range · search), event table
+  (when · who · action · entity), a **before → after detail panel** with changed
+  fields highlighted, pagination, and CSV export. New `modules/admin/audit-api.ts`.
+
+### Tests
+
+- Backend: **777 passed** (+6 — list, entity filter, salary redaction with/without
+  perm, CSV export, perm gate).
+- Frontend: **346 passed** (+3 — list, detail diff, perm gate).
+
+### Notes
+
+- No new permission codes or migrations (reuses the existing `audit:read:org` perm
+  and the `audit_log` table). The log stays append-only; this is read-only.
+- The list endpoint uses `?export=csv` (not `?format=csv`, which collides with DRF's
+  format-override query param).
+
 ## [1.12.1] — 2026-06-20
 
 Announcements management UI — the missing admin/HR surface for the dashboard's
