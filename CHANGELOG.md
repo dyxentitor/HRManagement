@@ -2,6 +2,28 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.1] — 2026-06-21
+
+Fixes: a claim stayed "Submitted" on `/claims/me` after the manager approved it.
+
+### Fixed
+
+- **Root cause:** every claim approval chain has ≥2 steps, and the `WorkflowEngine` uses the
+  claim's `status` as its state machine — it must stay `"submitted"` to keep acting through the
+  chain, only becoming terminal (`"approved"` → `finance_approved`) at the final step. So after
+  the manager's **non-final** approval the status stayed `"submitted"` and the employee couldn't
+  tell it had been approved. The real progress is in `current_level` (advanced per approval).
+- **Fix (display-only):** new `displayStatus(claim)` derives **`manager_approved`** when
+  `status === "submitted" && current_level > 1`, applied to the status pill (card / row / drawer),
+  the stepper + note, and the activity feed. The backend status is unchanged — overwriting it
+  mid-chain breaks the engine (`Cannot act on status='manager_approved'`); the workflow test now
+  asserts the status stays `"submitted"` with `current_level == 2`.
+
+### Tests
+
+- Frontend: **367 passed** (+1 — `displayStatus`). Backend: **787 passed** (workflow assertion
+  updated; no behaviour change). No migration, no new perms.
+
 ## [1.19.0] — 2026-06-21
 
 Approvals inbox — premium redesign. Spec:
