@@ -2,6 +2,34 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.1] — 2026-06-20
+
+Approvals unification — fixes a route/architecture issue surfaced after v1.14.0.
+
+### Fixed / Changed
+
+- The v1.14.0 leave **L4** redesign landed on `/leave/approvals`, which was an
+  **orphan** page: nothing linked to it, it was shadowed by the approvals module's
+  redirect, and it was gated on the `leave` flag while the real inbox (`/approvals`)
+  is gated on `approvals`. Consolidated to the single, sidebar-linked **`/approvals`**
+  (`UnifiedInboxPage`), now rebuilt with the rich card UX for **all** kinds
+  (leave / claim / KPI): avatar + name, type/dates/amount/cycle context, a per-leave
+  **team-coverage badge** (via `/leave/coverage`), inline approve/reject + comment,
+  and **bulk approve-selected**.
+- Backend **inbox enriched** — `InboxItem` (`modules/dashboard/services/inbox.py`)
+  now carries structured fields (`employee_id`, `name`, `type_code`, `detail`) so the
+  cards and coverage have real data instead of re-parsing the summary string.
+- Removed the leave-only `ApprovalsInboxPage` + `LeaveApprovalCard` and the
+  `/leave/approvals` route; that path now redirects to `/approvals` (consistent
+  feature-flag gating).
+
+### Tests
+
+- Backend: **781 passed** (inbox enrichment is additive; 8 inbox tests pass).
+- Frontend: **351 passed** (rebuilt unified-inbox tests; removed the orphan
+  leave-approvals test).
+- No new permission codes or migrations.
+
 ## [1.14.0] — 2026-06-20
 
 Leave module UI/UX redesign — the whole employee + manager leave experience
