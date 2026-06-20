@@ -1,4 +1,3 @@
-import { FileText } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { DetailPanel, StatusPill } from "@/components/hrms";
@@ -8,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { type ClaimCategory, type ClaimRequest, claimsApi } from "../api";
 import { ClaimActivityTimeline } from "../components/ClaimActivityTimeline";
 import { ClaimCategoryGrid } from "../components/ClaimCategoryGrid";
+import { ClaimReceipts } from "../components/ClaimReceipts";
 import { ClaimStatusTiles } from "../components/ClaimStatusTiles";
 import { ClaimsHero } from "../components/ClaimsHero";
 import { InProgressClaims } from "../components/InProgressClaims";
@@ -49,15 +49,6 @@ export default function MyClaimsPage() {
 			await refresh();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Cancel failed");
-		}
-	}
-
-	async function openAttachment(claimId: string, attachmentId: number) {
-		try {
-			const { url } = await claimsApi.downloadAttachment(claimId, attachmentId);
-			window.open(url, "_blank", "noopener,noreferrer");
-		} catch (e) {
-			setError(e instanceof Error ? e.message : "Could not open the receipt");
 		}
 	}
 
@@ -144,27 +135,7 @@ export default function MyClaimsPage() {
 						)}
 						<dt className="text-label uppercase text-text-tertiary self-start">Receipts</dt>
 						<dd>
-							{selected.attachments.length === 0 ? (
-								<span className="text-text-tertiary">None attached</span>
-							) : (
-								<ul className="space-y-1.5">
-									{selected.attachments.map((a) => (
-										<li key={a.id}>
-											<button
-												type="button"
-												onClick={() => openAttachment(selected.id, a.id)}
-												className="inline-flex items-center gap-2 text-left text-accent-200 hover:underline"
-											>
-												<FileText className="size-3.5 shrink-0" aria-hidden />
-												<span className="truncate">{a.filename}</span>
-												<span className="text-[10px] text-text-tertiary tabular-nums shrink-0">
-													{(a.size_bytes / 1024).toFixed(0)} KB
-												</span>
-											</button>
-										</li>
-									))}
-								</ul>
-							)}
+							<ClaimReceipts claimId={selected.id} attachments={selected.attachments} />
 						</dd>
 					</dl>
 				)}

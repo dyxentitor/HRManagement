@@ -95,11 +95,15 @@ def get_inbox(*, user: User) -> list[InboxItem]:
         approver_id=user.id,
         status="pending",
     ).values_list("claim_id", flat=True)
-    claim_qs = ClaimRequest.all_objects.filter(
-        id__in=pending_claim_ids,
-        status__in=("submitted", "manager_approved"),
-        deleted_at__isnull=True,
-    ).select_related("employee", "category")
+    claim_qs = (
+        ClaimRequest.all_objects.filter(
+            id__in=pending_claim_ids,
+            status__in=("submitted", "manager_approved"),
+            deleted_at__isnull=True,
+        )
+        .select_related("employee", "category")
+        .prefetch_related("attachments")
+    )
     for c in claim_qs:
         items.append(
             InboxItem(
@@ -116,6 +120,10 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                     "amount": str(c.amount),
                     "currency_code": c.currency_code,
                     "expense_date": c.expense_date.isoformat(),
+                    "attachments": [
+                        {"id": a.id, "filename": a.filename, "size_bytes": a.size_bytes}
+                        for a in c.attachments.all()
+                    ],
                 },
             )
         )

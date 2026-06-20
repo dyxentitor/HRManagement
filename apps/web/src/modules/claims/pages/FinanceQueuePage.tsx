@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 
 import { type ClaimRequest, claimsApi } from "../api";
+import { ClaimReceipts } from "../components/ClaimReceipts";
 
 const FINANCE_PERM = "claim:approve:finance";
 
@@ -50,12 +51,10 @@ export default function FinanceQueuePage() {
 					role="alert"
 					className="bg-surface border border-border-subtle rounded p-6 text-text-secondary"
 				>
-					<p className="text-text-primary font-semibold mb-1">
-						Finance access required
-					</p>
+					<p className="text-text-primary font-semibold mb-1">Finance access required</p>
 					<p className="text-small">
-						The reimbursement queue is restricted to users with the finance
-						role. Ask your administrator if you should have access.
+						The reimbursement queue is restricted to users with the finance role. Ask your
+						administrator if you should have access.
 					</p>
 				</div>
 			</div>
@@ -75,10 +74,7 @@ export default function FinanceQueuePage() {
 			) : (
 				<ul className="space-y-2">
 					{queue.map((c) => (
-						<li
-							key={c.id}
-							className="bg-surface border border-border-subtle rounded p-3"
-						>
+						<li key={c.id} className="bg-surface border border-border-subtle rounded p-3">
 							<div className="flex items-center justify-between">
 								<div className="text-sm">
 									<div className="font-semibold">
@@ -88,10 +84,14 @@ export default function FinanceQueuePage() {
 										{c.expense_date} {c.merchant && `• ${c.merchant}`}
 									</div>
 									{c.description && (
-										<div className="text-text-tertiary mt-1">
-											"{c.description}"
-										</div>
+										<div className="text-text-tertiary mt-1">"{c.description}"</div>
 									)}
+									<div className="mt-2">
+										<span className="text-[10px] uppercase tracking-wide text-text-tertiary block mb-1">
+											Receipts
+										</span>
+										<ClaimReceipts claimId={c.id} attachments={c.attachments} />
+									</div>
 								</div>
 								{acting === c.id ? (
 									<div className="space-y-2 ml-3">

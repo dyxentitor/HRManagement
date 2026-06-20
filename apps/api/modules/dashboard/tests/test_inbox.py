@@ -11,7 +11,12 @@ import pytest
 from cryptography.fernet import Fernet
 from rest_framework.test import APIClient
 
-from modules.claims.models import ClaimApproval, ClaimCategory, ClaimRequest
+from modules.claims.models import (
+    ClaimApproval,
+    ClaimAttachment,
+    ClaimCategory,
+    ClaimRequest,
+)
 from modules.employee.models import Employee
 from modules.identity.models import Permission, Role, RolePermission, User, UserRole
 from modules.kpi.models import KpiAssignment, KpiCycle, KpiTemplate
@@ -165,6 +170,42 @@ def test_approver_sees_pending_claim(stack):
     assert len(items) == 1
     assert items[0].kind == "claim"
     assert items[0].id == str(cr.id)
+
+
+@pytest.mark.django_db
+def test_claim_inbox_item_includes_attachments(stack):
+    """A pending claim's inbox item exposes its receipts in detail.attachments."""
+    from modules.dashboard.services.inbox import get_inbox
+
+    org, mgr_user, emp_user, _mgr_emp, emp_emp, _, claim_cat = stack
+
+    cr = ClaimRequest.all_objects.create(
+        org_id=org.id,
+        employee=emp_emp,
+        category=claim_cat,
+        amount=Decimal("90.00"),
+        currency_code="MYR",
+        expense_date=datetime.date(2026, 4, 20),
+        description="Taxi",
+        status="submitted",
+        submitted_at=datetime.datetime(2026, 4, 25, 9, 0, tzinfo=datetime.UTC),
+    )
+    ClaimApproval.objects.create(claim=cr, level=1, approver_id=mgr_user.id, status="pending")
+    att = ClaimAttachment.objects.create(
+        claim=cr,
+        filename="receipt.pdf",
+        content_type="application/pdf",
+        size_bytes=2048,
+        s3_key="claims/x/receipt.pdf",
+        uploaded_by=emp_user.id,
+    )
+
+    items = get_inbox(user=mgr_user)
+    attachments = items[0].detail["attachments"]
+    assert len(attachments) == 1
+    assert attachments[0]["id"] == att.id
+    assert attachments[0]["filename"] == "receipt.pdf"
+    assert attachments[0]["size_bytes"] == 2048
 
 
 @pytest.mark.django_db

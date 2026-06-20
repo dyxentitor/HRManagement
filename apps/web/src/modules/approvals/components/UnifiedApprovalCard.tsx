@@ -4,6 +4,7 @@ import { StatusPill } from "@/components/hrms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { ClaimReceipts, type ReceiptRef } from "@/modules/claims/components/ClaimReceipts";
 import { formatRange } from "@/modules/leave/lib/leave-dates";
 import { typeTone } from "@/modules/leave/lib/leave-ui";
 
@@ -128,9 +129,7 @@ export function UnifiedApprovalCard({
 						<StatusPill tone={KIND_TONE[item.kind]} label={item.kind} />
 					</div>
 					<Context item={item} />
-					{reason && (
-						<p className="text-small text-text-tertiary italic mt-1.5">“{reason}”</p>
-					)}
+					{reason && <p className="text-small text-text-tertiary italic mt-1.5">“{reason}”</p>}
 					{item.kind === "leave" && (
 						<div className="mt-2.5">
 							{hasClash ? (
@@ -143,6 +142,17 @@ export function UnifiedApprovalCard({
 									No coverage clash ✓
 								</span>
 							)}
+						</div>
+					)}
+					{item.kind === "claim" && (
+						<div className="mt-2.5">
+							<span className="text-[10px] uppercase tracking-wide text-text-tertiary block mb-1">
+								Receipts
+							</span>
+							<ClaimReceipts
+								claimId={item.id}
+								attachments={(item.detail.attachments as ReceiptRef[] | undefined) ?? []}
+							/>
 						</div>
 					)}
 					<div className="flex items-center gap-2 mt-3">
