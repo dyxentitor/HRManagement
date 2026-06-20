@@ -2,6 +2,77 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.0] — 2026-06-20
+
+Dashboard **command-center redesign** — a ground-up rebuild of the dashboard into
+an asymmetrical 5-layer workspace (hero · today's focus · operational bento ·
+company & community · smart insights), on the existing dark design system with
+glassmorphism + aurora hero. Specs:
+`docs/superpowers/specs/2026-06-19-operational-dashboard-redesign-design.md` (backend
+foundation) and `2026-06-20-dashboard-command-center-redesign.md` (final UI). Brief:
+`References/UI_UX_fixed.md`.
+
+### Added — backend subsystems
+
+- New app `modules.announcements` — `Announcement` model + perm-gated CRUD at
+  `/api/v1/announcements/`.
+- New app `modules.onboarding` — `OnboardingChecklist` + `OnboardingItem` (6-item
+  default template; auto-completes) + viewset at `/api/v1/onboarding/` with toggle.
+- `PayrollException` model + viewset at `/api/v1/payroll/exceptions/` with `resolve`.
+- `PayrollPeriod` 5-state workflow (`draft → approved → ready → processing →
+  completed`) + stage timestamps; reversible data migration maps legacy
+  `locked → approved`, `published → completed`.
+- `Employee.resignation_date` (nullable) + `backfill_resignation_dates` command.
+- **6 new permission codes** (`announcement:read/write`, `onboarding:read/write`,
+  `payroll:exception:read/write`; 111 → 117), backfilled via `grant_default_perms`.
+
+### Added — dashboard cards
+
+- `hero_summary`, `pending_tasks` (action engine), `employee_snapshot`
+  (+ monthly_growth), `payroll_status`, `activity_feed` (filters passive view-audit
+  noise + resolves actor/department), `company_announcements` (+ body snippet +
+  `featured`), and `smart_insights` (derived: payroll countdown, missing docs,
+  contracts/certs expiring, probation — no AI, no new models). Cards self-hide via
+  `requires_perms`.
+- `seed_dashboard_demo` — idempotent demo data (announcements, active payroll period,
+  exception, onboarding) so the dashboard reads as populated.
+
+### Added — frontend (command center)
+
+- 5 layer components under `modules/dashboard/components/command/`: `HeroWorkspace`
+  (greeting + one-line summary + featured announcement + payroll countdown, aurora/
+  glass), `TodaysFocus` (action cards), `OperationalWorkspace` (asymmetrical bento:
+  large `EmployeeOverview` donut + growth, `PayrollProgress` stepper, tall
+  `ActivityTimeline`, `QuickActions`), `CommunityLayer` (rich announcements +
+  holidays + birthdays), `SmartInsights`.
+- `glass-surface` / `hero-aurora` / `soft-glow` / `layer-eyebrow` utilities added to
+  `index.css` (tokens only — no raw hex in components).
+
+### Changed / Removed
+
+- `DashboardPage` rebuilt around the 5 layers; the prior grid widgets
+  (`components/widgets/`) removed. `role_filter` switched to the command-center card
+  set — the standalone attendance/department/cert/KPI cards are folded into
+  `pending_tasks` + `smart_insights`.
+- Payroll publish now lands the period at `completed` (was `published`) +
+  `completed_at`.
+
+### Tests
+
+- Backend: **771 passed** (1 pre-existing date-sensitive failure carried forward —
+  `test_clock_out_completes_record`, CLAUDE.md §2.3).
+- Frontend: **340 passed**.
+- Permission codes: **117** (+6).
+
+### Notes
+
+- No new migrations beyond A1 (PayrollPeriod / PayrollException / resignation_date /
+  the two new apps); no new feature flags (announcements/onboarding gated by perms;
+  payroll-exceptions under the existing `payslip` flag).
+- Browser visual walk deferred — the sandboxed env has no browser/sudo. Verify at
+  `http://localhost:5173/` (run `seed_dashboard_demo` once for populated data). A
+  design proof lives at `dashboard-preview.html` (untracked scratch).
+
 ## [1.11.0] — 2026-06-08
 
 Unified user/employee creation. Makes onboarding a single coherent flow in
