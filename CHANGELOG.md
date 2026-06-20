@@ -2,6 +2,32 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.15.0] — 2026-06-20
+
+Claims workspace redesign — `/claims/me` rebuilt from a bare table into an
+action-first workspace (command-center style). Spec:
+`docs/superpowers/specs/2026-06-20-claims-workspace-redesign.md`. Ref:
+`References/Image_ref/Claims2.png`.
+
+### Added / Changed
+
+- **My Claims** is now a workspace: glass **hero** with a contextual summary line +
+  Submit CTA; **4 summary cards** (Pending / Approved / Paid / Rejected with counts +
+  amounts, derived client-side); a **category quick-launch grid** — each card links to
+  `/claims/submit?category=<id>`, which now **preselects** that category; a **recent
+  claims** list (row → detail drawer with cancel for draft/submitted); a **derived
+  activity feed**; and a static **How claims work** workflow. The empty state becomes
+  guidance (categories + how-it-works + clear CTA) instead of "No claims."
+- New components under `modules/claims/components/` + `lib/claim-ui.ts`
+  (status/category tone + icon maps, bucketing, money/date helpers).
+- `ClaimSubmitPage` reads `?category=` to preselect the category.
+
+### Tests
+
+- Frontend: **356 passed** (+ claim-ui buckets, category-grid links, My Claims
+  render/empty-state). Backend unchanged (**781**; no backend/perm/migration changes).
+- Note: `RosterPage.test` is a known network-timing flake (passes on re-run; unrelated).
+
 ## [1.14.1] — 2026-06-20
 
 Approvals unification — fixes a route/architecture issue surfaced after v1.14.0.
