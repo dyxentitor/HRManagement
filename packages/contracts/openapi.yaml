@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.13.0
+  version: 1.13.1
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -2455,6 +2455,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/LeaveBalance'
           description: ''
+  /api/v1/leave/coverage:
+    get:
+      operationId: leave_coverage_retrieve
+      description: |-
+        Team availability for a date window — powers the Apply calendar clash hints
+        and the Approvals coverage badge.
+
+        Any authenticated org user may read counts for their own team; teammate
+        *names* are included only for callers holding ``leave:request:read:team``
+        (managers / HR / approvers). With that perm, ``?employee_id=`` targets a
+        specific person's team (e.g. when reviewing their request).
+      tags:
+      - leave
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/leave/employee-overrides/:
     get:
       operationId: leave_employee_overrides_list

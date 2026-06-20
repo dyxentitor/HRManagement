@@ -1,11 +1,13 @@
 """Leave module URL routing."""
 
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
     AdminAccrualViewSet,
     EmployeeLeaveOverrideViewSet,
     LeaveBalanceViewSet,
+    LeaveCoverageView,
     LeavePolicyViewSet,
     LeaveRequestViewSet,
     LeaveTypeViewSet,
@@ -22,4 +24,7 @@ router.register(
 router.register(r"leave/balances", LeaveBalanceViewSet, basename="leave-balance")
 router.register(r"leave/requests", LeaveRequestViewSet, basename="leave-request")
 router.register(r"admin/leave", AdminAccrualViewSet, basename="admin-leave")
-urlpatterns = router.urls
+urlpatterns = [
+    *router.urls,
+    path("leave/coverage", LeaveCoverageView.as_view(), name="leave-coverage"),
+]

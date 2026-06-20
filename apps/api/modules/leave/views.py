@@ -9,6 +9,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from common.feature_flags.decorators import requires_feature
 from common.workflow import Decision
@@ -312,3 +313,102 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         LeaveRequestService.withdraw(req, actor=request.user)
         req.refresh_from_db()
         return Response(self.get_serializer(req).data)
+
+
+class LeaveCoverageView(APIView):
+    """Team availability for a date window — powers the Apply calendar clash hints
+    and the Approvals coverage badge.
+
+    Any authenticated org user may read counts for their own team; teammate
+    *names* are included only for callers holding ``leave:request:read:team``
+    (managers / HR / approvers). With that perm, ``?employee_id=`` targets a
+    specific person's team (e.g. when reviewing their request).
+    """
+
+    permission_classes: ClassVar[list] = [HRMSPermission]
+    required_perms: ClassVar[list[str]] = []
+
+    def get(self, request):
+        import datetime as _dt
+
+        from modules.identity.services.permissions import get_user_perms
+
+        start = request.query_params.get("start")
+        end = request.query_params.get("end")
+        if not start or not end:
+            return Response({"detail": "start and end are required"}, status=400)
+        try:
+            d_start = _dt.date.fromisoformat(start)
+            d_end = _dt.date.fromisoformat(end)
+        except ValueError:
+            return Response({"detail": "start/end must be YYYY-MM-DD"}, status=400)
+
+        perms = get_user_perms(request.user)
+        can_team = "leave:request:read:team" in perms
+        org_id = request.user.org_id
+
+        emp_param = request.query_params.get("employee_id")
+        caller = Employee.all_objects.filter(
+            user_id=request.user.id, deleted_at__isnull=True
+        ).first()
+        if emp_param and can_team:
+            target = Employee.all_objects.filter(
+                id=emp_param, org_id=org_id, deleted_at__isnull=True
+            ).first()
+        else:
+            target = caller
+        if target is None:
+            return Response({"team_size": 0, "per_day": {}, "people": []})
+
+        peers = Employee.all_objects.filter(org_id=org_id, deleted_at__isnull=True).exclude(
+            id=target.id
+        )
+        if target.manager_id:
+            peers = peers.filter(manager_id=target.manager_id)
+        elif target.department_id:
+            peers = peers.filter(department_id=target.department_id)
+        else:
+            peers = peers.none()
+        peer_map = {e.id: f"{e.first_name} {e.last_name}".strip() for e in peers}
+        peer_ids = list(peer_map.keys())
+
+        reqs = (
+            LeaveRequest.all_objects.filter(
+                org_id=org_id,
+                employee_id__in=peer_ids,
+                status__in=("approved", "submitted"),
+                start_date__lte=d_end,
+                end_date__gte=d_start,
+                deleted_at__isnull=True,
+            ).select_related("leave_type")
+            if peer_ids
+            else []
+        )
+
+        per_day: dict[str, int] = {}
+        people: list[dict] = []
+        for r in reqs:
+            people.append(
+                {
+                    "employee_id": str(r.employee_id),
+                    "name": peer_map.get(r.employee_id, ""),
+                    "leave_type_code": r.leave_type.code,
+                    "start": r.start_date.isoformat(),
+                    "end": r.end_date.isoformat(),
+                    "status": r.status,
+                }
+            )
+            day = max(r.start_date, d_start)
+            stop = min(r.end_date, d_end)
+            while day <= stop:
+                key = day.isoformat()
+                per_day[key] = per_day.get(key, 0) + 1
+                day += _dt.timedelta(days=1)
+
+        return Response(
+            {
+                "team_size": len(peer_ids),
+                "per_day": per_day,
+                "people": people if can_team else [],
+            }
+        )

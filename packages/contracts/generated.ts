@@ -1336,6 +1336,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leave/coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Team availability for a date window — powers the Apply calendar clash hints
+         *     and the Approvals coverage badge.
+         *
+         *     Any authenticated org user may read counts for their own team; teammate
+         *     *names* are included only for callers holding ``leave:request:read:team``
+         *     (managers / HR / approvers). With that perm, ``?employee_id=`` targets a
+         *     specific person's team (e.g. when reviewing their request).
+         */
+        get: operations["leave_coverage_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/leave/employee-overrides/": {
         parameters: {
             query?: never;
@@ -7112,6 +7137,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["LeaveBalance"];
                 };
+            };
+        };
+    };
+    leave_coverage_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
