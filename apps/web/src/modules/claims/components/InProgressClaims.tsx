@@ -1,11 +1,54 @@
-import { useMemo, useState } from "react";
-
+import { ProgressHistoryPanel, StatusPill } from "@/components/hrms";
 import { cn } from "@/lib/utils";
 import type { ClaimRequest } from "../api";
-import { isInFlight } from "../lib/claim-ui";
+import {
+	STATUS_LABEL,
+	STATUS_TONE,
+	TONE_CHIP,
+	categoryMeta,
+	fmtDate,
+	fmtMoney,
+	isInFlight,
+	num,
+} from "../lib/claim-ui";
 import { ClaimProgressCard } from "./ClaimProgressCard";
 
-/** "In progress" section — rich claim cards with an In progress / All toggle. */
+function ClaimRow({
+	claim,
+	onSelect,
+}: {
+	claim: ClaimRequest;
+	onSelect: (c: ClaimRequest) => void;
+}) {
+	const meta = categoryMeta(`${claim.category_code} ${claim.description}`);
+	return (
+		<button
+			type="button"
+			onClick={() => onSelect(claim)}
+			className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-left border-t border-border-subtle first:border-t-0 hover:bg-surface-elevated/40"
+		>
+			<span
+				className={cn("size-7 rounded-lg grid place-items-center shrink-0", TONE_CHIP[meta.tone])}
+				aria-hidden
+			>
+				<meta.icon className="size-3.5" />
+			</span>
+			<div className="min-w-0 flex-1">
+				<p className="text-small text-text-primary truncate">
+					{claim.category_code}
+					{claim.merchant ? ` · ${claim.merchant}` : ""}
+				</p>
+				<p className="text-[10px] text-text-tertiary">{fmtDate(claim.expense_date)}</p>
+			</div>
+			<span className="text-small text-text-secondary tabular-nums shrink-0">
+				{fmtMoney(num(claim.amount), claim.currency_code)}
+			</span>
+			<StatusPill tone={STATUS_TONE[claim.status]} label={STATUS_LABEL[claim.status]} />
+		</button>
+	);
+}
+
+/** Bounded "In progress / History" section for claims. */
 export function InProgressClaims({
 	claims,
 	onSelect,
@@ -13,58 +56,17 @@ export function InProgressClaims({
 	claims: ClaimRequest[];
 	onSelect: (c: ClaimRequest) => void;
 }) {
-	const [showAll, setShowAll] = useState(false);
-
-	const inFlight = useMemo(() => claims.filter((c) => isInFlight(c.status)), [claims]);
-	const sorted = useMemo(
-		() => [...claims].sort((a, b) => (b.expense_date ?? "").localeCompare(a.expense_date ?? "")),
-		[claims],
-	);
-	const shown = showAll ? sorted : inFlight;
-
 	return (
-		<section>
-			<div className="flex items-center justify-between mb-3">
-				<p className="layer-eyebrow">
-					{showAll ? "All claims" : `In progress · ${inFlight.length}`}
-				</p>
-				<div className="flex gap-1 text-small">
-					<button
-						type="button"
-						onClick={() => setShowAll(false)}
-						className={cn(
-							"px-2.5 py-1 rounded-full",
-							!showAll ? "bg-accent-500/15 text-text-primary" : "text-text-tertiary",
-						)}
-					>
-						In progress
-					</button>
-					<button
-						type="button"
-						onClick={() => setShowAll(true)}
-						className={cn(
-							"px-2.5 py-1 rounded-full",
-							showAll ? "bg-accent-500/15 text-text-primary" : "text-text-tertiary",
-						)}
-					>
-						All
-					</button>
-				</div>
-			</div>
-
-			{shown.length === 0 ? (
-				<div className="glass-surface rounded-2xl p-8 text-center text-text-tertiary">
-					{showAll
-						? "No claims yet — pick a category below to start."
-						: "Nothing in progress. You're all settled. 🎉"}
-				</div>
-			) : (
-				<div className="grid sm:grid-cols-2 gap-3">
-					{shown.map((c) => (
-						<ClaimProgressCard key={c.id} claim={c} onSelect={onSelect} />
-					))}
-				</div>
-			)}
-		</section>
+		<ProgressHistoryPanel
+			items={claims}
+			isInFlight={(c) => isInFlight(c.status)}
+			getKey={(c) => c.id}
+			sortValue={(c) => c.expense_date ?? ""}
+			cardLimit={2}
+			renderCard={(c) => <ClaimProgressCard claim={c} onSelect={onSelect} />}
+			renderRow={(c) => <ClaimRow claim={c} onSelect={onSelect} />}
+			emptyInProgress="Nothing in progress. You're all settled. 🎉"
+			emptyHistory="No claims yet — pick a category below to start."
+		/>
 	);
 }

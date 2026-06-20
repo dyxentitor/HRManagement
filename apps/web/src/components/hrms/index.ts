@@ -11,6 +11,8 @@ export { DetailPanel } from "./DetailPanel";
 export type { DetailPanelProps } from "./DetailPanel";
 export { DonutChart } from "./DonutChart";
 export type { DonutChartProps, DonutSegment } from "./DonutChart";
+export { ProgressHistoryPanel } from "./ProgressHistoryPanel";
+export type { ProgressHistoryPanelProps } from "./ProgressHistoryPanel";
 export { EmployeeCard } from "./EmployeeCard";
 export type { EmployeeCardProps } from "./EmployeeCard";
 export { EmptyState } from "./EmptyState";
