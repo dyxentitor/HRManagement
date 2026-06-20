@@ -2,6 +2,29 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.18.1] — 2026-06-21
+
+Claim Submit page redesign — brings `/claims/submit` into the premium command-center
+language (it was a plain CRUD form). Spec:
+`docs/superpowers/specs/2026-06-21-claim-submit-redesign.md`.
+
+### Changed
+
+- **Two-column layout** mirroring Leave Apply: a `glass-surface` **form** (styled `Select`
+  with a per-category hint, **RM-prefixed amount**, date, optional merchant/description) on
+  the left, and a live **"Claim summary"** on the right — big amount, category glyph +
+  merchant + date, **receipt status** line, a **"where it goes"** Submit → Manager → Finance
+  → Paid stepper, turnaround note, and the Submit CTA.
+- New **`ReceiptDropzone`** replaces the raw file input — drag-or-browse zone (coral outline
+  when the category requires a receipt) + file chips with size and remove.
+- Preserves the create → upload-attachments → submit → navigate(`/claims/me`) flow and the
+  `?category=` prefill (v1.15.0).
+
+### Tests
+
+- Frontend: **363 passed** (+ `ReceiptDropzone` add/remove; Submit page render/fields/
+  disabled-submit). Backend unchanged (**785**; no backend/API change).
+
 ## [1.18.0] — 2026-06-21
 
 Leave over-draw guard — prevents paid leave balances going negative (the data root
