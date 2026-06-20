@@ -2,6 +2,27 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.1] — 2026-06-20
+
+Bounded the In-progress / History section on Claims + Leave so the page no longer
+grows unbounded as items accumulate. Spec:
+`docs/superpowers/specs/2026-06-20-bounded-progress-history.md`.
+
+### Changed
+
+- New shared **`ProgressHistoryPanel`** (`components/hrms/`): **In progress** shows rich
+  cards **capped at top 2** (overflow surfaces as "+N more in history →"); **History**
+  renders every item as **compact rows** inside a **fixed-height, internally-scrolling**
+  panel (`max-h-72`). Page height is now bounded regardless of count, and the bento column
+  stays aligned with the calendar/timeline.
+- `InProgressClaims` + `InProgressLeave` reworked to use the shared panel with domain-specific
+  card/row renderers; click still opens the existing detail drawer.
+
+### Tests
+
+- Frontend: **358 passed** (+ `ProgressHistoryPanel`: card cap + overflow, History rows).
+  Backend unchanged (**781**; no backend/perm/migration changes).
+
 ## [1.17.0] — 2026-06-20
 
 Leave premium redesign — `/leave/me` rebuilt in the dashboard/claims command-center
