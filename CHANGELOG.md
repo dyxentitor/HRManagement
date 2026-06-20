@@ -2,6 +2,32 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.19.0] — 2026-06-21
+
+Approvals inbox — premium redesign. Spec:
+`docs/superpowers/specs/2026-06-21-approvals-inbox-redesign.md`.
+
+### Changed
+
+- `/approvals` rebuilt in the command-center language so an approver instantly sees **who** and
+  **what**:
+  - **Aurora hero** — pending count + "oldest waiting N days" + an **Approve selected (N)** CTA +
+    a `glass` **by-type spotlight** (Leave / Claims + summed RM / KPI). Filter pills retained.
+  - **`UnifiedApprovalCard`** rebuilt as a `glass-surface` card: kind-toned **avatar** + **name ·
+    department · code · when**, a focal **"what"** block — claims show **big RM amount + category +
+    receipts**, leave shows **days + range + coverage badge**, KPI shows the cycle — plus the
+    reason, inline **Reject/Approve**, and bulk-select. Reuses `ClaimReceipts` + the coverage data.
+
+### Added
+
+- **Department** on the inbox `InboxItem` (`get_inbox` enrichment + `select_related`), exposed to
+  the card so reviewers see which team each requester is from.
+
+### Tests
+
+- Backend: **787 passed** (claim inbox item now also asserts `department`). Frontend: **366 passed**
+  (card shows department + the claim amount / leave days). No migration, no new perms, no schema change.
+
 ## [1.18.3] — 2026-06-21
 
 Wires claim receipts into the Approvals + Finance views (follow-on to v1.18.2). Spec:
