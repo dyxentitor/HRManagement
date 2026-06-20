@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
 
@@ -8,6 +8,8 @@ import { type ClaimCategory, claimsApi } from "../api";
 
 export default function ClaimSubmitPage() {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const presetCategory = searchParams.get("category");
 	const [noEmployee, setNoEmployee] = useState<boolean>(false);
 	const [categories, setCategories] = useState<ClaimCategory[]>([]);
 	const [category, setCategory] = useState<string>("");
@@ -28,10 +30,17 @@ export default function ClaimSubmitPage() {
 			}
 			claimsApi
 				.listCategories()
-				.then(setCategories)
+				.then((cats) => {
+					setCategories(cats);
+					// Preselect the category passed from the My Claims category cards
+					// (one-click launch), if it's a real category id.
+					if (presetCategory && cats.some((c) => c.id === presetCategory)) {
+						setCategory(presetCategory);
+					}
+				})
 				.catch(() => setError("Failed to load categories"));
 		});
-	}, []);
+	}, [presetCategory]);
 
 	const selectedCat = categories.find((c) => c.id === category);
 	const requiresAttachment = selectedCat?.requires_attachment ?? false;

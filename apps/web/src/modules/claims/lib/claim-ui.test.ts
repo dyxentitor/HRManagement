@@ -1,0 +1,51 @@
+import { describe, expect, it } from "vitest";
+
+import type { ClaimRequest } from "../api";
+import { bucketOf, summarise } from "./claim-ui";
+
+function claim(over: Partial<ClaimRequest>): ClaimRequest {
+	return {
+		id: Math.random().toString(),
+		employee: "e",
+		category: "c",
+		category_code: "MEDICAL",
+		amount: "100",
+		currency_code: "MYR",
+		expense_date: "2026-06-01",
+		description: "",
+		merchant: "",
+		status: "submitted",
+		current_level: 1,
+		submitted_at: "2026-06-01T00:00:00Z",
+		reimbursed_at: null,
+		reimbursement_reference: "",
+		attachments: [],
+		...over,
+	} as ClaimRequest;
+}
+
+describe("claim-ui", () => {
+	it("buckets statuses into pending/approved/paid/rejected", () => {
+		expect(bucketOf("submitted")).toBe("pending");
+		expect(bucketOf("manager_approved")).toBe("pending");
+		expect(bucketOf("finance_approved")).toBe("approved");
+		expect(bucketOf("reimbursed")).toBe("paid");
+		expect(bucketOf("rejected")).toBe("rejected");
+		expect(bucketOf("draft")).toBeNull();
+		expect(bucketOf("cancelled")).toBeNull();
+	});
+
+	it("summarises counts + amounts per bucket", () => {
+		const stats = summarise([
+			claim({ status: "submitted", amount: "100" }),
+			claim({ status: "manager_approved", amount: "50" }),
+			claim({ status: "reimbursed", amount: "200" }),
+			claim({ status: "rejected", amount: "30" }),
+			claim({ status: "draft", amount: "999" }), // ignored
+		]);
+		expect(stats.pending.count).toBe(2);
+		expect(stats.pending.amount).toBe(150);
+		expect(stats.paid.amount).toBe(200);
+		expect(stats.rejected.count).toBe(1);
+	});
+});

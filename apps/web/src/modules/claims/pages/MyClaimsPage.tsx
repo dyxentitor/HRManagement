@@ -1,45 +1,23 @@
-import { useCallback, useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { StatusPill } from "@/components/hrms";
-import { PageHeader } from "@/components/shell/PageHeader";
+import { DetailPanel, StatusPill } from "@/components/hrms";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { type ClaimRequest, type ClaimStatus, claimsApi } from "../api";
-
-const STATUS_TONE: Record<
-	ClaimStatus,
-	"yellow" | "sky" | "lavender" | "mint" | "coral" | "peach"
-> = {
-	draft: "yellow",
-	submitted: "sky",
-	manager_approved: "lavender",
-	finance_approved: "lavender",
-	reimbursed: "mint",
-	rejected: "coral",
-	cancelled: "peach",
-};
-
-const STATUS_LABEL: Record<ClaimStatus, string> = {
-	draft: "Draft",
-	submitted: "Submitted",
-	manager_approved: "Manager approved",
-	finance_approved: "Finance approved",
-	reimbursed: "Reimbursed",
-	rejected: "Rejected",
-	cancelled: "Cancelled",
-};
-
-function formatDate(iso: string | null | undefined): string {
-	if (!iso) return "—";
-	return new Date(iso).toLocaleDateString(undefined, {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	});
-}
+import { type ClaimCategory, type ClaimRequest, claimsApi } from "../api";
+import { ClaimActivityFeed } from "../components/ClaimActivityFeed";
+import { ClaimCategoryGrid } from "../components/ClaimCategoryGrid";
+import { ClaimSummaryCards } from "../components/ClaimSummaryCards";
+import { HowClaimsWork } from "../components/HowClaimsWork";
+import { RecentClaimsList } from "../components/RecentClaimsList";
+import { STATUS_LABEL, STATUS_TONE, fmtDate, fmtMoney, num, summarise } from "../lib/claim-ui";
 
 export default function MyClaimsPage() {
 	const [claims, setClaims] = useState<ClaimRequest[]>([]);
+	const [categories, setCategories] = useState<ClaimCategory[]>([]);
+	const [selected, setSelected] = useState<ClaimRequest | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -49,42 +27,72 @@ export default function MyClaimsPage() {
 		try {
 			const c = await claimsApi.listMine();
 			setClaims(c);
+			try {
+				setCategories(await claimsApi.listCategories());
+			} catch {
+				setCategories([]);
+			}
 		} catch (e) {
-			setError(e instanceof Error ? e.message : "Failed");
+			setError(e instanceof Error ? e.message : "Failed to load claims");
 		} finally {
 			setLoading(false);
 		}
 	}, []);
 
 	useEffect(() => {
-		refresh();
+		void refresh();
 	}, [refresh]);
 
 	async function onCancel(id: string) {
 		try {
 			await claimsApi.cancel(id);
+			setSelected(null);
 			await refresh();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Cancel failed");
 		}
 	}
 
-	if (loading) return <p className="text-text-tertiary p-4">Loading claims…</p>;
+	const heroLine = useMemo(() => {
+		if (claims.length === 0)
+			return "Submit your first claim and track it through to payment.";
+		const s = summarise(claims);
+		const inFlight = s.pending.amount + s.approved.amount;
+		const waiting = s.pending.count + s.approved.count;
+		if (waiting === 0) return "All your claims are settled. Nothing in flight.";
+		return `${waiting} claim${waiting === 1 ? "" : "s"} in progress · ${fmtMoney(inFlight, s.pending.currency)} awaiting payment.`;
+	}, [claims]);
+
+	const canCancel = selected && (selected.status === "draft" || selected.status === "submitted");
+
+	if (loading) {
+		return (
+			<div className="space-y-5">
+				<Skeleton className="h-24 rounded-xl" />
+				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+					{["a", "b", "c", "d"].map((k) => (
+						<Skeleton key={k} className="h-20 rounded-xl" />
+					))}
+				</div>
+				<Skeleton className="h-64 rounded-xl" />
+			</div>
+		);
+	}
 
 	return (
-		<div className="space-y-6 max-w-5xl mx-auto">
-			<PageHeader
-				breadcrumb="Claims"
-				title="My Claims"
-				actions={
-					<Link
-						to="/claims/submit"
-						className="bg-accent-500 text-white px-4 py-2 rounded text-sm hover:bg-accent-600"
-					>
-						Submit a claim
+		<div className="space-y-5">
+			{/* Hero */}
+			<section className="glass-surface rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
+				<div className="min-w-0">
+					<h1 className="text-h1 text-text-primary">My Claims</h1>
+					<p className="text-small text-text-secondary mt-1">{heroLine}</p>
+				</div>
+				<Button asChild className="soft-glow rounded-xl">
+					<Link to="/claims/submit">
+						<Plus className="size-4 mr-1" /> Submit a claim
 					</Link>
-				}
-			/>
+				</Button>
+			</section>
 
 			{error && (
 				<p role="alert" className="text-coral text-small">
@@ -92,79 +100,65 @@ export default function MyClaimsPage() {
 				</p>
 			)}
 
-			{claims.length === 0 ? (
-				<div className="bg-surface-hover border border-border-subtle rounded-lg p-8 text-center">
-					<p className="text-text-secondary">
-						No claims yet.{" "}
-						<Link
-							to="/claims/submit"
-							className="text-accent-200 hover:underline"
-						>
-							Submit one
-						</Link>
-						.
-					</p>
+			<ClaimSummaryCards claims={claims} />
+
+			<div className="grid lg:grid-cols-2 gap-4 items-start">
+				<div className="space-y-4">
+					<ClaimCategoryGrid categories={categories} />
+					<HowClaimsWork />
 				</div>
-			) : (
-				<section className="bg-surface-hover border border-border-subtle rounded-lg overflow-hidden">
-					<table className="w-full text-sm border-collapse">
-						<thead>
-							<tr className="border-b border-border-subtle bg-surface-hover">
-								<th className="text-left py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
-									Date
-								</th>
-								<th className="text-left py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
-									Category
-								</th>
-								<th className="text-left py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
-									Amount
-								</th>
-								<th className="text-left py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
-									Status
-								</th>
-								<th className="text-right py-3 px-4 text-label uppercase text-text-tertiary font-semibold tracking-wide">
-									Actions
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							{claims.map((c) => (
-								<tr
-									key={c.id}
-									className="border-b border-border-subtle last:border-0 hover:bg-surface-hover transition-colors"
-								>
-									<td className="py-3 px-4 text-body text-text-primary">
-										{formatDate(c.expense_date)}
-									</td>
-									<td className="py-3 px-4 text-body text-text-secondary">
-										{c.category_code}
-									</td>
-									<td className="py-3 px-4 text-body text-text-primary font-semibold">
-										{c.currency_code} {c.amount}
-									</td>
-									<td className="py-3 px-4">
-										<StatusPill
-											tone={STATUS_TONE[c.status]}
-											label={STATUS_LABEL[c.status]}
-										/>
-									</td>
-									<td className="py-3 px-4 text-right">
-										{(c.status === "draft" || c.status === "submitted") && (
-											<button
-												type="button"
-												onClick={() => onCancel(c.id)}
-												className="text-small text-coral hover:underline"
-											>
-												Cancel
-											</button>
-										)}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</section>
-			)}
+				<div className="space-y-4">
+					<RecentClaimsList claims={claims} onSelect={setSelected} />
+					<ClaimActivityFeed claims={claims} />
+				</div>
+			</div>
+
+			<DetailPanel
+				open={selected !== null}
+				onClose={() => setSelected(null)}
+				title={selected ? `Claim · ${selected.category_code}` : "Claim"}
+				footer={
+					canCancel ? (
+						<Button
+							type="button"
+							variant="outline"
+							className="w-full border-coral/30 text-coral hover:bg-coral/10"
+							onClick={() => selected && onCancel(selected.id)}
+						>
+							Cancel claim
+						</Button>
+					) : null
+				}
+			>
+				{selected && (
+					<dl className="grid grid-cols-[110px_1fr] gap-y-2 text-body">
+						<dt className="text-label uppercase text-text-tertiary self-center">Category</dt>
+						<dd>{selected.category_code}</dd>
+						<dt className="text-label uppercase text-text-tertiary self-center">Amount</dt>
+						<dd className="tabular-nums">{fmtMoney(num(selected.amount), selected.currency_code)}</dd>
+						<dt className="text-label uppercase text-text-tertiary self-center">Date</dt>
+						<dd>{fmtDate(selected.expense_date)}</dd>
+						{selected.merchant && (
+							<>
+								<dt className="text-label uppercase text-text-tertiary self-center">Merchant</dt>
+								<dd>{selected.merchant}</dd>
+							</>
+						)}
+						<dt className="text-label uppercase text-text-tertiary self-center">Status</dt>
+						<dd>
+							<StatusPill tone={STATUS_TONE[selected.status]} label={STATUS_LABEL[selected.status]} />
+						</dd>
+						{selected.description && (
+							<>
+								<dt className="text-label uppercase text-text-tertiary self-start">Description</dt>
+								<dd>{selected.description}</dd>
+							</>
+						)}
+						<dt className="text-label uppercase text-text-tertiary self-center">Receipts</dt>
+						<dd>{selected.attachments.length} attached</dd>
+					</dl>
+				)}
+			</DetailPanel>
 		</div>
 	);
 }
