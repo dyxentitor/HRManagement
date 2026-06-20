@@ -1,20 +1,65 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { PageHeader } from "@/components/shell/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { employeeApi } from "@/modules/employee/api";
 
 import { type LeaveRequest, leaveApi } from "../api";
+import { LeaveApprovalCard } from "../components/LeaveApprovalCard";
+
+interface Clash {
+	count: number;
+	names: string[];
+}
 
 export default function ApprovalsInboxPage() {
 	const [pending, setPending] = useState<LeaveRequest[]>([]);
+	const [names, setNames] = useState<Map<string, string>>(new Map());
+	const [clashes, setClashes] = useState<Map<string, Clash>>(new Map());
+	const [selected, setSelected] = useState<Set<string>>(new Set());
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [comment, setComment] = useState<string>("");
-	const [actingOn, setActingOn] = useState<string | null>(null);
+	const [bulkBusy, setBulkBusy] = useState(false);
 
 	const refresh = useCallback(async () => {
 		setLoading(true);
 		setError(null);
 		try {
 			const all = await leaveApi.listTeamRequests();
-			setPending(all.filter((r) => r.status === "submitted"));
+			const subs = all.filter((r) => r.status === "submitted");
+			setPending(subs);
+			setSelected(new Set());
+
+			// Names (best-effort): map employee_id -> "First Last".
+			try {
+				const emps = (await employeeApi.list()) as Array<{
+					id: string;
+					first_name?: string;
+					last_name?: string;
+				}>;
+				setNames(
+					new Map(
+						emps.map((e) => [e.id, `${e.first_name ?? ""} ${e.last_name ?? ""}`.trim()]),
+					),
+				);
+			} catch {
+				setNames(new Map());
+			}
+
+			// Coverage per request (clash awareness).
+			const entries = await Promise.all(
+				subs.map(async (r) => {
+					try {
+						const cov = await leaveApi.coverage(r.start_date, r.end_date, r.employee_id);
+						const count = Object.values(cov.per_day ?? {}).reduce((a, b) => Math.max(a, b), 0);
+						return [r.id, { count, names: cov.people.map((p) => p.name) }] as [string, Clash];
+					} catch {
+						return [r.id, { count: 0, names: [] as string[] }] as [string, Clash];
+					}
+				}),
+			);
+			setClashes(new Map(entries));
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to load");
 		} finally {
@@ -23,116 +68,119 @@ export default function ApprovalsInboxPage() {
 	}, []);
 
 	useEffect(() => {
-		refresh();
+		void refresh();
 	}, [refresh]);
 
-	async function approve(id: string) {
+	async function approve(id: string, comment: string) {
 		try {
 			await leaveApi.approve(id, comment);
-			setComment("");
-			setActingOn(null);
 			await refresh();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Approve failed");
 		}
 	}
 
-	async function reject(id: string) {
+	async function reject(id: string, comment: string) {
 		if (!comment.trim()) {
-			setError("Comment is required to reject");
+			setError("A comment is required to reject.");
 			return;
 		}
 		try {
 			await leaveApi.reject(id, comment);
-			setComment("");
-			setActingOn(null);
 			await refresh();
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Reject failed");
 		}
 	}
 
-	if (loading) return <p>Loading…</p>;
+	async function approveSelected() {
+		setBulkBusy(true);
+		try {
+			for (const id of selected) {
+				await leaveApi.approve(id, "");
+			}
+			await refresh();
+		} catch (e) {
+			setError(e instanceof Error ? e.message : "Bulk approve failed");
+		} finally {
+			setBulkBusy(false);
+		}
+	}
+
+	function toggle(id: string) {
+		setSelected((s) => {
+			const next = new Set(s);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	}
+
+	const oldestDays = useMemo(() => {
+		const subs = pending.filter((r) => r.submitted_at);
+		if (subs.length === 0) return 0;
+		const oldest = subs.reduce((min, r) =>
+			(r.submitted_at ?? "") < (min.submitted_at ?? "") ? r : min,
+		);
+		if (!oldest.submitted_at) return 0;
+		return Math.round((Date.now() - new Date(oldest.submitted_at).getTime()) / 86_400_000);
+	}, [pending]);
+
+	if (loading) {
+		return (
+			<div className="space-y-3">
+				<Skeleton className="h-9 w-64 rounded-lg" />
+				{["a", "b", "c"].map((k) => (
+					<Skeleton key={k} className="h-28 rounded-xl" />
+				))}
+			</div>
+		);
+	}
 
 	return (
-		<div className="space-y-4 max-w-4xl">
-			<h1 className="text-2xl font-bold">Approvals Inbox</h1>
+		<div className="space-y-4">
+			<PageHeader
+				title="Approvals"
+				subtitle={
+					pending.length
+						? `${pending.length} pending · oldest waiting ${oldestDays} day${oldestDays === 1 ? "" : "s"}`
+						: "Nothing waiting on you"
+				}
+				actions={
+					selected.size > 0 ? (
+						<Button type="button" disabled={bulkBusy} onClick={approveSelected}>
+							✓ Approve selected ({selected.size})
+						</Button>
+					) : null
+				}
+			/>
+
 			{error && (
-				<p role="alert" className="text-coral">
+				<p role="alert" className="text-coral text-small">
 					{error}
 				</p>
 			)}
 
 			{pending.length === 0 ? (
-				<p className="text-text-secondary">No pending approvals.</p>
+				<div className="bg-surface-hover border border-dashed border-border-subtle rounded-xl p-8 text-center text-text-tertiary">
+					No pending approvals. You're all caught up. 🎉
+				</div>
 			) : (
-				<ul className="space-y-2">
-					{pending.map((r) => (
-						<li
+				<div className="space-y-3">
+					{pending.map((r, i) => (
+						<LeaveApprovalCard
 							key={r.id}
-							className="bg-surface border border-border-subtle rounded p-3"
-						>
-							<div className="flex items-center justify-between">
-								<div className="text-sm">
-									<div className="font-semibold">
-										{r.leave_type_code} • {r.total_days} day(s)
-									</div>
-									<div className="text-text-secondary">
-										{r.start_date} → {r.end_date}
-									</div>
-									{r.reason && (
-										<div className="text-text-tertiary mt-1">"{r.reason}"</div>
-									)}
-								</div>
-								{actingOn === r.id ? (
-									<div className="space-y-2 ml-3">
-										<textarea
-											value={comment}
-											onChange={(e) => setComment(e.target.value)}
-											placeholder="Comment (required for reject)"
-											rows={2}
-											className="border border-border-subtle rounded px-2 py-1 w-64 text-sm bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-										/>
-										<div className="space-x-2">
-											<button
-												type="button"
-												onClick={() => approve(r.id)}
-												className="text-xs bg-mint text-canvas px-3 py-1 rounded hover:bg-mint/90"
-											>
-												Approve
-											</button>
-											<button
-												type="button"
-												onClick={() => reject(r.id)}
-												className="text-xs bg-canvas text-coral border border-coral/30 px-3 py-1 rounded hover:bg-coral/10"
-											>
-												Reject
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													setActingOn(null);
-													setComment("");
-												}}
-												className="text-xs text-text-secondary underline"
-											>
-												Cancel
-											</button>
-										</div>
-									</div>
-								) : (
-									<button
-										type="button"
-										onClick={() => setActingOn(r.id)}
-										className="text-sm text-text-secondary hover:text-text-primary border border-border-subtle rounded px-3 py-1 hover:bg-surface-hover"
-									>
-										Review
-									</button>
-								)}
-							</div>
-						</li>
+							request={r}
+							name={names.get(r.employee_id) || r.employee_id.slice(0, 8)}
+							clash={clashes.get(r.id)}
+							selected={selected.has(r.id)}
+							onToggleSelect={() => toggle(r.id)}
+							onApprove={(c) => approve(r.id, c)}
+							onReject={(c) => reject(r.id, c)}
+							tone={i}
+						/>
 					))}
-				</ul>
+				</div>
 			)}
 		</div>
 	);
