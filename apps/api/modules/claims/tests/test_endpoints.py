@@ -209,7 +209,10 @@ def test_create_draft_submit_approve_reimburse(stack) -> None:
         format="json",
     )
     assert resp.status_code == 200, resp.content
-    assert resp.json()["status"] == "submitted"  # mid-chain
+    # mid-chain: the engine keeps status="submitted" (it needs it to keep acting);
+    # current_level advances so the client can show "manager approved".
+    assert resp.json()["status"] == "submitted"
+    assert resp.json()["current_level"] == 2
 
     # 4. Finance approve
     resp = fin_client.post(

@@ -11,7 +11,7 @@ import { ClaimReceipts } from "../components/ClaimReceipts";
 import { ClaimStatusTiles } from "../components/ClaimStatusTiles";
 import { ClaimsHero } from "../components/ClaimsHero";
 import { InProgressClaims } from "../components/InProgressClaims";
-import { STATUS_LABEL, STATUS_TONE, fmtDate, fmtMoney, num } from "../lib/claim-ui";
+import { STATUS_LABEL, STATUS_TONE, displayStatus, fmtDate, fmtMoney, num } from "../lib/claim-ui";
 
 export default function MyClaimsPage() {
 	const [claims, setClaims] = useState<ClaimRequest[]>([]);
@@ -123,8 +123,8 @@ export default function MyClaimsPage() {
 						<dt className="text-label uppercase text-text-tertiary self-center">Status</dt>
 						<dd>
 							<StatusPill
-								tone={STATUS_TONE[selected.status]}
-								label={STATUS_LABEL[selected.status]}
+								tone={STATUS_TONE[displayStatus(selected)]}
+								label={STATUS_LABEL[displayStatus(selected)]}
 							/>
 						</dd>
 						{selected.description && (

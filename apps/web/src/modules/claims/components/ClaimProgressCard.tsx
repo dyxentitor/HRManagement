@@ -1,6 +1,14 @@
 import { cn } from "@/lib/utils";
 import type { ClaimRequest } from "../api";
-import { type Tone, categoryMeta, fmtDate, fmtMoney, num, stageNote } from "../lib/claim-ui";
+import {
+	type Tone,
+	categoryMeta,
+	displayStatus,
+	fmtDate,
+	fmtMoney,
+	num,
+	stageNote,
+} from "../lib/claim-ui";
 import { ClaimStepper } from "./ClaimStepper";
 
 const ICON_BG: Record<Tone, string> = {
@@ -30,6 +38,7 @@ export function ClaimProgressCard({
 	onSelect: (c: ClaimRequest) => void;
 }) {
 	const meta = categoryMeta(`${claim.category_code} ${claim.description}`);
+	const status = displayStatus(claim);
 	return (
 		<button
 			type="button"
@@ -57,9 +66,9 @@ export function ClaimProgressCard({
 				{claim.merchant ? ` · ${claim.merchant}` : ""}
 			</p>
 			<div className="relative mt-4">
-				<ClaimStepper status={claim.status} />
+				<ClaimStepper status={status} />
 			</div>
-			<p className="relative text-small text-text-tertiary mt-3">{stageNote(claim.status)}</p>
+			<p className="relative text-small text-text-tertiary mt-3">{stageNote(status)}</p>
 		</button>
 	);
 }

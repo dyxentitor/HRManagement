@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { cn } from "@/lib/utils";
 import type { ClaimRequest } from "../api";
-import { type Tone, fmtMoney, num } from "../lib/claim-ui";
+import { type Tone, displayStatus, fmtMoney, num } from "../lib/claim-ui";
 
 interface Event {
 	ts: string;
@@ -13,11 +13,12 @@ interface Event {
 function eventFor(c: ClaimRequest): Event | null {
 	const money = fmtMoney(num(c.amount), c.currency_code);
 	const cat = c.category_code;
+	const status = displayStatus(c);
 	if (c.reimbursed_at)
 		return { ts: c.reimbursed_at, text: `Finance paid your ${cat} claim · ${money}`, tone: "mint" };
-	if (c.status === "rejected" && c.submitted_at)
+	if (status === "rejected" && c.submitted_at)
 		return { ts: c.submitted_at, text: `Your ${cat} claim was rejected`, tone: "coral" };
-	if ((c.status === "finance_approved" || c.status === "manager_approved") && c.submitted_at)
+	if ((status === "finance_approved" || status === "manager_approved") && c.submitted_at)
 		return { ts: c.submitted_at, text: `Your ${cat} claim was approved`, tone: "lavender" };
 	if (c.submitted_at)
 		return { ts: c.submitted_at, text: `You submitted a ${cat} claim · ${money}`, tone: "sky" };

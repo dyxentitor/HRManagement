@@ -48,6 +48,10 @@ class ClaimRequestService:
 
         # Engine sets status = "approved" when final step is approved.
         # Map to our granular statuses: check if last step uses FinanceResolver.
+        # NOTE: the engine requires status="submitted" to keep acting through the
+        # chain, so we MUST NOT overwrite status mid-chain. The employee-facing
+        # "manager approved" progress is derived on the client from current_level
+        # (which the engine advances per approval).
         if claim.status == "approved":
             last_step = chain.get_step(chain.total_steps)
             if last_step is not None and isinstance(last_step.resolver, FinanceResolver):

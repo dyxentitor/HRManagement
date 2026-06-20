@@ -25,6 +25,22 @@ export const STATUS_LABEL: Record<ClaimStatus, string> = {
 	cancelled: "Cancelled",
 };
 
+/**
+ * Status to show the employee. The approval engine keeps `status` at "submitted"
+ * while the chain is mid-flight (it needs that to keep acting) and only advances
+ * `current_level` per approval. So once `current_level > 1` the manager (level 1)
+ * has approved — surface that as "manager_approved" instead of "submitted".
+ */
+export function displayStatus(claim: {
+	status: ClaimStatus;
+	current_level: number;
+}): ClaimStatus {
+	if (claim.status === "submitted" && Number(claim.current_level) > 1) {
+		return "manager_approved";
+	}
+	return claim.status;
+}
+
 interface CatMeta {
 	icon: ComponentType<{ className?: string }>;
 	tone: Tone;

@@ -6,6 +6,7 @@ import {
 	STATUS_TONE,
 	TONE_CHIP,
 	categoryMeta,
+	displayStatus,
 	fmtDate,
 	fmtMoney,
 	isInFlight,
@@ -21,6 +22,7 @@ function ClaimRow({
 	onSelect: (c: ClaimRequest) => void;
 }) {
 	const meta = categoryMeta(`${claim.category_code} ${claim.description}`);
+	const status = displayStatus(claim);
 	return (
 		<button
 			type="button"
@@ -43,7 +45,7 @@ function ClaimRow({
 			<span className="text-small text-text-secondary tabular-nums shrink-0">
 				{fmtMoney(num(claim.amount), claim.currency_code)}
 			</span>
-			<StatusPill tone={STATUS_TONE[claim.status]} label={STATUS_LABEL[claim.status]} />
+			<StatusPill tone={STATUS_TONE[status]} label={STATUS_LABEL[status]} />
 		</button>
 	);
 }
