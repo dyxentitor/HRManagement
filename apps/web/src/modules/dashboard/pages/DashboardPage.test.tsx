@@ -17,9 +17,10 @@ vi.mock("@/lib/auth", () => ({
 	}),
 }));
 
-vi.mock("../api", () => ({
-	getDashboard: mocks.getDashboard,
-}));
+vi.mock("../api", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("../api")>();
+	return { ...actual, getDashboard: mocks.getDashboard };
+});
 
 import DashboardPage from "./DashboardPage";
 
@@ -32,36 +33,70 @@ function renderPage() {
 }
 
 describe("DashboardPage", () => {
-	it("renders /me KPI tiles when only me perm is granted", async () => {
-		mocks.perms = new Set(["dashboard:read:me"]);
+	it("renders the hero, pending tasks and quick actions for /me", async () => {
+		mocks.perms = new Set(["dashboard:read:me", "leave:request:create:self"]);
 		mocks.getDashboard.mockResolvedValue({
 			variant: "me",
 			cards: [
 				{
-					type: "my_leave_balance",
-					title: "My leave",
-					data: { annual_days: 14, carried: 2 },
+					type: "hero_summary",
+					title: "Today",
+					data: {
+						today: "2026-06-20",
+						working_day: "Saturday",
+						next_payroll_date: "2026-06-28",
+						days_to_payroll: 8,
+					},
+				},
+				{
+					type: "pending_tasks",
+					title: "Pending tasks",
+					data: {
+						tasks: [
+							{
+								key: "leave_approvals",
+								label: "Leave approvals",
+								count: 3,
+								tone: "peach",
+								action_route: "/approvals",
+							},
+						],
+					},
 				},
 			],
 		});
 		renderPage();
 		await waitFor(() => {
-			expect(screen.getByText(/Annual leave/i)).toBeInTheDocument();
+			expect(screen.getByText(/Ops/)).toBeInTheDocument();
 		});
-		expect(screen.getByText(/14 d/)).toBeInTheDocument();
+		expect(screen.getByText("Leave approvals")).toBeInTheDocument();
+		expect(screen.getByText("Quick actions")).toBeInTheDocument();
+		expect(screen.getByText(/until payroll/)).toBeInTheDocument();
 	});
 
-	it("picks /team variant when team perm is present", async () => {
+	it("picks the /team variant when team perm is present", async () => {
 		mocks.perms = new Set(["dashboard:read:team", "dashboard:read:me"]);
 		mocks.getDashboard.mockResolvedValue({
 			variant: "team",
 			cards: [
-				{ type: "pending_approvals", title: "Pending", data: { count: 5 } },
+				{
+					type: "attendance_summary",
+					title: "Attendance today",
+					data: {
+						date: "2026-06-20",
+						team_size: 4,
+						present: 3,
+						late: 1,
+						absent: 0,
+						on_leave: 0,
+						partial: 0,
+					},
+				},
 			],
 		});
 		renderPage();
 		await waitFor(() => {
-			expect(screen.getByText(/Pending approvals/i)).toBeInTheDocument();
+			expect(screen.getByText("Attendance today")).toBeInTheDocument();
 		});
 		expect(mocks.getDashboard).toHaveBeenCalledWith("team");
 	});
@@ -71,9 +106,7 @@ describe("DashboardPage", () => {
 		mocks.getDashboard.mockRejectedValue(new Error("network down"));
 		renderPage();
 		await waitFor(() => {
-			expect(
-				screen.getByText(/network down|unable to load|error/i),
-			).toBeInTheDocument();
+			expect(screen.getByText(/network down/i)).toBeInTheDocument();
 		});
 	});
 });
