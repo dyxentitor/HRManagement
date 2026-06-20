@@ -2,6 +2,32 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.3] — 2026-06-21
+
+Fixes the alarming negative balance numbers on `/leave/me`.
+
+### Fixed
+
+- **Root cause:** `available = accrued + carried − taken − pending` can go negative when usage
+  exceeds the grant — there is no balance-sufficiency guard on leave apply/approve, and the
+  condition also surfaces with partially-seeded data. The balance **hero, donut and tiles
+  rendered the raw negative** as the headline ("−N days available", a "−4" tile).
+- **Fix (display):** never present a negative "days available" — floor the display at 0
+  (`availableDays`) and **surface over-allocation explicitly** instead ("over by N days" on the
+  tile; "Over-allocated by N days" in the hero). The model keeps the true value, so approvers /
+  HR still see the real overdraw.
+
+### Deferred (recommended follow-up)
+
+- A **backend over-draw validator** on leave apply/approve to stop `available` going negative in
+  the first place (excluding `UNPAID`). This is a business-rule change and is left for explicit
+  sign-off.
+
+### Tests
+
+- Frontend: **359 passed** (+ `LeaveBalanceTiles`: floors at 0, shows "over by N"). Backend
+  unchanged (**781**; no backend changes).
+
 ## [1.17.2] — 2026-06-21
 
 Leave layout polish — fixes the whitespace gap and bounds the Activity timeline.
