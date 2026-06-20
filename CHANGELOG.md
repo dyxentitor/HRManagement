@@ -2,6 +2,28 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.18.0] — 2026-06-21
+
+Leave over-draw guard — prevents paid leave balances going negative (the data root
+cause behind v1.17.3's display floor). Spec:
+`docs/superpowers/specs/2026-06-21-leave-overdraw-guard.md`.
+
+### Added
+
+- **Balance-sufficiency check on submit.** `LeaveRequestService._validate_eligibility`
+  (called at the top of `submit()`, before the balance is held) now blocks a **paid**
+  leave type (`is_paid=True`) when `total_days > available`
+  (`available = accrued + carried_forward − taken − pending`). Raises `ValidationError`
+  → RFC 7807 `errors[0].message`, already surfaced by the Apply page toast. **Unpaid**
+  types (`is_paid=False`) draw no balance and are exempt. Taking exactly the available
+  balance is allowed (blocks only strictly greater).
+- Covers event-based paid types too (e.g. REPLACEMENT — can't take more than earned).
+
+### Tests
+
+- Backend: **785 passed** (+4 — blocks over-draw on submit, allows exact/within,
+  exempts unpaid). All 97 leave tests green. No model/migration/permission change.
+
 ## [1.17.3] — 2026-06-21
 
 Fixes the alarming negative balance numbers on `/leave/me`.
