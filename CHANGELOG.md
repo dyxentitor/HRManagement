@@ -2,6 +2,56 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.14.0] — 2026-06-20
+
+Leave module UI/UX redesign — the whole employee + manager leave experience
+rebuilt in the command-center language, designed collaboratively via the Visual
+Companion. Spec:
+`docs/superpowers/specs/2026-06-20-leave-module-redesign-design.md`.
+
+### Added
+
+- **My Leave (`/leave/me`)** — focused primary-type **hero** (ring + Used/Pending/
+  Carried + carry-forward expiry + Apply CTA) and other-type chips, then tabs:
+  **Calendar** (month grid of your leave + public holidays) with an **Upcoming
+  timeline**, **History** (filterable table with a **Reason** column, formatted
+  dates, pagination), and **Balances**. New components under
+  `modules/leave/components/` + `lib/{leave-dates,leave-ui}.ts`.
+- **`GET /api/v1/leave/coverage`** — team availability for a date window. Per-day
+  counts for any org user's team; teammate **names** only for `leave:request:read:team`
+  holders (managers/HR), who can target a specific person's team via `?employee_id=`.
+  Powers the Apply clash hints + the Approvals coverage badge.
+- **Apply (`/leave/apply`)** — compact searchable **type dropdown** (with balances),
+  an inline **click-to-pick range calendar** (holidays + teammate-clash dots from
+  `/leave/coverage`), half-day toggle + reason, and a **live summary** panel (balance
+  available → after, approver). Replaces the bare form.
+- **Approvals (`/leave/approvals`)** — context cards: requester name/avatar, type,
+  dates, days, reason, a **team-coverage badge** per request, inline approve/reject +
+  comment, and **bulk approve-selected**; empty state.
+
+### Changed
+
+- `EntitlementCard` migrated off stray `text-muted-foreground`/`bg-violet-500`/orange
+  classes to the dark design tokens.
+
+### Tests
+
+- Backend: **781 passed** (+3 — `/leave/coverage`: names-for-managers,
+  counts-for-employees, missing-params 400).
+- Frontend: **354 passed** (+ leave hero/calendar/history/range-calendar/approval-card
+  + page tests; removed the obsolete old-form half-day test; RFC 7807 extraction moved
+  to an isolated `leave/api.test.ts`).
+- No new permission codes or migrations.
+
+### Notes / deferred
+
+- The Approvals **balance-after** badge is deferred (needs the requester's balance
+  exposed to approvers — a small backend add).
+- Sick-leave **MC attachments** remain a separate spec.
+- Type **eligibility** disabled-states (e.g. Paternity 12-mo service) are enforced by
+  the backend validators on submit; a per-type `eligible` flag on `/leave/types` is a
+  follow-up.
+
 ## [1.13.1] — 2026-06-20
 
 Two bug fixes from live testing.
