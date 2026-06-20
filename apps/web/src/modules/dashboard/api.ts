@@ -39,6 +39,17 @@ export interface EmployeeSnapshotData {
 	on_leave: number;
 	on_probation: number;
 	resigned_this_month: number;
+	hired_this_month: number;
+	monthly_growth: number;
+}
+
+export interface SmartInsightsData {
+	payroll_days: number | null;
+	missing_docs: number;
+	contracts_expiring: number;
+	certs_expiring: number;
+	probation: number;
+	probation_ending: number;
 }
 
 export interface AttendanceSummaryData {
@@ -65,6 +76,7 @@ export interface PayrollStatusData {
 export interface ActivityItem {
 	ts: string;
 	actor: string;
+	department: string;
 	action: string;
 	entity: string;
 	entity_id: string;
@@ -84,8 +96,10 @@ export interface DepartmentOverviewData {
 export interface AnnouncementItem {
 	id: string;
 	title: string;
+	body: string;
 	category: string;
 	pinned: boolean;
+	featured: boolean;
 	published_at: string;
 }
 export interface CompanyAnnouncementsData {

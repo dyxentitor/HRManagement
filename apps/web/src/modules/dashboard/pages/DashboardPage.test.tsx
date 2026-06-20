@@ -32,11 +32,11 @@ function renderPage() {
 	);
 }
 
-describe("DashboardPage", () => {
-	it("renders the hero, pending tasks and quick actions for /me", async () => {
-		mocks.perms = new Set(["dashboard:read:me", "leave:request:create:self"]);
+describe("DashboardPage (command center)", () => {
+	it("renders hero, today's focus and smart insights for /admin", async () => {
+		mocks.perms = new Set(["dashboard:read:admin", "payroll:run:create"]);
 		mocks.getDashboard.mockResolvedValue({
-			variant: "me",
+			variant: "admin",
 			cards: [
 				{
 					type: "hero_summary",
@@ -45,7 +45,7 @@ describe("DashboardPage", () => {
 						today: "2026-06-20",
 						working_day: "Saturday",
 						next_payroll_date: "2026-06-28",
-						days_to_payroll: 8,
+						days_to_payroll: 3,
 					},
 				},
 				{
@@ -54,13 +54,25 @@ describe("DashboardPage", () => {
 					data: {
 						tasks: [
 							{
-								key: "leave_approvals",
-								label: "Leave approvals",
-								count: 3,
-								tone: "peach",
-								action_route: "/approvals",
+								key: "payroll_exceptions",
+								label: "Payroll exceptions",
+								count: 2,
+								tone: "yellow",
+								action_route: "/payroll/admin",
 							},
 						],
+					},
+				},
+				{
+					type: "smart_insights",
+					title: "Smart insights",
+					data: {
+						payroll_days: 3,
+						missing_docs: 5,
+						contracts_expiring: 0,
+						certs_expiring: 4,
+						probation: 0,
+						probation_ending: 0,
 					},
 				},
 			],
@@ -69,9 +81,10 @@ describe("DashboardPage", () => {
 		await waitFor(() => {
 			expect(screen.getByText(/Ops/)).toBeInTheDocument();
 		});
-		expect(screen.getByText("Leave approvals")).toBeInTheDocument();
-		expect(screen.getByText("Quick actions")).toBeInTheDocument();
+		expect(screen.getByText("Payroll exceptions")).toBeInTheDocument();
 		expect(screen.getByText(/until payroll/)).toBeInTheDocument();
+		expect(screen.getByText(/5 missing docs/)).toBeInTheDocument();
+		expect(screen.getByText("Quick actions")).toBeInTheDocument();
 	});
 
 	it("picks the /team variant when team perm is present", async () => {
@@ -80,23 +93,20 @@ describe("DashboardPage", () => {
 			variant: "team",
 			cards: [
 				{
-					type: "attendance_summary",
-					title: "Attendance today",
+					type: "hero_summary",
+					title: "Today",
 					data: {
-						date: "2026-06-20",
-						team_size: 4,
-						present: 3,
-						late: 1,
-						absent: 0,
-						on_leave: 0,
-						partial: 0,
+						today: "2026-06-20",
+						working_day: "Saturday",
+						next_payroll_date: null,
+						days_to_payroll: null,
 					},
 				},
 			],
 		});
 		renderPage();
 		await waitFor(() => {
-			expect(screen.getByText("Attendance today")).toBeInTheDocument();
+			expect(screen.getByText(/Ops/)).toBeInTheDocument();
 		});
 		expect(mocks.getDashboard).toHaveBeenCalledWith("team");
 	});

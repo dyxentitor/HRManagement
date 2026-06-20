@@ -3,51 +3,26 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import {
+	type ActivityFeedData,
 	type CardData,
+	type CompanyAnnouncementsData,
 	type DashboardResponse,
+	type EmployeeSnapshotData,
 	type HeroSummaryData,
+	type PayrollStatusData,
 	type PendingTasksData,
+	type SmartInsightsData,
 	getDashboard,
 } from "../api";
-import { CertsExpiringCard } from "../components/cards/CertsExpiringCard";
-import { KpiProgressCard } from "../components/cards/KpiProgressCard";
 import { LeaveBalanceCard } from "../components/cards/LeaveBalanceCard";
 import { RecentClaimsCard } from "../components/cards/RecentClaimsCard";
-import { TodayAttendanceCard } from "../components/cards/TodayAttendanceCard";
-import { ActivityFeed } from "../components/widgets/ActivityFeed";
-import { AnnouncementsWidget } from "../components/widgets/AnnouncementsWidget";
-import { AttendanceSummaryWidget } from "../components/widgets/AttendanceSummaryWidget";
-import { BirthdaysWidget } from "../components/widgets/BirthdaysWidget";
-import { DepartmentOverview } from "../components/widgets/DepartmentOverview";
-import { EmployeeSnapshotWidget } from "../components/widgets/EmployeeSnapshotWidget";
-import { HeroHeader } from "../components/widgets/HeroHeader";
-import { HolidaysTimeline } from "../components/widgets/HolidaysTimeline";
-import { PayrollStatusStepper } from "../components/widgets/PayrollStatusStepper";
-import { QuickActionsPanel } from "../components/widgets/QuickActionsPanel";
-import { TaskCardRow } from "../components/widgets/TaskCardRow";
+import { CommunityLayer } from "../components/command/CommunityLayer";
+import { HeroWorkspace } from "../components/command/HeroWorkspace";
+import { OperationalWorkspace } from "../components/command/OperationalWorkspace";
+import { SmartInsights } from "../components/command/SmartInsights";
+import { TodaysFocus } from "../components/command/TodaysFocus";
 
 type Variant = "me" | "team" | "admin";
-
-// biome-ignore lint/suspicious/noExplicitAny: card data is an untyped JSON bag; each widget narrows it.
-type AnyData = any;
-
-// Body-grid widgets keyed by card type. hero_summary + pending_tasks are pulled
-// out and rendered in dedicated slots, so they are absent here.
-const BODY_WIDGETS: Record<string, (d: AnyData) => JSX.Element> = {
-	employee_snapshot: (d) => <EmployeeSnapshotWidget data={d} />,
-	attendance_summary: (d) => <AttendanceSummaryWidget data={d} />,
-	payroll_status: (d) => <PayrollStatusStepper data={d} />,
-	department_overview: (d) => <DepartmentOverview data={d} />,
-	company_announcements: (d) => <AnnouncementsWidget data={d} />,
-	activity_feed: (d) => <ActivityFeed data={d} />,
-	upcoming_holidays: (d) => <HolidaysTimeline data={d} />,
-	birthdays_this_month: (d) => <BirthdaysWidget data={d} />,
-	my_leave_balance: (d) => <LeaveBalanceCard data={d} />,
-	recent_claims_self: (d) => <RecentClaimsCard data={d} />,
-	today_attendance_team: (d) => <TodayAttendanceCard data={d} />,
-	certs_expiring_team: (d) => <CertsExpiringCard data={d} />,
-	kpi_cycle_progress_team: (d) => <KpiProgressCard data={d} />,
-};
 
 function pickVariant(perms: Set<string>): Variant | null {
 	if (perms.has("dashboard:read:admin")) return "admin";
@@ -68,10 +43,6 @@ function heroCta(perms: Set<string>): { to: string; label: string } | undefined 
 	if (perms.has("approvals:inbox:read")) return { to: "/approvals", label: "Review approvals" };
 	if (perms.has("leave:request:create:self")) return { to: "/leave/me", label: "Apply for leave" };
 	return undefined;
-}
-
-function findCard(cards: CardData[], type: string): CardData | undefined {
-	return cards.find((c) => c.type === type);
 }
 
 export default function DashboardPage() {
@@ -103,15 +74,15 @@ export default function DashboardPage() {
 	if (loading) {
 		return (
 			<div className="space-y-4">
-				<Skeleton className="h-24 rounded-lg" />
-				<div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+				<Skeleton className="h-44 rounded-xl" />
+				<div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
 					{["a", "b", "c", "d", "e"].map((k) => (
-						<Skeleton key={k} className="h-24 rounded-lg" />
+						<Skeleton key={k} className="h-32 rounded-xl" />
 					))}
 				</div>
-				<div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-					{["a", "b", "c", "d", "e", "f"].map((k) => (
-						<Skeleton key={k} className="h-40 rounded-lg" />
+				<div className="grid lg:grid-cols-3 gap-4">
+					{["a", "b", "c"].map((k) => (
+						<Skeleton key={k} className="h-56 rounded-xl" />
 					))}
 				</div>
 			</div>
@@ -121,38 +92,61 @@ export default function DashboardPage() {
 	if (error) return <p className="text-coral p-4">{error}</p>;
 	if (!dashboard) return null;
 
-	const hero = findCard(dashboard.cards, "hero_summary")?.data as
-		| HeroSummaryData
-		| undefined;
-	const tasks = (findCard(dashboard.cards, "pending_tasks")?.data as
-		| PendingTasksData
-		| undefined)?.tasks;
+	const cards = dashboard.cards;
+	const data = <T,>(type: string): T | undefined =>
+		cards.find((c: CardData) => c.type === type)?.data as T | undefined;
 
-	const bodyCards = dashboard.cards.filter(
-		(c) => c.type !== "hero_summary" && c.type !== "pending_tasks",
-	);
+	const hero = data<HeroSummaryData>("hero_summary");
+	const tasks = data<PendingTasksData>("pending_tasks")?.tasks ?? [];
+	const announcements = data<CompanyAnnouncementsData>("company_announcements");
+	const featured = announcements?.items.find((a) => a.featured);
+	const holidays =
+		(data<{ holidays?: { date: string; name: string; type: string }[] }>(
+			"upcoming_holidays",
+		)?.holidays) ?? [];
+	const birthdays =
+		(data<{ birthdays?: { employee_code: string; name: string; day: number }[] }>(
+			"birthdays_this_month",
+		)?.birthdays) ?? [];
+	const leave = cards.find((c) => c.type === "my_leave_balance");
+	const claims = cards.find((c) => c.type === "recent_claims_self");
+	const insights = data<SmartInsightsData>("smart_insights");
 
 	return (
-		<div className="grid lg:grid-cols-[1fr_280px] gap-4 items-start">
-			<div className="space-y-4 min-w-0">
-				<HeroHeader
-					firstName={getFirstName(user?.email ?? "")}
-					data={hero}
-					cta={heroCta(perms)}
-				/>
+		<div className="space-y-5">
+			<HeroWorkspace
+				firstName={getFirstName(user?.email ?? "")}
+				hero={hero}
+				tasks={tasks}
+				featured={featured}
+				cta={heroCta(perms)}
+			/>
 
-				{tasks && <TaskCardRow tasks={tasks} />}
+			<TodaysFocus tasks={tasks} />
 
-				<div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-					{bodyCards.map((card) => {
-						const render = BODY_WIDGETS[card.type];
-						if (!render) return null;
-						return <div key={card.type}>{render(card.data as AnyData)}</div>;
-					})}
+			{/* Personal cards (employee variant) */}
+			{(leave || claims) && (
+				<div className="grid md:grid-cols-2 gap-4">
+					{leave && <LeaveBalanceCard data={leave.data} />}
+					{claims && <RecentClaimsCard data={claims.data} />}
 				</div>
-			</div>
+			)}
 
-			<QuickActionsPanel perms={perms} />
+			<OperationalWorkspace
+				snapshot={data<EmployeeSnapshotData>("employee_snapshot")}
+				payroll={data<PayrollStatusData>("payroll_status")}
+				activity={data<ActivityFeedData>("activity_feed")}
+				perms={perms}
+			/>
+
+			<CommunityLayer
+				announcements={announcements}
+				featuredId={featured?.id}
+				holidays={holidays}
+				birthdays={birthdays}
+			/>
+
+			{insights && <SmartInsights data={insights} />}
 		</div>
 	);
 }
