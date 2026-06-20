@@ -385,3 +385,44 @@ def test_register_attachment(stack) -> None:
     assert resp.status_code == 201, resp.content
     assert resp.json()["filename"] == "receipt.pdf"
     assert ClaimAttachment.objects.filter(s3_key=s3_key).count() == 1
+
+
+@pytest.mark.django_db
+def test_download_attachment_returns_presigned_url(stack) -> None:
+    """GET .../attachments/{id}/download returns a viewable presigned URL."""
+    _, _, cat, _, _, _, _, _, emp_client, _, _ = stack
+
+    claim_id = emp_client.post(
+        "/api/v1/claims/",
+        {
+            "category": str(cat.id),
+            "amount": "50.00",
+            "currency_code": "MYR",
+            "expense_date": "2026-06-01",
+            "description": "x",
+        },
+        format="json",
+    ).json()["id"]
+
+    s3_key = f"claims/{claim_id}/{uuid.uuid4()}_receipt.pdf"
+    att_id = emp_client.post(
+        f"/api/v1/claims/{claim_id}/attachments/",
+        {
+            "filename": "receipt.pdf",
+            "content_type": "application/pdf",
+            "size_bytes": 12345,
+            "s3_key": s3_key,
+        },
+        format="json",
+    ).json()["id"]
+
+    with mock.patch(
+        "modules.claims.services.attachment.AttachmentService.presigned_get",
+        return_value="https://minio.example/get?sig=abc",
+    ):
+        resp = emp_client.get(f"/api/v1/claims/{claim_id}/attachments/{att_id}/download/")
+
+    assert resp.status_code == 200, resp.content
+    body = resp.json()
+    assert body["url"] == "https://minio.example/get?sig=abc"
+    assert body["filename"] == "receipt.pdf"

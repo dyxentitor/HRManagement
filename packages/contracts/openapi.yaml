@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.14.0
+  version: 1.18.1
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -896,6 +896,32 @@ paths:
             schema:
               $ref: '#/components/schemas/ClaimRequestRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/{id}/attachments/{attachment_id}/download/:
+    get:
+      operationId: claims_attachments_download_retrieve
+      description: Return a short-lived presigned URL to view/download one receipt.
+      parameters:
+      - in: path
+        name: attachment_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
       security:
       - jwtAuth: []
       responses:

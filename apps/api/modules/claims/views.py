@@ -6,13 +6,14 @@ from typing import ClassVar
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from common.feature_flags.decorators import requires_feature
 from common.workflow import Decision
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
+from modules.identity.services.permissions import get_user_perms
 
 from .models import ClaimCategory, ClaimPolicy, ClaimRequest
 from .serializers import (
@@ -91,6 +92,7 @@ class ClaimRequestViewSet(viewsets.ModelViewSet):
             "retrieve",
             "attachments",
             "presigned_upload",
+            "download_attachment",
         ):
             return qs
         if scope == "self":
@@ -232,3 +234,37 @@ class ClaimRequestViewSet(viewsets.ModelViewSet):
             uploaded_by=request.user.id,
         )
         return Response(ClaimAttachmentSerializer(att).data, status=status.HTTP_201_CREATED)
+
+    def _assert_can_view_claim(self, request, claim) -> None:
+        """Anyone who can see the claim can view its receipts: the owner, the
+        owner's manager (claim:read:team), finance (claim:read:finance), or an
+        org-wide reader (claim:read:org)."""
+        perms = get_user_perms(request.user)
+        emp = Employee.all_objects.filter(user_id=request.user.id).first()
+        if emp is not None and claim.employee_id == emp.id:
+            return
+        if "claim:read:org" in perms or "claim:read:finance" in perms:
+            return
+        if "claim:read:team" in perms and emp is not None:
+            report_ids = set(
+                Employee.all_objects.filter(manager=emp).values_list("id", flat=True)
+            )
+            if claim.employee_id in report_ids:
+                return
+        raise PermissionDenied("You cannot view this claim's attachments.")
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"attachments/(?P<attachment_id>[^/.]+)/download",
+    )
+    def download_attachment(self, request, pk=None, attachment_id=None):
+        """Return a short-lived presigned URL to view/download one receipt."""
+        claim = self.get_object()
+        self._assert_can_view_claim(request, claim)
+        att = claim.attachments.filter(id=attachment_id).first()
+        if att is None:
+            raise NotFound("Attachment not found.")
+        return Response(
+            {"url": AttachmentService.presigned_get(attachment=att), "filename": att.filename}
+        )

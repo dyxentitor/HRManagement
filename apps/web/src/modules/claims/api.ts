@@ -50,10 +50,7 @@ async function _get<T>(url: string): Promise<T> {
 	return data as T;
 }
 async function _post<T>(url: string, body?: unknown): Promise<T> {
-	const opts =
-		body !== undefined
-			? ({ body: body as never } as never)
-			: (undefined as never);
+	const opts = body !== undefined ? ({ body: body as never } as never) : (undefined as never);
 	const { data, error } = await api.POST(url as never, opts);
 	if (error) throw new Error(`POST ${url} failed`);
 	return data as T;
@@ -64,21 +61,17 @@ function _unwrap<T>(d: { results?: T[] } | T[]): T[] {
 
 export const claimsApi = {
 	listCategories: () =>
-		_get<{ results?: ClaimCategory[] } | ClaimCategory[]>(
-			"/api/v1/claims/categories/",
-		).then(_unwrap),
+		_get<{ results?: ClaimCategory[] } | ClaimCategory[]>("/api/v1/claims/categories/").then(
+			_unwrap,
+		),
 	listMine: () =>
-		_get<{ results?: ClaimRequest[] } | ClaimRequest[]>(
-			"/api/v1/claims/?scope=self",
-		).then(_unwrap),
+		_get<{ results?: ClaimRequest[] } | ClaimRequest[]>("/api/v1/claims/?scope=self").then(_unwrap),
 	listFinanceQueue: () =>
-		_get<{ results?: ClaimRequest[] } | ClaimRequest[]>(
-			"/api/v1/claims/?scope=finance-queue",
-		).then(_unwrap),
+		_get<{ results?: ClaimRequest[] } | ClaimRequest[]>("/api/v1/claims/?scope=finance-queue").then(
+			_unwrap,
+		),
 	listTeam: () =>
-		_get<{ results?: ClaimRequest[] } | ClaimRequest[]>(
-			"/api/v1/claims/?scope=team",
-		).then(_unwrap),
+		_get<{ results?: ClaimRequest[] } | ClaimRequest[]>("/api/v1/claims/?scope=team").then(_unwrap),
 	retrieve: (id: string) => _get<ClaimRequest>(`/api/v1/claims/${id}/`),
 	create: (body: {
 		category: string;
@@ -110,4 +103,8 @@ export const claimsApi = {
 			s3_key: string;
 		},
 	) => _post<ClaimAttachment>(`/api/v1/claims/${claimId}/attachments/`, body),
+	downloadAttachment: (claimId: string, attachmentId: number | string) =>
+		_get<{ url: string; filename: string }>(
+			`/api/v1/claims/${claimId}/attachments/${attachmentId}/download/`,
+		),
 };

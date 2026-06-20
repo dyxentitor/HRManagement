@@ -649,6 +649,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/claims/{id}/attachments/{attachment_id}/download/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return a short-lived presigned URL to view/download one receipt. */
+        get: operations["claims_attachments_download_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/claims/{id}/attachments/presigned-upload/": {
         parameters: {
             query?: never;
@@ -5553,6 +5570,28 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_attachments_download_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
