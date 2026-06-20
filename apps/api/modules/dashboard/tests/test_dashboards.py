@@ -156,9 +156,9 @@ def test_team_dashboard_returns_cards_for_manager(stack):
     data = resp.json()
     assert data["variant"] == "team"
     card_types = {c["type"] for c in data["cards"]}
-    # v1.12.0: pending_approvals superseded by the richer pending_tasks card
+    # v1.12.0 command-center set: pending_tasks + activity_feed for team
     assert "pending_tasks" in card_types
-    assert "today_attendance_team" in card_types
+    assert "activity_feed" in card_types
 
 
 @pytest.mark.django_db

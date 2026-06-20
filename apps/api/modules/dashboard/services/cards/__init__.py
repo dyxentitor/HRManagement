@@ -17,6 +17,7 @@ from .payroll_status import PayrollStatus
 from .pending_approvals import PendingApprovals
 from .pending_tasks import PendingTasks
 from .recent_claims_self import RecentClaimsSelf
+from .smart_insights import SmartInsights
 from .today_attendance_team import TodayAttendanceTeam
 from .upcoming_holidays import UpcomingHolidays
 
@@ -40,6 +41,7 @@ CARD_TYPES: dict[str, type[Card]] = {
         ActivityFeed,
         DepartmentOverview,
         CompanyAnnouncements,
+        SmartInsights,
     )
 }
 
@@ -60,6 +62,7 @@ __all__ = [
     "PendingApprovals",
     "PendingTasks",
     "RecentClaimsSelf",
+    "SmartInsights",
     "TodayAttendanceTeam",
     "UpcomingHolidays",
 ]

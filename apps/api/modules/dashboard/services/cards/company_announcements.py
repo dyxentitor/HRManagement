@@ -21,11 +21,14 @@ class CompanyAnnouncements(Card):
         from modules.announcements.models import Announcement
 
         now = timezone.now()
-        rows = (
+        rows = list(
             Announcement.all_objects.filter(org_id=user.org_id, deleted_at__isnull=True)
             .filter(Q(expires_at__isnull=True) | Q(expires_at__gte=now))
             .order_by("-pinned", "-published_at")[:6]
         )
+
+        # The first pinned item is the hero's "featured" announcement.
+        featured_id = next((a.id for a in rows if a.pinned), None)
 
         return {
             "type": cls.type,
@@ -35,8 +38,10 @@ class CompanyAnnouncements(Card):
                     {
                         "id": str(a.id),
                         "title": a.title,
+                        "body": (a.body[:160] + "…") if len(a.body) > 160 else a.body,
                         "category": a.category,
                         "pinned": a.pinned,
+                        "featured": a.id == featured_id,
                         "published_at": a.published_at.isoformat(),
                     }
                     for a in rows

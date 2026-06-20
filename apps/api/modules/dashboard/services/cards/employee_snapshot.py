@@ -35,6 +35,9 @@ class EmployeeSnapshot(Card):
             resignation_date__lte=today,
         ).count()
 
+        hired_this_month = live.filter(hire_date__gte=first_of_month, hire_date__lte=today).count()
+        monthly_growth = hired_this_month - resigned_this_month
+
         return {
             "type": cls.type,
             "title": "Employee overview",
@@ -44,5 +47,7 @@ class EmployeeSnapshot(Card):
                 "on_leave": on_leave,
                 "on_probation": on_probation,
                 "resigned_this_month": resigned_this_month,
+                "hired_this_month": hired_this_month,
+                "monthly_growth": monthly_growth,
             },
         }

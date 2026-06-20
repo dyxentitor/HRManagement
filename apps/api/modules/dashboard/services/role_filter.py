@@ -1,44 +1,43 @@
-"""Per-dashboard-variant card list."""
+"""Per-dashboard-variant card list (command-center redesign, v1.12.0).
+
+Cards self-hide when the user lacks their required permissions
+(Card.is_visible_for), so a variant can list a card generously without leaking
+data. Layer order here matches the frontend's 5-layer composition.
+"""
 
 from __future__ import annotations
 
-# Cards per dashboard variant (in display order). Cards self-hide when the user
-# lacks their required permissions (Card.is_visible_for), so a variant can list a
-# card generously without leaking data.
 DASHBOARD_CARDS: dict[str, list[str]] = {
     "me": [
         "hero_summary",
         "pending_tasks",
         "my_leave_balance",
         "recent_claims_self",
+        "activity_feed",
         "company_announcements",
         "upcoming_holidays",
         "birthdays_this_month",
-        "activity_feed",
     ],
     "team": [
         "hero_summary",
         "pending_tasks",
-        "attendance_summary",
-        "today_attendance_team",
-        "certs_expiring_team",
-        "kpi_cycle_progress_team",
+        "employee_snapshot",
+        "payroll_status",
+        "activity_feed",
         "company_announcements",
         "upcoming_holidays",
         "birthdays_this_month",
-        "activity_feed",
-        "my_leave_balance",
+        "smart_insights",
     ],
     "admin": [
         "hero_summary",
         "pending_tasks",
         "employee_snapshot",
-        "attendance_summary",
         "payroll_status",
-        "department_overview",
+        "activity_feed",
         "company_announcements",
         "upcoming_holidays",
         "birthdays_this_month",
-        "activity_feed",
+        "smart_insights",
     ],
 }

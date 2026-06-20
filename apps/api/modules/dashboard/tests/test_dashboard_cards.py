@@ -35,7 +35,7 @@ def _grant(user, *codes):
     UserRole.objects.create(user=user, role=role, granted_by=None)
 
 
-def _emp(org, dept, code, status="active", manager=None, user=None, **extra):
+def _emp(org, dept, code, status="active", manager=None, user=None, hire_date=None, **extra):
     return Employee.all_objects.create(
         org_id=org.id,
         user=user,
@@ -43,7 +43,7 @@ def _emp(org, dept, code, status="active", manager=None, user=None, **extra):
         first_name=code,
         last_name="T",
         email=f"{code.lower()}@x.com",
-        hire_date=datetime.date(2024, 1, 1),
+        hire_date=hire_date or datetime.date(2024, 1, 1),
         employment_type="fulltime",
         department=dept,
         manager=manager,
@@ -214,3 +214,89 @@ def test_pending_tasks_perm_gated(org, admin_user):
     assert "payroll_exceptions" in tasks
     assert tasks["payroll_exceptions"]["count"] == 1
     assert tasks["payroll_exceptions"]["action_route"] == "/payroll/admin"
+
+
+@pytest.mark.django_db
+def test_activity_feed_filters_view_noise(org, admin_user):
+    from modules.dashboard.services.cards.activity_feed import ActivityFeed
+
+    AuditLog.objects.create(
+        org_id=org.id,
+        actor_id=None,
+        action="admin.overview_viewed",
+        entity="organization",
+        entity_id=uuid.uuid4(),
+    )
+    AuditLog.objects.create(
+        org_id=org.id,
+        actor_id=None,
+        action="submit",
+        entity="leave_request",
+        entity_id=uuid.uuid4(),
+    )
+    items = ActivityFeed.fetch(admin_user)["data"]["items"]
+    actions = [i["action"] for i in items]
+    assert "submit" in actions
+    assert "admin.overview_viewed" not in actions
+
+
+@pytest.mark.django_db
+def test_employee_snapshot_monthly_growth(org, admin_user):
+    import datetime as _dt
+
+    dept = Department.all_objects.create(org_id=org.id, name="Eng")
+    from modules.dashboard.services.cards.employee_snapshot import EmployeeSnapshot
+
+    _emp(org, dept, "H1", status="active", hire_date=_dt.date.today())
+    _emp(org, dept, "R1", status="resigned", resignation_date=_dt.date.today())
+    out = EmployeeSnapshot.fetch(admin_user)["data"]
+    assert out["hired_this_month"] == 1
+    assert out["resigned_this_month"] == 1
+    assert out["monthly_growth"] == 0
+
+
+@pytest.mark.django_db
+def test_company_announcements_featured(org, admin_user):
+    from modules.announcements.models import Announcement
+    from modules.dashboard.services.cards.company_announcements import CompanyAnnouncements
+
+    Announcement.all_objects.create(org_id=org.id, title="plain", body="b", pinned=False)
+    Announcement.all_objects.create(org_id=org.id, title="pinned", body="hello world", pinned=True)
+    items = CompanyAnnouncements.fetch(admin_user)["data"]["items"]
+    featured = [i for i in items if i["featured"]]
+    assert len(featured) == 1
+    assert featured[0]["title"] == "pinned"
+    assert featured[0]["body"] == "hello world"
+
+
+@pytest.mark.django_db
+def test_smart_insights_derivations(org, admin_user):
+    import datetime as _dt
+
+    from modules.dashboard.services.cards.smart_insights import SmartInsights
+    from modules.payslip.models import PayrollPeriod
+
+    dept = Department.all_objects.create(org_id=org.id, name="Eng")
+    # probation ending within 7 days
+    _emp(
+        org,
+        dept,
+        "P1",
+        status="probation",
+        probation_end_date=_dt.date.today() + _dt.timedelta(days=3),
+    )
+    # contract expiring within 14 days
+    _emp(org, dept, "C1", contract_end_date=_dt.date.today() + _dt.timedelta(days=7))
+    PayrollPeriod.all_objects.create(
+        org_id=org.id,
+        period_start=_dt.date.today(),
+        period_end=_dt.date.today(),
+        period_type="monthly",
+        pay_date=_dt.date.today() + _dt.timedelta(days=5),
+        status="ready",
+    )
+    out = SmartInsights.fetch(admin_user)["data"]
+    assert out["payroll_days"] == 5
+    assert out["probation"] >= 1
+    assert out["probation_ending"] == 1
+    assert out["contracts_expiring"] == 1
