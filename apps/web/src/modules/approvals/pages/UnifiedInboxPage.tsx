@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -36,10 +35,7 @@ export default function UnifiedInboxPage() {
 						const start = String(i.detail.start_date ?? "");
 						const end = String(i.detail.end_date ?? "");
 						const cov = await leaveApi.coverage(start, end, i.employee_id);
-						const count = Object.values(cov.per_day ?? {}).reduce(
-							(a, b) => Math.max(a, b),
-							0,
-						);
+						const count = Object.values(cov.per_day ?? {}).reduce((a, b) => Math.max(a, b), 0);
 						return [i.id, { count, names: cov.people.map((p) => p.name) }] as [string, Clash];
 					} catch {
 						return [i.id, { count: 0, names: [] as string[] }] as [string, Clash];
@@ -65,6 +61,14 @@ export default function UnifiedInboxPage() {
 			claim: items.filter((i) => i.kind === "claim").length,
 			kpi: items.filter((i) => i.kind === "kpi").length,
 		}),
+		[items],
+	);
+
+	const claimTotal = useMemo(
+		() =>
+			items
+				.filter((i) => i.kind === "claim")
+				.reduce((sum, i) => sum + (Number(i.detail.amount) || 0), 0),
 		[items],
 	);
 
@@ -122,9 +126,7 @@ export default function UnifiedInboxPage() {
 	const oldestDays = useMemo(() => {
 		const subs = items.filter((i) => i.submitted_at);
 		if (subs.length === 0) return 0;
-		const oldest = subs.reduce((m, i) =>
-			(i.submitted_at ?? "") < (m.submitted_at ?? "") ? i : m,
-		);
+		const oldest = subs.reduce((m, i) => ((i.submitted_at ?? "") < (m.submitted_at ?? "") ? i : m));
 		if (!oldest.submitted_at) return 0;
 		return Math.round((Date.now() - new Date(oldest.submitted_at).getTime()) / 86_400_000);
 	}, [items]);
@@ -160,21 +162,75 @@ export default function UnifiedInboxPage() {
 
 	return (
 		<div className="space-y-4">
-			<PageHeader
-				title="Approvals"
-				subtitle={
-					counts.all
-						? `${counts.all} pending · oldest waiting ${oldestDays} day${oldestDays === 1 ? "" : "s"}`
-						: "Nothing waiting on you"
-				}
-				actions={
-					selected.size > 0 ? (
-						<Button type="button" disabled={bulkBusy} onClick={approveSelected}>
-							✓ Approve selected ({selected.size})
-						</Button>
-					) : null
-				}
-			/>
+			<section className="relative grid lg:grid-cols-[1.6fr_1fr] rounded-2xl overflow-hidden border border-border-subtle min-h-[150px]">
+				<div className="hero-aurora absolute inset-0" aria-hidden>
+					<svg
+						viewBox="0 0 1200 200"
+						preserveAspectRatio="none"
+						className="absolute bottom-0 left-0 w-full opacity-50"
+						aria-hidden
+					>
+						<title>decorative waves</title>
+						<path
+							d="M0 140 C200 90 380 180 600 130 C820 80 1000 170 1200 120 L1200 200 L0 200 Z"
+							fill="rgb(124 92 255 / 0.25)"
+						/>
+					</svg>
+				</div>
+				<div className="relative z-10 p-6 flex flex-col justify-center gap-1.5">
+					<p className="layer-eyebrow text-accent-200">Approvals</p>
+					<div className="flex items-end gap-3">
+						<span className="text-[40px] font-extralight leading-none tabular-nums">
+							{counts.all}
+						</span>
+						<span className="text-text-secondary pb-1.5">
+							{counts.all === 1 ? "needs your review" : "need your review"}
+						</span>
+					</div>
+					<p className="text-small text-text-secondary">
+						{counts.all
+							? `Oldest waiting ${oldestDays} day${oldestDays === 1 ? "" : "s"}.`
+							: "Nothing waiting on you."}
+						{selected.size > 0 && <span className="text-yellow"> {selected.size} selected.</span>}
+					</p>
+					{selected.size > 0 && (
+						<div className="mt-2">
+							<Button
+								type="button"
+								disabled={bulkBusy}
+								onClick={approveSelected}
+								className="soft-glow rounded-xl"
+							>
+								✓ Approve selected ({selected.size})
+							</Button>
+						</div>
+					)}
+				</div>
+				<div className="relative z-10 m-3.5 glass-surface rounded-xl p-4 flex flex-col justify-center gap-2">
+					<p className="layer-eyebrow">By type</p>
+					<div className="flex justify-between text-small">
+						<span className="text-text-secondary">
+							<span className="text-yellow">●</span> Leave
+						</span>
+						<span className="tabular-nums">{counts.leave}</span>
+					</div>
+					<div className="flex justify-between text-small">
+						<span className="text-text-secondary">
+							<span className="text-peach">●</span> Claims
+						</span>
+						<span className="tabular-nums">
+							{counts.claim}
+							{claimTotal > 0 ? ` · RM ${claimTotal.toLocaleString("en-MY")}` : ""}
+						</span>
+					</div>
+					<div className="flex justify-between text-small">
+						<span className="text-text-secondary">
+							<span className="text-sky">●</span> KPI
+						</span>
+						<span className="tabular-nums">{counts.kpi}</span>
+					</div>
+				</div>
+			</section>
 
 			{error && (
 				<p className="text-coral text-small" role="alert">
@@ -195,7 +251,7 @@ export default function UnifiedInboxPage() {
 				</div>
 			) : (
 				<div className="space-y-3">
-					{filtered.map((item, i) => (
+					{filtered.map((item) => (
 						<UnifiedApprovalCard
 							key={`${item.kind}-${item.id}`}
 							item={item}
@@ -204,7 +260,6 @@ export default function UnifiedInboxPage() {
 							onToggleSelect={() => toggle(item.id)}
 							onApprove={(c) => approve(item, c)}
 							onReject={(c) => reject(item, c)}
-							tone={i}
 						/>
 					))}
 				</div>

@@ -13,6 +13,7 @@ const inbox = [
 		deep_link: "/approvals?focus=lr1",
 		employee_id: "e1",
 		name: "John Tan",
+		department: "Engineering",
 		type_code: "ANNUAL",
 		detail: { start_date: "2026-05-14", end_date: "2026-05-14", total_days: "1", reason: "Trip" },
 	},
@@ -25,6 +26,7 @@ const inbox = [
 		deep_link: "/approvals?focus=cl1",
 		employee_id: "e2",
 		name: "Siti Yusof",
+		department: "Design",
 		type_code: "TRAVEL",
 		detail: { amount: "350", currency_code: "MYR", expense_date: "2026-04-27" },
 	},
@@ -68,6 +70,10 @@ describe("UnifiedInboxPage", () => {
 		expect(screen.getByRole("button", { name: /All · 2/i })).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: /Leave · 1/i })).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: /Claims · 1/i })).toBeInTheDocument();
+		// who: department surfaced; what: the claim amount + leave days
+		expect(screen.getByText(/Engineering/)).toBeInTheDocument();
+		expect(screen.getByText(/MYR 350/)).toBeInTheDocument();
+		expect(screen.getByText(/1 days/)).toBeInTheDocument();
 		// leave card shows a coverage badge
 		expect(screen.getByText(/No coverage clash/)).toBeInTheDocument();
 	});

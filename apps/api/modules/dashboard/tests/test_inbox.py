@@ -170,6 +170,9 @@ def test_approver_sees_pending_claim(stack):
     assert len(items) == 1
     assert items[0].kind == "claim"
     assert items[0].id == str(cr.id)
+    # who is requesting — name + department surfaced for the approver
+    assert items[0].department == "Engineering"
+    assert items[0].to_dict()["department"] == "Engineering"
 
 
 @pytest.mark.django_db

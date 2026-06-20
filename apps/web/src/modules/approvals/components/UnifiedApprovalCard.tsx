@@ -6,12 +6,11 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ClaimReceipts, type ReceiptRef } from "@/modules/claims/components/ClaimReceipts";
 import { formatRange } from "@/modules/leave/lib/leave-dates";
-import { typeTone } from "@/modules/leave/lib/leave-ui";
 
 import type { InboxItem } from "../api";
 
-const AV_TONES = ["bg-peach", "bg-lavender", "bg-mint", "bg-sky", "bg-coral", "bg-yellow"];
 const KIND_TONE = { leave: "yellow", claim: "peach", kpi: "sky" } as const;
+const AVATAR_BG = { leave: "bg-yellow", claim: "bg-peach", kpi: "bg-sky" } as const;
 
 function initials(name: string): string {
 	return (
@@ -27,6 +26,15 @@ function str(v: unknown): string {
 	return typeof v === "string" ? v : String(v ?? "");
 }
 
+function timeAgo(iso: string | null): string {
+	if (!iso) return "";
+	const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+	if (mins < 60) return `${Math.max(1, mins)}m ago`;
+	const h = Math.floor(mins / 60);
+	if (h < 24) return `${h}h ago`;
+	return `${Math.floor(h / 24)}d ago`;
+}
+
 export interface Clash {
 	count: number;
 	names: string[];
@@ -39,37 +47,57 @@ export interface UnifiedApprovalCardProps {
 	onToggleSelect: () => void;
 	onApprove: (comment: string) => Promise<void>;
 	onReject: (comment: string) => Promise<void>;
-	tone: number;
 }
 
-function Context({ item }: { item: InboxItem }) {
+/** What is being requested — the focal "big number" + context per kind. */
+function What({ item, clash }: { item: InboxItem; clash?: Clash }) {
 	const d = item.detail;
-	if (item.kind === "leave") {
-		return (
-			<div className="flex items-center gap-2 mt-1.5">
-				<StatusPill tone={typeTone(item.type_code)} label={item.type_code} />
-				<span className="text-small text-text-secondary tabular-nums">
-					{formatRange(str(d.start_date), str(d.end_date))} · {str(d.total_days)}d
-				</span>
-			</div>
-		);
-	}
 	if (item.kind === "claim") {
+		const receipts = (d.attachments as ReceiptRef[] | undefined) ?? [];
 		return (
-			<div className="flex items-center gap-2 mt-1.5">
-				<StatusPill tone="peach" label={item.type_code} />
-				<span className="text-small text-text-secondary tabular-nums">
-					{str(d.currency_code)} {str(d.amount)} · {str(d.expense_date)}
-				</span>
-			</div>
+			<>
+				<div className="flex items-baseline gap-2.5 flex-wrap">
+					<span className="text-2xl font-extralight tracking-tight tabular-nums">
+						{str(d.currency_code)} {str(d.amount)}
+					</span>
+					<span className="text-small text-text-secondary">
+						{item.type_code} · {str(d.expense_date)}
+					</span>
+				</div>
+				<div className="mt-2">
+					<ClaimReceipts claimId={item.id} attachments={receipts} />
+				</div>
+			</>
 		);
 	}
-	return (
-		<div className="flex items-center gap-2 mt-1.5">
-			<StatusPill tone="sky" label="KPI" />
-			<span className="text-small text-text-secondary">{str(d.cycle)} self-review</span>
-		</div>
-	);
+	if (item.kind === "leave") {
+		const hasClash = (clash?.count ?? 0) > 0;
+		return (
+			<>
+				<div className="flex items-baseline gap-2.5 flex-wrap">
+					<span className="text-2xl font-extralight tracking-tight tabular-nums">
+						{str(d.total_days)} days
+					</span>
+					<span className="text-small text-text-secondary">
+						{item.type_code} · {formatRange(str(d.start_date), str(d.end_date))}
+					</span>
+				</div>
+				<div className="mt-2">
+					{hasClash ? (
+						<span className="inline-block text-[10px] rounded-md px-2 py-1 bg-coral/10 border border-coral/25 text-coral">
+							⚠ Coverage: {clash?.count} teammate(s) off
+							{clash?.names.length ? ` — ${clash.names.slice(0, 2).join(", ")}` : ""}
+						</span>
+					) : (
+						<span className="inline-block text-[10px] rounded-md px-2 py-1 bg-mint/10 border border-mint/25 text-mint">
+							No coverage clash ✓
+						</span>
+					)}
+				</div>
+			</>
+		);
+	}
+	return <span className="text-small text-text-secondary">{str(d.cycle)} cycle · self-review</span>;
 }
 
 export function UnifiedApprovalCard({
@@ -79,13 +107,12 @@ export function UnifiedApprovalCard({
 	onToggleSelect,
 	onApprove,
 	onReject,
-	tone,
 }: UnifiedApprovalCardProps) {
 	const [comment, setComment] = useState("");
 	const [busy, setBusy] = useState(false);
 	const name = item.name || item.employee_code;
 	const reason = str(item.detail.reason);
-	const hasClash = (clash?.count ?? 0) > 0;
+	const meta = [item.department, item.employee_code].filter(Boolean).join(" · ");
 
 	async function act(fn: (c: string) => Promise<void>) {
 		setBusy(true);
@@ -99,8 +126,8 @@ export function UnifiedApprovalCard({
 	return (
 		<div
 			className={cn(
-				"bg-surface-hover border rounded-xl p-4",
-				selected ? "border-accent-500/50" : "border-border-subtle",
+				"glass-surface rounded-2xl p-4 transition-transform duration-fast hover:-translate-y-0.5",
+				selected && "ring-1 ring-accent-500/50",
 			)}
 		>
 			<div className="flex items-start gap-3">
@@ -113,48 +140,32 @@ export function UnifiedApprovalCard({
 				/>
 				<span
 					className={cn(
-						"size-9 rounded-full grid place-items-center text-canvas font-bold text-small shrink-0",
-						AV_TONES[tone % AV_TONES.length],
+						"size-10 rounded-full grid place-items-center text-canvas font-bold text-small shrink-0",
+						AVATAR_BG[item.kind],
 					)}
 					aria-hidden
 				>
 					{initials(name)}
 				</span>
 				<div className="min-w-0 flex-1">
-					<div className="flex items-center justify-between gap-2">
-						<p className="text-body text-text-primary truncate">
-							<b>{name}</b>
-							<span className="text-text-tertiary"> · {item.employee_code}</span>
-						</p>
-						<StatusPill tone={KIND_TONE[item.kind]} label={item.kind} />
+					<div className="flex items-start justify-between gap-2">
+						<div className="min-w-0">
+							<p className="text-body text-text-primary truncate">
+								<b>{name}</b>
+								{meta && <span className="text-text-tertiary"> · {meta}</span>}
+							</p>
+						</div>
+						<div className="flex items-center gap-2 shrink-0">
+							<span className="text-[11px] text-text-tertiary">{timeAgo(item.submitted_at)}</span>
+							<StatusPill tone={KIND_TONE[item.kind]} label={item.kind} />
+						</div>
 					</div>
-					<Context item={item} />
-					{reason && <p className="text-small text-text-tertiary italic mt-1.5">“{reason}”</p>}
-					{item.kind === "leave" && (
-						<div className="mt-2.5">
-							{hasClash ? (
-								<span className="inline-block text-[10px] rounded-md px-2 py-1 bg-coral/10 border border-coral/25 text-coral">
-									⚠ Coverage: {clash?.count} teammate(s) off
-									{clash?.names.length ? ` — ${clash.names.slice(0, 2).join(", ")}` : ""}
-								</span>
-							) : (
-								<span className="inline-block text-[10px] rounded-md px-2 py-1 bg-mint/10 border border-mint/25 text-mint">
-									No coverage clash ✓
-								</span>
-							)}
-						</div>
-					)}
-					{item.kind === "claim" && (
-						<div className="mt-2.5">
-							<span className="text-[10px] uppercase tracking-wide text-text-tertiary block mb-1">
-								Receipts
-							</span>
-							<ClaimReceipts
-								claimId={item.id}
-								attachments={(item.detail.attachments as ReceiptRef[] | undefined) ?? []}
-							/>
-						</div>
-					)}
+
+					<div className="border-l-2 border-border-subtle pl-3 mt-2.5">
+						<What item={item} clash={clash} />
+						{reason && <p className="text-small text-text-tertiary italic mt-2">“{reason}”</p>}
+					</div>
+
 					<div className="flex items-center gap-2 mt-3">
 						<Input
 							value={comment}

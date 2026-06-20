@@ -17,6 +17,11 @@ def _emp_name(emp) -> str:
     return f"{emp.first_name} {emp.last_name}".strip()
 
 
+def _emp_dept(emp) -> str:
+    dept = getattr(emp, "department", None) if emp is not None else None
+    return getattr(dept, "name", "") or ""
+
+
 @dataclass
 class InboxItem:
     kind: str  # 'leave', 'claim', or 'kpi'
@@ -29,6 +34,7 @@ class InboxItem:
     # team-coverage for leave without re-parsing `summary`.
     employee_id: str = ""
     name: str = ""
+    department: str = ""
     type_code: str = ""
     detail: dict[str, Any] = field(default_factory=dict)
 
@@ -42,6 +48,7 @@ class InboxItem:
             "deep_link": self.deep_link,
             "employee_id": self.employee_id,
             "name": self.name,
+            "department": self.department,
             "type_code": self.type_code,
             "detail": self.detail,
         }
@@ -64,7 +71,11 @@ def get_inbox(*, user: User) -> list[InboxItem]:
     from modules.employee.models import Employee as _Employee
 
     for r in leave_qs:
-        emp = _Employee.all_objects.filter(id=r.employee_id, deleted_at__isnull=True).first()
+        emp = (
+            _Employee.all_objects.filter(id=r.employee_id, deleted_at__isnull=True)
+            .select_related("department")
+            .first()
+        )
         emp_code = emp.employee_code if emp else str(r.employee_id)
         items.append(
             InboxItem(
@@ -79,6 +90,7 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                 deep_link=f"/approvals?focus={r.id}",
                 employee_id=str(r.employee_id),
                 name=_emp_name(emp) or emp_code,
+                department=_emp_dept(emp),
                 type_code=r.leave_type.code,
                 detail={
                     "start_date": r.start_date.isoformat(),
@@ -101,7 +113,7 @@ def get_inbox(*, user: User) -> list[InboxItem]:
             status__in=("submitted", "manager_approved"),
             deleted_at__isnull=True,
         )
-        .select_related("employee", "category")
+        .select_related("employee__department", "category")
         .prefetch_related("attachments")
     )
     for c in claim_qs:
@@ -115,6 +127,7 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                 deep_link=f"/approvals?focus={c.id}",
                 employee_id=str(c.employee_id),
                 name=_emp_name(c.employee) or c.employee.employee_code,
+                department=_emp_dept(c.employee),
                 type_code=c.category.code,
                 detail={
                     "amount": str(c.amount),
@@ -153,9 +166,11 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                 .order_by("-submitted_at")
                 .first()
             )
-            emp = _EmpKpi.all_objects.filter(
-                id=assignment.employee_id, deleted_at__isnull=True
-            ).first()
+            emp = (
+                _EmpKpi.all_objects.filter(id=assignment.employee_id, deleted_at__isnull=True)
+                .select_related("department")
+                .first()
+            )
             emp_code = emp.employee_code if emp else str(assignment.employee_id)
             cycle_name = assignment.cycle.name
             items.append(
@@ -168,6 +183,7 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                     deep_link=f"/approvals?focus={assignment.id}",
                     employee_id=str(assignment.employee_id),
                     name=_emp_name(emp) or emp_code,
+                    department=_emp_dept(emp),
                     type_code="KPI",
                     detail={"cycle": cycle_name},
                 )
