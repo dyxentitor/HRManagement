@@ -156,7 +156,8 @@ def test_team_dashboard_returns_cards_for_manager(stack):
     data = resp.json()
     assert data["variant"] == "team"
     card_types = {c["type"] for c in data["cards"]}
-    assert "pending_approvals" in card_types
+    # v1.12.0: pending_approvals superseded by the richer pending_tasks card
+    assert "pending_tasks" in card_types
     assert "today_attendance_team" in card_types
 
 

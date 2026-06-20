@@ -2,28 +2,43 @@
 
 from __future__ import annotations
 
-# Cards per dashboard variant (in display order)
+# Cards per dashboard variant (in display order). Cards self-hide when the user
+# lacks their required permissions (Card.is_visible_for), so a variant can list a
+# card generously without leaking data.
 DASHBOARD_CARDS: dict[str, list[str]] = {
     "me": [
+        "hero_summary",
+        "pending_tasks",
         "my_leave_balance",
-        "upcoming_holidays",
         "recent_claims_self",
+        "company_announcements",
+        "upcoming_holidays",
         "birthdays_this_month",
+        "activity_feed",
     ],
     "team": [
-        "pending_approvals",
+        "hero_summary",
+        "pending_tasks",
+        "attendance_summary",
         "today_attendance_team",
         "certs_expiring_team",
         "kpi_cycle_progress_team",
-        "my_leave_balance",
+        "company_announcements",
         "upcoming_holidays",
+        "birthdays_this_month",
+        "activity_feed",
+        "my_leave_balance",
     ],
     "admin": [
-        "pending_approvals",
-        "today_attendance_team",
-        "certs_expiring_team",
-        "kpi_cycle_progress_team",
-        "birthdays_this_month",
+        "hero_summary",
+        "pending_tasks",
+        "employee_snapshot",
+        "attendance_summary",
+        "payroll_status",
+        "department_overview",
+        "company_announcements",
         "upcoming_holidays",
+        "birthdays_this_month",
+        "activity_feed",
     ],
 }
