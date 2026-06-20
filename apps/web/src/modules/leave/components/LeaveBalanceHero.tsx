@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { DonutChart } from "@/components/hrms";
 import { Button } from "@/components/ui/button";
 import type { LeaveBalance } from "../api";
-import { num } from "../lib/leave-ui";
+import { availableDays, num, overdrawnBy } from "../lib/leave-ui";
 
 function fmtDay(iso: string): string {
 	return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-MY", {
@@ -25,7 +25,10 @@ export function LeaveBalanceHero({
 		balances.find((b) => b.leave_type_code === primaryCode) ??
 		[...balances].sort((a, b) => num(b.entitled) - num(a.entitled))[0];
 
-	const available = primary ? num(primary.available) : 0;
+	// Display-floored at 0 — a balance can be over-allocated (raw available < 0);
+	// we never show a negative "days available", we flag the overdraw instead.
+	const available = primary ? availableDays(primary.available) : 0;
+	const overdrawn = primary ? overdrawnBy(primary.available) : 0;
 	const taken = primary ? num(primary.taken) : 0;
 	const pending = primary ? num(primary.pending) : 0;
 	const total = available + taken + pending;
@@ -74,6 +77,9 @@ export function LeaveBalanceHero({
 				</div>
 				<p className="text-small text-text-secondary">
 					{taken} taken · {pending} pending this year.
+					{overdrawn > 0 && (
+						<span className="text-coral"> Over-allocated by {overdrawn} days.</span>
+					)}
 				</p>
 				<div className="flex flex-wrap items-center gap-3 mt-3">
 					<Button asChild className="soft-glow rounded-xl">

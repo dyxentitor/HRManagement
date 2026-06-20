@@ -138,6 +138,20 @@ export function num(s: string | null | undefined): number {
 	return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * Days available for display — floored at 0. A balance can be over-allocated
+ * (taken + pending > granted), making the raw `available` negative; we never
+ * show a negative "days available" to the employee — see `overdrawnBy`.
+ */
+export function availableDays(available: string | null | undefined): number {
+	return Math.max(0, num(available));
+}
+
+/** How many days a balance is over-allocated by (0 when not over-allocated). */
+export function overdrawnBy(available: string | null | undefined): number {
+	return Math.max(0, -num(available));
+}
+
 /** "1 day" / "2 days" / "0.5 day". */
 export function fmtDays(value: number | string): string {
 	const n = typeof value === "string" ? num(value) : value;

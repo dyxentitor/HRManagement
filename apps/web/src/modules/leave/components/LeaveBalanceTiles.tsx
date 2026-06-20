@@ -1,6 +1,14 @@
 import { cn } from "@/lib/utils";
 import type { LeaveBalance } from "../api";
-import { TONE_BG, TONE_ICON_BG, num, typeIcon, typeTone } from "../lib/leave-ui";
+import {
+	TONE_BG,
+	TONE_ICON_BG,
+	availableDays,
+	num,
+	overdrawnBy,
+	typeIcon,
+	typeTone,
+} from "../lib/leave-ui";
 
 /** Per-type balance tiles (glow), in the dashboard's tile language. */
 export function LeaveBalanceTiles({
@@ -44,15 +52,21 @@ export function LeaveBalanceTiles({
 									<Icon className="size-4.5" />
 								</span>
 								<span className="text-[30px] font-extralight leading-none tabular-nums tracking-tight">
-									{num(b.available)}
+									{availableDays(b.available)}
 								</span>
 							</div>
 							<p className="relative z-10 text-small text-text-secondary leading-tight mt-auto">
 								{b.leave_type_name ?? b.leave_type_code}
 							</p>
-							<p className="relative z-10 text-[10px] text-text-tertiary tabular-nums">
-								of {num(b.entitled)} days
-							</p>
+							{overdrawnBy(b.available) > 0 ? (
+								<p className="relative z-10 text-[10px] text-coral tabular-nums">
+									over by {overdrawnBy(b.available)} days
+								</p>
+							) : (
+								<p className="relative z-10 text-[10px] text-text-tertiary tabular-nums">
+									of {num(b.entitled)} days
+								</p>
+							)}
 						</button>
 					);
 				})}
