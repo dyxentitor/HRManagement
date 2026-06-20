@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -15,13 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { employeeApi } from "@/modules/employee/api";
 
-import {
-	type Coverage,
-	type Holiday,
-	type LeaveBalance,
-	type LeaveType,
-	leaveApi,
-} from "../api";
+import { type Coverage, type Holiday, type LeaveBalance, type LeaveType, leaveApi } from "../api";
 import { LeaveRangeCalendar } from "../components/LeaveRangeCalendar";
 import { formatRange } from "../lib/leave-dates";
 
@@ -34,6 +28,8 @@ function diffInDays(start: string, end: string): number {
 
 export default function LeaveApplyPage() {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const presetType = searchParams.get("type");
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [types, setTypes] = useState<LeaveType[]>([]);
 	const [balances, setBalances] = useState<LeaveBalance[]>([]);
@@ -54,14 +50,24 @@ export default function LeaveApplyPage() {
 				setNoEmployee(true);
 				return;
 			}
-			leaveApi.listTypes().then(setTypes).catch(() => setError("Failed to load leave types"));
-			leaveApi.myBalances().then(setBalances).catch(() => undefined);
+			leaveApi
+				.listTypes()
+				.then((t) => {
+					setTypes(t);
+					// Preselect the type passed from the My Leave "Take leave" cards.
+					if (presetType && t.some((x) => x.id === presetType)) setLeaveType(presetType);
+				})
+				.catch(() => setError("Failed to load leave types"));
+			leaveApi
+				.myBalances()
+				.then(setBalances)
+				.catch(() => undefined);
 			leaveApi
 				.holidays(new Date().getFullYear())
 				.then(setHolidays)
 				.catch(() => setHolidays([]));
 		});
-	}, []);
+	}, [presetType]);
 
 	// Coverage for the chosen range (clash awareness).
 	useEffect(() => {
@@ -122,7 +128,10 @@ export default function LeaveApplyPage() {
 
 	return (
 		<form onSubmit={onSubmit} className="space-y-4">
-			<PageHeader title="Apply for leave" subtitle="Pick a type and your dates — we'll show the impact." />
+			<PageHeader
+				title="Apply for leave"
+				subtitle="Pick a type and your dates — we'll show the impact."
+			/>
 
 			<div className="flex flex-wrap items-end gap-4">
 				<div className="min-w-[240px]">

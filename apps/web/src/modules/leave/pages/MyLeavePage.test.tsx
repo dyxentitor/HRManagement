@@ -30,7 +30,7 @@ const requests = [
 		total_days: "1.0",
 		is_half_day: true,
 		half_day_period: "pm",
-		reason: "Doctor",
+		reason: "Doctor visit",
 		status: "submitted",
 		current_level: 1,
 		submitted_at: "2026-04-28T09:00:00Z",
@@ -47,16 +47,19 @@ const balances = [
 		year: 2026,
 		entitled: "16.0",
 		accrued: "16.0",
-		taken: "0.0",
+		taken: "2.0",
 		pending: "0.0",
 		carried_forward: "0.0",
 		available: "14.0",
 	},
 ];
 
+const types = [{ id: "t1", code: "ANNUAL", name: "Annual", is_paid: true, is_statutory: false }];
+
 const mocks = vi.hoisted(() => ({
 	myBalances: vi.fn(),
 	listMyRequests: vi.fn(),
+	listTypes: vi.fn(),
 	holidays: vi.fn(),
 	cancel: vi.fn(),
 }));
@@ -65,6 +68,7 @@ vi.mock("../api", () => ({
 	leaveApi: {
 		myBalances: mocks.myBalances,
 		listMyRequests: mocks.listMyRequests,
+		listTypes: mocks.listTypes,
 		holidays: mocks.holidays,
 		cancel: mocks.cancel,
 	},
@@ -83,34 +87,34 @@ function renderPage() {
 beforeEach(() => {
 	mocks.myBalances.mockResolvedValue(balances);
 	mocks.listMyRequests.mockResolvedValue(requests);
+	mocks.listTypes.mockResolvedValue(types);
 	mocks.holidays.mockResolvedValue([]);
 });
 
 describe("MyLeavePage", () => {
-	it("renders the hero and the three tabs", async () => {
+	it("renders the balance hero, a balance tile and the Apply CTA", async () => {
 		renderPage();
-		await waitFor(() => expect(screen.getByText("Annual leave")).toBeInTheDocument());
-		expect(screen.getByRole("tab", { name: "Calendar" })).toBeInTheDocument();
-		expect(screen.getByRole("tab", { name: "History" })).toBeInTheDocument();
-		expect(screen.getByRole("tab", { name: "Balances" })).toBeInTheDocument();
+		await waitFor(() => expect(screen.getByText("14 days")).toBeInTheDocument());
+		expect(screen.getAllByText(/available/i).length).toBeGreaterThan(0);
+		expect(screen.getByRole("link", { name: /Apply for leave/i })).toHaveAttribute(
+			"href",
+			"/leave/apply",
+		);
 	});
 
-	it("shows requests with the Reason column in the History tab", async () => {
-		const user = userEvent.setup();
+	it("shows in-flight requests in the In progress section", async () => {
 		renderPage();
-		await waitFor(() => screen.getByRole("tab", { name: "History" }));
-		await user.click(screen.getByRole("tab", { name: "History" }));
-		expect(await screen.findByText("Reason")).toBeInTheDocument();
-		expect(screen.getByText("Family trip")).toBeInTheDocument();
-		expect(screen.getByText(/½ PM/i)).toBeInTheDocument();
+		await waitFor(() => expect(screen.getByText("SICK leave")).toBeInTheDocument());
+		// approved request is not in-flight → not in the default In progress view
+		expect(screen.getByText(/In progress · 1/i)).toBeInTheDocument();
 	});
 
-	it("opens the detail panel when a history row is clicked", async () => {
+	it("opens the request detail drawer with the reason when a card is clicked", async () => {
 		const user = userEvent.setup();
 		renderPage();
-		await waitFor(() => screen.getByRole("tab", { name: "History" }));
-		await user.click(screen.getByRole("tab", { name: "History" }));
-		await user.click(await screen.findByText("Family trip"));
+		await waitFor(() => screen.getByText("SICK leave"));
+		await user.click(screen.getByText("SICK leave"));
 		expect(await screen.findByRole("dialog")).toBeInTheDocument();
+		expect(screen.getByText("Doctor visit")).toBeInTheDocument();
 	});
 });
