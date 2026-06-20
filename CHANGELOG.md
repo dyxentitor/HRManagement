@@ -2,6 +2,28 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.18.2] — 2026-06-21
+
+Fixes: attached receipts couldn't be viewed in a claim.
+
+### Fixed
+
+- **Root cause:** receipts uploaded fine, but nothing could *render* them — the claim
+  detail drawer showed only a **count**, and `AttachmentService.presigned_get()` (which
+  mints a viewable URL) was **wired to no endpoint**; the serializer exposed only the
+  internal `s3_key`.
+- **Backend:** new `GET /api/v1/claims/{id}/attachments/{attachment_id}/download` returns a
+  short-lived (5-min) presigned URL, **access-gated** to anyone who can view the claim — the
+  owner, the owner's manager (`claim:read:team`), finance (`claim:read:finance`), or an
+  org-wide reader (`claim:read:org`). (Generated on demand, not per-serialization.)
+- **Frontend:** the My Claims detail drawer now **lists each receipt** (filename + size) as a
+  button that opens the presigned URL in a new tab, instead of just "N attached".
+
+### Tests
+
+- Backend: **786 passed** (+1 — download returns a presigned URL). Frontend: **364 passed**
+  (+1 — drawer lists + opens a receipt). Contracts regenerated. No migration; no new perms.
+
 ## [1.18.1] — 2026-06-21
 
 Claim Submit page redesign — brings `/claims/submit` into the premium command-center
