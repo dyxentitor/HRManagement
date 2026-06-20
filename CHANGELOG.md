@@ -2,6 +2,27 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.18.3] — 2026-06-21
+
+Wires claim receipts into the Approvals + Finance views (follow-on to v1.18.2). Spec:
+`docs/superpowers/specs/2026-06-21-receipts-in-approvals-finance.md`.
+
+### Added
+
+- Shared **`ClaimReceipts`** component (extracted from the My Claims drawer) — lists each
+  receipt (filename + size) and opens its presigned URL on click.
+- **Approvals:** the unified inbox (`get_inbox`) now carries `detail.attachments`
+  (`[{id, filename, size_bytes}]`, prefetched) on claim items; `UnifiedApprovalCard`
+  renders `ClaimReceipts` for claims so approvers can open the employee's receipts.
+- **Finance:** `FinanceQueuePage` renders `ClaimReceipts` under each claim (it already loads
+  full claims). Both reuse the v1.18.2 download endpoint, already access-gated for
+  team / finance / org readers.
+
+### Tests
+
+- Backend: **787 passed** (+1 — claim inbox item exposes `detail.attachments`). Frontend
+  green (+2 — `ClaimReceipts` lists/opens). No migration, no new perms, no schema change.
+
 ## [1.18.2] — 2026-06-21
 
 Fixes: attached receipts couldn't be viewed in a claim.
