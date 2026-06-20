@@ -56,6 +56,8 @@ export type LeaveRequest = {
 	decided_at: string | null;
 };
 
+export type Holiday = { date: string; name: string; type: string };
+
 /**
  * Pull a user-readable message out of an RFC 7807 problem detail body.
  * Backend shape (see common/exception_handler.py):
@@ -95,6 +97,10 @@ export const leaveApi = {
 			(d) => (Array.isArray(d) ? d : d.results || []),
 		),
 	myBalances: () => _get<LeaveBalance[]>("/api/v1/leave/balances/me/"),
+	holidays: (year?: number) =>
+		_get<{ results?: Holiday[] } | Holiday[]>(
+			`/api/v1/schedule/holidays/${year ? `?year=${year}` : ""}`,
+		).then((d) => (Array.isArray(d) ? d : d.results || [])),
 	listMyRequests: () =>
 		_get<{ results?: LeaveRequest[] } | LeaveRequest[]>(
 			"/api/v1/leave/requests/?scope=self",
