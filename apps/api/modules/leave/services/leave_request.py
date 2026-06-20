@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+from decimal import Decimal
 
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -14,7 +15,7 @@ from common.workflow import (
 from modules.identity.models import User
 
 from ..chains import LEAVE_DEFAULT
-from ..models import LeaveRequest
+from ..models import LeaveBalance, LeaveRequest
 from .balance import BalanceService
 
 
@@ -67,8 +68,7 @@ class LeaveRequestService:
                 raise ValidationError(
                     {
                         "start_date": (
-                            f"{lt.name} requires "
-                            f"{lt.notice_days_required} days of advance notice."
+                            f"{lt.name} requires {lt.notice_days_required} days of advance notice."
                         )
                     },
                 )
@@ -90,8 +90,30 @@ class LeaveRequestService:
                 raise ValidationError(
                     {
                         "leave_type": (
-                            f"Maximum {lt.max_per_lifetime_events} {term} reached "
-                            f"for {lt.name}."
+                            f"Maximum {lt.max_per_lifetime_events} {term} reached for {lt.name}."
+                        )
+                    },
+                )
+
+        # v1.18.0 — balance over-draw guard. Paid leave types cannot be submitted
+        # for more days than the employee currently has available
+        # (available = accrued + carried_forward - taken - pending). Unpaid types
+        # (is_paid=False) draw no balance and are exempt.
+        if lt.is_paid:
+            bal = LeaveBalance.all_objects.filter(
+                org_id=request.org_id,
+                employee_id=request.employee_id,
+                leave_type=lt,
+                year=request.start_date.year,
+                deleted_at__isnull=True,
+            ).first()
+            available = bal.available if bal else Decimal("0")
+            if request.total_days > available:
+                raise ValidationError(
+                    {
+                        "total_days": (
+                            f"Insufficient {lt.name} balance — you have {available} "
+                            f"day(s) available but requested {request.total_days}."
                         )
                     },
                 )
