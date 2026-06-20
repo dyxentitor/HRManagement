@@ -2,6 +2,25 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.2] — 2026-06-21
+
+Leave layout polish — fixes the whitespace gap and bounds the Activity timeline.
+Spec: `docs/superpowers/specs/2026-06-21-leave-layout-rebalance.md`.
+
+### Fixed / Changed
+
+- **Leave bento rebalanced** — two balanced columns: **left** = In progress/History +
+  **Take leave** (now 2-up in the column); **right** = This-month Calendar + Activity.
+  Removes the lonely full-width Take-leave row and the large empty gap under the short
+  left column.
+- **Activity timeline bounded** (Leave + Claims) — renders up to **12** events inside a
+  **fixed-height, internally-scrolling** list (`max-h-56`), so it never grows the page.
+
+### Tests
+
+- Frontend: **358 passed** (no behavioural change to tested assertions). Backend unchanged
+  (**781**; no backend/perm/migration changes).
+
 ## [1.17.1] — 2026-06-20
 
 Bounded the In-progress / History section on Claims + Leave so the page no longer
