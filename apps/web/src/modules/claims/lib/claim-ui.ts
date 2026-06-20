@@ -1,11 +1,4 @@
-import {
-	GraduationCap,
-	HeartPulse,
-	Laptop,
-	Plane,
-	Receipt,
-	UtensilsCrossed,
-} from "lucide-react";
+import { GraduationCap, HeartPulse, Laptop, Plane, Receipt, UtensilsCrossed } from "lucide-react";
 import type { ComponentType } from "react";
 
 import type { ClaimRequest, ClaimStatus } from "../api";
@@ -108,4 +101,88 @@ export function fmtDate(iso: string | null | undefined): string {
 		month: "short",
 		year: "numeric",
 	});
+}
+
+// --- Claim journey (stepper) -------------------------------------------------
+
+export const CLAIM_STAGES = ["Submitted", "Manager", "Finance", "Paid"] as const;
+export type StageState = "done" | "current" | "upcoming";
+
+/** Per-stage state for the 4-step claim journey, given the claim status. */
+export function stageStates(status: ClaimStatus): StageState[] {
+	switch (status) {
+		case "draft":
+			return ["current", "upcoming", "upcoming", "upcoming"];
+		case "submitted":
+			return ["done", "current", "upcoming", "upcoming"];
+		case "manager_approved":
+			return ["done", "done", "current", "upcoming"];
+		case "finance_approved":
+			return ["done", "done", "done", "current"];
+		case "reimbursed":
+			return ["done", "done", "done", "done"];
+		case "rejected":
+			return ["done", "done", "upcoming", "upcoming"];
+		default: // cancelled
+			return ["upcoming", "upcoming", "upcoming", "upcoming"];
+	}
+}
+
+/** Short human note about where a claim is in the flow. */
+export function stageNote(status: ClaimStatus): string {
+	switch (status) {
+		case "draft":
+			return "Draft · not submitted";
+		case "submitted":
+			return "Awaiting manager review";
+		case "manager_approved":
+			return "With finance";
+		case "finance_approved":
+			return "Approved · paid soon";
+		case "reimbursed":
+			return "Paid";
+		case "rejected":
+			return "Rejected";
+		default:
+			return "Cancelled";
+	}
+}
+
+/** Claims still moving through the flow (shown in "In progress"). */
+export function isInFlight(status: ClaimStatus): boolean {
+	return (
+		status === "draft" ||
+		status === "submitted" ||
+		status === "manager_approved" ||
+		status === "finance_approved"
+	);
+}
+
+// --- Category explainer copy (feature cards) ---------------------------------
+
+const CAT_COPY: { match: RegExp; copy: string }[] = [
+	{
+		match: /medic|health|clinic|dental/i,
+		copy: "Clinic visits, prescriptions and dental. Receipt required — usually paid within a week.",
+	},
+	{
+		match: /travel|trip|transport|mileage|flight|taxi/i,
+		copy: "Flights, taxis, mileage and accommodation for work trips. Itemised receipts speed approval.",
+	},
+	{
+		match: /equip|asset|device|laptop|hardware|tool/i,
+		copy: "Monitors, peripherals and tools for your role. Larger items may need pre-approval.",
+	},
+	{
+		match: /train|course|educat|cert|learn|book/i,
+		copy: "Courses, books and certifications that grow your skills.",
+	},
+	{ match: /meal|food|entertain|dining/i, copy: "Client and team meals on approved occasions." },
+];
+
+export function categoryCopy(codeOrName: string, requiresAttachment: boolean): string {
+	for (const r of CAT_COPY) if (r.match.test(codeOrName)) return r.copy;
+	return requiresAttachment
+		? "Describe the expense and attach a receipt."
+		: "Describe the expense — no receipt needed.";
 }

@@ -19,7 +19,8 @@ describe("ClaimCategoryGrid", () => {
 		);
 		const medical = screen.getByRole("link", { name: /Medical/ });
 		expect(medical).toHaveAttribute("href", "/claims/submit?category=c1");
-		expect(screen.getByText("Receipt required")).toBeInTheDocument();
-		expect(screen.getByText("No receipt needed")).toBeInTheDocument();
+		// explainer copy on the feature card
+		expect(screen.getByText(/Clinic visits/i)).toBeInTheDocument();
+		expect(screen.getAllByText("Start").length).toBeGreaterThan(0);
 	});
 });

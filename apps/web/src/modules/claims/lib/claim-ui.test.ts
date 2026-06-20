@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ClaimRequest } from "../api";
-import { bucketOf, summarise } from "./claim-ui";
+import { bucketOf, stageStates, summarise } from "./claim-ui";
 
 function claim(over: Partial<ClaimRequest>): ClaimRequest {
 	return {
@@ -47,5 +47,11 @@ describe("claim-ui", () => {
 		expect(stats.pending.amount).toBe(150);
 		expect(stats.paid.amount).toBe(200);
 		expect(stats.rejected.count).toBe(1);
+	});
+
+	it("maps claim status to the 4-stage journey", () => {
+		expect(stageStates("submitted")).toEqual(["done", "current", "upcoming", "upcoming"]);
+		expect(stageStates("finance_approved")).toEqual(["done", "done", "done", "current"]);
+		expect(stageStates("reimbursed")).toEqual(["done", "done", "done", "done"]);
 	});
 });

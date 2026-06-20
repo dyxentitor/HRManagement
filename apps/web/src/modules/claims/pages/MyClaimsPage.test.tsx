@@ -74,18 +74,19 @@ beforeEach(() => {
 });
 
 describe("MyClaimsPage", () => {
-	it("renders the hero, summary cards, categories and recent claims", async () => {
+	it("renders the hero, status tiles, in-progress cards and categories", async () => {
 		mocks.listMine.mockResolvedValue(claims);
 		renderPage();
-		await waitFor(() => expect(screen.getByText("My Claims")).toBeInTheDocument());
-		// summary buckets
-		expect(screen.getByText(/Pending ·/)).toBeInTheDocument();
-		expect(screen.getByText(/Paid ·/)).toBeInTheDocument();
-		// category quick-launch + how it works
-		expect(screen.getByText(/pick a category/i)).toBeInTheDocument();
-		expect(screen.getByText(/How claims work/i)).toBeInTheDocument();
-		// a recent claim row
-		expect(screen.getByText(/Grab/)).toBeInTheDocument();
+		// editorial hero
+		await waitFor(() => expect(screen.getByText(/to be reimbursed/i)).toBeInTheDocument());
+		// status tiles
+		expect(screen.getByText("Pending")).toBeInTheDocument();
+		expect(screen.getByText("Approved")).toBeInTheDocument();
+		// in-progress shows the in-flight (submitted) claim by default, not the reimbursed one
+		expect(screen.getByText(/Clinic A/)).toBeInTheDocument();
+		expect(screen.queryByText(/Grab/)).not.toBeInTheDocument();
+		// category feature cards
+		expect(screen.getByText(/Start a new claim/i)).toBeInTheDocument();
 	});
 
 	it("shows a guidance hero + Submit CTA when there are no claims", async () => {
