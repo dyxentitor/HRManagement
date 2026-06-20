@@ -48,7 +48,7 @@ export function LeaveActivityTimeline({ requests }: { requests: LeaveRequest[] }
 				.map(eventFor)
 				.filter((e): e is Event => e !== null)
 				.sort((a, b) => b.ts.localeCompare(a.ts))
-				.slice(0, 6),
+				.slice(0, 12),
 		[requests],
 	);
 
@@ -58,7 +58,7 @@ export function LeaveActivityTimeline({ requests }: { requests: LeaveRequest[] }
 			{events.length === 0 ? (
 				<p className="text-small text-text-tertiary">No activity yet.</p>
 			) : (
-				<ol className="relative pl-5">
+				<ol className="relative pl-5 max-h-56 overflow-y-auto pr-1">
 					<span
 						className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-border-subtle"
 						aria-hidden

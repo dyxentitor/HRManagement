@@ -116,7 +116,10 @@ export default function MyLeavePage() {
 			<LeaveBalanceTiles balances={balances} onSelect={setSelectedBalance} />
 
 			<div className="grid lg:grid-cols-[1.55fr_1fr] gap-6 items-start">
-				<InProgressLeave requests={requests} onSelect={setSelected} />
+				<div className="space-y-6">
+					<InProgressLeave requests={requests} onSelect={setSelected} />
+					<LeaveTypeCards types={types} balances={balances} />
+				</div>
 				<div className="space-y-5">
 					<section>
 						<p className="layer-eyebrow mb-3">This month</p>
@@ -127,8 +130,6 @@ export default function MyLeavePage() {
 					<LeaveActivityTimeline requests={requests} />
 				</div>
 			</div>
-
-			<LeaveTypeCards types={types} balances={balances} />
 
 			{/* Request detail drawer */}
 			<DetailPanel
