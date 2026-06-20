@@ -6,6 +6,9 @@ const AdminRoleDetailPage = lazy(() => import("./pages/AdminRoleDetailPage"));
 const AdminModulesPage = lazy(() => import("./pages/AdminModulesPage"));
 const AdminTeamsPage = lazy(() => import("./pages/AdminTeamsPage"));
 const AdminLeaveTypesPage = lazy(() => import("./pages/AdminLeaveTypesPage"));
+const AdminAnnouncementsPage = lazy(
+	() => import("./pages/AdminAnnouncementsPage"),
+);
 
 const SettingsShell = lazy(() => import("./settings/SettingsShell"));
 const SettingsOverviewPage = lazy(
@@ -68,6 +71,7 @@ export const adminRoutes: RouteObject[] = [
 			{ path: "roles", element: <AdminRolesPage /> },
 			{ path: "roles/:code", element: <AdminRoleDetailPage /> },
 			{ path: "leave-types", element: <AdminLeaveTypesPage /> },
+			{ path: "announcements", element: <AdminAnnouncementsPage /> },
 		],
 	},
 ];

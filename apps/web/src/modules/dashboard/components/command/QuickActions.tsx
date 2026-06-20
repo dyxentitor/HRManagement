@@ -24,7 +24,7 @@ const ACTIONS: Action[] = [
 	{ label: "Approvals inbox", to: "/approvals", icon: Inbox, perm: "approvals:inbox:read" },
 	{ label: "Run payroll", to: "/payroll/admin", icon: Wallet, perm: "payroll:run:create" },
 	{ label: "Generate report", to: "/reports", icon: FileSpreadsheet, perm: "report:list" },
-	{ label: "Announcements", to: "/admin/settings", icon: Megaphone, perm: "announcement:write" },
+	{ label: "Announcements", to: "/admin/settings/announcements", icon: Megaphone, perm: "announcement:write" },
 	{ label: "Apply for leave", to: "/leave/me", icon: CalendarPlus, perm: "leave:request:create:self" },
 	{ label: "Submit a claim", to: "/claims/me", icon: Receipt, perm: "claim:create:self" },
 	{ label: "My profile", to: "/me/profile", icon: UserCircle, perm: "" },
