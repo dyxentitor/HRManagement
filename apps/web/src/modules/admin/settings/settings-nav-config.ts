@@ -6,6 +6,7 @@ import {
 	LayoutGrid,
 	Link2,
 	Megaphone,
+	ScrollText,
 	Palmtree,
 	Settings2,
 	Users,
@@ -88,5 +89,11 @@ export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
 		label: "Announcements",
 		icon: Megaphone,
 		perm: "announcement:write",
+	},
+	{
+		to: "/admin/settings/audit",
+		label: "Audit Log",
+		icon: ScrollText,
+		perm: "audit:read:org",
 	},
 ];

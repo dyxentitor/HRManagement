@@ -9,6 +9,7 @@ const AdminLeaveTypesPage = lazy(() => import("./pages/AdminLeaveTypesPage"));
 const AdminAnnouncementsPage = lazy(
 	() => import("./pages/AdminAnnouncementsPage"),
 );
+const AdminAuditLogPage = lazy(() => import("./pages/AdminAuditLogPage"));
 
 const SettingsShell = lazy(() => import("./settings/SettingsShell"));
 const SettingsOverviewPage = lazy(
@@ -72,6 +73,7 @@ export const adminRoutes: RouteObject[] = [
 			{ path: "roles/:code", element: <AdminRoleDetailPage /> },
 			{ path: "leave-types", element: <AdminLeaveTypesPage /> },
 			{ path: "announcements", element: <AdminAnnouncementsPage /> },
+			{ path: "audit", element: <AdminAuditLogPage /> },
 		],
 	},
 ];
