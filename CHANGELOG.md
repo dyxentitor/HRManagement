@@ -2,6 +2,33 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.12.1] — 2026-06-20
+
+Announcements management UI — the missing admin/HR surface for the dashboard's
+featured/announcement cards (the v1.12.0 backend CRUD had no page).
+
+### Added
+
+- **Admin page** `/admin/settings/announcements` (gated on `announcement:write`,
+  i.e. org_admin + hr_manager) under the Settings shell: list (DataTable) +
+  create / edit / delete + a **Pin** toggle. The first pinned announcement is what
+  surfaces as the hero "★ Featured" card. Form fields: title, body, category
+  (policy/event/maintenance/holiday/general), pinned, optional expiry.
+  `modules/admin/announcements-api.ts` wraps the generated client with RFC 7807
+  error extraction.
+- Settings sub-nav entry "Announcements"; the dashboard "Announcements" quick
+  action now links here (was a `/admin/settings` placeholder).
+
+### Tests
+
+- Frontend: **343 passed** (+3 — list/create/permission-gate for the new page).
+- Backend unchanged (771).
+
+### Notes
+
+- Frontend-only; no backend, migration, or permission changes (reuses the
+  v1.12.0 `/api/v1/announcements/` CRUD + `announcement:write`).
+
 ## [1.12.0] — 2026-06-20
 
 Dashboard **command-center redesign** — a ground-up rebuild of the dashboard into
