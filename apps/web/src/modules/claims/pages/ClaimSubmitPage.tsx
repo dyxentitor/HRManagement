@@ -1,26 +1,40 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
-
+import { PageHeader } from "@/components/shell/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { employeeApi } from "@/modules/employee/api";
+
 import { type ClaimCategory, claimsApi } from "../api";
+import { ClaimStepper } from "../components/ClaimStepper";
+import { ReceiptDropzone } from "../components/ReceiptDropzone";
+import { TONE_CHIP, categoryCopy, categoryMeta, fmtDate, fmtMoney, num } from "../lib/claim-ui";
 
 export default function ClaimSubmitPage() {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const presetCategory = searchParams.get("category");
-	const [noEmployee, setNoEmployee] = useState<boolean>(false);
+	const [noEmployee, setNoEmployee] = useState(false);
 	const [categories, setCategories] = useState<ClaimCategory[]>([]);
-	const [category, setCategory] = useState<string>("");
-	const [amount, setAmount] = useState<string>("");
-	const [expenseDate, setExpenseDate] = useState<string>("");
-	const [merchant, setMerchant] = useState<string>("");
-	const [description, setDescription] = useState<string>("");
+	const [category, setCategory] = useState("");
+	const [amount, setAmount] = useState("");
+	const [expenseDate, setExpenseDate] = useState("");
+	const [merchant, setMerchant] = useState("");
+	const [description, setDescription] = useState("");
 	const [files, setFiles] = useState<File[]>([]);
-	const [submitting, setSubmitting] = useState<boolean>(false);
+	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		employeeApi.getMe().then((emp) => {
@@ -32,8 +46,6 @@ export default function ClaimSubmitPage() {
 				.listCategories()
 				.then((cats) => {
 					setCategories(cats);
-					// Preselect the category passed from the My Claims category cards
-					// (one-click launch), if it's a real category id.
 					if (presetCategory && cats.some((c) => c.id === presetCategory)) {
 						setCategory(presetCategory);
 					}
@@ -44,10 +56,8 @@ export default function ClaimSubmitPage() {
 
 	const selectedCat = categories.find((c) => c.id === category);
 	const requiresAttachment = selectedCat?.requires_attachment ?? false;
-
-	function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-		if (e.target.files) setFiles(Array.from(e.target.files));
-	}
+	const currency = selectedCat?.currency_code || "MYR";
+	const meta = selectedCat ? categoryMeta(`${selectedCat.code} ${selectedCat.name}`) : null;
 
 	async function uploadFile(claimId: string, f: File): Promise<void> {
 		const presigned = await claimsApi.presignedUpload(
@@ -74,16 +84,14 @@ export default function ClaimSubmitPage() {
 		setError(null);
 		setSubmitting(true);
 		try {
-			const cat = categories.find((c) => c.id === category);
 			const created = await claimsApi.create({
 				category,
 				amount,
-				currency_code: cat?.currency_code || "MYR",
+				currency_code: currency,
 				expense_date: expenseDate,
 				description,
 				merchant: merchant || undefined,
 			});
-			// Upload attachments (if any) before submit so they're attached when approver looks
 			for (const f of files) {
 				await uploadFile(created.id, f);
 			}
@@ -97,133 +105,182 @@ export default function ClaimSubmitPage() {
 	}
 
 	const canSubmit =
-		!!category &&
-		!!amount &&
-		!!expenseDate &&
+		category !== "" &&
+		amount !== "" &&
+		expenseDate !== "" &&
 		(!requiresAttachment || files.length > 0) &&
 		!submitting;
 
 	if (noEmployee) {
 		return (
-			<div className="space-y-4 max-w-xl">
-				<h1 className="text-2xl font-bold">Submit a Claim</h1>
+			<div className="max-w-xl space-y-4">
+				<PageHeader title="Submit a claim" />
 				<NotLinkedEmptyState scope="claims" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-4 max-w-xl">
-			<h1 className="text-2xl font-bold">Submit a Claim</h1>
-			<form onSubmit={onSubmit} className="space-y-3">
-				<Field label="Category" required>
-					<select
-						value={category}
-						onChange={(e) => setCategory(e.target.value)}
-						required
-						className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-						aria-label="Category"
-					>
-						<option value="">Select…</option>
-						{categories.map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name} {c.requires_attachment ? "(attachment required)" : ""}
-							</option>
-						))}
-					</select>
-				</Field>
+		<form onSubmit={onSubmit} className="space-y-5">
+			<PageHeader
+				title="Submit a claim"
+				subtitle="Fill it in once — we'll show where it goes and what's needed."
+			/>
 
-				<div className="grid grid-cols-2 gap-3">
-					<Field label="Amount (MYR)" required>
-						<input
-							type="number"
-							step="0.01"
-							min="0"
-							value={amount}
-							onChange={(e) => setAmount(e.target.value)}
-							required
-							className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
+			<div className="grid lg:grid-cols-[1.55fr_1fr] gap-5 items-start">
+				{/* Form */}
+				<div className="glass-surface rounded-2xl p-5 space-y-4">
+					<div>
+						<span className="text-label uppercase text-text-tertiary block mb-1.5">Category</span>
+						<Select value={category} onValueChange={setCategory}>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select a category…" />
+							</SelectTrigger>
+							<SelectContent>
+								{categories.map((c) => (
+									<SelectItem key={c.id} value={c.id}>
+										{c.name}
+										{c.requires_attachment ? " · receipt required" : ""}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						{selectedCat && (
+							<p className="text-small text-text-tertiary mt-1.5">
+								{categoryCopy(`${selectedCat.code} ${selectedCat.name}`, requiresAttachment)}
+							</p>
+						)}
+					</div>
+
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<span className="text-label uppercase text-text-tertiary block mb-1.5">Amount</span>
+							<div className="flex items-center bg-canvas border border-border-subtle rounded-lg overflow-hidden focus-within:border-accent-500">
+								<span className="px-3 py-2 text-text-tertiary bg-surface-hover border-r border-border-subtle">
+									{currency}
+								</span>
+								<input
+									type="number"
+									step="0.01"
+									min="0"
+									value={amount}
+									onChange={(e) => setAmount(e.target.value)}
+									required
+									placeholder="0.00"
+									aria-label="Amount"
+									className="flex-1 bg-transparent px-3 py-2 text-text-primary tabular-nums placeholder:text-text-tertiary focus:outline-none"
+								/>
+							</div>
+						</div>
+						<div>
+							<span className="text-label uppercase text-text-tertiary block mb-1.5">
+								Expense date
+							</span>
+							<Input
+								type="date"
+								value={expenseDate}
+								onChange={(e) => setExpenseDate(e.target.value)}
+								required
+								aria-label="Expense date"
+							/>
+						</div>
+					</div>
+
+					<div>
+						<span className="text-label uppercase text-text-tertiary block mb-1.5">
+							Merchant{" "}
+							<span className="normal-case tracking-normal text-text-tertiary">· optional</span>
+						</span>
+						<Input
+							value={merchant}
+							onChange={(e) => setMerchant(e.target.value)}
+							placeholder="e.g. Klinik Mediviron"
 						/>
-					</Field>
-					<Field label="Expense date" required>
-						<input
-							type="date"
-							value={expenseDate}
-							onChange={(e) => setExpenseDate(e.target.value)}
-							required
-							className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
+					</div>
+
+					<div>
+						<span className="text-label uppercase text-text-tertiary block mb-1.5">
+							Description{" "}
+							<span className="normal-case tracking-normal text-text-tertiary">· optional</span>
+						</span>
+						<Textarea
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+							rows={2}
+							placeholder="What was it for…"
 						/>
-					</Field>
+					</div>
+
+					<div>
+						<span
+							className={cn(
+								"text-label uppercase block mb-1.5",
+								requiresAttachment ? "text-coral" : "text-text-tertiary",
+							)}
+						>
+							Receipts {requiresAttachment ? "· required" : "· optional"}
+						</span>
+						<ReceiptDropzone files={files} onChange={setFiles} required={requiresAttachment} />
+					</div>
 				</div>
 
-				<Field label="Merchant">
-					<input
-						type="text"
-						value={merchant}
-						onChange={(e) => setMerchant(e.target.value)}
-						className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-					/>
-				</Field>
-
-				<Field label="Description">
-					<textarea
-						value={description}
-						onChange={(e) => setDescription(e.target.value)}
-						rows={3}
-						className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-					/>
-				</Field>
-
-				<Field
-					label={`Receipts ${requiresAttachment ? "(required)" : "(optional)"}`}
-				>
-					<input
-						ref={fileInputRef}
-						type="file"
-						multiple
-						onChange={handleFileChange}
-						className="block text-sm"
-					/>
-					{files.length > 0 && (
-						<ul className="mt-2 text-xs text-text-secondary">
-							{files.map((f) => (
-								<li key={f.name}>
-									{f.name} ({(f.size / 1024).toFixed(1)} KB)
-								</li>
-							))}
-						</ul>
-					)}
-				</Field>
-
-				{error && (
-					<p role="alert" className="text-coral text-sm">
-						{error}
+				{/* Live summary */}
+				<div className="glass-surface rounded-2xl p-5">
+					<span className="layer-eyebrow">Claim summary</span>
+					<p className="text-h1 font-extralight tracking-tight mt-2 tabular-nums">
+						{amount ? fmtMoney(num(amount), currency) : `${currency} 0`}
 					</p>
-				)}
 
-				<button
-					type="submit"
-					disabled={!canSubmit}
-					className="bg-accent-500 text-white py-2 px-4 rounded disabled:opacity-50 hover:bg-accent-600"
-				>
-					{submitting ? "Submitting…" : "Submit claim"}
-				</button>
-			</form>
-		</div>
-	);
-}
+					<div className="flex items-center gap-2.5 mt-3">
+						<span
+							className={cn(
+								"size-8 rounded-lg grid place-items-center",
+								meta ? TONE_CHIP[meta.tone] : "bg-surface-hover text-text-tertiary",
+							)}
+							aria-hidden
+						>
+							{meta ? <meta.icon className="size-4" /> : "—"}
+						</span>
+						<div className="min-w-0">
+							<p className="text-small text-text-primary truncate">
+								{selectedCat?.name ?? "Pick a category"}
+							</p>
+							<p className="text-[11px] text-text-tertiary truncate">
+								{[merchant, expenseDate ? fmtDate(expenseDate) : null]
+									.filter(Boolean)
+									.join(" · ") || "—"}
+							</p>
+						</div>
+					</div>
 
-function Field({
-	label,
-	required,
-	children,
-}: { label: string; required?: boolean; children: React.ReactNode }) {
-	return (
-		<label className="block">
-			<span className="block text-sm text-text-secondary mb-1">
-				{label} {required && <span className="text-coral">*</span>}
-			</span>
-			{children}
-		</label>
+					<div className="flex justify-between text-small border-t border-border-subtle mt-3 pt-3">
+						<span className="text-text-tertiary">Receipts</span>
+						{files.length > 0 ? (
+							<span className="text-mint">{files.length} attached ✓</span>
+						) : requiresAttachment ? (
+							<span className="text-coral">Required</span>
+						) : (
+							<span className="text-text-tertiary">None</span>
+						)}
+					</div>
+
+					<p className="layer-eyebrow mt-5 mb-2">Where it goes</p>
+					<ClaimStepper status="draft" />
+					<p className="text-small text-text-tertiary mt-3">
+						Typical turnaround is 3–7 working days.
+					</p>
+
+					{error && (
+						<p role="alert" className="text-coral text-small mt-3">
+							{error}
+						</p>
+					)}
+
+					<Button type="submit" disabled={!canSubmit} className="w-full mt-4 soft-glow rounded-xl">
+						{submitting ? "Submitting…" : "Submit claim"}
+					</Button>
+				</div>
+			</div>
+		</form>
 	);
 }
