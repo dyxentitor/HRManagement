@@ -1,22 +1,51 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
-
+import { PageHeader } from "@/components/shell/PageHeader";
+import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { employeeApi } from "@/modules/employee/api";
-import { type LeaveType, leaveApi } from "../api";
+
+import {
+	type Coverage,
+	type Holiday,
+	type LeaveBalance,
+	type LeaveType,
+	leaveApi,
+} from "../api";
+import { LeaveRangeCalendar } from "../components/LeaveRangeCalendar";
+import { formatRange } from "../lib/leave-dates";
+
+function diffInDays(start: string, end: string): number {
+	if (!start || !end) return 0;
+	const a = new Date(`${start}T00:00:00Z`);
+	const b = new Date(`${end}T00:00:00Z`);
+	return Math.max(0, (b.getTime() - a.getTime()) / 86_400_000 + 1);
+}
 
 export default function LeaveApplyPage() {
 	const navigate = useNavigate();
-	const [noEmployee, setNoEmployee] = useState<boolean>(false);
+	const [noEmployee, setNoEmployee] = useState(false);
 	const [types, setTypes] = useState<LeaveType[]>([]);
-	const [leaveType, setLeaveType] = useState<string>("");
-	const [startDate, setStartDate] = useState<string>("");
-	const [endDate, setEndDate] = useState<string>("");
-	const [isHalfDay, setIsHalfDay] = useState<boolean>(false);
-	const [halfDayPeriod, setHalfDayPeriod] = useState<string>("am");
-	const [reason, setReason] = useState<string>("");
-	const [submitting, setSubmitting] = useState<boolean>(false);
+	const [balances, setBalances] = useState<LeaveBalance[]>([]);
+	const [holidays, setHolidays] = useState<Holiday[]>([]);
+	const [coverage, setCoverage] = useState<Coverage | null>(null);
+
+	const [leaveType, setLeaveType] = useState("");
+	const [range, setRange] = useState({ start: "", end: "" });
+	const [isHalfDay, setIsHalfDay] = useState(false);
+	const [halfDayPeriod, setHalfDayPeriod] = useState("am");
+	const [reason, setReason] = useState("");
+	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -25,22 +54,36 @@ export default function LeaveApplyPage() {
 				setNoEmployee(true);
 				return;
 			}
+			leaveApi.listTypes().then(setTypes).catch(() => setError("Failed to load leave types"));
+			leaveApi.myBalances().then(setBalances).catch(() => undefined);
 			leaveApi
-				.listTypes()
-				.then(setTypes)
-				.catch(() => setError("Failed to load leave types"));
+				.holidays(new Date().getFullYear())
+				.then(setHolidays)
+				.catch(() => setHolidays([]));
 		});
 	}, []);
 
-	function diffInDays(start: string, end: string): number {
-		if (!start || !end) return 0;
-		const a = new Date(start);
-		const b = new Date(end);
-		const diff = (b.getTime() - a.getTime()) / 86_400_000 + 1;
-		return Math.max(0, diff);
-	}
+	// Coverage for the chosen range (clash awareness).
+	useEffect(() => {
+		if (!range.start || !range.end) {
+			setCoverage(null);
+			return;
+		}
+		leaveApi
+			.coverage(range.start, range.end)
+			.then(setCoverage)
+			.catch(() => setCoverage(null));
+	}, [range.start, range.end]);
 
-	const totalDays = isHalfDay ? 0.5 : diffInDays(startDate, endDate);
+	const totalDays = isHalfDay ? 0.5 : diffInDays(range.start, range.end);
+
+	const selectedBalance = useMemo(() => {
+		const t = types.find((x) => x.id === leaveType);
+		return t ? balances.find((b) => b.leave_type_code === t.code) : undefined;
+	}, [types, balances, leaveType]);
+
+	const available = Number(selectedBalance?.available ?? 0);
+	const after = available - totalDays;
 
 	async function onSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -49,14 +92,13 @@ export default function LeaveApplyPage() {
 		try {
 			const created = await leaveApi.apply({
 				leave_type: leaveType,
-				start_date: startDate,
-				end_date: endDate,
+				start_date: range.start,
+				end_date: range.end,
 				total_days: String(totalDays),
 				is_half_day: isHalfDay,
 				half_day_period: isHalfDay ? halfDayPeriod : "",
 				reason,
 			});
-			// Auto-submit immediately. (Future: separate save-as-draft and submit.)
 			await leaveApi.submit(created.id);
 			navigate("/leave/me");
 		} catch (err) {
@@ -69,176 +111,143 @@ export default function LeaveApplyPage() {
 	if (noEmployee) {
 		return (
 			<div className="max-w-xl space-y-4">
-				<h1 className="text-2xl font-bold">Apply for Leave</h1>
+				<PageHeader title="Apply for leave" />
 				<NotLinkedEmptyState scope="leave" />
 			</div>
 		);
 	}
 
-	return (
-		<div className="max-w-xl space-y-4">
-			<h1 className="text-2xl font-bold">Apply for Leave</h1>
-			<form onSubmit={onSubmit} className="space-y-3">
-				<Field label="Leave type" required>
-					<select
-						value={leaveType}
-						onChange={(e) => setLeaveType(e.target.value)}
-						required
-						className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-						aria-label="Leave type"
-					>
-						<option value="">Select…</option>
-						{types.map((t) => (
-							<option key={t.id} value={t.id}>
-								{t.name} ({t.code})
-							</option>
-						))}
-					</select>
-				</Field>
+	const canSubmit =
+		!submitting && leaveType !== "" && range.start !== "" && range.end !== "" && totalDays > 0;
 
-				<div>
-					<span className="block text-sm text-text-secondary mb-1">
-						Duration
-					</span>
-					<div className="flex gap-4 text-sm">
-						<label className="flex items-center gap-2">
-							<input
-								type="radio"
-								name="duration"
-								aria-label="Full day"
-								checked={!isHalfDay}
-								onChange={() => setIsHalfDay(false)}
-							/>
-							Full day
-						</label>
-						<label className="flex items-center gap-2">
-							<input
-								type="radio"
-								name="duration"
-								aria-label="Half day"
-								checked={isHalfDay}
-								onChange={() => {
-									setIsHalfDay(true);
-									setEndDate(startDate);
-								}}
-							/>
-							Half day
-						</label>
+	return (
+		<form onSubmit={onSubmit} className="space-y-4">
+			<PageHeader title="Apply for leave" subtitle="Pick a type and your dates — we'll show the impact." />
+
+			<div className="flex flex-wrap items-end gap-4">
+				<div className="min-w-[240px]">
+					<span className="text-label text-text-tertiary block mb-1">Leave type</span>
+					<Select value={leaveType} onValueChange={setLeaveType}>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Select a type…" />
+						</SelectTrigger>
+						<SelectContent>
+							{types.map((t) => {
+								const bal = balances.find((b) => b.leave_type_code === t.code);
+								return (
+									<SelectItem key={t.id} value={t.id}>
+										{t.name}
+										{bal ? ` · ${Number(bal.available)} left` : ""}
+									</SelectItem>
+								);
+							})}
+						</SelectContent>
+					</Select>
+				</div>
+				<label className="flex items-center gap-2.5 cursor-pointer pb-2">
+					<Switch
+						checked={isHalfDay}
+						onCheckedChange={(v) => {
+							setIsHalfDay(v);
+							if (v && range.start) setRange({ start: range.start, end: range.start });
+						}}
+					/>
+					<span className="text-small text-text-secondary">Half day</span>
+					{isHalfDay && (
+						<Select value={halfDayPeriod} onValueChange={setHalfDayPeriod}>
+							<SelectTrigger className="h-8 w-24">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="am">Morning</SelectItem>
+								<SelectItem value="pm">Afternoon</SelectItem>
+							</SelectContent>
+						</Select>
+					)}
+				</label>
+			</div>
+
+			<div className="grid lg:grid-cols-[1.7fr_1fr] gap-4 items-start">
+				<div className="bg-surface-hover border border-border-subtle rounded-xl p-4">
+					<LeaveRangeCalendar
+						value={range}
+						onChange={(v) => setRange(isHalfDay ? { start: v.start, end: v.start } : v)}
+						holidays={holidays}
+						coverage={coverage?.per_day}
+					/>
+					<div className="mt-4">
+						<span className="text-label text-text-tertiary block mb-1">Reason</span>
+						<Textarea
+							value={reason}
+							onChange={(e) => setReason(e.target.value)}
+							rows={2}
+							placeholder="What's it for…"
+						/>
 					</div>
 				</div>
 
-				{isHalfDay ? (
-					<>
-						<Field label="Date" required>
-							<input
-								type="date"
-								aria-label="Date"
-								value={startDate}
-								onChange={(e) => {
-									setStartDate(e.target.value);
-									setEndDate(e.target.value);
-								}}
-								required
-								className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-							/>
-						</Field>
-						<div>
-							<span className="block text-sm text-text-secondary mb-1">
-								Period <span className="text-coral">*</span>
-							</span>
-							<div className="flex gap-4 text-sm">
-								<label className="flex items-center gap-2">
-									<input
-										type="radio"
-										name="period"
-										aria-label="Morning (AM)"
-										checked={halfDayPeriod === "am"}
-										onChange={() => setHalfDayPeriod("am")}
-									/>
-									Morning (AM)
-								</label>
-								<label className="flex items-center gap-2">
-									<input
-										type="radio"
-										name="period"
-										aria-label="Afternoon (PM)"
-										checked={halfDayPeriod === "pm"}
-										onChange={() => setHalfDayPeriod("pm")}
-									/>
-									Afternoon (PM)
-								</label>
+				<div className="space-y-3">
+					<div className="glass-surface rounded-xl p-4">
+						<span className="text-label text-text-tertiary block mb-2">Request summary</span>
+						<p className="text-h1 text-text-primary leading-none">
+							{totalDays} <span className="text-h3 text-text-tertiary">days</span>
+						</p>
+						<p className="text-small text-text-tertiary mt-1">
+							{range.start ? formatRange(range.start, range.end) : "Pick your dates"}
+						</p>
+						<div className="mt-3 space-y-1.5 text-small">
+							<div className="flex justify-between border-t border-border-subtle pt-1.5">
+								<span className="text-text-tertiary">Available</span>
+								<span className="tabular-nums">{available} d</span>
+							</div>
+							<div className="flex justify-between border-t border-border-subtle pt-1.5">
+								<span className="text-text-tertiary">This request</span>
+								<span className="tabular-nums text-coral">−{totalDays} d</span>
+							</div>
+							<div className="flex justify-between border-t border-border-subtle pt-1.5">
+								<span className="text-text-tertiary">Balance after</span>
+								<span className={`tabular-nums ${after < 0 ? "text-coral" : "text-mint"}`}>
+									{after} d
+								</span>
+							</div>
+							<div className="flex justify-between border-t border-border-subtle pt-1.5">
+								<span className="text-text-tertiary">Approver</span>
+								<span>Your manager</span>
 							</div>
 						</div>
-					</>
-				) : (
-					<div className="grid grid-cols-2 gap-3">
-						<Field label="Start date" required>
-							<input
-								type="date"
-								aria-label="Start date"
-								value={startDate}
-								onChange={(e) => setStartDate(e.target.value)}
-								required
-								className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-							/>
-						</Field>
-						<Field label="End date" required>
-							<input
-								type="date"
-								aria-label="End date"
-								value={endDate}
-								onChange={(e) => setEndDate(e.target.value)}
-								required
-								className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-							/>
-						</Field>
+						{error && (
+							<p role="alert" className="text-coral text-small mt-3">
+								{error}
+							</p>
+						)}
+						<Button type="submit" disabled={!canSubmit} className="w-full mt-3 soft-glow">
+							{submitting ? "Submitting…" : "Submit request"}
+						</Button>
 					</div>
-				)}
 
-				<Field label="Reason">
-					<textarea
-						value={reason}
-						onChange={(e) => setReason(e.target.value)}
-						rows={3}
-						className="w-full border border-border-subtle rounded px-3 py-2 bg-canvas text-text-primary placeholder:text-text-tertiary focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 focus:outline-none"
-					/>
-				</Field>
-
-				<p className="text-sm text-text-secondary">
-					Total days: <strong>{totalDays}</strong>
-				</p>
-
-				{error && (
-					<p role="alert" className="text-coral text-sm">
-						{error}
-					</p>
-				)}
-
-				<button
-					type="submit"
-					disabled={
-						submitting || !leaveType || !startDate || !endDate || totalDays <= 0
-					}
-					className="bg-accent-500 text-white py-2 px-4 rounded disabled:opacity-50 hover:bg-accent-600"
-				>
-					{submitting ? "Submitting…" : "Apply"}
-				</button>
-			</form>
-		</div>
-	);
-}
-
-function Field({
-	label,
-	required,
-	children,
-}: { label: string; required?: boolean; children: React.ReactNode }) {
-	return (
-		<label className="block">
-			<span className="block text-sm text-text-secondary mb-1">
-				{label} {required && <span className="text-coral">*</span>}
-			</span>
-			{children}
-		</label>
+					{coverage && coverage.per_day && Object.keys(coverage.per_day).length > 0 && (
+						<div className="bg-surface-hover border border-border-subtle rounded-xl p-4">
+							<span className="text-label text-text-tertiary block mb-2">
+								Heads up · your team that week
+							</span>
+							{coverage.people.length > 0 ? (
+								<ul className="space-y-1 text-small">
+									{coverage.people.slice(0, 4).map((p) => (
+										<li key={`${p.employee_id}-${p.start}`} className="flex justify-between">
+											<span className="text-text-secondary">{p.name}</span>
+											<span className="text-coral">off {formatRange(p.start, p.end)}</span>
+										</li>
+									))}
+								</ul>
+							) : (
+								<p className="text-small text-coral">
+									{Math.max(...Object.values(coverage.per_day))} teammate(s) off during these dates.
+								</p>
+							)}
+						</div>
+					)}
+				</div>
+			</div>
+		</form>
 	);
 }

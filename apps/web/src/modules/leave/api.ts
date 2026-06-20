@@ -58,6 +58,20 @@ export type LeaveRequest = {
 
 export type Holiday = { date: string; name: string; type: string };
 
+export type CoveragePerson = {
+	employee_id: string;
+	name: string;
+	leave_type_code: string;
+	start: string;
+	end: string;
+	status: string;
+};
+export type Coverage = {
+	team_size: number;
+	per_day: Record<string, number>;
+	people: CoveragePerson[];
+};
+
 /**
  * Pull a user-readable message out of an RFC 7807 problem detail body.
  * Backend shape (see common/exception_handler.py):
@@ -101,6 +115,11 @@ export const leaveApi = {
 		_get<{ results?: Holiday[] } | Holiday[]>(
 			`/api/v1/schedule/holidays/${year ? `?year=${year}` : ""}`,
 		).then((d) => (Array.isArray(d) ? d : d.results || [])),
+	coverage: (start: string, end: string, employeeId?: string) => {
+		const qs = new URLSearchParams({ start, end });
+		if (employeeId) qs.set("employee_id", employeeId);
+		return _get<Coverage>(`/api/v1/leave/coverage?${qs.toString()}`);
+	},
 	listMyRequests: () =>
 		_get<{ results?: LeaveRequest[] } | LeaveRequest[]>(
 			"/api/v1/leave/requests/?scope=self",
