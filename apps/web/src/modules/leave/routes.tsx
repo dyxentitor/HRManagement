@@ -3,10 +3,10 @@ import type { RouteObject } from "react-router-dom";
 
 const LeaveApplyPage = lazy(() => import("./pages/LeaveApplyPage"));
 const MyLeavePage = lazy(() => import("./pages/MyLeavePage"));
-const ApprovalsInboxPage = lazy(() => import("./pages/ApprovalsInboxPage"));
 
 export const leaveRoutes: RouteObject[] = [
 	{ path: "leave/apply", element: <LeaveApplyPage /> },
 	{ path: "leave/me", element: <MyLeavePage /> },
-	{ path: "leave/approvals", element: <ApprovalsInboxPage /> },
+	// /leave/approvals is handled by modules/approvals (redirects to the unified
+	// /approvals inbox) — leave no longer ships its own approvals page.
 ];

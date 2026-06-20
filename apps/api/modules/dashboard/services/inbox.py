@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
 from modules.claims.models import ClaimApproval, ClaimRequest
 from modules.identity.models import User
 from modules.leave.models import LeaveApproval, LeaveRequest
+
+
+def _emp_name(emp) -> str:
+    if emp is None:
+        return ""
+    return f"{emp.first_name} {emp.last_name}".strip()
 
 
 @dataclass
@@ -19,6 +25,12 @@ class InboxItem:
     summary: str  # human-readable summary
     submitted_at: datetime | None
     deep_link: str
+    # Structured fields (v1.14.1) so the unified inbox can render rich cards +
+    # team-coverage for leave without re-parsing `summary`.
+    employee_id: str = ""
+    name: str = ""
+    type_code: str = ""
+    detail: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -28,6 +40,10 @@ class InboxItem:
             "summary": self.summary,
             "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
             "deep_link": self.deep_link,
+            "employee_id": self.employee_id,
+            "name": self.name,
+            "type_code": self.type_code,
+            "detail": self.detail,
         }
 
 
@@ -61,6 +77,16 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                 ),
                 submitted_at=r.submitted_at,
                 deep_link=f"/approvals?focus={r.id}",
+                employee_id=str(r.employee_id),
+                name=_emp_name(emp) or emp_code,
+                type_code=r.leave_type.code,
+                detail={
+                    "start_date": r.start_date.isoformat(),
+                    "end_date": r.end_date.isoformat(),
+                    "total_days": str(r.total_days),
+                    "is_half_day": r.is_half_day,
+                    "reason": r.reason,
+                },
             )
         )
 
@@ -83,6 +109,14 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                 summary=f"{c.category.code} — {c.currency_code} {c.amount} ({c.expense_date})",
                 submitted_at=c.submitted_at,
                 deep_link=f"/approvals?focus={c.id}",
+                employee_id=str(c.employee_id),
+                name=_emp_name(c.employee) or c.employee.employee_code,
+                type_code=c.category.code,
+                detail={
+                    "amount": str(c.amount),
+                    "currency_code": c.currency_code,
+                    "expense_date": c.expense_date.isoformat(),
+                },
             )
         )
 
@@ -124,6 +158,10 @@ def get_inbox(*, user: User) -> list[InboxItem]:
                     summary=f"KPI {cycle_name} self-review",
                     submitted_at=self_review.submitted_at if self_review else None,
                     deep_link=f"/approvals?focus={assignment.id}",
+                    employee_id=str(assignment.employee_id),
+                    name=_emp_name(emp) or emp_code,
+                    type_code="KPI",
+                    detail={"cycle": cycle_name},
                 )
             )
     except Exception:

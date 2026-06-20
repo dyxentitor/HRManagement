@@ -1,31 +1,40 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const inbox = [
 	{
 		kind: "leave",
 		id: "lr1",
 		employee_code: "PVT-OPS-001",
-		summary: "Annual leave 14 May (1d)",
+		summary: "Annual leave",
 		submitted_at: "2026-04-28T07:00:00Z",
-		deep_link: "/leave/lr1",
+		deep_link: "/approvals?focus=lr1",
+		employee_id: "e1",
+		name: "John Tan",
+		type_code: "ANNUAL",
+		detail: { start_date: "2026-05-14", end_date: "2026-05-14", total_days: "1", reason: "Trip" },
 	},
 	{
 		kind: "claim",
 		id: "cl1",
-		employee_code: "PVT-OPS-001",
-		summary: "Reimbursement RM 350",
+		employee_code: "PVT-OPS-002",
+		summary: "Reimbursement",
 		submitted_at: "2026-04-27T10:00:00Z",
-		deep_link: "/claims/cl1",
+		deep_link: "/approvals?focus=cl1",
+		employee_id: "e2",
+		name: "Siti Yusof",
+		type_code: "TRAVEL",
+		detail: { amount: "350", currency_code: "MYR", expense_date: "2026-04-27" },
 	},
-] as const;
+];
 
 const mocks = vi.hoisted(() => ({
 	getInbox: vi.fn(),
 	approveItem: vi.fn(),
 	rejectItem: vi.fn(),
+	coverage: vi.fn(),
 }));
 
 vi.mock("../api", () => ({
@@ -33,6 +42,7 @@ vi.mock("../api", () => ({
 	approveItem: mocks.approveItem,
 	rejectItem: mocks.rejectItem,
 }));
+vi.mock("@/modules/leave/api", () => ({ leaveApi: { coverage: mocks.coverage } }));
 
 import UnifiedInboxPage from "./UnifiedInboxPage";
 
@@ -44,52 +54,45 @@ function renderPage() {
 	);
 }
 
+beforeEach(() => {
+	for (const f of Object.values(mocks)) f.mockReset();
+	mocks.coverage.mockResolvedValue({ team_size: 0, per_day: {}, people: [] });
+});
+
 describe("UnifiedInboxPage", () => {
-	it("shows All / Leave / Claims / KPI filter pills with counts", async () => {
+	it("shows filter pills with counts and a rich card per item", async () => {
 		mocks.getInbox.mockResolvedValue(inbox);
 		renderPage();
-		await waitFor(() =>
-			expect(screen.getAllByText(/PVT-OPS-001/).length).toBeGreaterThan(0),
-		);
-		expect(
-			screen.getByRole("button", { name: /All · 2/i }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: /Leave · 1/i }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: /Claims · 1/i }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: /KPI · 0/i }),
-		).toBeInTheDocument();
+		await waitFor(() => expect(screen.getByText("John Tan")).toBeInTheDocument());
+		expect(screen.getByText("Siti Yusof")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /All · 2/i })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /Leave · 1/i })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /Claims · 1/i })).toBeInTheDocument();
+		// leave card shows a coverage badge
+		expect(screen.getByText(/No coverage clash/)).toBeInTheDocument();
 	});
 
 	it("filters when a kind pill is clicked", async () => {
 		const user = userEvent.setup();
 		mocks.getInbox.mockResolvedValue(inbox);
 		renderPage();
-		await waitFor(() =>
-			expect(screen.getByText(/Annual leave/)).toBeInTheDocument(),
-		);
+		await waitFor(() => screen.getByText("John Tan"));
 		await user.click(screen.getByRole("button", { name: /Leave · 1/i }));
-		expect(screen.getByText(/Annual leave/)).toBeInTheDocument();
-		expect(screen.queryByText(/Reimbursement/)).not.toBeInTheDocument();
+		expect(screen.getByText("John Tan")).toBeInTheDocument();
+		expect(screen.queryByText("Siti Yusof")).not.toBeInTheDocument();
 	});
 
-	it("opens DetailPanel on row click", async () => {
+	it("approves inline", async () => {
 		const user = userEvent.setup();
 		mocks.getInbox.mockResolvedValue(inbox);
+		mocks.approveItem.mockResolvedValue(undefined);
 		renderPage();
-		await waitFor(() => screen.getByText(/Annual leave/));
-		await user.click(screen.getByText(/Annual leave/));
-		expect(await screen.findByRole("dialog")).toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: /approve/i }),
-		).toBeInTheDocument();
+		await waitFor(() => screen.getByText("John Tan"));
+		await user.click(screen.getAllByRole("button", { name: "Approve" })[0]);
+		await waitFor(() => expect(mocks.approveItem).toHaveBeenCalled());
 	});
 
-	it("shows empty state when filter has no matches", async () => {
+	it("shows empty state when a filter has no matches", async () => {
 		const user = userEvent.setup();
 		mocks.getInbox.mockResolvedValue(inbox);
 		renderPage();

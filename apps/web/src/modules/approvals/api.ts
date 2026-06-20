@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export type InboxItem = {
 	kind: "leave" | "claim" | "kpi";
@@ -7,6 +7,11 @@ export type InboxItem = {
 	summary: string;
 	submitted_at: string | null;
 	deep_link: string;
+	// structured fields (v1.14.1) for rich cards + leave coverage
+	employee_id: string;
+	name: string;
+	type_code: string;
+	detail: Record<string, unknown>;
 };
 
 async function authFetch(
