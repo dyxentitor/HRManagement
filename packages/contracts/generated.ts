@@ -3025,8 +3025,6 @@ export interface components {
          */
         CertificationStatusEnum: "active" | "expired" | "revoked";
         CertificationWrite: {
-            /** Format: uuid */
-            employee_id: string;
             name: string;
             issuer?: string;
             certificate_number?: string;
@@ -3036,8 +3034,6 @@ export interface components {
             expires_on?: string | null;
         };
         CertificationWriteRequest: {
-            /** Format: uuid */
-            employee_id: string;
             name: string;
             issuer?: string;
             certificate_number?: string;
@@ -3836,8 +3832,6 @@ export interface components {
             expires_at?: string | null;
         };
         PatchedCertificationWriteRequest: {
-            /** Format: uuid */
-            employee_id?: string;
             name?: string;
             issuer?: string;
             certificate_number?: string;

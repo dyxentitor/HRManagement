@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.12.1
+  version: 1.13.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -5782,9 +5782,6 @@ components:
     CertificationWrite:
       type: object
       properties:
-        employee_id:
-          type: string
-          format: uuid
         name:
           type: string
           maxLength: 200
@@ -5802,15 +5799,11 @@ components:
           format: date
           nullable: true
       required:
-      - employee_id
       - issued_on
       - name
     CertificationWriteRequest:
       type: object
       properties:
-        employee_id:
-          type: string
-          format: uuid
         name:
           type: string
           minLength: 1
@@ -5829,7 +5822,6 @@ components:
           format: date
           nullable: true
       required:
-      - employee_id
       - issued_on
       - name
     ChannelEnum:
@@ -7795,9 +7787,6 @@ components:
     PatchedCertificationWriteRequest:
       type: object
       properties:
-        employee_id:
-          type: string
-          format: uuid
         name:
           type: string
           minLength: 1

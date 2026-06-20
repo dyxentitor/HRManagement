@@ -39,10 +39,13 @@ class CertificationSerializer(serializers.ModelSerializer):
 
 
 class CertificationWriteSerializer(serializers.ModelSerializer):
+    # employee_id is NOT accepted from the client — it is derived server-side from
+    # the authenticated user's linked Employee (self-service). This fixes the
+    # "Must be a valid UUID" 400 the My Certifications page hit by sending "" and
+    # closes the hole where a cert:write:self user could file a cert for anyone.
     class Meta:
         model = Certification
         fields = (
-            "employee_id",
             "name",
             "issuer",
             "certificate_number",

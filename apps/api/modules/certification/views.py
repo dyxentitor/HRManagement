@@ -74,7 +74,20 @@ class CertificationViewSet(viewsets.ModelViewSet):
         return ["cert:write:self"]
 
     def perform_create(self, serializer):
-        serializer.save(org_id=self.request.user.org_id)
+        # Self-service: the cert belongs to the caller's own Employee record.
+        # Certification.employee_id is an Employee.id (per seed_demo_data), so we
+        # resolve User -> Employee here rather than trusting a client value.
+        emp = Employee.all_objects.filter(
+            user_id=self.request.user.id,
+            deleted_at__isnull=True,
+        ).first()
+        if emp is None:
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError(
+                {"employee_id": "No employee profile is linked to your account."}
+            )
+        serializer.save(org_id=self.request.user.org_id, employee_id=emp.id)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

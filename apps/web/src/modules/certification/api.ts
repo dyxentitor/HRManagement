@@ -88,12 +88,12 @@ export const certificationApi = {
 	},
 
 	createCertification: (payload: {
-		employee_id: string;
 		name: string;
 		issuer?: string;
 		certificate_number?: string;
 		issued_on: string;
 		expires_on?: string;
+		// employee_id is derived server-side from the signed-in user's Employee.
 	}) => _post<Certification>("/api/v1/certifications/", payload),
 
 	myAssignments: () =>

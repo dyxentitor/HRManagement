@@ -78,7 +78,6 @@ export default function MyCertificationsPage() {
 		setError(null);
 		try {
 			await certificationApi.createCertification({
-				employee_id: "",
 				name,
 				issuer,
 				certificate_number: certNumber,

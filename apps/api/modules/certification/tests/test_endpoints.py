@@ -129,13 +129,16 @@ def stack():
 
 
 @pytest.mark.django_db
-def test_create_certification(stack) -> None:
+def test_create_certification_derives_employee_from_user(stack) -> None:
+    """Self-service create: employee_id is derived from the caller's linked
+    Employee, not trusted from the client — so the My Certifications page omits it
+    (it used to send employee_id="" → 400 'Must be a valid UUID')."""
+    emp = _make_employee(org=stack["org"], user=stack["emp_user"], code="EMP1")
     c = stack["client"]
-    c.credentials(HTTP_AUTHORIZATION=f"Bearer {stack['hr_token']}")
+    c.credentials(HTTP_AUTHORIZATION=f"Bearer {stack['emp_token']}")
     resp = c.post(
         "/api/v1/certifications/",
         {
-            "employee_id": str(stack["emp_user"].id),
             "name": "AWS Solutions Architect",
             "issuer": "Amazon",
             "issued_on": "2025-01-01",
@@ -147,6 +150,22 @@ def test_create_certification(stack) -> None:
     data = resp.json()
     assert data["name"] == "AWS Solutions Architect"
     assert data["status"] == "active"
+    assert data["employee_id"] == str(emp.id)
+
+
+@pytest.mark.django_db
+def test_create_certification_no_linked_employee_400(stack) -> None:
+    """A caller with no linked Employee (e.g. an admin demo account) gets a clear 400,
+    not a server error."""
+    c = stack["client"]
+    c.credentials(HTTP_AUTHORIZATION=f"Bearer {stack['emp_token']}")
+    resp = c.post(
+        "/api/v1/certifications/",
+        {"name": "First Aid", "issued_on": "2026-01-01"},
+        format="json",
+    )
+    assert resp.status_code == 400
+    assert "employee" in resp.json()["errors"][0]["message"].lower()
 
 
 @pytest.mark.django_db
