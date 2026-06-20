@@ -42,7 +42,7 @@ describe("EntitlementCard", () => {
 		expect(screen.queryByText(/Expires/)).toBeNull();
 	});
 
-	it("shows expiry pill in orange/peach when within 30 days", () => {
+	it("shows expiry pill in the warning (yellow) tone when within 30 days", () => {
 		const today = new Date();
 		const soon = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
 		const soonIso = soon.toISOString().slice(0, 10);
@@ -57,7 +57,7 @@ describe("EntitlementCard", () => {
 		);
 		const pill = screen.getByText(/Expires/);
 		expect(pill).toBeInTheDocument();
-		expect(pill.className).toMatch(/orange/);
+		expect(pill.className).toMatch(/yellow/);
 	});
 
 	it("expands ledger panel on click", async () => {

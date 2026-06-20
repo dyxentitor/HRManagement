@@ -1,67 +1,51 @@
-import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
-import {
-	type Column,
-	DataTable,
-	DetailPanel,
-	KpiTile,
-	StatusPill,
-} from "@/components/hrms";
-import { PageHeader } from "@/components/shell/PageHeader";
+import { DetailPanel, StatusPill } from "@/components/hrms";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { type LeaveBalance, type LeaveRequest, leaveApi } from "../api";
+import { type Holiday, type LeaveBalance, type LeaveRequest, leaveApi } from "../api";
 import { EntitlementCard } from "../components/EntitlementCard";
-
-const TYPE_TONE: Record<
-	string,
-	"lavender" | "coral" | "peach" | "sky" | "mint" | "yellow"
-> = {
-	ANNUAL: "lavender",
-	SICK: "coral",
-	REPLACEMENT: "peach",
-	COMPASSIONATE: "sky",
-	MATERNITY: "mint",
-	PATERNITY: "mint",
-	UNPAID: "yellow",
-};
-
-const STATUS_TONE: Record<
-	LeaveRequest["status"],
-	"mint" | "yellow" | "coral" | "sky"
-> = {
-	approved: "mint",
-	submitted: "yellow",
-	rejected: "coral",
-	cancelled: "sky",
-	withdrawn: "sky",
-	draft: "sky",
-};
+import { LeaveCalendar } from "../components/LeaveCalendar";
+import { LeaveHero } from "../components/LeaveHero";
+import { LeaveHistory } from "../components/LeaveHistory";
+import { UpcomingTimeline } from "../components/UpcomingTimeline";
+import { formatRange } from "../lib/leave-dates";
+import { STATUS_TONE, typeTone } from "../lib/leave-ui";
 
 function halfDayLabel(r: LeaveRequest): string | null {
 	if (!r.is_half_day) return null;
 	return r.half_day_period === "pm" ? "½ PM" : "½ AM";
 }
 
+function currentMonthUtc(): Date {
+	const now = new Date();
+	return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+}
+
 export default function MyLeavePage() {
 	const [balances, setBalances] = useState<LeaveBalance[]>([]);
 	const [requests, setRequests] = useState<LeaveRequest[]>([]);
+	const [holidays, setHolidays] = useState<Holiday[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [selected, setSelected] = useState<LeaveRequest | null>(null);
+	const [tab, setTab] = useState("calendar");
 
 	const refresh = useCallback(async () => {
 		setLoading(true);
 		setError(null);
 		try {
-			const [b, r] = await Promise.all([
-				leaveApi.myBalances(),
-				leaveApi.listMyRequests(),
-			]);
+			// Required vs optional: a holidays failure must not blank the page (§3.7).
+			const [b, r] = await Promise.all([leaveApi.myBalances(), leaveApi.listMyRequests()]);
 			setBalances(b);
 			setRequests(r);
+			try {
+				setHolidays(await leaveApi.holidays(new Date().getFullYear()));
+			} catch {
+				setHolidays([]);
+			}
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to load");
 		} finally {
@@ -73,53 +57,11 @@ export default function MyLeavePage() {
 		void refresh();
 	}, [refresh]);
 
-	const summary = useMemo(() => {
-		const total = requests.length;
-		const approved = requests.filter((r) => r.status === "approved").length;
-		const rejected = requests.filter((r) => r.status === "rejected").length;
-		const pending = requests.filter((r) => r.status === "submitted").length;
-		return { total, approved, rejected, pending };
-	}, [requests]);
-
-	const columns: Column<LeaveRequest>[] = [
-		{
-			key: "type",
-			header: "Type",
-			render: (r) => (
-				<StatusPill
-					tone={TYPE_TONE[r.leave_type_code] ?? "lavender"}
-					label={r.leave_type_code}
-				/>
-			),
-		},
-		{ key: "from", header: "From", render: (r) => r.start_date },
-		{ key: "to", header: "To", render: (r) => r.end_date },
-		{
-			key: "days",
-			header: "Days",
-			render: (r) => {
-				const half = halfDayLabel(r);
-				return (
-					<span className="inline-flex items-center justify-end gap-1.5">
-						{`${r.total_days}d`}
-						{half && (
-							<span className="text-label uppercase text-accent-200">
-								{half}
-							</span>
-						)}
-					</span>
-				);
-			},
-			align: "right",
-		},
-		{
-			key: "status",
-			header: "Status",
-			render: (r) => (
-				<StatusPill tone={STATUS_TONE[r.status]} label={r.status} />
-			),
-		},
-	];
+	const primaryCode = useMemo(() => {
+		if (balances.length === 0) return "ANNUAL";
+		return [...balances].sort((a, b) => Number(b.entitled) - Number(a.entitled))[0]
+			.leave_type_code;
+	}, [balances]);
 
 	async function onCancel() {
 		if (!selected) return;
@@ -133,95 +75,74 @@ export default function MyLeavePage() {
 	}
 
 	const canCancelSelected =
-		selected &&
-		(selected.status === "draft" || selected.status === "submitted");
+		selected && (selected.status === "draft" || selected.status === "submitted");
+
+	if (loading) {
+		return (
+			<div className="space-y-5">
+				<Skeleton className="h-32 rounded-xl" />
+				<Skeleton className="h-9 w-72 rounded-lg" />
+				<Skeleton className="h-72 rounded-xl" />
+			</div>
+		);
+	}
 
 	return (
-		<div className="space-y-6">
-			<PageHeader
-				title="Leave"
-				actions={
-					<Button
-						asChild
-						className="bg-accent-500 hover:bg-accent-600 text-white"
-					>
-						<Link to="/leave/apply">
-							<Plus className="size-4 mr-1" /> Apply for leave
-						</Link>
-					</Button>
-				}
-			/>
-
+		<div className="space-y-5">
 			{error && (
 				<p className="text-coral text-small" role="alert">
 					{error}
 				</p>
 			)}
 
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-				<KpiTile
-					tone="sky"
-					icon={String(summary.total)}
-					label="Total leave"
-					value={String(summary.total)}
-				/>
-				<KpiTile
-					tone="lavender"
-					icon={String(summary.approved)}
-					label="Approved"
-					value={String(summary.approved)}
-				/>
-				<KpiTile
-					tone="coral"
-					icon={String(summary.rejected)}
-					label="Rejected"
-					value={String(summary.rejected)}
-				/>
-				<KpiTile
-					tone="yellow"
-					icon={String(summary.pending)}
-					label="Pending"
-					value={String(summary.pending)}
-				/>
-			</div>
+			<LeaveHero
+				balances={balances}
+				primaryCode={primaryCode}
+				onSelectType={() => setTab("balances")}
+			/>
 
-			<div className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-				{loading ? (
-					<p className="text-text-tertiary text-body">Loading…</p>
-				) : (
-					<DataTable<LeaveRequest>
-						rows={requests}
-						columns={columns}
-						rowKey={(r) => r.id}
-						onRowClick={(r) => setSelected(r)}
-					/>
-				)}
-			</div>
+			<Tabs value={tab} onValueChange={setTab}>
+				<TabsList>
+					<TabsTrigger value="calendar">Calendar</TabsTrigger>
+					<TabsTrigger value="history">History</TabsTrigger>
+					<TabsTrigger value="balances">Balances</TabsTrigger>
+				</TabsList>
 
-			{balances.length > 0 ? (
-				<div className="space-y-3">
-					<h2 className="text-h3 text-text-primary">Balances</h2>
-					<div className="flex flex-wrap gap-2">
-						{balances.map((b) => (
-							<StatusPill
-								key={b.id}
-								tone={TYPE_TONE[b.leave_type_code] ?? "lavender"}
-								label={`${b.leave_type_code}: ${b.available}/${b.entitled} d`}
-							/>
-						))}
+				<TabsContent value="calendar">
+					<div className="grid lg:grid-cols-[1.6fr_1fr] gap-4">
+						<div className="bg-surface-hover border border-border-subtle rounded-xl p-4">
+							<LeaveCalendar month={currentMonthUtc()} requests={requests} holidays={holidays} />
+						</div>
+						<div className="bg-surface-hover border border-border-subtle rounded-xl p-4">
+							<h3 className="text-label font-semibold text-text-secondary mb-3">
+								Upcoming
+							</h3>
+							<UpcomingTimeline requests={requests} holidays={holidays} />
+						</div>
 					</div>
-					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-						{balances.map((b) => (
-							<EntitlementCard key={`card-${b.id}`} balance={b} />
-						))}
-					</div>
-				</div>
-			) : null}
+				</TabsContent>
+
+				<TabsContent value="history">
+					<LeaveHistory requests={requests} onSelect={setSelected} />
+				</TabsContent>
+
+				<TabsContent value="balances">
+					{balances.length === 0 ? (
+						<p className="text-text-tertiary text-small">No balances yet.</p>
+					) : (
+						<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+							{balances.map((b) => (
+								<EntitlementCard key={b.id} balance={b} />
+							))}
+						</div>
+					)}
+				</TabsContent>
+			</Tabs>
 
 			<DetailPanel
 				open={selected !== null}
 				onClose={() => setSelected(null)}
-				title={selected ? `Leave · ${selected.id}` : "Leave"}
+				title={selected ? `Leave · ${selected.leave_type_code}` : "Leave"}
 				footer={
 					canCancelSelected ? (
 						<Button
@@ -237,42 +158,24 @@ export default function MyLeavePage() {
 			>
 				{selected && (
 					<dl className="grid grid-cols-[110px_1fr] gap-y-2 text-body">
-						<dt className="text-label uppercase text-text-tertiary self-center">
-							Type
-						</dt>
+						<dt className="text-label uppercase text-text-tertiary self-center">Type</dt>
 						<dd>
-							<StatusPill
-								tone={TYPE_TONE[selected.leave_type_code] ?? "lavender"}
-								label={selected.leave_type_code}
-							/>
+							<StatusPill tone={typeTone(selected.leave_type_code)} label={selected.leave_type_code} />
 						</dd>
-						<dt className="text-label uppercase text-text-tertiary self-center">
-							Range
-						</dt>
+						<dt className="text-label uppercase text-text-tertiary self-center">Dates</dt>
 						<dd>
-							{selected.start_date} → {selected.end_date}
-						</dd>
-						<dt className="text-label uppercase text-text-tertiary self-center">
-							Days
-						</dt>
-						<dd>
-							{selected.total_days}
+							{formatRange(selected.start_date, selected.end_date)}
 							{halfDayLabel(selected) ? ` · ${halfDayLabel(selected)}` : ""}
 						</dd>
-						<dt className="text-label uppercase text-text-tertiary self-center">
-							Status
-						</dt>
+						<dt className="text-label uppercase text-text-tertiary self-center">Days</dt>
+						<dd>{selected.total_days}</dd>
+						<dt className="text-label uppercase text-text-tertiary self-center">Status</dt>
 						<dd>
-							<StatusPill
-								tone={STATUS_TONE[selected.status]}
-								label={selected.status}
-							/>
+							<StatusPill tone={STATUS_TONE[selected.status]} label={selected.status} />
 						</dd>
 						{selected.reason && (
 							<>
-								<dt className="text-label uppercase text-text-tertiary self-start">
-									Reason
-								</dt>
+								<dt className="text-label uppercase text-text-tertiary self-start">Reason</dt>
 								<dd>{selected.reason}</dd>
 							</>
 						)}

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const requests = [
 	{
@@ -28,8 +28,8 @@ const requests = [
 		start_date: "2026-05-14",
 		end_date: "2026-05-14",
 		total_days: "1.0",
-		is_half_day: false,
-		half_day_period: "",
+		is_half_day: true,
+		half_day_period: "pm",
 		reason: "Doctor",
 		status: "submitted",
 		current_level: 1,
@@ -43,9 +43,10 @@ const balances = [
 		id: "b1",
 		leave_type: "ANNUAL",
 		leave_type_code: "ANNUAL",
+		leave_type_name: "Annual",
 		year: 2026,
-		entitled: "14.0",
-		accrued: "14.0",
+		entitled: "16.0",
+		accrued: "16.0",
 		taken: "0.0",
 		pending: "0.0",
 		carried_forward: "0.0",
@@ -56,6 +57,7 @@ const balances = [
 const mocks = vi.hoisted(() => ({
 	myBalances: vi.fn(),
 	listMyRequests: vi.fn(),
+	holidays: vi.fn(),
 	cancel: vi.fn(),
 }));
 
@@ -63,6 +65,7 @@ vi.mock("../api", () => ({
 	leaveApi: {
 		myBalances: mocks.myBalances,
 		listMyRequests: mocks.listMyRequests,
+		holidays: mocks.holidays,
 		cancel: mocks.cancel,
 	},
 }));
@@ -77,56 +80,37 @@ function renderPage() {
 	);
 }
 
+beforeEach(() => {
+	mocks.myBalances.mockResolvedValue(balances);
+	mocks.listMyRequests.mockResolvedValue(requests);
+	mocks.holidays.mockResolvedValue([]);
+});
+
 describe("MyLeavePage", () => {
-	it("renders the 4 KPI tiles based on request statuses", async () => {
-		mocks.myBalances.mockResolvedValue(balances);
-		mocks.listMyRequests.mockResolvedValue(requests);
+	it("renders the hero and the three tabs", async () => {
 		renderPage();
-		await waitFor(() => {
-			expect(screen.getByText("Total leave")).toBeInTheDocument();
-		});
-		expect(screen.getByText("Approved")).toBeInTheDocument();
-		expect(screen.getByText("Rejected")).toBeInTheDocument();
-		// "Pending" appears in both the KPI tile and the EntitlementCard stat row;
-		// use getAllByText to assert presence (>= 1 occurrence).
-		expect(screen.getAllByText("Pending").length).toBeGreaterThanOrEqual(1);
+		await waitFor(() => expect(screen.getByText("Annual leave")).toBeInTheDocument());
+		expect(screen.getByRole("tab", { name: "Calendar" })).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: "History" })).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: "Balances" })).toBeInTheDocument();
 	});
 
-	it("renders the requests in a table", async () => {
-		mocks.myBalances.mockResolvedValue([]);
-		mocks.listMyRequests.mockResolvedValue(requests);
-		renderPage();
-		await waitFor(() => {
-			expect(screen.getByText("ANNUAL")).toBeInTheDocument();
-		});
-		expect(screen.getByText("SICK")).toBeInTheDocument();
-	});
-
-	it("shows a ½ PM indicator for a half-day request", async () => {
-		mocks.myBalances.mockResolvedValue([]);
-		mocks.listMyRequests.mockResolvedValue([
-			{
-				...requests[1],
-				id: "lr3",
-				total_days: "0.5",
-				is_half_day: true,
-				half_day_period: "pm",
-			},
-		]);
-		renderPage();
-		await waitFor(() =>
-			expect(screen.getByText(/½ PM/i)).toBeInTheDocument(),
-		);
-	});
-
-	it("opens detail panel when a row is clicked", async () => {
+	it("shows requests with the Reason column in the History tab", async () => {
 		const user = userEvent.setup();
-		mocks.myBalances.mockResolvedValue([]);
-		mocks.listMyRequests.mockResolvedValue(requests);
 		renderPage();
-		await waitFor(() => screen.getByText("ANNUAL"));
-		await user.click(screen.getByText("ANNUAL"));
-		// detail panel renders title with the request id
+		await waitFor(() => screen.getByRole("tab", { name: "History" }));
+		await user.click(screen.getByRole("tab", { name: "History" }));
+		expect(await screen.findByText("Reason")).toBeInTheDocument();
+		expect(screen.getByText("Family trip")).toBeInTheDocument();
+		expect(screen.getByText(/½ PM/i)).toBeInTheDocument();
+	});
+
+	it("opens the detail panel when a history row is clicked", async () => {
+		const user = userEvent.setup();
+		renderPage();
+		await waitFor(() => screen.getByRole("tab", { name: "History" }));
+		await user.click(screen.getByRole("tab", { name: "History" }));
+		await user.click(await screen.findByText("Family trip"));
 		expect(await screen.findByRole("dialog")).toBeInTheDocument();
 	});
 });
