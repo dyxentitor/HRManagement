@@ -94,6 +94,158 @@ paths:
                 items:
                   $ref: '#/components/schemas/UnlinkedUser'
           description: ''
+  /api/v1/announcements/:
+    get:
+      operationId: announcements_list
+      description: |-
+        Company announcements.
+
+        Read gated on announcement:read (every org user); write on announcement:write.
+      tags:
+      - announcements
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Announcement'
+          description: ''
+    post:
+      operationId: announcements_create
+      description: |-
+        Company announcements.
+
+        Read gated on announcement:read (every org user); write on announcement:write.
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/{id}/:
+    get:
+      operationId: announcements_retrieve
+      description: |-
+        Company announcements.
+
+        Read gated on announcement:read (every org user); write on announcement:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+    put:
+      operationId: announcements_update
+      description: |-
+        Company announcements.
+
+        Read gated on announcement:read (every org user); write on announcement:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+    patch:
+      operationId: announcements_partial_update
+      description: |-
+        Company announcements.
+
+        Read gated on announcement:read (every org user); write on announcement:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnouncementRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+    delete:
+      operationId: announcements_destroy
+      description: |-
+        Company announcements.
+
+        Read gated on announcement:read (every org user); write on announcement:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/approvals/inbox:
     get:
       operationId: approvals_inbox_retrieve
@@ -3060,6 +3212,202 @@ paths:
               schema:
                 $ref: '#/components/schemas/Notification'
           description: ''
+  /api/v1/onboarding/:
+    get:
+      operationId: onboarding_list
+      description: |-
+        Employee onboarding checklists.
+
+        Read gated on onboarding:read; create/toggle on onboarding:write.
+        Creating a checklist seeds the DEFAULT_ITEMS template.
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnboardingChecklist'
+          description: ''
+    post:
+      operationId: onboarding_create
+      description: |-
+        Employee onboarding checklists.
+
+        Read gated on onboarding:read; create/toggle on onboarding:write.
+        Creating a checklist seeds the DEFAULT_ITEMS template.
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingChecklistRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OnboardingChecklistRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingChecklist'
+          description: ''
+  /api/v1/onboarding/{id}/:
+    get:
+      operationId: onboarding_retrieve
+      description: |-
+        Employee onboarding checklists.
+
+        Read gated on onboarding:read; create/toggle on onboarding:write.
+        Creating a checklist seeds the DEFAULT_ITEMS template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingChecklist'
+          description: ''
+    put:
+      operationId: onboarding_update
+      description: |-
+        Employee onboarding checklists.
+
+        Read gated on onboarding:read; create/toggle on onboarding:write.
+        Creating a checklist seeds the DEFAULT_ITEMS template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingChecklistRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OnboardingChecklistRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingChecklist'
+          description: ''
+    patch:
+      operationId: onboarding_partial_update
+      description: |-
+        Employee onboarding checklists.
+
+        Read gated on onboarding:read; create/toggle on onboarding:write.
+        Creating a checklist seeds the DEFAULT_ITEMS template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOnboardingChecklistRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOnboardingChecklistRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingChecklist'
+          description: ''
+    delete:
+      operationId: onboarding_destroy
+      description: |-
+        Employee onboarding checklists.
+
+        Read gated on onboarding:read; create/toggle on onboarding:write.
+        Creating a checklist seeds the DEFAULT_ITEMS template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - onboarding
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/onboarding/{id}/items/{item_id}/toggle/:
+    patch:
+      operationId: onboarding_items_toggle_partial_update
+      description: |-
+        Employee onboarding checklists.
+
+        Read gated on onboarding:read; create/toggle on onboarding:write.
+        Creating a checklist seeds the DEFAULT_ITEMS template.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - onboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOnboardingChecklistRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOnboardingChecklistRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingChecklist'
+          description: ''
   /api/v1/org/feature-flags/:
     get:
       operationId: org_feature_flags_retrieve
@@ -3205,6 +3553,130 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: ''
+  /api/v1/payroll/exceptions/:
+    get:
+      operationId: payroll_exceptions_retrieve
+      description: |-
+        Payroll exceptions — flagged issues needing resolution.
+
+        Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: payroll_exceptions_create
+      description: |-
+        Payroll exceptions — flagged issues needing resolution.
+
+        Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: No response body
+  /api/v1/payroll/exceptions/{id}/:
+    get:
+      operationId: payroll_exceptions_retrieve_2
+      description: |-
+        Payroll exceptions — flagged issues needing resolution.
+
+        Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: payroll_exceptions_update
+      description: |-
+        Payroll exceptions — flagged issues needing resolution.
+
+        Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: payroll_exceptions_partial_update
+      description: |-
+        Payroll exceptions — flagged issues needing resolution.
+
+        Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: payroll_exceptions_destroy
+      description: |-
+        Payroll exceptions — flagged issues needing resolution.
+
+        Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/payroll/exceptions/{id}/resolve/:
+    patch:
+      operationId: payroll_exceptions_resolve_partial_update
+      description: |-
+        Payroll exceptions — flagged issues needing resolution.
+
+        Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payroll
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/payroll/periods/:
     get:
       operationId: payroll_periods_list
@@ -4978,6 +5450,68 @@ components:
         * `monthly` - Monthly
         * `event_based` - Event-based
         * `none` - No accrual
+    Announcement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        pinned:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - created_at
+      - created_by
+      - id
+      - title
+    AnnouncementRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        pinned:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - body
+      - title
     AttendanceRecord:
       type: object
       properties:
@@ -5122,6 +5656,20 @@ components:
     BlankEnum:
       enum:
       - ''
+    CategoryEnum:
+      enum:
+      - policy
+      - event
+      - maintenance
+      - holiday
+      - general
+      type: string
+      description: |-
+        * `policy` - Policy
+        * `event` - Event
+        * `maintenance` - Maintenance
+        * `holiday` - Holiday
+        * `general` - General
     Certification:
       type: object
       properties:
@@ -7031,6 +7579,96 @@ components:
     NullEnum:
       enum:
       - null
+    OnboardingChecklist:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee_id:
+          type: string
+          format: uuid
+        status:
+          allOf:
+          - $ref: '#/components/schemas/OnboardingChecklistStatusEnum'
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnboardingItem'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - completed_at
+      - created_at
+      - employee_id
+      - id
+      - items
+      - started_at
+      - status
+    OnboardingChecklistRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+      required:
+      - employee_id
+    OnboardingChecklistStatusEnum:
+      enum:
+      - in_progress
+      - completed
+      type: string
+      description: |-
+        * `in_progress` - In progress
+        * `completed` - Completed
+    OnboardingItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        label:
+          type: string
+          maxLength: 200
+        done:
+          type: boolean
+        order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - id
+      - label
+    OnboardingItemRequest:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        done:
+          type: boolean
+        order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - label
     OrgSettings:
       type: object
       properties:
@@ -7123,6 +7761,27 @@ components:
       - name
       - slug
       - updated_at
+    PatchedAnnouncementRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        pinned:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
     PatchedCertificationWriteRequest:
       type: object
       properties:
@@ -7581,6 +8240,12 @@ components:
           maximum: 2147483647
           minimum: -2147483648
           nullable: true
+    PatchedOnboardingChecklistRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
     PatchedOrgSettingsRequest:
       type: object
       properties:
@@ -7808,13 +8473,17 @@ components:
     PayrollPeriodStatusEnum:
       enum:
       - draft
-      - locked
-      - published
+      - approved
+      - ready
+      - processing
+      - completed
       type: string
       description: |-
         * `draft` - Draft
-        * `locked` - Locked
-        * `published` - Published
+        * `approved` - Approved
+        * `ready` - Ready
+        * `processing` - Processing
+        * `completed` - Completed
     PayrollRun:
       type: object
       properties:

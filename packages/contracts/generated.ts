@@ -118,6 +118,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/announcements/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Company announcements.
+         *
+         *     Read gated on announcement:read (every org user); write on announcement:write.
+         */
+        get: operations["announcements_list"];
+        put?: never;
+        /**
+         * @description Company announcements.
+         *
+         *     Read gated on announcement:read (every org user); write on announcement:write.
+         */
+        post: operations["announcements_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Company announcements.
+         *
+         *     Read gated on announcement:read (every org user); write on announcement:write.
+         */
+        get: operations["announcements_retrieve"];
+        /**
+         * @description Company announcements.
+         *
+         *     Read gated on announcement:read (every org user); write on announcement:write.
+         */
+        put: operations["announcements_update"];
+        post?: never;
+        /**
+         * @description Company announcements.
+         *
+         *     Read gated on announcement:read (every org user); write on announcement:write.
+         */
+        delete: operations["announcements_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Company announcements.
+         *
+         *     Read gated on announcement:read (every org user); write on announcement:write.
+         */
+        patch: operations["announcements_partial_update"];
+        trace?: never;
+    };
     "/api/v1/approvals/inbox": {
         parameters: {
             query?: never;
@@ -1577,6 +1639,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/onboarding/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Employee onboarding checklists.
+         *
+         *     Read gated on onboarding:read; create/toggle on onboarding:write.
+         *     Creating a checklist seeds the DEFAULT_ITEMS template.
+         */
+        get: operations["onboarding_list"];
+        put?: never;
+        /**
+         * @description Employee onboarding checklists.
+         *
+         *     Read gated on onboarding:read; create/toggle on onboarding:write.
+         *     Creating a checklist seeds the DEFAULT_ITEMS template.
+         */
+        post: operations["onboarding_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/onboarding/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Employee onboarding checklists.
+         *
+         *     Read gated on onboarding:read; create/toggle on onboarding:write.
+         *     Creating a checklist seeds the DEFAULT_ITEMS template.
+         */
+        get: operations["onboarding_retrieve"];
+        /**
+         * @description Employee onboarding checklists.
+         *
+         *     Read gated on onboarding:read; create/toggle on onboarding:write.
+         *     Creating a checklist seeds the DEFAULT_ITEMS template.
+         */
+        put: operations["onboarding_update"];
+        post?: never;
+        /**
+         * @description Employee onboarding checklists.
+         *
+         *     Read gated on onboarding:read; create/toggle on onboarding:write.
+         *     Creating a checklist seeds the DEFAULT_ITEMS template.
+         */
+        delete: operations["onboarding_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Employee onboarding checklists.
+         *
+         *     Read gated on onboarding:read; create/toggle on onboarding:write.
+         *     Creating a checklist seeds the DEFAULT_ITEMS template.
+         */
+        patch: operations["onboarding_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/onboarding/{id}/items/{item_id}/toggle/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description Employee onboarding checklists.
+         *
+         *     Read gated on onboarding:read; create/toggle on onboarding:write.
+         *     Creating a checklist seeds the DEFAULT_ITEMS template.
+         */
+        patch: operations["onboarding_items_toggle_partial_update"];
+        trace?: never;
+    };
     "/api/v1/org/feature-flags/": {
         parameters: {
             query?: never;
@@ -1706,6 +1858,89 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/exceptions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Payroll exceptions — flagged issues needing resolution.
+         *
+         *     Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+         */
+        get: operations["payroll_exceptions_retrieve"];
+        put?: never;
+        /**
+         * @description Payroll exceptions — flagged issues needing resolution.
+         *
+         *     Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+         */
+        post: operations["payroll_exceptions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/exceptions/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Payroll exceptions — flagged issues needing resolution.
+         *
+         *     Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+         */
+        get: operations["payroll_exceptions_retrieve_2"];
+        /**
+         * @description Payroll exceptions — flagged issues needing resolution.
+         *
+         *     Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+         */
+        put: operations["payroll_exceptions_update"];
+        post?: never;
+        /**
+         * @description Payroll exceptions — flagged issues needing resolution.
+         *
+         *     Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+         */
+        delete: operations["payroll_exceptions_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Payroll exceptions — flagged issues needing resolution.
+         *
+         *     Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+         */
+        patch: operations["payroll_exceptions_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/payroll/exceptions/{id}/resolve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description Payroll exceptions — flagged issues needing resolution.
+         *
+         *     Read gated on payroll:exception:read; create/resolve on payroll:exception:write.
+         */
+        patch: operations["payroll_exceptions_resolve_partial_update"];
         trace?: never;
     };
     "/api/v1/payroll/periods/": {
@@ -2631,6 +2866,32 @@ export interface components {
          * @enum {string}
          */
         AccrualTypeEnum: "annual" | "monthly" | "event_based" | "none";
+        Announcement: {
+            /** Format: uuid */
+            readonly id: string;
+            title: string;
+            body: string;
+            category?: components["schemas"]["CategoryEnum"];
+            pinned?: boolean;
+            /** Format: date-time */
+            published_at?: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: uuid */
+            readonly created_by: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        AnnouncementRequest: {
+            title: string;
+            body: string;
+            category?: components["schemas"]["CategoryEnum"];
+            pinned?: boolean;
+            /** Format: date-time */
+            published_at?: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
         AttendanceRecord: {
             /** Format: uuid */
             readonly id: string;
@@ -2698,6 +2959,15 @@ export interface components {
         AttendanceRecordStatusEnum: "present" | "late" | "absent" | "holiday" | "on_leave" | "partial";
         /** @enum {unknown} */
         BlankEnum: "";
+        /**
+         * @description * `policy` - Policy
+         *     * `event` - Event
+         *     * `maintenance` - Maintenance
+         *     * `holiday` - Holiday
+         *     * `general` - General
+         * @enum {string}
+         */
+        CategoryEnum: "policy" | "event" | "maintenance" | "holiday" | "general";
         Certification: {
             /** Format: uuid */
             readonly id: string;
@@ -3474,6 +3744,42 @@ export interface components {
         };
         /** @enum {unknown} */
         NullEnum: null;
+        OnboardingChecklist: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            employee_id: string;
+            readonly status: components["schemas"]["OnboardingChecklistStatusEnum"];
+            /** Format: date-time */
+            readonly started_at: string;
+            /** Format: date-time */
+            readonly completed_at: string | null;
+            readonly items: components["schemas"]["OnboardingItem"][];
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        OnboardingChecklistRequest: {
+            /** Format: uuid */
+            employee_id: string;
+        };
+        /**
+         * @description * `in_progress` - In progress
+         *     * `completed` - Completed
+         * @enum {string}
+         */
+        OnboardingChecklistStatusEnum: "in_progress" | "completed";
+        OnboardingItem: {
+            /** Format: uuid */
+            readonly id: string;
+            label: string;
+            done?: boolean;
+            order?: number;
+        };
+        OnboardingItemRequest: {
+            label: string;
+            done?: boolean;
+            order?: number;
+        };
         OrgSettings: {
             /** Format: uuid */
             readonly id: string;
@@ -3502,6 +3808,16 @@ export interface components {
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        PatchedAnnouncementRequest: {
+            title?: string;
+            body?: string;
+            category?: components["schemas"]["CategoryEnum"];
+            pinned?: boolean;
+            /** Format: date-time */
+            published_at?: string;
+            /** Format: date-time */
+            expires_at?: string | null;
         };
         PatchedCertificationWriteRequest: {
             /** Format: uuid */
@@ -3700,6 +4016,10 @@ export interface components {
             notice_days_required?: number;
             max_per_lifetime_events?: number | null;
         };
+        PatchedOnboardingChecklistRequest: {
+            /** Format: uuid */
+            employee_id?: string;
+        };
         PatchedOrgSettingsRequest: {
             name?: string;
             country_code?: string;
@@ -3811,11 +4131,13 @@ export interface components {
         };
         /**
          * @description * `draft` - Draft
-         *     * `locked` - Locked
-         *     * `published` - Published
+         *     * `approved` - Approved
+         *     * `ready` - Ready
+         *     * `processing` - Processing
+         *     * `completed` - Completed
          * @enum {string}
          */
-        PayrollPeriodStatusEnum: "draft" | "locked" | "published";
+        PayrollPeriodStatusEnum: "draft" | "approved" | "ready" | "processing" | "completed";
         PayrollRun: {
             /** Format: uuid */
             readonly id: string;
@@ -4294,6 +4616,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UnlinkedUser"][];
+                };
+            };
+        };
+    };
+    announcements_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"][];
+                };
+            };
+        };
+    };
+    announcements_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    announcements_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["PatchedAnnouncementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
                 };
             };
         };
@@ -7398,6 +7856,169 @@ export interface operations {
             };
         };
     };
+    onboarding_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingChecklist"][];
+                };
+            };
+        };
+    };
+    onboarding_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingChecklistRequest"];
+                "multipart/form-data": components["schemas"]["OnboardingChecklistRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingChecklist"];
+                };
+            };
+        };
+    };
+    onboarding_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingChecklist"];
+                };
+            };
+        };
+    };
+    onboarding_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnboardingChecklistRequest"];
+                "multipart/form-data": components["schemas"]["OnboardingChecklistRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingChecklist"];
+                };
+            };
+        };
+    };
+    onboarding_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    onboarding_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedOnboardingChecklistRequest"];
+                "multipart/form-data": components["schemas"]["PatchedOnboardingChecklistRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingChecklist"];
+                };
+            };
+        };
+    };
+    onboarding_items_toggle_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedOnboardingChecklistRequest"];
+                "multipart/form-data": components["schemas"]["PatchedOnboardingChecklistRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingChecklist"];
+                };
+            };
+        };
+    };
     org_feature_flags_retrieve: {
         parameters: {
             query?: never;
@@ -7570,6 +8191,142 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Organization"];
                 };
+            };
+        };
+    };
+    payroll_exceptions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payroll_exceptions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payroll_exceptions_retrieve_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payroll_exceptions_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payroll_exceptions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payroll_exceptions_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payroll_exceptions_resolve_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

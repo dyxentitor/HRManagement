@@ -38,10 +38,14 @@ def stack():
         default_locale="en-MY",
     )
     hr_user = User.objects.create_user(
-        email="hr@x.com", password="x", org_id=org.id  # pragma: allowlist secret
+        email="hr@x.com",
+        password="x",
+        org_id=org.id,  # pragma: allowlist secret
     )
     emp_user = User.objects.create_user(
-        email="emp@x.com", password="x", org_id=org.id  # pragma: allowlist secret
+        email="emp@x.com",
+        password="x",
+        org_id=org.id,  # pragma: allowlist secret
     )
     hr_role = Role.objects.create(org_id=org.id, code="hr", name="HR", is_system=False)
     emp_role = Role.objects.create(org_id=org.id, code="employee", name="Emp", is_system=False)

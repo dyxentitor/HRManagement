@@ -14,9 +14,10 @@ def test_user_create_permission_seeded():
 
 
 @pytest.mark.django_db
-def test_permission_catalogue_total_is_111():
+def test_permission_catalogue_total_is_117():
     call_command("seed_permission_catalogue")
-    assert Permission.objects.count() == 111
+    # 111 (v1.11.0) + 6 dashboard perms (announcement/onboarding/payroll-exception, v1.12.0)
+    assert Permission.objects.count() == 117
 
 
 @pytest.mark.django_db

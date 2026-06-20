@@ -25,7 +25,7 @@ def test_period_accepts_new_workflow_states():
 
 @pytest.mark.django_db
 def test_period_stage_timestamps_settable():
-    now = datetime.datetime(2026, 6, 28, 9, 0, tzinfo=datetime.timezone.utc)
+    now = datetime.datetime(2026, 6, 28, 9, 0, tzinfo=datetime.UTC)
     p = PayrollPeriod.all_objects.create(
         org_id=uuid.uuid4(),
         period_start=datetime.date(2026, 6, 1),

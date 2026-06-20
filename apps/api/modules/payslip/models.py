@@ -119,9 +119,7 @@ class PayslipRecord(TenantBaseModel):
         ]
 
     def __str__(self) -> str:
-        return (
-            f"Payslip({self.employee_id}, " f"{self.period.period_start}..{self.period.period_end})"
-        )
+        return f"Payslip({self.employee_id}, {self.period.period_start}..{self.period.period_end})"
 
 
 class PayrollRun(TenantBaseModel):
@@ -163,9 +161,7 @@ class PayrollException(TenantBaseModel):
     Surfaced as the "Payroll exceptions" pending-task card on the dashboard.
     """
 
-    period = models.ForeignKey(
-        PayrollPeriod, on_delete=models.PROTECT, related_name="exceptions"
-    )
+    period = models.ForeignKey(PayrollPeriod, on_delete=models.PROTECT, related_name="exceptions")
     employee_id = models.UUIDField(null=True, blank=True)
     kind = models.CharField(max_length=16, choices=EXCEPTION_KINDS, default="other")
     message = models.CharField(max_length=500)

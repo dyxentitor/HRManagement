@@ -38,10 +38,14 @@ def stack():
         default_locale="en-MY",
     )
     hr_user = User.objects.create_user(
-        email="hr@x.com", password="x", org_id=org.id  # pragma: allowlist secret
+        email="hr@x.com",
+        password="x",
+        org_id=org.id,  # pragma: allowlist secret
     )
     emp_user = User.objects.create_user(
-        email="emp@x.com", password="x", org_id=org.id  # pragma: allowlist secret
+        email="emp@x.com",
+        password="x",
+        org_id=org.id,  # pragma: allowlist secret
     )
     hr_role = Role.objects.create(org_id=org.id, code="hr", name="HR", is_system=False)
     emp_role = Role.objects.create(org_id=org.id, code="employee", name="Emp", is_system=False)
@@ -56,9 +60,7 @@ def stack():
 def test_create_seeds_default_items(stack):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'hr@x.com')}")
-    resp = client.post(
-        "/api/v1/onboarding/", {"employee_id": str(uuid.uuid4())}, format="json"
-    )
+    resp = client.post("/api/v1/onboarding/", {"employee_id": str(uuid.uuid4())}, format="json")
     assert resp.status_code == 201, resp.content
     body = resp.json()
     assert len(body["items"]) == 6
