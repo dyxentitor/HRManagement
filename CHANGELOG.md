@@ -2,6 +2,37 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.17.0] — 2026-06-20
+
+Leave premium redesign — `/leave/me` rebuilt in the dashboard/claims command-center
+language so Dashboard + Claims + Leave read as one product (supersedes the v1.14.0
+hero+tabs layout). Spec: `docs/superpowers/specs/2026-06-20-leave-premium-command-center.md`.
+
+### Changed
+
+- **My Leave** is now a typography-led, varied-rhythm workspace:
+  - **Aurora hero** with an editorial **"{N} days available"** (primary type) + a
+    `glass` **DonutChart spotlight** (Available / Pending / Taken) + a carry-forward
+    **expiry nudge**.
+  - **Per-type glow balance tiles** (top 4 by entitlement); tile click → balance detail
+    drawer (reuses `EntitlementCard`).
+  - **In progress / All** section of rich `glass` request cards, each with a 3-stage
+    **stepper** (Submitted → In review → Approved) + note; card → request drawer (cancel
+    for draft/submitted).
+  - The **month calendar** and a **vertical activity timeline** folded into the bento
+    (right column), so the page is one screen instead of tabs.
+  - **Take leave** — large glass **feature cards** per type that explain each (with
+    balance), linking to `/leave/apply?type=<id>` (Apply now preselects the type).
+- New components under `modules/leave/components/` + `lib/leave-ui.ts` extended (type
+  icon/copy, stepper stages, helpers). Reuses `hero-aurora` / `glass-surface` /
+  `soft-glow` / `layer-eyebrow` / `DonutChart`. Keeps `LeaveCalendar`, `EntitlementCard`.
+- Removed the v1.14.0 `LeaveHero`, `UpcomingTimeline`, `LeaveHistory` (superseded).
+
+### Tests
+
+- Frontend: **356 passed** (leave-ui journey, type feature-card links, My Leave
+  hero/in-progress/drawer). Backend unchanged (**781**; no backend/perm/migration changes).
+
 ## [1.16.0] — 2026-06-20
 
 Claims premium redesign — `/claims/me` rebuilt in the dashboard's command-center
