@@ -4,6 +4,7 @@ import { LogoUploader } from "@/components/hrms/LogoUploader";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCan } from "@/lib/perm";
 
 import { type OrgSettings, settingsApi } from "./settings-api";
 
@@ -22,8 +23,13 @@ export default function OrganizationSettingsPage() {
 	});
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	// GET /org/settings requires org:settings:read. Gate the fetch on it so
+	// manager-tier users who navigate directly to this URL get a clean message
+	// instead of a 403 XHR (mirrors SettingsNav's overview-fetch gating).
+	const canRead = useCan("org:settings:read");
 
 	const refresh = useCallback(async () => {
+		if (!canRead) return;
 		try {
 			const fresh = await settingsApi.getOrg();
 			setOrg(fresh);
@@ -36,7 +42,7 @@ export default function OrganizationSettingsPage() {
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Failed to load");
 		}
-	}, []);
+	}, [canRead]);
 
 	useEffect(() => {
 		refresh();
@@ -66,6 +72,17 @@ export default function OrganizationSettingsPage() {
 			default_locale: org.default_locale,
 		});
 		setError(null);
+	}
+
+	if (!canRead) {
+		return (
+			<div className="flex flex-col gap-4">
+				<PageHeader title="Organization" />
+				<p className="text-text-tertiary">
+					You don't have permission to view organization settings.
+				</p>
+			</div>
+		);
 	}
 
 	if (!org) {

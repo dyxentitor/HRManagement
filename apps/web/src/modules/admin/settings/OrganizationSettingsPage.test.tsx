@@ -5,6 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import OrganizationSettingsPage from "./OrganizationSettingsPage";
 import { settingsApi } from "./settings-api";
 
+const permMocks = vi.hoisted(() => ({ can: vi.fn(() => true) }));
+vi.mock("@/lib/perm", () => ({ useCan: () => permMocks.can() }));
+
 vi.mock("./settings-api", () => ({
 	settingsApi: {
 		getOrg: vi.fn(),
@@ -17,6 +20,7 @@ vi.mock("./settings-api", () => ({
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	permMocks.can.mockReturnValue(true);
 });
 
 function mockOrg(overrides = {}) {
@@ -36,6 +40,15 @@ function mockOrg(overrides = {}) {
 }
 
 describe("OrganizationSettingsPage", () => {
+	it("shows a no-permission notice and skips the fetch without org:settings:read", async () => {
+		permMocks.can.mockReturnValue(false);
+		render(<OrganizationSettingsPage />);
+		expect(
+			await screen.findByText(/don't have permission/i),
+		).toBeInTheDocument();
+		expect(settingsApi.getOrg).not.toHaveBeenCalled();
+	});
+
 	it("renders form pre-filled from /org/settings", async () => {
 		mockOrg();
 		render(<OrganizationSettingsPage />);
