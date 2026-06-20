@@ -2,6 +2,37 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.16.0] — 2026-06-20
+
+Claims premium redesign — `/claims/me` rebuilt in the dashboard's command-center
+language so the app reads as one premium product (supersedes v1.15.0's stacked-card
+layout). Spec: `docs/superpowers/specs/2026-06-20-claims-premium-command-center.md`.
+
+### Changed
+
+- **My Claims** is now a typography-led, varied-rhythm workspace with few hard borders:
+  - **Aurora hero** with an editorial **"RM X to be reimbursed"** and a `glass-surface`
+    **DonutChart spotlight** (paid vs outstanding + % + next-payment line) and a contextual
+    **receipt nudge** that opens the relevant claim.
+  - **Glow status tiles** (Pending / Approved / Paid / Rejected) in the dashboard's
+    TodaysFocus style.
+  - **In progress / All** section of rich `glass-surface` claim cards, each with a 4-stage
+    **stepper** (Submitted → Manager → Finance → Paid) and a status note; card → detail drawer
+    (cancel for draft/submitted).
+  - **Vertical activity timeline** (connecting line + colored dots).
+  - **Large glass feature-card categories** that explain each type, linking to
+    `/claims/submit?category=<id>`.
+- New components under `modules/claims/components/` + `lib/claim-ui.ts` extended with the
+  stepper stages + category copy. Reuses `hero-aurora` / `glass-surface` / `soft-glow` /
+  `layer-eyebrow` / `DonutChart`.
+- Removed the v1.15.0 stacked-card components (`ClaimSummaryCards`, `RecentClaimsList`,
+  `ClaimActivityFeed`, `HowClaimsWork`).
+
+### Tests
+
+- Frontend: **357 passed** (claim-ui buckets + stepper stages, category feature-card links,
+  My Claims render/empty-state). Backend unchanged (**781**; no backend/perm/migration changes).
+
 ## [1.15.0] — 2026-06-20
 
 Claims workspace redesign — `/claims/me` rebuilt from a bare table into an
