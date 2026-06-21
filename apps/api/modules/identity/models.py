@@ -253,6 +253,61 @@ class Session(models.Model):
         return f"session({self.user.email}, created={self.created_at:%Y-%m-%d %H:%M})"
 
 
+class Invitation(models.Model):
+    """A single-use onboarding invitation for a provisioned user.
+
+    The raw token is emailed to the employee and never stored — only its SHA-256
+    hash lives here. Status, expiry, and device/IP capture give HR a full audit
+    trail of the activation lifecycle (Employee_creation.md §Secure Invitation).
+    """
+
+    STATUS_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        ("draft", "Draft"),
+        ("sent", "Sent"),
+        ("opened", "Opened"),
+        ("activated", "Activated"),
+        ("revoked", "Revoked"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    org_id = models.UUIDField(db_index=True)
+    user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.CASCADE,
+        related_name="invitations",
+    )
+    employee_id = models.UUIDField(null=True, blank=True)
+    token_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="sent")
+    expires_at = models.DateTimeField()
+    created_by = models.UUIDField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    opened_at = models.DateTimeField(null=True, blank=True)
+    activated_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    sent_count = models.PositiveIntegerField(default=1)
+    opened_ip = models.CharField(max_length=64, blank=True)
+    opened_user_agent = models.TextField(blank=True)
+    activated_ip = models.CharField(max_length=64, blank=True)
+
+    class Meta:
+        db_table = "identity_invitation"
+        ordering: ClassVar[list[str]] = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"invite({self.user_id}, {self.effective_status})"
+
+    @property
+    def is_expired(self) -> bool:
+        return self.status in ("sent", "opened") and self.expires_at < timezone.now()
+
+    @property
+    def effective_status(self) -> str:
+        """Status as shown to HR — derives 'expired' without a cron sweep."""
+        return "expired" if self.is_expired else self.status
+
+
 class MFADevice(models.Model):
     """A user's TOTP device. We currently support one device per user."""
 

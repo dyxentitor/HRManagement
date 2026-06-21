@@ -6,30 +6,21 @@ const AdminRoleDetailPage = lazy(() => import("./pages/AdminRoleDetailPage"));
 const AdminModulesPage = lazy(() => import("./pages/AdminModulesPage"));
 const AdminTeamsPage = lazy(() => import("./pages/AdminTeamsPage"));
 const AdminLeaveTypesPage = lazy(() => import("./pages/AdminLeaveTypesPage"));
-const AdminAnnouncementsPage = lazy(
-	() => import("./pages/AdminAnnouncementsPage"),
-);
+const AdminAnnouncementsPage = lazy(() => import("./pages/AdminAnnouncementsPage"));
 const AdminAuditLogPage = lazy(() => import("./pages/AdminAuditLogPage"));
 
 const SettingsShell = lazy(() => import("./settings/SettingsShell"));
-const SettingsOverviewPage = lazy(
-	() => import("./settings/SettingsOverviewPage"),
-);
-const OrganizationSettingsPage = lazy(
-	() => import("./settings/OrganizationSettingsPage"),
-);
-const DepartmentsAdminPage = lazy(
-	() => import("./settings/DepartmentsAdminPage"),
-);
+const SettingsOverviewPage = lazy(() => import("./settings/SettingsOverviewPage"));
+const OrganizationSettingsPage = lazy(() => import("./settings/OrganizationSettingsPage"));
+const DepartmentsAdminPage = lazy(() => import("./settings/DepartmentsAdminPage"));
 const UsersLinkingPage = lazy(() => import("./settings/UsersLinkingPage"));
 const UserCreatePage = lazy(() =>
 	import("./settings/UserCreatePage").then((m) => ({
 		default: m.UserCreatePage,
 	})),
 );
-const ArchivedEmployeesPage = lazy(
-	() => import("./settings/ArchivedEmployeesPage"),
-);
+const ArchivedEmployeesPage = lazy(() => import("./settings/ArchivedEmployeesPage"));
+const InvitationsPage = lazy(() => import("./settings/InvitationsPage"));
 
 function RedirectRoleDetail() {
 	const { code } = useParams<{ code: string }>();
@@ -68,6 +59,7 @@ export const adminRoutes: RouteObject[] = [
 			{ path: "teams", element: <AdminTeamsPage /> },
 			{ path: "users", element: <UsersLinkingPage /> },
 			{ path: "users/new", element: <UserCreatePage /> },
+			{ path: "invitations", element: <InvitationsPage /> },
 			{ path: "archived", element: <ArchivedEmployeesPage /> },
 			{ path: "roles", element: <AdminRolesPage /> },
 			{ path: "roles/:code", element: <AdminRoleDetailPage /> },

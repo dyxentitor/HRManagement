@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.21.0
+  version: 1.22.1
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -1993,6 +1993,174 @@ paths:
               schema:
                 $ref: '#/components/schemas/Employee'
           description: ''
+  /api/v1/invitations/:
+    get:
+      operationId: invitations_list
+      description: HR view of invitations + lifecycle actions (resend / revoke / extend).
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/invitations/{id}/:
+    get:
+      operationId: invitations_retrieve
+      description: HR view of invitations + lifecycle actions (resend / revoke / extend).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/invitations/{id}/activity/:
+    get:
+      operationId: invitations_activity_retrieve
+      description: HR view of invitations + lifecycle actions (resend / revoke / extend).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/invitations/{id}/copy-link/:
+    post:
+      operationId: invitations_copy_link_create
+      description: HR view of invitations + lifecycle actions (resend / revoke / extend).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/invitations/{id}/extend/:
+    post:
+      operationId: invitations_extend_create
+      description: HR view of invitations + lifecycle actions (resend / revoke / extend).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/invitations/{id}/resend/:
+    post:
+      operationId: invitations_resend_create
+      description: HR view of invitations + lifecycle actions (resend / revoke / extend).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/invitations/{id}/revoke/:
+    post:
+      operationId: invitations_revoke_create
+      description: HR view of invitations + lifecycle actions (resend / revoke / extend).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/invitations/activate/:
+    post:
+      operationId: invitations_activate_create
+      description: 'Public: set the password for an invited account and activate it.'
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/invitations/verify/:
+    get:
+      operationId: invitations_verify_retrieve
+      description: 'Public: validate an activation token (marks it opened) for the
+        landing page.'
+      tags:
+      - invitations
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/v1/kpi/assignments/:
     get:
       operationId: kpi_assignments_list
@@ -6859,6 +7027,102 @@ components:
         * `federal` - Federal
         * `state` - State
         * `company` - Company
+    Invitation:
+      type: object
+      description: HR-facing read of an invitation, with the linked employee name
+        + dept.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        email:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/InvitationStatusEnum'
+          readOnly: true
+        effective_status:
+          type: string
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        opened_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        activated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        revoked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        sent_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        employee_name:
+          type: string
+          readOnly: true
+        department:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - activated_at
+      - created_at
+      - department
+      - effective_status
+      - email
+      - employee_id
+      - employee_name
+      - expires_at
+      - id
+      - opened_at
+      - revoked_at
+      - sent_at
+      - sent_count
+      - status
+      - user_id
+    InvitationStatusEnum:
+      enum:
+      - draft
+      - sent
+      - opened
+      - activated
+      - revoked
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `sent` - Sent
+        * `opened` - Opened
+        * `activated` - Activated
+        * `revoked` - Revoked
     KpiAssignment:
       type: object
       properties:

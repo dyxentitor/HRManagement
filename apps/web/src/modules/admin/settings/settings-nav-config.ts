@@ -5,6 +5,7 @@ import {
 	Landmark,
 	LayoutGrid,
 	Link2,
+	MailPlus,
 	Megaphone,
 	ScrollText,
 	Palmtree,
@@ -64,6 +65,12 @@ export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
 		perm: "employee:write:org",
 		isNewInV190: true,
 		badge: "unlinked_users",
+	},
+	{
+		to: "/admin/settings/invitations",
+		label: "Invitations",
+		icon: MailPlus,
+		perm: "user:create",
 	},
 	{
 		to: "/admin/settings/archived",

@@ -182,6 +182,10 @@ EMAIL_HOST_PASSWORD = env("SMTP_PASSWORD", default="")  # pragma: allowlist secr
 EMAIL_USE_TLS = env.bool("SMTP_USE_TLS", default=False)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="hrms@provintell.local")
 
+# Onboarding invitations
+INVITATION_EXPIRY_HOURS = env.int("INVITATION_EXPIRY_HOURS", default=72)
+FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://localhost:5173")
+
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:5173", "http://127.0.0.1:5173"],

@@ -4,8 +4,8 @@ Both creation paths — employee-first and user-first — call `provision_user`.
 It creates a User in an org, assigns one role, writes an audit row, busts the
 perm cache, and handles two credential methods:
 
-- "invite": create the user with an UNUSABLE password, then trigger the
-  existing password-reset email so they set their own password.
+- "invite": create the user with an UNUSABLE password, then send a single-use
+  onboarding invitation (Invitation token) so they set their own password.
 - "temp": set a provided temp password and flag `must_change_password=True`.
 """
 
@@ -16,7 +16,6 @@ from rest_framework.exceptions import ValidationError
 
 from common.audit.service import append as audit_append
 from modules.identity.models import Role, User, UserRole
-from modules.identity.services.auth import initiate_password_reset
 from modules.identity.services.permissions import invalidate_user_perms
 
 
@@ -76,6 +75,8 @@ def provision_user(
     )
 
     if credential_method == "invite":
-        initiate_password_reset(email=email)
+        from .invitation import create_invitation
+
+        create_invitation(user, created_by=actor_id)
 
     return user
