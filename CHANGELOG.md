@@ -2,6 +2,16 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.22.1] — 2026-06-21
+
+### Fixed
+
+- **Roster conflicts panel** was taking too much vertical space when several conflicts existed.
+  It's now a **compact, collapsible one-line bar** — conflict count + an at-a-glance by-rule
+  summary (e.g. "2 overtime · 1 coverage") + a chevron — collapsed by default, expanding to the
+  bounded, scrollable list. Frontend-only; backend unchanged (790 passed). No new perm, no
+  migration.
+
 ## [1.22.0] — 2026-06-21
 
 Roster Planning Workspace — Phases 1 + 2 (`/schedule/roster`). Turns the spreadsheet-style grid
