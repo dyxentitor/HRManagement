@@ -2,6 +2,37 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.21.0] — 2026-06-21
+
+Combined **Growth** workspace (Certifications + Training) + certification document upload.
+Spec: `docs/superpowers/specs/2026-06-21-growth-page-cert-upload.md`.
+
+### Added
+
+- **`/growth`** — one page, two big equal-height columns: **Certifications** (left) +
+  **Training** (right). Each column = a shared `GrowthHero` (status ring · composition
+  segment-bar · 3 stat tiles · a "next up" callout) + an urgency-first row list (expiring /
+  overdue) with its key action (Add certificate / Mark complete). Renders one column if only one
+  module is enabled.
+- **Certification document upload** — attach a picture/PDF when adding a cert (≤10 MB,
+  `image/*,application/pdf`) and view it later. New `GET /certifications/{id}/document/download/`
+  returns a presigned view URL (404 when none). Upload reuses the existing presigned-PUT +
+  register endpoints; the add-cert drawer does create → presign → S3 PUT → register.
+
+### Changed
+
+- `/certifications/me` + `/training/me` now **redirect** to `/growth`; sidebar + command palette
+  collapse their two entries to one **Growth** (visible when `certification` OR `training` is on).
+- `TrainingAssignmentSerializer` gains **`plan_name`** so training rows show the plan name (rows
+  previously rendered the raw plan UUID).
+- Removed the superseded `MyCertificationsPage` / `MyTrainingPage` (replaced by the columns).
+
+### Tests
+
+- Frontend **378 passed** (`cert-ui` summaries + `GrowthPage`: both columns, view document,
+  add-cert-with-file). Backend **788 passed** (cert document register + presigned download).
+  Contracts regenerated. No new perm codes, no migration.
+
 ## [1.20.0] — 2026-06-21
 
 My Payslips + My Profile — premium redesign (employee pages). Spec:
