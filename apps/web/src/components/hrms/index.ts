@@ -1,3 +1,5 @@
+export { ComingSoon } from "./ComingSoon";
+export type { ComingSoonProps } from "./ComingSoon";
 export { ApprovalActionBar } from "./ApprovalActionBar";
 export type { ApprovalActionBarProps } from "./ApprovalActionBar";
 export { MfaPrompt } from "./MfaPrompt";
