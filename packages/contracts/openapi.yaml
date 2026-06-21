@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.22.1
+  version: 1.23.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -2139,7 +2139,11 @@ paths:
   /api/v1/invitations/activate/:
     post:
       operationId: invitations_activate_create
-      description: 'Public: set the password for an invited account and activate it.'
+      description: |-
+        Public: set the password for an invited account, activate it, and sign in.
+
+        Returns JWTs so the onboarding wizard can continue authenticated (Phase 2),
+        and seeds the onboarding progress so the post-login gate can resume it.
       tags:
       - invitations
       security:
@@ -3380,6 +3384,21 @@ paths:
       - jwtAuth: []
       responses:
         '204':
+          description: No response body
+  /api/v1/me/preferences:
+    patch:
+      operationId: me_preferences_partial_update
+      description: |-
+        Merge-update the caller's own preferences (theme/locale/timezone/onboarding…).
+
+        The nested `onboarding` object is shallow-merged so a single field (e.g. the
+        current step) can be updated without clobbering the rest.
+      tags:
+      - me
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
           description: No response body
   /api/v1/notifications:
     get:

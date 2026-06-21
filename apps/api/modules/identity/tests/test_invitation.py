@@ -155,3 +155,36 @@ def test_non_hr_cannot_list(org, user):
     c = APIClient()
     c.force_authenticate(_make_user(org, "emp2@example.com", "employee"))
     assert c.get("/api/v1/invitations/").status_code == 403
+
+
+def test_activate_returns_tokens_and_seeds_onboarding(org, user):
+    """Phase 2: activate signs the hire in + flags onboarding so the wizard runs."""
+    _, raw = inv_service.create_invitation(user, created_by=None)
+    c = APIClient()
+    r = c.post(
+        "/api/v1/invitations/activate/",
+        {"token": raw, "password": "secretpw1234"},
+        format="json",
+    )
+    assert r.status_code == 200, r.content
+    body = r.json()
+    assert body["access_token"] and body["refresh_token"]
+    user.refresh_from_db()
+    assert user.preferences["onboarding"] == {"completed": False, "step": "profile"}
+
+
+def test_me_preferences_merges_onboarding(org, user):
+    c = APIClient()
+    c.force_authenticate(user)
+    r = c.patch(
+        "/api/v1/me/preferences",
+        {"theme": "dark", "onboarding": {"step": "review"}},
+        format="json",
+    )
+    assert r.status_code == 200, r.content
+    user.refresh_from_db()
+    assert user.preferences["theme"] == "dark"
+    # a follow-up patch shallow-merges onboarding (step preserved)
+    c.patch("/api/v1/me/preferences", {"onboarding": {"completed": True}}, format="json")
+    user.refresh_from_db()
+    assert user.preferences["onboarding"] == {"step": "review", "completed": True}

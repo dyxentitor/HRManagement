@@ -16,7 +16,15 @@ export async function verifyInvitation(token: string): Promise<InvitationPreview
 	return r.json();
 }
 
-export async function activateInvitation(token: string, password: string): Promise<void> {
+export interface ActivationTokens {
+	access_token: string;
+	refresh_token: string;
+}
+
+export async function activateInvitation(
+	token: string,
+	password: string,
+): Promise<ActivationTokens> {
 	const r = await fetch(`${BASE_URL}/api/v1/invitations/activate/`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -30,4 +38,5 @@ export async function activateInvitation(token: string, password: string): Promi
 		};
 		throw new Error(b.token?.[0] || b.password?.[0] || b.detail || "Activation failed.");
 	}
+	return r.json();
 }

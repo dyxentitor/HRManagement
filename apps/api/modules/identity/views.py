@@ -82,6 +82,28 @@ def me_view(request) -> Response:
     return Response(MeSerializer(request.user).data)
 
 
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def me_preferences_view(request) -> Response:
+    """Merge-update the caller's own preferences (theme/locale/timezone/onboarding…).
+
+    The nested `onboarding` object is shallow-merged so a single field (e.g. the
+    current step) can be updated without clobbering the rest.
+    """
+    user = request.user
+    prefs = dict(user.preferences or {})
+    body = request.data if isinstance(request.data, dict) else {}
+    for key, value in body.items():
+        nested = key == "onboarding" and isinstance(value, dict)
+        if nested and isinstance(prefs.get("onboarding"), dict):
+            prefs["onboarding"] = {**prefs["onboarding"], **value}
+        else:
+            prefs[key] = value
+    user.preferences = prefs
+    user.save(update_fields=["preferences", "updated_at"])
+    return Response(prefs)
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def password_forgot_view(request) -> Response:
@@ -281,7 +303,8 @@ def role_reset_view(request, code: str) -> Response:
     return Response(RoleDetailSerializer(role).data)
 
 
-from modules.identity.models import User as UserModel, UserRole  # noqa: E402
+from modules.identity.models import User as UserModel  # noqa: E402
+from modules.identity.models import UserRole  # noqa: E402
 from modules.identity.serializers import AssignRolesInputSerializer  # noqa: E402
 from modules.identity.services.permissions import (  # noqa: E402
     LastAdminError,

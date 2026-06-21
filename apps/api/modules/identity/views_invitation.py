@@ -108,12 +108,35 @@ def invitation_verify_view(request) -> Response:
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def invitation_activate_view(request) -> Response:
-    """Public: set the password for an invited account and activate it."""
+    """Public: set the password for an invited account, activate it, and sign in.
+
+    Returns JWTs so the onboarding wizard can continue authenticated (Phase 2),
+    and seeds the onboarding progress so the post-login gate can resume it.
+    """
+    from .services.auth import _issue_tokens
+    from .services.sessions import create_session
+
     s = InvitationActivateSerializer(data=request.data)
     s.is_valid(raise_exception=True)
-    inv_service.activate(
+    user = inv_service.activate(
         s.validated_data["token"],
         password=s.validated_data["password"],
         ip=_client_ip(request) or "",
     )
-    return Response({"detail": "Account activated."}, status=status.HTTP_200_OK)
+
+    prefs = dict(user.preferences or {})
+    prefs["onboarding"] = {"completed": False, "step": "profile"}
+    user.preferences = prefs
+    user.save(update_fields=["preferences", "updated_at"])
+
+    access, refresh = _issue_tokens(user)
+    create_session(
+        user,
+        refresh_token=refresh,
+        ip=_client_ip(request),
+        user_agent=request.META.get("HTTP_USER_AGENT", ""),
+    )
+    return Response(
+        {"access_token": access, "refresh_token": refresh},
+        status=status.HTTP_200_OK,
+    )

@@ -1236,7 +1236,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Public: set the password for an invited account and activate it. */
+        /**
+         * @description Public: set the password for an invited account, activate it, and sign in.
+         *
+         *     Returns JWTs so the onboarding wizard can continue authenticated (Phase 2),
+         *     and seeds the onboarding progress so the post-login gate can resume it.
+         */
         post: operations["invitations_activate_create"];
         delete?: never;
         options?: never;
@@ -1796,6 +1801,28 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["leave_types_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * @description Merge-update the caller's own preferences (theme/locale/timezone/onboarding…).
+         *
+         *     The nested `onboarding` object is shallow-merged so a single field (e.g. the
+         *     current step) can be updated without clobbering the rest.
+         */
+        patch: operations["me_preferences_partial_update"];
         trace?: never;
     };
     "/api/v1/notifications": {
@@ -8283,6 +8310,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["LeaveType"];
                 };
+            };
+        };
+    };
+    me_preferences_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

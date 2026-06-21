@@ -14,5 +14,12 @@ export function SignedOutGate({ children }: { children: ReactNode }) {
 	if (mustChangePassword && location.pathname !== "/force-password-change") {
 		return <Navigate to="/force-password-change" replace />;
 	}
+	// New hires mid-onboarding resume the wizard (it lives outside AppShell, so
+	// no loop). The key is only set once activation begins — existing users
+	// have no `onboarding` key and are unaffected.
+	const onboarding = user.preferences?.onboarding as { completed?: boolean } | undefined;
+	if (onboarding && !onboarding.completed && location.pathname !== "/onboarding") {
+		return <Navigate to="/onboarding" replace />;
+	}
 	return <>{children}</>;
 }
