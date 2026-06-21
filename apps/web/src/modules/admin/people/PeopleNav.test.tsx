@@ -19,12 +19,12 @@ function renderNav() {
 }
 
 describe("PeopleNav", () => {
-	it("shows Directory, Invitations and Accounts when permitted", () => {
+	it("shows Directory, Onboarding and Accounts when permitted", () => {
 		perm.can.mockReturnValue(true);
 		renderNav();
 		expect(screen.getByText("People")).toBeInTheDocument();
 		expect(screen.getByText("Directory")).toBeInTheDocument();
-		expect(screen.getByText("Invitations")).toBeInTheDocument();
+		expect(screen.getByText("Onboarding")).toBeInTheDocument();
 		expect(screen.getByText("Accounts")).toBeInTheDocument();
 	});
 
@@ -33,7 +33,7 @@ describe("PeopleNav", () => {
 		perm.can.mockImplementation((p: string) => p === "employee:read:org");
 		renderNav();
 		expect(screen.getByText("Directory")).toBeInTheDocument();
-		expect(screen.queryByText("Invitations")).not.toBeInTheDocument();
+		expect(screen.queryByText("Onboarding")).not.toBeInTheDocument();
 		expect(screen.queryByText("Accounts")).not.toBeInTheDocument();
 	});
 });

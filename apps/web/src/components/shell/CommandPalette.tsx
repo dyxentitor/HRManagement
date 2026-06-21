@@ -91,10 +91,10 @@ const PAGES = [
 		perm: "employee:read:org",
 	},
 	{
-		label: "People · Invitations",
-		to: "/admin/people/invitations",
+		label: "People · Onboarding",
+		to: "/admin/people/onboarding",
 		icon: Users,
-		perm: "user:create",
+		perm: "onboarding:read",
 	},
 	{
 		label: "People · Accounts",

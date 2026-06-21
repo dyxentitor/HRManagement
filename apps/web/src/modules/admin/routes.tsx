@@ -20,10 +20,9 @@ const UserCreatePage = lazy(() =>
 	})),
 );
 const ArchivedEmployeesPage = lazy(() => import("./settings/ArchivedEmployeesPage"));
-const InvitationsPage = lazy(() => import("./settings/InvitationsPage"));
 const PeopleShell = lazy(() => import("./people/PeopleShell"));
 const EmployeesPage = lazy(() => import("@/modules/employee/pages/EmployeesPage"));
-const OnboardingBoardPage = lazy(() => import("./people/OnboardingBoardPage"));
+const OnboardingHubPage = lazy(() => import("./people/OnboardingHubPage"));
 
 function RedirectRoleDetail() {
 	const { code } = useParams<{ code: string }>();
@@ -63,7 +62,7 @@ export const adminRoutes: RouteObject[] = [
 			// Moved to the People hub (v1.25.0) — redirect old links.
 			{ path: "users", element: <Navigate to="/admin/people/accounts" replace /> },
 			{ path: "users/new", element: <Navigate to="/admin/people/accounts/new" replace /> },
-			{ path: "invitations", element: <Navigate to="/admin/people/invitations" replace /> },
+			{ path: "invitations", element: <Navigate to="/admin/people/onboarding" replace /> },
 			{ path: "archived", element: <ArchivedEmployeesPage /> },
 			{ path: "roles", element: <AdminRolesPage /> },
 			{ path: "roles/:code", element: <AdminRoleDetailPage /> },
@@ -79,8 +78,9 @@ export const adminRoutes: RouteObject[] = [
 		element: <PeopleShell />,
 		children: [
 			{ index: true, element: <EmployeesPage /> },
-			{ path: "onboarding", element: <OnboardingBoardPage /> },
-			{ path: "invitations", element: <InvitationsPage /> },
+			{ path: "onboarding", element: <OnboardingHubPage /> },
+			// Invitations merged into the Onboarding hub — keep the old link working.
+			{ path: "invitations", element: <Navigate to="/admin/people/onboarding" replace /> },
 			{ path: "accounts", element: <UsersLinkingPage /> },
 			{ path: "accounts/new", element: <UserCreatePage /> },
 		],

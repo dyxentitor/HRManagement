@@ -1,4 +1,4 @@
-import { ClipboardCheck, Link2, MailPlus, UsersRound } from "lucide-react";
+import { ClipboardCheck, Link2, UsersRound } from "lucide-react";
 import type { ComponentType } from "react";
 
 export type PeopleNavBadge = "unlinked_users";
@@ -25,12 +25,6 @@ export const PEOPLE_NAV_ITEMS: PeopleNavItem[] = [
 		label: "Onboarding",
 		icon: ClipboardCheck,
 		perm: "onboarding:read",
-	},
-	{
-		to: "/admin/people/invitations",
-		label: "Invitations",
-		icon: MailPlus,
-		perm: "user:create",
 	},
 	{
 		to: "/admin/people/accounts",
