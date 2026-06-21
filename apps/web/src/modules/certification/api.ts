@@ -1,5 +1,15 @@
 import { api } from "@/lib/api";
 
+const CERT_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+async function certAuthHeaders(
+	extra: Record<string, string> = {},
+): Promise<Record<string, string>> {
+	const { tokenStorage } = await import("@/lib/token-storage");
+	const token = tokenStorage.getAccess();
+	return { ...extra, ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
+
 export type CertStatus = "active" | "expired" | "revoked";
 
 export type Certification = {
@@ -29,11 +39,7 @@ export type TrainingPlan = {
 	updated_at: string;
 };
 
-export type TrainingAssignmentStatus =
-	| "assigned"
-	| "in_progress"
-	| "completed"
-	| "overdue";
+export type TrainingAssignmentStatus = "assigned" | "in_progress" | "completed" | "overdue";
 
 export type TrainingProgress = {
 	id: number;
@@ -46,6 +52,7 @@ export type TrainingProgress = {
 export type TrainingAssignment = {
 	id: string;
 	plan: string;
+	plan_name: string;
 	employee_id: string;
 	assigned_by: string;
 	due_date: string;
@@ -96,17 +103,14 @@ export const certificationApi = {
 		// employee_id is derived server-side from the signed-in user's Employee.
 	}) => _post<Certification>("/api/v1/certifications/", payload),
 
-	myAssignments: () =>
-		_get<TrainingAssignment[]>("/api/v1/training/assignments/me/"),
+	myAssignments: () => _get<TrainingAssignment[]>("/api/v1/training/assignments/me/"),
 
 	listAssignments: (params?: { status?: string }) => {
 		const qs = new URLSearchParams();
 		if (params?.status) qs.set("status", params.status);
 		const query = qs.toString();
 		return _get<TrainingAssignment[]>(
-			query
-				? `/api/v1/training/assignments/?${query}`
-				: "/api/v1/training/assignments/",
+			query ? `/api/v1/training/assignments/?${query}` : "/api/v1/training/assignments/",
 		);
 	},
 
@@ -125,4 +129,44 @@ export const certificationApi = {
 		progress_pct: number;
 		notes?: string;
 	}) => _post<TrainingProgress>("/api/v1/training/progress/", payload),
+
+	/** Presigned GET to view/download a cert's uploaded document. */
+	downloadDocument: async (certId: string): Promise<{ url: string; filename: string }> => {
+		const resp = await fetch(
+			`${CERT_BASE_URL}/api/v1/certifications/${certId}/document/download/`,
+			{ headers: await certAuthHeaders() },
+		);
+		if (!resp.ok) throw new Error("Could not open the document");
+		return (await resp.json()) as { url: string; filename: string };
+	},
+
+	/** Upload a document (image/pdf) to an existing cert: presign → S3 PUT → register. */
+	uploadCertificationDocument: async (certId: string, file: File): Promise<Certification> => {
+		const authJson = await certAuthHeaders({ "Content-Type": "application/json" });
+
+		const presignResp = await fetch(
+			`${CERT_BASE_URL}/api/v1/certifications/${certId}/document/presigned-upload/`,
+			{ method: "POST", headers: authJson, body: JSON.stringify({ content_type: file.type }) },
+		);
+		if (!presignResp.ok) throw new Error("Could not start the upload");
+		const { upload_url, s3_key } = (await presignResp.json()) as {
+			upload_url: string;
+			s3_key: string;
+		};
+
+		const putResp = await fetch(upload_url, {
+			method: "PUT",
+			headers: { "Content-Type": file.type },
+			body: file,
+		});
+		if (!putResp.ok) throw new Error("Upload to storage failed");
+
+		const regResp = await fetch(`${CERT_BASE_URL}/api/v1/certifications/${certId}/document/`, {
+			method: "POST",
+			headers: authJson,
+			body: JSON.stringify({ s3_key }),
+		});
+		if (!regResp.ok) throw new Error("Could not save the document");
+		return (await regResp.json()) as Certification;
+	},
 };

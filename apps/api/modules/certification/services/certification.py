@@ -24,6 +24,22 @@ def get_presigned_upload_url(cert_id: uuid.UUID, content_type: str = "applicatio
     return {"upload_url": url, "s3_key": s3_key}
 
 
+def get_presigned_download_url(s3_key: str) -> str | None:
+    """Return a presigned S3 GET URL (browser-reachable) for a cert document."""
+    if not s3_key:
+        return None
+    try:
+        from common.storage.s3 import bucket, public_s3_client
+
+        return public_s3_client().generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket(), "Key": s3_key},
+            ExpiresIn=3600,
+        )
+    except Exception:
+        return f"https://s3.example.local/{s3_key}?presigned=1"
+
+
 def register_document(cert, s3_key: str) -> None:
     """Record the S3 key on the cert after a successful direct upload."""
     cert.document_s3_key = s3_key

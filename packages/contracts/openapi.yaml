@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.19.1
+  version: 1.20.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -640,6 +640,27 @@ paths:
             schema:
               $ref: '#/components/schemas/CertificationRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
+  /api/v1/certifications/{id}/document/download/:
+    get:
+      operationId: certifications_document_download_retrieve
+      description: Return a presigned GET URL to view/download the cert document.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - certifications
       security:
       - jwtAuth: []
       responses:
@@ -9034,6 +9055,9 @@ components:
         plan:
           type: string
           format: uuid
+        plan_name:
+          type: string
+          readOnly: true
         employee_id:
           type: string
           format: uuid
@@ -9077,6 +9101,7 @@ components:
       - evidence_s3_key
       - id
       - plan
+      - plan_name
       - progress
       - status
       - updated_at

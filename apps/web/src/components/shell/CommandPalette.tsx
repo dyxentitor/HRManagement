@@ -71,8 +71,8 @@ const PAGES = [
 		module: "kpi",
 	},
 	{
-		label: "Certifications",
-		to: "/certifications/me",
+		label: "Growth",
+		to: "/growth",
 		icon: GraduationCap,
 		perm: "cert:read:self",
 		module: "certification",
@@ -172,9 +172,7 @@ export function CommandPalette() {
 	// biome-ignore lint/correctness/useHookAtTopLevel: PAGES is module-constant; hook count is fixed.
 	const pagePerms = PAGES.map((p) => (p.perm === "" ? true : useCan(p.perm)));
 	// biome-ignore lint/correctness/useHookAtTopLevel: PAGES is module-constant; hook count is fixed.
-	const pageFeatures = PAGES.map((p) =>
-		p.module ? useFeature(p.module) : true,
-	);
+	const pageFeatures = PAGES.map((p) => (p.module ? useFeature(p.module) : true));
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
@@ -235,9 +233,7 @@ export function CommandPalette() {
 									<UserCircle className="size-4 mr-2" aria-hidden />
 									{emp.full_name}
 									{emp.email && (
-										<span className="ml-2 text-text-tertiary text-small">
-											{emp.email}
-										</span>
+										<span className="ml-2 text-text-tertiary text-small">{emp.email}</span>
 									)}
 								</CommandItem>
 							))}
@@ -247,16 +243,10 @@ export function CommandPalette() {
 
 				<CommandSeparator />
 				<CommandGroup heading="Actions">
-					<CommandItem
-						onSelect={() => go("/schedule/me")}
-						value="Clock in / out"
-					>
+					<CommandItem onSelect={() => go("/schedule/me")} value="Clock in / out">
 						<Clock className="size-4 mr-2" aria-hidden /> Clock in / out
 					</CommandItem>
-					<CommandItem
-						onSelect={() => go("/leave/apply")}
-						value="Apply for leave"
-					>
+					<CommandItem onSelect={() => go("/leave/apply")} value="Apply for leave">
 						<Calendar className="size-4 mr-2" aria-hidden /> Apply for leave
 					</CommandItem>
 				</CommandGroup>

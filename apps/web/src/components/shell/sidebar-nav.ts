@@ -78,8 +78,8 @@ export const NAV: NavGroup[] = [
 				module: "kpi",
 			},
 			{
-				label: "Certifications",
-				to: "/certifications/me",
+				label: "Growth",
+				to: "/growth",
 				icon: GraduationCap,
 				perm: "cert:read:self",
 				module: "certification",

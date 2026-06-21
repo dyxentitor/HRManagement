@@ -26,7 +26,11 @@ from .serializers import (
     TrainingProgressSerializer,
     TrainingProgressWriteSerializer,
 )
-from .services.certification import get_presigned_upload_url, register_document
+from .services.certification import (
+    get_presigned_download_url,
+    get_presigned_upload_url,
+    register_document,
+)
 from .services.training import complete_assignment
 
 
@@ -71,6 +75,8 @@ class CertificationViewSet(viewsets.ModelViewSet):
             return ["cert:read:team"]
         if self.action in ("presigned_upload", "register_document_action"):
             return ["cert:write:self"]
+        if self.action == "download_document":
+            return ["cert:read:self"]
         return ["cert:write:self"]
 
     def perform_create(self, serializer):
@@ -145,6 +151,20 @@ class CertificationViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         register_document(cert, s3_key=serializer.validated_data["s3_key"])
         return Response(CertificationSerializer(cert).data)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="document/download",
+    )
+    def download_document(self, request, pk=None):
+        """Return a presigned GET URL to view/download the cert document."""
+        cert = self.get_object()
+        if not cert.document_s3_key:
+            raise NotFound("No document uploaded for this certification.")
+        url = get_presigned_download_url(cert.document_s3_key)
+        filename = cert.document_s3_key.rsplit("/", 1)[-1]
+        return Response({"url": url, "filename": filename})
 
 
 @requires_feature("training")

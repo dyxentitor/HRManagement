@@ -154,6 +154,41 @@ def test_create_certification_derives_employee_from_user(stack) -> None:
 
 
 @pytest.mark.django_db
+def test_certification_document_upload_register_and_download(stack) -> None:
+    """Owner can register a document on their cert and get a presigned view URL."""
+    emp = _make_employee(org=stack["org"], user=stack["emp_user"], code="EMP1")
+    cert = Certification.objects.create(
+        org_id=stack["org"].id,
+        employee_id=emp.id,
+        name="CISSP",
+        issued_on="2024-03-01",
+    )
+    c = stack["client"]
+    c.credentials(HTTP_AUTHORIZATION=f"Bearer {stack['emp_token']}")
+
+    # before upload — download 404s
+    resp = c.get(f"/api/v1/certifications/{cert.id}/document/download/")
+    assert resp.status_code == 404, resp.content
+
+    # register a document key (post-PUT step)
+    key = f"certifications/{cert.id}/document.pdf"
+    resp = c.post(
+        f"/api/v1/certifications/{cert.id}/document/",
+        {"s3_key": key},
+        format="json",
+    )
+    assert resp.status_code == 200, resp.content
+    assert resp.json()["document_s3_key"] == key
+
+    # now download returns a presigned URL + filename
+    resp = c.get(f"/api/v1/certifications/{cert.id}/document/download/")
+    assert resp.status_code == 200, resp.content
+    body = resp.json()
+    assert body["filename"] == "document.pdf"
+    assert body["url"]
+
+
+@pytest.mark.django_db
 def test_create_certification_no_linked_employee_400(stack) -> None:
     """A caller with no linked Employee (e.g. an admin demo account) gets a clear 400,
     not a server error."""

@@ -3,12 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
 
-import {
-	type CertStatus,
-	type Certification,
-	type TrainingPlan,
-	certificationApi,
-} from "../api";
+import { type CertStatus, type Certification, type TrainingPlan, certificationApi } from "../api";
 
 const STATUS_TONE: Record<CertStatus, "mint" | "coral"> = {
 	active: "mint",
@@ -62,9 +57,7 @@ export default function AdminCertPage() {
 		try {
 			const [c, p] = await Promise.all([
 				certificationApi.listCertifications(
-					selectedWindow !== undefined
-						? { expiring_within_days: selectedWindow }
-						: undefined,
+					selectedWindow !== undefined ? { expiring_within_days: selectedWindow } : undefined,
 				),
 				certificationApi.listPlans(),
 			]);
@@ -124,11 +117,7 @@ export default function AdminCertPage() {
 					<h2 className="text-h2 text-text-primary">Certifications</h2>
 					<select
 						value={selectedWindow ?? ""}
-						onChange={(e) =>
-							setSelectedWindow(
-								e.target.value ? Number(e.target.value) : undefined,
-							)
-						}
+						onChange={(e) => setSelectedWindow(e.target.value ? Number(e.target.value) : undefined)}
 						className="border border-border-subtle rounded px-2 py-1 text-sm bg-canvas text-text-primary focus:border-accent-500 focus:outline-none"
 					>
 						{EXPIRY_WINDOWS.map(({ label, days }) => (
@@ -141,9 +130,7 @@ export default function AdminCertPage() {
 
 				{certs.length === 0 ? (
 					<div className="bg-surface-hover border border-border-subtle rounded-lg p-8 text-center">
-						<p className="text-text-secondary">
-							No certifications matching filter.
-						</p>
+						<p className="text-text-secondary">No certifications matching filter.</p>
 					</div>
 				) : (
 					<div className="bg-surface-hover border border-border-subtle rounded-lg overflow-hidden">
@@ -179,20 +166,13 @@ export default function AdminCertPage() {
 										>
 											{shortId(c.employee_id)}
 										</td>
-										<td className="py-3 px-4 text-body text-text-primary font-medium">
-											{c.name}
-										</td>
-										<td className="py-3 px-4 text-body text-text-secondary">
-											{c.issuer || "—"}
-										</td>
+										<td className="py-3 px-4 text-body text-text-primary font-medium">{c.name}</td>
+										<td className="py-3 px-4 text-body text-text-secondary">{c.issuer || "—"}</td>
 										<td className="py-3 px-4 text-body text-text-primary">
 											{c.expires_on ? formatDate(c.expires_on) : "No expiry"}
 										</td>
 										<td className="py-3 px-4">
-											<StatusPill
-												tone={STATUS_TONE[c.status]}
-												label={STATUS_LABEL[c.status]}
-											/>
+											<StatusPill tone={STATUS_TONE[c.status]} label={STATUS_LABEL[c.status]} />
 										</td>
 									</tr>
 								))}
@@ -220,10 +200,7 @@ export default function AdminCertPage() {
 						className="border border-border-subtle rounded-lg p-4 space-y-3 bg-surface-hover"
 					>
 						<div>
-							<label
-								htmlFor="plan-name"
-								className="block text-small text-text-secondary mb-1"
-							>
+							<label htmlFor="plan-name" className="block text-small text-text-secondary mb-1">
 								Plan Name *
 							</label>
 							<input
@@ -235,10 +212,7 @@ export default function AdminCertPage() {
 							/>
 						</div>
 						<div>
-							<label
-								htmlFor="plan-desc"
-								className="block text-small text-text-secondary mb-1"
-							>
+							<label htmlFor="plan-desc" className="block text-small text-text-secondary mb-1">
 								Description
 							</label>
 							<textarea
@@ -261,9 +235,7 @@ export default function AdminCertPage() {
 
 				{plans.length === 0 ? (
 					<div className="bg-surface-hover border border-border-subtle rounded-lg p-8 text-center">
-						<p className="text-text-secondary">
-							No training plans created yet.
-						</p>
+						<p className="text-text-secondary">No training plans created yet.</p>
 					</div>
 				) : (
 					<div className="bg-surface-hover border border-border-subtle rounded-lg overflow-hidden">
@@ -284,9 +256,7 @@ export default function AdminCertPage() {
 										key={p.id}
 										className="border-b border-border-subtle last:border-0 hover:bg-surface-hover transition-colors"
 									>
-										<td className="py-3 px-4 text-body text-text-primary font-medium">
-											{p.name}
-										</td>
+										<td className="py-3 px-4 text-body text-text-primary font-medium">{p.name}</td>
 										<td className="py-3 px-4 text-body text-text-secondary">
 											{p.description || "—"}
 										</td>

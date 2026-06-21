@@ -86,12 +86,14 @@ class TrainingProgressSerializer(serializers.ModelSerializer):
 
 class TrainingAssignmentSerializer(serializers.ModelSerializer):
     progress = TrainingProgressSerializer(many=True, read_only=True)
+    plan_name = serializers.CharField(source="plan.name", read_only=True)
 
     class Meta:
         model = TrainingAssignment
         fields = (
             "id",
             "plan",
+            "plan_name",
             "employee_id",
             "assigned_by",
             "due_date",
