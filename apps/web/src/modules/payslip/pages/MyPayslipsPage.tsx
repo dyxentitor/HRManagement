@@ -1,32 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { StatusPill } from "@/components/hrms";
-import { PageHeader } from "@/components/shell/PageHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { type PayslipRecord, payslipApi } from "../api";
-
-type PayslipStatus = PayslipRecord["status"];
-
-const STATUS_TONE: Record<PayslipStatus, "yellow" | "mint"> = {
-	draft: "yellow",
-	published: "mint",
-	sent: "mint",
-};
-
-const STATUS_LABEL: Record<PayslipStatus, string> = {
-	draft: "Draft",
-	published: "Published",
-	sent: "Sent",
-};
-
-function formatDate(iso: string | null | undefined): string {
-	if (!iso) return "—";
-	return new Date(iso).toLocaleDateString(undefined, {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	});
-}
+import { PayslipBreakdown } from "../components/PayslipBreakdown";
+import { PayslipHero } from "../components/PayslipHero";
+import { PayslipHistory } from "../components/PayslipHistory";
+import { isPublished, sortNewestFirst, yearSummary } from "../lib/payslip-ui";
 
 export default function MyPayslipsPage() {
 	const [payslips, setPayslips] = useState<PayslipRecord[]>([]);
@@ -46,83 +26,61 @@ export default function MyPayslipsPage() {
 	}, []);
 
 	useEffect(() => {
-		refresh();
+		void refresh();
 	}, [refresh]);
 
-	async function openPdf(id: string) {
+	async function onDownload(p: PayslipRecord) {
 		try {
-			const ps = await payslipApi.retrieve(id);
-			if (ps.pdf_url) {
-				window.open(ps.pdf_url, "_blank");
-			} else {
-				setError("PDF not yet available for this payslip.");
-			}
+			const url = p.pdf_url ?? (await payslipApi.retrieve(p.id)).pdf_url;
+			if (url) window.open(url, "_blank", "noopener,noreferrer");
+			else setError("PDF not yet available for this payslip.");
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to fetch payslip");
 		}
 	}
 
-	if (loading)
-		return <p className="text-text-tertiary p-4">Loading payslips…</p>;
+	// the latest payslip shown in the hero/breakdown — prefer a published one
+	const latest = useMemo(() => {
+		const sorted = sortNewestFirst(payslips);
+		return sorted.find(isPublished) ?? sorted[0] ?? null;
+	}, [payslips]);
+
+	const ytd = useMemo(() => {
+		const year = latest?.period_start
+			? new Date(`${latest.period_start.slice(0, 10)}T00:00:00Z`).getUTCFullYear()
+			: new Date().getUTCFullYear();
+		return yearSummary(payslips, year);
+	}, [payslips, latest]);
+
+	if (loading) {
+		return (
+			<div className="space-y-5">
+				<Skeleton className="h-44 rounded-2xl" />
+				<Skeleton className="h-64 rounded-2xl" />
+			</div>
+		);
+	}
 
 	return (
-		<div className="space-y-6 max-w-5xl mx-auto">
-			<PageHeader breadcrumb="Payslips" title="My Payslips" />
-
+		<div className="space-y-5">
 			{error && (
 				<p role="alert" className="text-coral text-small">
 					{error}
 				</p>
 			)}
 
-			{payslips.length === 0 ? (
-				<div className="bg-surface-hover border border-border-subtle rounded-lg p-8 text-center">
-					<p className="text-text-secondary">No payslips available yet.</p>
+			{latest === null ? (
+				<div className="glass-surface rounded-2xl p-10 text-center text-text-tertiary">
+					No payslips yet. They'll appear here once payroll publishes them.
 				</div>
 			) : (
-				<ul className="space-y-3">
-					{payslips.map((ps) => {
-						const isPublished =
-							ps.status === "published" || ps.status === "sent";
-						return (
-							<li
-								key={ps.id}
-								className="bg-surface-hover border border-border-subtle rounded-lg p-4"
-							>
-								<div className="flex items-center justify-between gap-3">
-									<div>
-										<div className="flex items-center gap-2 mb-1">
-											<span className="text-body text-text-primary font-semibold">
-												{ps.currency_code} {ps.net}
-											</span>
-											<span className="text-small text-text-tertiary">
-												(gross {ps.gross})
-											</span>
-										</div>
-										<div className="flex items-center gap-2 text-small text-text-secondary">
-											<StatusPill
-												tone={STATUS_TONE[ps.status]}
-												label={STATUS_LABEL[ps.status]}
-											/>
-											{isPublished && (
-												<span>Published {formatDate(ps.published_at)}</span>
-											)}
-										</div>
-									</div>
-									{isPublished && (
-										<button
-											type="button"
-											onClick={() => openPdf(ps.id)}
-											className="bg-accent-500 text-white py-1.5 px-3 rounded text-sm hover:bg-accent-600"
-										>
-											View PDF
-										</button>
-									)}
-								</div>
-							</li>
-						);
-					})}
-				</ul>
+				<>
+					<PayslipHero latest={latest} ytd={ytd} onDownload={onDownload} />
+					<div className="grid lg:grid-cols-[1fr_1.3fr] gap-5 items-start">
+						<PayslipBreakdown payslip={latest} />
+						<PayslipHistory payslips={payslips} onDownload={onDownload} />
+					</div>
+				</>
 			)}
 		</div>
 	);

@@ -160,6 +160,9 @@ def test_employee_list_own_payslips(stack):
     data = resp.json()
     assert len(data) == 1
     assert data[0]["id"] == str(payslip.id)
+    # the period's dates ride along so the employee view can label the month/pay date
+    assert data[0]["period_start"] == "2026-06-01"
+    assert data[0]["pay_date"] == "2026-07-05"
 
 
 @pytest.mark.django_db

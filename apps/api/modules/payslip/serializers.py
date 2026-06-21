@@ -38,6 +38,11 @@ class PayrollComponentSerializer(serializers.ModelSerializer):
 
 class PayslipRecordSerializer(serializers.ModelSerializer):
     pdf_url = serializers.SerializerMethodField()
+    # Surface the period's dates so the employee's payslip view can label the
+    # month + pay date without hitting the HR-only payroll-periods endpoint.
+    period_start = serializers.DateField(source="period.period_start", read_only=True)
+    period_end = serializers.DateField(source="period.period_end", read_only=True)
+    pay_date = serializers.DateField(source="period.pay_date", read_only=True)
 
     class Meta:
         model = PayslipRecord
@@ -45,6 +50,9 @@ class PayslipRecordSerializer(serializers.ModelSerializer):
             "id",
             "employee_id",
             "period",
+            "period_start",
+            "period_end",
+            "pay_date",
             "gross",
             "net",
             "currency_code",

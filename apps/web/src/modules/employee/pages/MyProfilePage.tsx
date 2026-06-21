@@ -27,6 +27,10 @@ interface EmployeeProfile {
 	hire_date?: string;
 	status?: string;
 	department?: string;
+	date_of_birth?: string | null;
+	gender?: string | null;
+	nationality?: string | null;
+	marital_status?: string | null;
 	bank_name?: string;
 	bank_account_last4?: string;
 	ic_last4?: string;
@@ -48,12 +52,24 @@ function tenureFromHireDate(hireDate?: string): string {
 	if (!hireDate) return "—";
 	const months = Math.max(
 		0,
-		Math.floor(
-			(Date.now() - new Date(hireDate).getTime()) /
-				(1000 * 60 * 60 * 24 * 30.42),
-		),
+		Math.floor((Date.now() - new Date(hireDate).getTime()) / (1000 * 60 * 60 * 24 * 30.42)),
 	);
 	return `${Math.floor(months / 12)}y ${months % 12}m`;
+}
+
+function formatDob(iso?: string | null): string {
+	if (!iso) return "—";
+	return new Date(`${iso.slice(0, 10)}T00:00:00Z`).toLocaleDateString("en-MY", {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+		timeZone: "UTC",
+	});
+}
+
+function titleCase(s?: string | null): string {
+	if (!s) return "—";
+	return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
 }
 
 export default function MyProfilePage() {
@@ -63,8 +79,7 @@ export default function MyProfilePage() {
 	const [editing, setEditing] = useState<SectionId | null>(null);
 	const [draft, setDraft] = useState<Partial<EmployeeWritePayload>>({});
 	const [saving, setSaving] = useState(false);
-	const [pendingMfa, setPendingMfa] =
-		useState<Partial<EmployeeWritePayload> | null>(null);
+	const [pendingMfa, setPendingMfa] = useState<Partial<EmployeeWritePayload> | null>(null);
 	const [mfaError, setMfaError] = useState<string | undefined>(undefined);
 
 	const refresh = useCallback(async () => {
@@ -104,8 +119,7 @@ export default function MyProfilePage() {
 			bank_name: profile.bank_name ?? "",
 			emergency_contact_name: profile.emergency_contact_name ?? "",
 			emergency_contact_phone: profile.emergency_contact_phone ?? "",
-			emergency_contact_relationship:
-				profile.emergency_contact_relationship ?? "",
+			emergency_contact_relationship: profile.emergency_contact_relationship ?? "",
 		});
 	}
 
@@ -114,17 +128,11 @@ export default function MyProfilePage() {
 		setDraft({});
 	}
 
-	function setField<K extends keyof EmployeeWritePayload>(
-		k: K,
-		v: EmployeeWritePayload[K],
-	) {
+	function setField<K extends keyof EmployeeWritePayload>(k: K, v: EmployeeWritePayload[K]) {
 		setDraft((d) => ({ ...d, [k]: v }));
 	}
 
-	async function performSave(
-		payload: Partial<EmployeeWritePayload>,
-		mfaCode?: string,
-	) {
+	async function performSave(payload: Partial<EmployeeWritePayload>, mfaCode?: string) {
 		setSaving(true);
 		setMfaError(undefined);
 		try {
@@ -150,14 +158,7 @@ export default function MyProfilePage() {
 	function saveSection(section: SectionId) {
 		const fieldsBySection: Record<SectionId, (keyof EmployeeWritePayload)[]> = {
 			personal: ["phone", "alt_phone", "preferred_name"],
-			address: [
-				"address_line1",
-				"address_line2",
-				"city",
-				"state",
-				"postcode",
-				"country_code",
-			],
+			address: ["address_line1", "address_line2", "city", "state", "postcode", "country_code"],
 			banking: ["bank_name"],
 			emergency: [
 				"emergency_contact_name",
@@ -170,11 +171,7 @@ export default function MyProfilePage() {
 			(payload as Record<string, unknown>)[k] = draft[k];
 		}
 
-		if (
-			section === "banking" &&
-			profile &&
-			draft.bank_name !== profile.bank_name
-		) {
+		if (section === "banking" && profile && draft.bank_name !== profile.bank_name) {
 			setPendingMfa(payload);
 			return;
 		}
@@ -205,48 +202,71 @@ export default function MyProfilePage() {
 		: "—";
 
 	return (
-		<div className="space-y-6">
-			<PageHeader breadcrumb="Personal" title="My Profile" />
-
-			<div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4">
-				<aside className="bg-surface-hover border border-border-subtle rounded-lg p-5 text-center">
-					<AvatarUpload
-						photoUrl={profile.photo_url ?? null}
-						fullName={profile.full_name}
-						onUploaded={() => void refresh()}
-						onDeleted={() => void refresh()}
-					/>
-					<h2 className="text-h2 text-text-primary mt-2">
-						{profile.full_name}
-					</h2>
-					{profile.role_title && (
-						<p className="text-small text-accent-200 inline-block bg-accent-500/15 rounded-full px-2.5 py-0.5 mt-1">
-							{profile.role_title}
-							{profile.department ? ` · ${profile.department}` : ""}
-						</p>
-					)}
-					<dl className="mt-3 text-small space-y-1.5">
-						<div className="flex justify-between border-t border-border-subtle pt-1.5">
-							<dt className="text-text-tertiary">Joined</dt>
-							<dd className="text-text-primary">{joined}</dd>
-						</div>
-						<div className="flex justify-between border-t border-border-subtle pt-1.5">
-							<dt className="text-text-tertiary">Tenure</dt>
-							<dd className="text-text-primary">{tenure}</dd>
-						</div>
+		<div className="space-y-5">
+			<div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5 items-start">
+				<aside className="relative overflow-hidden rounded-2xl border border-border-subtle p-6 text-center hero-aurora">
+					<div className="relative z-10">
+						<AvatarUpload
+							photoUrl={profile.photo_url ?? null}
+							fullName={profile.full_name}
+							onUploaded={() => void refresh()}
+							onDeleted={() => void refresh()}
+						/>
+						<h2 className="text-h2 text-text-primary mt-3">{profile.full_name}</h2>
+						{profile.role_title && (
+							<p className="text-small text-text-secondary">
+								{profile.role_title}
+								{profile.department ? ` · ${profile.department}` : ""}
+							</p>
+						)}
 						{profile.status && (
-							<div className="flex justify-between border-t border-border-subtle pt-1.5">
-								<dt className="text-text-tertiary">Status</dt>
-								<dd className="text-text-primary">{profile.status}</dd>
+							<div className="mt-2">
+								<StatusPill tone="mint" label={`● ${profile.status}`} />
 							</div>
 						)}
-					</dl>
+						<dl className="mt-4 text-small text-left space-y-0">
+							<div className="flex items-center gap-2.5 border-t border-border-subtle py-2">
+								<span className="text-text-tertiary w-5 text-center">🪪</span>
+								<span className="text-text-secondary font-mono">{profile.employee_code}</span>
+							</div>
+							<div className="flex items-center gap-2.5 border-t border-border-subtle py-2">
+								<span className="text-text-tertiary w-5 text-center">💼</span>
+								<span className="text-text-secondary">
+									{profile.employment_type || "—"} · {tenure} · joined {joined}
+								</span>
+							</div>
+							<div className="flex items-center gap-2.5 border-t border-border-subtle py-2">
+								<span className="text-text-tertiary w-5 text-center">✉️</span>
+								<span className="text-text-secondary truncate">{profile.email}</span>
+							</div>
+							<div className="flex items-center gap-2.5 border-t border-border-subtle py-2">
+								<span className="text-text-tertiary w-5 text-center">📞</span>
+								<span className="text-text-secondary">{profile.phone || "—"}</span>
+							</div>
+						</dl>
+					</div>
 				</aside>
 
-				<div className="space-y-3">
+				<div className="space-y-4">
+					<ReadOnlySection
+						title="Personal details"
+						fields={[
+							{ k: "Full name", v: profile.full_name },
+							{ k: "Date of birth", v: formatDob(profile.date_of_birth) },
+							{ k: "Gender", v: titleCase(profile.gender) },
+							{ k: "Nationality", v: profile.nationality || "—" },
+							{ k: "Marital status", v: titleCase(profile.marital_status) },
+							{
+								k: "IC",
+								v: profile.ic_last4 ? `•••• ${profile.ic_last4}` : "—",
+								mono: true,
+							},
+						]}
+					/>
+
 					<EditableSection
 						id="personal"
-						title="Personal"
+						title="Contact details"
 						editing={editing}
 						onEdit={() => startEdit("personal")}
 						onCancel={cancelEdit}
@@ -257,15 +277,7 @@ export default function MyProfilePage() {
 								<Field k="Phone" v={profile.phone || "—"} />
 								<Field k="Alt phone" v={profile.alt_phone || "—"} />
 								<Field k="Email" v={profile.email} />
-								<Field
-									k="Preferred name"
-									v={profile.preferred_name || profile.full_name}
-								/>
-								<Field
-									k="IC"
-									v={profile.ic_last4 ? `•••• ${profile.ic_last4}` : "—"}
-									mono
-								/>
+								<Field k="Preferred name" v={profile.preferred_name || profile.full_name} />
 							</dl>
 						}
 						editView={
@@ -370,11 +382,7 @@ export default function MyProfilePage() {
 								<Field k="Bank" v={profile.bank_name || "—"} />
 								<Field
 									k="Account"
-									v={
-										profile.bank_account_last4
-											? `•••• ${profile.bank_account_last4}`
-											: "—"
-									}
+									v={profile.bank_account_last4 ? `•••• ${profile.bank_account_last4}` : "—"}
 									mono
 								/>
 							</dl>
@@ -402,10 +410,7 @@ export default function MyProfilePage() {
 							<dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-body">
 								<Field k="Name" v={profile.emergency_contact_name || "—"} />
 								<Field k="Phone" v={profile.emergency_contact_phone || "—"} />
-								<Field
-									k="Relationship"
-									v={profile.emergency_contact_relationship || "—"}
-								/>
+								<Field k="Relationship" v={profile.emergency_contact_relationship || "—"} />
 							</dl>
 						}
 						editView={
@@ -423,9 +428,7 @@ export default function MyProfilePage() {
 								<LabeledInput
 									label="Relationship"
 									value={draft.emergency_contact_relationship ?? ""}
-									onChange={(v) =>
-										setField("emergency_contact_relationship", v)
-									}
+									onChange={(v) => setField("emergency_contact_relationship", v)}
 								/>
 							</div>
 						}
@@ -459,14 +462,7 @@ function Field({
 	return (
 		<div>
 			<dt className="text-label uppercase text-text-tertiary">{k}</dt>
-			<dd
-				className={cn(
-					"text-text-primary mt-0.5",
-					mono && "font-mono text-small",
-				)}
-			>
-				{v}
-			</dd>
+			<dd className={cn("text-text-primary mt-0.5", mono && "font-mono text-small")}>{v}</dd>
 		</div>
 	);
 }
@@ -499,9 +495,10 @@ function ReadOnlySection({
 	fields: { k: string; v: React.ReactNode; mono?: boolean }[];
 }) {
 	return (
-		<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
+		<section className="glass-surface rounded-2xl p-5">
 			<header className="flex items-center justify-between mb-3">
-				<h2 className="text-h3 text-text-primary">{title}</h2>
+				<p className="layer-eyebrow">{title}</p>
+				<span className="text-[10px] uppercase tracking-wide text-text-tertiary">read-only</span>
 			</header>
 			<dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-body">
 				{fields.map((f) => (
@@ -541,19 +538,12 @@ function EditableSection({
 }: EditableSectionProps) {
 	const isEditing = editing === id;
 	return (
-		<section
-			className={cn(
-				"bg-surface-hover border rounded-lg p-4",
-				flagged ? "border-coral/30" : "border-border-subtle",
-			)}
-		>
+		<section className={cn("glass-surface rounded-2xl p-5", flagged && "ring-1 ring-coral/30")}>
 			<header className="flex items-center justify-between mb-3">
-				<h2 className="text-h3 text-text-primary flex items-center gap-2">
+				<p className="layer-eyebrow flex items-center gap-2">
 					{title}
-					{flagged && flagLabel && (
-						<StatusPill tone="coral" label={flagLabel} />
-					)}
-				</h2>
+					{flagged && flagLabel && <StatusPill tone="coral" label={flagLabel} />}
+				</p>
 				{!isEditing && (
 					<button
 						type="button"
@@ -568,12 +558,7 @@ function EditableSection({
 			{isEditing ? editView : readView}
 			{isEditing && (
 				<div className="flex justify-end gap-2 mt-3">
-					<Button
-						type="button"
-						variant="ghost"
-						onClick={onCancel}
-						disabled={saving}
-					>
+					<Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
 						Cancel
 					</Button>
 					<Button type="button" onClick={onSave} disabled={saving}>

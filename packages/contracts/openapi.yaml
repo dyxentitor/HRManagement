@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.18.1
+  version: 1.19.1
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -8605,6 +8605,18 @@ components:
           type: string
           format: uuid
           readOnly: true
+        period_start:
+          type: string
+          format: date
+          readOnly: true
+        period_end:
+          type: string
+          format: date
+          readOnly: true
+        pay_date:
+          type: string
+          format: date
+          readOnly: true
         gross:
           type: string
           format: decimal
@@ -8661,10 +8673,13 @@ components:
       - gross
       - id
       - net
+      - pay_date
       - pdf_generated_at
       - pdf_s3_key
       - pdf_url
       - period
+      - period_end
+      - period_start
       - published_at
       - source
       - status

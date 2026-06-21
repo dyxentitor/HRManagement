@@ -13,6 +13,9 @@ export type PayslipRecord = {
 	id: string;
 	employee_id: string;
 	period: string;
+	period_start: string | null;
+	period_end: string | null;
+	pay_date: string | null;
 	gross: string;
 	net: string;
 	currency_code: string;
@@ -54,29 +57,22 @@ async function _get<T>(url: string): Promise<T> {
 }
 
 async function _post<T>(url: string, body?: unknown): Promise<T> {
-	const opts =
-		body !== undefined
-			? ({ body: body as never } as never)
-			: (undefined as never);
+	const opts = body !== undefined ? ({ body: body as never } as never) : (undefined as never);
 	const { data, error } = await api.POST(url as never, opts);
 	if (error) throw new Error(`POST ${url} failed`);
 	return data as T;
 }
 
 function _unwrap<T>(d: { results?: T[] } | T[]): T[] {
-	return Array.isArray(d) ? d : d.results ?? [];
+	return Array.isArray(d) ? d : (d.results ?? []);
 }
 
 export const payslipApi = {
 	listMine: () =>
-		_get<{ results?: PayslipRecord[] } | PayslipRecord[]>(
-			"/api/v1/payslips/me/",
-		).then(_unwrap),
+		_get<{ results?: PayslipRecord[] } | PayslipRecord[]>("/api/v1/payslips/me/").then(_unwrap),
 	retrieve: (id: string) => _get<PayslipRecord>(`/api/v1/payslips/${id}/`),
 	listPeriods: () =>
-		_get<{ results?: PayrollPeriod[] } | PayrollPeriod[]>(
-			"/api/v1/payroll/periods/",
-		).then(_unwrap),
+		_get<{ results?: PayrollPeriod[] } | PayrollPeriod[]>("/api/v1/payroll/periods/").then(_unwrap),
 	createPeriod: (body: {
 		period_start: string;
 		period_end: string;
@@ -84,9 +80,7 @@ export const payslipApi = {
 		pay_date: string;
 	}) => _post<PayrollPeriod>("/api/v1/payroll/periods/", body),
 	listRuns: () =>
-		_get<{ results?: PayrollRun[] } | PayrollRun[]>(
-			"/api/v1/payroll/runs/",
-		).then(_unwrap),
+		_get<{ results?: PayrollRun[] } | PayrollRun[]>("/api/v1/payroll/runs/").then(_unwrap),
 	uploadRun: async (periodId: string, csvFile: File): Promise<UploadResult> => {
 		const { tokenStorage } = await import("@/lib/token-storage");
 		const token = tokenStorage.getAccess();

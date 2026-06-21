@@ -3,12 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
 
-import {
-	type PayrollPeriod,
-	type PayrollRun,
-	type UploadResult,
-	payslipApi,
-} from "../api";
+import { type PayrollPeriod, type PayrollRun, type UploadResult, payslipApi } from "../api";
 
 function formatPeriodLabel(p: PayrollPeriod): string {
 	const fmt = (iso: string) => {
@@ -22,10 +17,7 @@ function formatPeriodLabel(p: PayrollPeriod): string {
 	return `${fmt(p.period_start)} – ${fmt(p.period_end)}`;
 }
 
-const RUN_STATUS_TONE: Record<
-	PayrollRun["status"],
-	"mint" | "sky" | "coral" | "yellow"
-> = {
+const RUN_STATUS_TONE: Record<PayrollRun["status"], "mint" | "sky" | "coral" | "yellow"> = {
 	published: "mint",
 	validated: "sky",
 	failed: "coral",
@@ -39,10 +31,7 @@ const RUN_STATUS_LABEL: Record<PayrollRun["status"], string> = {
 	draft: "Draft",
 };
 
-const PERIOD_STATUS_TONE: Record<
-	PayrollPeriod["status"],
-	"lavender" | "mint" | "yellow"
-> = {
+const PERIOD_STATUS_TONE: Record<PayrollPeriod["status"], "lavender" | "mint" | "yellow"> = {
 	locked: "lavender",
 	published: "mint",
 	draft: "yellow",
@@ -61,10 +50,7 @@ export default function PayrollAdminPage() {
 	const refresh = useCallback(async () => {
 		setError(null);
 		try {
-			const [p, r] = await Promise.all([
-				payslipApi.listPeriods(),
-				payslipApi.listRuns(),
-			]);
+			const [p, r] = await Promise.all([payslipApi.listPeriods(), payslipApi.listRuns()]);
 			setPeriods(p);
 			setRuns(r);
 			if (p.length > 0 && !selectedPeriod) {
@@ -155,9 +141,7 @@ export default function PayrollAdminPage() {
 								onChange={(e) => setSelectedPeriod(e.target.value)}
 								className="border border-border-subtle rounded-md px-3 py-1.5 text-body text-text-primary bg-canvas focus:border-accent-500 focus:outline-none max-w-xs"
 							>
-								{periods.length === 0 && (
-									<option value="">No periods available</option>
-								)}
+								{periods.length === 0 && <option value="">No periods available</option>}
 								{periods.map((p) => (
 									<option key={p.id} value={p.id}>
 										{formatPeriodLabel(p)}
@@ -204,8 +188,7 @@ export default function PayrollAdminPage() {
 				{uploadResult && (
 					<div className="pt-2 border-t border-border-subtle">
 						<p className="text-mint text-small">
-							Imported {uploadResult.row_count} row(s). Status:{" "}
-							{uploadResult.status}
+							Imported {uploadResult.row_count} row(s). Status: {uploadResult.status}
 						</p>
 						{uploadResult.errors.length > 0 && (
 							<ul className="mt-1 text-coral text-small list-disc list-inside">

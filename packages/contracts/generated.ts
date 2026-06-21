@@ -4223,6 +4223,12 @@ export interface components {
             readonly employee_id: string;
             /** Format: uuid */
             readonly period: string;
+            /** Format: date */
+            readonly period_start: string;
+            /** Format: date */
+            readonly period_end: string;
+            /** Format: date */
+            readonly pay_date: string;
             /** Format: decimal */
             readonly gross: string;
             /** Format: decimal */
