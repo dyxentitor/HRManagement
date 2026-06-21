@@ -2,6 +2,33 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.25.0] — 2026-06-21
+
+Dedicated **People** hub — relocate people/onboarding operations out of Settings. Spec:
+`docs/superpowers/specs/2026-06-21-people-hub.md`.
+
+### Changed
+
+- New **`/admin/people`** tabbed shell (mirrors the Settings shell): **Directory** (the Employees
+  list) · **Invitations** · **Accounts** (Users & Linking). Settings now holds only org
+  *configuration* (Organization, Modules, Departments, Teams, Archived, Roles, Leave Types,
+  Announcements, Audit).
+- Sidebar **Admin**: "Employees" → **"People"** (`/admin/people`). Command palette updated.
+- **Back-compat redirects** (no broken links): `/employees`, `/admin/settings/users[/new]`,
+  `/admin/settings/invitations` → their People-hub equivalents.
+
+### Notes
+
+- Reuses every existing page (`EmployeesPage`, `InvitationsPage`, `UsersLinkingPage`,
+  `UserCreatePage`) with no behaviour change — pure information-architecture refactor.
+- The **Onboarding** tab is added when Phase 3 ships its progress board. Archived employees stays
+  in Settings for now.
+
+### Tests
+
+- Frontend **398 passed** (+ `PeopleNav` perm-gating; Sidebar updated). Backend unchanged (**802**).
+  No backend change, no migration, no new perm.
+
 ## [1.24.2] — 2026-06-21
 
 ### Fixed
