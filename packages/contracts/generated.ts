@@ -1984,6 +1984,23 @@ export interface paths {
         patch: operations["onboarding_items_toggle_partial_update"];
         trace?: never;
     };
+    "/api/v1/onboarding/progress/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description HR onboarding board — one row per onboarding-cohort member. */
+        get: operations["onboarding_progress_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/feature-flags/": {
         parameters: {
             query?: never;
@@ -8578,6 +8595,25 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["PatchedOnboardingChecklistRequest"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingChecklist"];
+                };
+            };
+        };
+    };
+    onboarding_progress_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

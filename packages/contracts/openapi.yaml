@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.23.0
+  version: 1.25.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -3661,6 +3661,21 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedOnboardingChecklistRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingChecklist'
+          description: ''
+  /api/v1/onboarding/progress/:
+    get:
+      operationId: onboarding_progress_retrieve
+      description: HR onboarding board — one row per onboarding-cohort member.
+      tags:
+      - onboarding
       security:
       - jwtAuth: []
       responses:

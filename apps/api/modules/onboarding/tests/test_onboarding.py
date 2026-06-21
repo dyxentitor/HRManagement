@@ -85,6 +85,31 @@ def test_toggle_all_items_completes_checklist(stack):
 
 
 @pytest.mark.django_db
+@pytest.mark.django_db
+def test_progress_lists_a_row_per_invitation(stack):
+    from modules.identity.services import invitation as inv_service
+
+    emp_user = User.objects.get(email="emp@x.com")
+    inv_service.create_invitation(emp_user, created_by=None)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'hr@x.com')}")
+    r = client.get("/api/v1/onboarding/progress/")
+    assert r.status_code == 200, r.content
+    row = next(x for x in r.json() if x["email"] == "emp@x.com")
+    assert row["invitation_status"] == "sent"
+    assert row["overall"] == "invited"
+    assert row["profile_percent"] is None  # no linked employee
+    assert row["mfa_enabled"] is False
+
+
+@pytest.mark.django_db
+def test_progress_forbidden_without_perm(stack):
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'emp@x.com')}")
+    assert client.get("/api/v1/onboarding/progress/").status_code == 403
+
+
+@pytest.mark.django_db
 def test_employee_without_perm_forbidden(stack):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'emp@x.com')}")

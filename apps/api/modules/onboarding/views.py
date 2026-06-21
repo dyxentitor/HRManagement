@@ -28,9 +28,16 @@ class OnboardingChecklistViewSet(viewsets.ModelViewSet):
 
     @property
     def required_perms(self):
-        if self.action in ("list", "retrieve"):
+        if self.action in ("list", "retrieve", "progress"):
             return ["onboarding:read"]
         return ["onboarding:write"]
+
+    @action(detail=False, methods=["get"], url_path="progress")
+    def progress(self, request):
+        """HR onboarding board — one row per onboarding-cohort member."""
+        from .services.progress import onboarding_progress
+
+        return Response(onboarding_progress(request.user.org_id))
 
     def get_queryset(self):
         return (

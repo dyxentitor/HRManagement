@@ -23,6 +23,7 @@ const ArchivedEmployeesPage = lazy(() => import("./settings/ArchivedEmployeesPag
 const InvitationsPage = lazy(() => import("./settings/InvitationsPage"));
 const PeopleShell = lazy(() => import("./people/PeopleShell"));
 const EmployeesPage = lazy(() => import("@/modules/employee/pages/EmployeesPage"));
+const OnboardingBoardPage = lazy(() => import("./people/OnboardingBoardPage"));
 
 function RedirectRoleDetail() {
 	const { code } = useParams<{ code: string }>();
@@ -78,6 +79,7 @@ export const adminRoutes: RouteObject[] = [
 		element: <PeopleShell />,
 		children: [
 			{ index: true, element: <EmployeesPage /> },
+			{ path: "onboarding", element: <OnboardingBoardPage /> },
 			{ path: "invitations", element: <InvitationsPage /> },
 			{ path: "accounts", element: <UsersLinkingPage /> },
 			{ path: "accounts/new", element: <UserCreatePage /> },
