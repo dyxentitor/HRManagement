@@ -2,6 +2,43 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.22.0] — 2026-06-21
+
+Roster Planning Workspace — Phases 1 + 2 (`/schedule/roster`). Turns the spreadsheet-style grid
+into a workforce-planning workspace. Spec: `References/Schjedule_enhace.md` +
+`docs/superpowers/specs/2026-06-21-roster-workspace-redesign.md`.
+
+### Added (Phase 1 — visual language)
+
+- **Aurora workspace header** — "Roster Planning" · range · view · employee count, with live
+  **coverage %**, **conflicts**, and **Draft / N unpublished** status chips + the Publish button.
+- **Regrouped toolbar** (glass): Nav (◀ Today ▶) · View (Week/Month) · Filters · Search ·
+  Validate / Build Roster.
+- **Semantic shift pills** — DAY / NIGHT / EVE / LEAVE instead of single letters
+  (`shift-semantic.ts`); `SHIFT_CODE_TONE` realigned to the spec (Morning = blue, Night = purple,
+  Evening = orange). Empty assignable cells show a hover **+**; employee rows gain an **avatar +
+  role**; calendar semantics — weekend = purple, today = blue, holiday = amber.
+
+### Added (Phase 2 — coverage + conflicts)
+
+- **Coverage dashboard** — 5 cards (coverage % · scheduled today · day/night · on-leave · short
+  coverage) derived from the calendar stats (`roster-derive.ts`).
+- **Conflicts panel** + header counter — the calendar payload now carries **`warnings`**
+  computed for the visible range (`calendar_warnings()`: overtime >48h/week · leave overlap ·
+  coverage drop), reusing the bulk-fill rule family with no extra queries.
+
+### Tests
+
+- Backend **790 passed** (calendar payload `warnings`: overtime + coverage-drop). Frontend
+  **384 passed** (shift-semantic, roster-derive, ConflictsPanel, updated roster grid/cell/toolbar;
+  the known RosterPage cell test passes on re-run). Contracts regenerated. No migration, no new
+  perm. Existing multi-select / pattern / cover-up / publish behaviour preserved.
+
+### Deferred (Roster spec "Future Enhancements" — Phase 4)
+
+- Real approval workflow, double-booking / rest hard-blocks, drag-and-drop, shift templates,
+  AI auto-scheduler. The inspector panel + richer cell interactions remain as a follow-up Phase 3.
+
 ## [1.21.0] — 2026-06-21
 
 Combined **Growth** workspace (Certifications + Training) + certification document upload.
