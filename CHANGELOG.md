@@ -2,6 +2,17 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.24.1] — 2026-06-21
+
+### Fixed
+
+- **Onboarding wizard hung on step 3 ("Your profile")** with an endless spinner when the invited
+  account isn't linked to an Employee record (a user-first invite — e.g. inviting a Gmail address
+  without an employee). `ProfileStep`/`ReviewStep` treated `getMe() === null` as "still loading".
+  Now a dedicated loading flag is separate from the data: on **null** (no employee) **or a fetch
+  error**, the step renders a graceful, continueable state ("your HR team is still setting up your
+  profile") instead of spinning. +3 tests. Frontend-only; backend unchanged (802 passed).
+
 ## [1.24.0] — 2026-06-21
 
 Employee Onboarding **Phase 2** — the guided onboarding wizard (lean). Source:
