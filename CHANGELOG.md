@@ -2,6 +2,16 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.26.2] — 2026-06-21
+
+### Changed
+
+- **KPI pages now show a "Coming soon" placeholder** while performance management is reworked.
+  `/kpi/me`, `/kpi/manager`, and `/kpi/admin` render a new reusable premium **`ComingSoon`** HRMS
+  composite (aurora card · what's-coming teaser · back-to-dashboard). Nav entries stay discoverable;
+  the KPI page components **and the backend are untouched** — swap the route elements back when the
+  rework ships. Frontend-only; backend unchanged (804).
+
 ## [1.26.1] — 2026-06-21
 
 ### Changed
