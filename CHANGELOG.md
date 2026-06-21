@@ -2,6 +2,16 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.24.2] — 2026-06-21
+
+### Fixed
+
+- **"Go to my dashboard" at the end of onboarding bounced back into the wizard.** Finishing marked
+  onboarding complete in the backend, but the front-end auth context still held the stale user
+  (`onboarding.completed = false`), so `SignedOutGate` redirected straight back to `/onboarding`
+  (resuming at the profile step). `finish` now awaits `complete()` **and** `refreshMe()` before
+  navigating, so the gate sees `completed = true`. Frontend-only.
+
 ## [1.24.1] — 2026-06-21
 
 ### Fixed
