@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 
 import type { CellTone } from "../lib/cell-tone";
+import { cellLabel, isAssignable } from "../lib/shift-semantic";
 
 interface Props {
 	viewMode: "week" | "month";
@@ -60,12 +61,14 @@ export function RosterCell(props: Props) {
 			? "bg-[repeating-linear-gradient(45deg,rgb(var(--bg-canvas)),rgb(var(--bg-canvas))_4px,rgb(var(--bg-surface))_4px,rgb(var(--bg-surface))_8px)]"
 			: "";
 	const coverBorder = tone.kind === "cover-up" ? "ring-2 ring-coral" : "";
-	const isDraft =
-		pendingEdit || (tone.kind === "shift" && tone.isPublished === false);
+	const isDraft = pendingEdit || (tone.kind === "shift" && tone.isPublished === false);
+
+	const label = cellLabel(tone, shiftName, viewMode);
+	const assignable = isAssignable(tone);
 
 	const cls = cn(
-		"relative w-full text-center rounded font-mono text-text-primary transition-colors cursor-pointer",
-		viewMode === "month" ? "h-7 text-xs" : "h-14 text-sm",
+		"group relative w-full grid place-items-center rounded text-text-primary transition-colors cursor-pointer",
+		viewMode === "month" ? "h-7" : "h-14",
 		TONE_BG[tone.tone] ?? "",
 		inactiveStripe,
 		coverBorder,
@@ -88,11 +91,23 @@ export function RosterCell(props: Props) {
 			onClick={handleClick}
 			className={cls}
 		>
-			{tone.letter}
-			{tone.kind === "cover-up" && (
-				<span className="absolute -top-1 -right-1 text-[8px] text-coral">
-					⤴
+			{label && (
+				<span
+					className={cn(
+						"font-semibold tracking-wide uppercase",
+						viewMode === "month" ? "text-[10px]" : "text-[9px]",
+					)}
+				>
+					{label}
 				</span>
+			)}
+			{!label && assignable && (
+				<span className="text-text-tertiary text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+					+
+				</span>
+			)}
+			{tone.kind === "cover-up" && (
+				<span className="absolute -top-1 -right-1 text-[8px] text-coral">⤴</span>
 			)}
 			{isDraft && (
 				<span

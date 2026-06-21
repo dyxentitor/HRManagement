@@ -16,6 +16,7 @@ from django.db.models import Q
 from modules.employee.models import Employee, Team
 from modules.leave.models import LeaveRequest
 from modules.schedule.models import Holiday, Shift, ShiftAssignment
+from modules.schedule.services.warnings import calendar_warnings
 
 
 def _date_range(date_from: dt.date, date_to: dt.date) -> list[dt.date]:
@@ -181,6 +182,13 @@ def build_calendar(
         employees=employees,
     )
 
+    warnings = calendar_warnings(
+        assignments=list(assignments),
+        employees=employees,
+        leaves_payload=leaves_payload,
+        coverage=stats["coverage"],
+    )
+
     return {
         "range": {"from": date_from.isoformat(), "to": date_to.isoformat()},
         "teams": teams_payload,
@@ -189,6 +197,7 @@ def build_calendar(
         "leaves": leaves_payload,
         "holidays": holidays_payload,
         "stats": stats,
+        "warnings": warnings,
     }
 
 

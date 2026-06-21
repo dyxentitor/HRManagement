@@ -21,7 +21,8 @@ describe("RosterCell", () => {
 			/>,
 		);
 		expect(screen.getByRole("button", { name: /Mar 4/ })).toBeInTheDocument();
-		expect(screen.getByText("M")).toBeInTheDocument();
+		// month view shows the compact first letter of the semantic label (DAY → D)
+		expect(screen.getByText("D")).toBeInTheDocument();
 	});
 
 	it("calls onClick on plain click", async () => {
@@ -111,7 +112,7 @@ describe("RosterCell", () => {
 		expect(btn.className).toContain("accent-500");
 	});
 
-	it("adds a peach ring when isHoliday, keeping the shift letter", () => {
+	it("adds a peach ring when isHoliday, keeping the semantic label", () => {
 		render(
 			<RosterCell
 				viewMode="week"
@@ -129,7 +130,7 @@ describe("RosterCell", () => {
 		);
 		const btn = screen.getByRole("button");
 		expect(btn.className).toMatch(/ring-peach/);
-		expect(btn).toHaveTextContent("M");
+		expect(btn).toHaveTextContent("DAY");
 	});
 
 	it("has no peach ring without isHoliday", () => {

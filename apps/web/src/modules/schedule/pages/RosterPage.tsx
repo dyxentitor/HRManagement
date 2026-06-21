@@ -1,20 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { PageHeader } from "@/components/shell/PageHeader";
-
-import {
-	type BulkFillCell,
-	type BulkFillWarning,
-	type CalendarPayload,
-	type Team,
-	scheduleApi,
-	teamApi,
-} from "../api";
+import { type BulkFillCell, type CalendarPayload, type Team, scheduleApi, teamApi } from "../api";
 import { BuildRosterModal } from "../components/BuildRosterModal";
+import { ConflictsPanel } from "../components/ConflictsPanel";
+import { CoverageDashboard } from "../components/CoverageDashboard";
 import { RosterGrid } from "../components/RosterGrid";
 import { RosterToolbar } from "../components/RosterToolbar";
+import { RosterWorkspaceHeader } from "../components/RosterWorkspaceHeader";
 import { RowEditPanel } from "../components/RowEditPanel";
 import { StatsFooter } from "../components/StatsFooter";
+import { rosterMetrics } from "../lib/roster-derive";
 
 type ViewMode = "week" | "month";
 
@@ -26,10 +21,7 @@ interface PanelState {
 
 import { isoLocalDate } from "../lib/local-date";
 
-function rangeFor(
-	viewMode: ViewMode,
-	anchor: Date,
-): { from: string; to: string; label: string } {
+function rangeFor(viewMode: ViewMode, anchor: Date): { from: string; to: string; label: string } {
 	if (viewMode === "week") {
 		const day = anchor.getDay();
 		const diff = (day + 6) % 7;
@@ -69,13 +61,10 @@ export default function RosterPage() {
 		draft: new Map(),
 	});
 	const [buildOpen, setBuildOpen] = useState(false);
-	const [warnings, setWarnings] = useState<BulkFillWarning[]>([]);
 	const [error, setError] = useState<string | null>(null);
+	const conflictsRef = useRef<HTMLDivElement>(null);
 
-	const { from, to, label } = useMemo(
-		() => rangeFor(viewMode, anchor),
-		[viewMode, anchor],
-	);
+	const { from, to, label } = useMemo(() => rangeFor(viewMode, anchor), [viewMode, anchor]);
 
 	useEffect(() => {
 		localStorage.setItem("roster.view_mode", viewMode);
@@ -105,10 +94,7 @@ export default function RosterPage() {
 		refresh();
 	}, [refresh]);
 
-	const unpublishedCount = useMemo(
-		() => (payload?.assignments ?? []).filter((a) => !a.is_published).length,
-		[payload],
-	);
+	const metrics = useMemo(() => (payload ? rosterMetrics(payload) : null), [payload]);
 
 	function step(direction: 1 | -1) {
 		const next = new Date(anchor);
@@ -117,14 +103,15 @@ export default function RosterPage() {
 		setAnchor(next);
 	}
 
+	function validate() {
+		void refresh();
+		conflictsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+	}
+
 	function openPanelForRow(employeeId: string) {
 		if (panel.employeeId === employeeId) return;
 		if (panel.employeeId && panel.draft.size > 0) {
-			if (
-				!window.confirm(
-					`Discard ${panel.draft.size} unsaved edit(s) and switch employee?`,
-				)
-			)
+			if (!window.confirm(`Discard ${panel.draft.size} unsaved edit(s) and switch employee?`))
 				return;
 		}
 		setPanel({ employeeId, draft: new Map() });
@@ -136,11 +123,7 @@ export default function RosterPage() {
 			return;
 		}
 		if (panel.employeeId && panel.draft.size > 0) {
-			if (
-				!window.confirm(
-					`Discard ${panel.draft.size} unsaved edit(s) and switch employee?`,
-				)
-			)
+			if (!window.confirm(`Discard ${panel.draft.size} unsaved edit(s) and switch employee?`))
 				return;
 		}
 		setPanel({ employeeId, scrollToDate: date, draft: new Map() });
@@ -173,14 +156,12 @@ export default function RosterPage() {
 			}
 		}
 		try {
-			const setResults = await Promise.all(
+			await Promise.all(
 				[...setBuckets.entries()].map(([shift_id, cells]) =>
 					scheduleApi.bulkFill({ cells, shift_id, notes: "" }),
 				),
 			);
 			await Promise.all(deletes.map((id) => scheduleApi.deleteAssignment(id)));
-			const allWarnings = setResults.flatMap((r) => r.warnings);
-			setWarnings(allWarnings);
 			closePanel();
 			await refresh();
 		} catch (e) {
@@ -188,10 +169,7 @@ export default function RosterPage() {
 		}
 	}
 
-	async function applyPanelPattern(
-		pattern: Record<string, string | undefined>,
-		months: 1 | 2 | 3,
-	) {
+	async function applyPanelPattern(pattern: Record<string, string | undefined>, months: 1 | 2 | 3) {
 		if (!panel.employeeId) return;
 		const start = new Date(`${from}T00:00:00`);
 		const end = new Date(start);
@@ -220,11 +198,9 @@ export default function RosterPage() {
 		await refresh();
 	}
 
-	async function applySelection(
-		selection: { employee_id: string; date: string }[],
-	) {
+	async function applySelection(selection: { employee_id: string; date: string }[]) {
 		if (!payload || selection.length === 0 || !payload.shifts.length) return;
-		const result = await scheduleApi.bulkFill({
+		await scheduleApi.bulkFill({
 			cells: selection.map((s) => ({
 				employee_id: s.employee_id,
 				work_date: s.date,
@@ -232,7 +208,6 @@ export default function RosterPage() {
 			shift_id: payload.shifts[0].id,
 			notes: "",
 		});
-		setWarnings(result.warnings);
 		await refresh();
 	}
 
@@ -246,37 +221,46 @@ export default function RosterPage() {
 	}, [panel.employeeId, payload]);
 
 	const employeeAssignments = useMemo(
-		() =>
-			payload?.assignments.filter((a) => a.employee_id === panel.employeeId) ??
-			[],
+		() => payload?.assignments.filter((a) => a.employee_id === panel.employeeId) ?? [],
 		[payload, panel.employeeId],
 	);
 
-	const teammates = useMemo(
-		() => payload?.teams.flatMap((t) => t.members) ?? [],
-		[payload],
-	);
+	const teammates = useMemo(() => payload?.teams.flatMap((t) => t.members) ?? [], [payload]);
 
 	return (
 		<div className="space-y-3">
-			<PageHeader breadcrumb="Schedule" title="Roster" />
+			{metrics && (
+				<RosterWorkspaceHeader
+					rangeLabel={label}
+					viewMode={viewMode}
+					metrics={metrics}
+					onPublish={publish}
+				/>
+			)}
 
 			<RosterToolbar
 				rangeLabel={label}
 				viewMode={viewMode}
 				onViewMode={setViewMode}
 				onPrev={() => step(-1)}
+				onToday={() => setAnchor(new Date())}
 				onNext={() => step(1)}
 				teams={teams}
 				teamId={teamId}
 				onTeamId={setTeamId}
 				search={search}
 				onSearch={setSearch}
-				warningCount={warnings.length}
-				unpublishedCount={unpublishedCount}
-				onPublish={publish}
 				onBuild={() => setBuildOpen(true)}
+				onValidate={validate}
 			/>
+
+			{metrics && <CoverageDashboard metrics={metrics} />}
+
+			{payload && (
+				<div ref={conflictsRef}>
+					<ConflictsPanel warnings={payload.warnings} />
+				</div>
+			)}
 
 			{error && (
 				<p role="alert" className="text-coral text-small">

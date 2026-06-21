@@ -66,10 +66,10 @@ describe("resolveCellTone", () => {
 		expect(t.letter).toBe("M");
 	});
 
-	it("returns 'shift' for normal assignment with M code mapped to accent (violet)", () => {
+	it("returns 'shift' for normal assignment with M code mapped to sky (blue)", () => {
 		const t = resolveCellTone(mk({ assignment: mkAssignment() }));
 		expect(t.kind).toBe("shift");
-		expect(t.tone).toBe("accent");
+		expect(t.tone).toBe("sky");
 		expect(t.letter).toBe("M");
 	});
 
@@ -94,22 +94,22 @@ describe("resolveCellTone", () => {
 		expect(t.kind).toBe("leave");
 	});
 
-	it("Night shift uses sky tone", () => {
+	it("Night shift uses lavender tone", () => {
 		const t = resolveCellTone(
 			mk({
 				assignment: mkAssignment({ shift_code: "N" }),
 			}),
 		);
-		expect(t.tone).toBe("sky");
+		expect(t.tone).toBe("lavender");
 		expect(t.letter).toBe("N");
 	});
 
-	it("Day shift uses lavender tone", () => {
+	it("Day shift uses sky tone", () => {
 		const t = resolveCellTone(
 			mk({
 				assignment: mkAssignment({ shift_code: "D" }),
 			}),
 		);
-		expect(t.tone).toBe("lavender");
+		expect(t.tone).toBe("sky");
 	});
 });

@@ -97,6 +97,8 @@ export interface CalendarPayload {
 	leaves: CalendarLeave[];
 	holidays: CalendarHoliday[];
 	stats: CalendarStats;
+	/** Display-only conflicts for the existing assignments in range (Phase 2). */
+	warnings: BulkFillWarning[];
 }
 
 export interface BulkFillCell {
@@ -137,10 +139,7 @@ async function _get<T>(url: string): Promise<T> {
 	return data as T;
 }
 async function _post<T>(url: string, body?: unknown): Promise<T> {
-	const opts =
-		body !== undefined
-			? ({ body: body as never } as never)
-			: (undefined as never);
+	const opts = body !== undefined ? ({ body: body as never } as never) : (undefined as never);
 	const { data, error } = await api.POST(url as never, opts);
 	if (error) throw new Error(`POST ${url} failed`);
 	return data as T;
@@ -159,14 +158,11 @@ export const scheduleApi = {
 		_get<{ results?: ShiftAssignment[] } | ShiftAssignment[]>(
 			`/api/v1/schedule/shift-assignments/?from=${from}&to=${to}`,
 		).then(_unwrap),
-	listShifts: () =>
-		_get<{ results?: Shift[] } | Shift[]>("/api/v1/schedule/shifts/").then(
+	listShifts: () => _get<{ results?: Shift[] } | Shift[]>("/api/v1/schedule/shifts/").then(_unwrap),
+	listHolidays: (year: number) =>
+		_get<{ results?: Holiday[] } | Holiday[]>(`/api/v1/schedule/holidays/?year=${year}`).then(
 			_unwrap,
 		),
-	listHolidays: (year: number) =>
-		_get<{ results?: Holiday[] } | Holiday[]>(
-			`/api/v1/schedule/holidays/?year=${year}`,
-		).then(_unwrap),
 	bulkAssign: (body: {
 		employee_ids: string[];
 		pattern: Record<string, string>;
@@ -175,10 +171,10 @@ export const scheduleApi = {
 		notes?: string;
 	}) => _post("/api/v1/schedule/shift-assignments/bulk-pattern/", body),
 	publish: (date_from: string, date_to: string) =>
-		_post<{ published: number }>(
-			"/api/v1/schedule/shift-assignments/publish/",
-			{ date_from, date_to },
-		),
+		_post<{ published: number }>("/api/v1/schedule/shift-assignments/publish/", {
+			date_from,
+			date_to,
+		}),
 	// Calendar endpoint: spectacular emits `query?: never` for this @action,
 	// so we cannot pass typed query params; fall back to manual querystring +
 	// the generic helper. Path itself is in the OpenAPI spec.
@@ -197,9 +193,7 @@ export const scheduleApi = {
 		if (params.department_id) qs.set("department_id", params.department_id);
 		if (params.q) qs.set("q", params.q);
 		if (params.include_inactive) qs.set("include_inactive", "true");
-		return _get<CalendarPayload>(
-			`/api/v1/schedule/shift-assignments/calendar/?${qs.toString()}`,
-		);
+		return _get<CalendarPayload>(`/api/v1/schedule/shift-assignments/calendar/?${qs.toString()}`);
 	},
 	// Bulk-fill: typed path, but spectacular emits the wrong body shape
 	// (ShiftAssignmentRequest fallback for an @action endpoint). Body is
@@ -209,10 +203,9 @@ export const scheduleApi = {
 		shift_id: string;
 		notes?: string;
 	}): Promise<BulkFillResult> => {
-		const { data, error } = await api.POST(
-			"/api/v1/schedule/shift-assignments/bulk-fill/",
-			{ body: body as never },
-		);
+		const { data, error } = await api.POST("/api/v1/schedule/shift-assignments/bulk-fill/", {
+			body: body as never,
+		});
 		if (error || !data) throw new Error("bulk-fill failed");
 		return data as unknown as BulkFillResult;
 	},
@@ -222,22 +215,18 @@ export const scheduleApi = {
 		assignmentId: string,
 		coveringForId: string | null,
 	): Promise<CalendarAssignment> => {
-		const { data, error } = await api.PATCH(
-			"/api/v1/schedule/shift-assignments/{id}/cover-up/",
-			{
-				params: { path: { id: assignmentId } },
-				body: { covering_for_id: coveringForId } as never,
-			},
-		);
+		const { data, error } = await api.PATCH("/api/v1/schedule/shift-assignments/{id}/cover-up/", {
+			params: { path: { id: assignmentId } },
+			body: { covering_for_id: coveringForId } as never,
+		});
 		if (error || !data) throw new Error("cover-up failed");
 		return data as unknown as CalendarAssignment;
 	},
 	// Delete: typed path + path param `id`.
 	deleteAssignment: async (id: string): Promise<void> => {
-		const { error } = await api.DELETE(
-			"/api/v1/schedule/shift-assignments/{id}/",
-			{ params: { path: { id } } },
-		);
+		const { error } = await api.DELETE("/api/v1/schedule/shift-assignments/{id}/", {
+			params: { path: { id } },
+		});
 		if (error) throw new Error(`DELETE shift-assignment ${id} failed`);
 	},
 };

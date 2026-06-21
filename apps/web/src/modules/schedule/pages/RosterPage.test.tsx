@@ -55,6 +55,7 @@ const populatedCalendar = {
 	leaves: [],
 	holidays: [],
 	stats: { by_day: [], totals: { hours: 0, headcount: 0 }, coverage: [] },
+	warnings: [],
 };
 
 describe("RosterPage", () => {
@@ -73,33 +74,27 @@ describe("RosterPage", () => {
 	it("renders header + toolbar + empty grid after load", async () => {
 		render(<RosterPage />);
 		await waitFor(() => {
-			expect(screen.getByText("Roster")).toBeInTheDocument();
+			expect(screen.getByText("Roster Planning")).toBeInTheDocument();
 			expect(screen.getByText("Build Roster")).toBeInTheDocument();
 		});
 	});
 
 	it("clicking employee name opens panel for that employee", async () => {
 		render(<RosterPage />);
-		await waitFor(() => screen.getByRole("button", { name: "Syafiq" }));
-		await userEvent.click(screen.getByRole("button", { name: "Syafiq" }));
+		await waitFor(() => screen.getByRole("button", { name: "Open Syafiq" }));
+		await userEvent.click(screen.getByRole("button", { name: "Open Syafiq" }));
 		await waitFor(() => {
-			expect(
-				screen.getByRole("dialog", { name: "Row editor" }),
-			).toBeInTheDocument();
+			expect(screen.getByRole("dialog", { name: "Row editor" })).toBeInTheDocument();
 		});
 	});
 
 	it("clicking a cell opens panel scrolled to that day", async () => {
 		render(<RosterPage />);
 		await waitFor(() => screen.getAllByRole("button"));
-		const cells = screen
-			.getAllByRole("button")
-			.filter((b) => b.textContent === "X");
+		const cells = screen.getAllByRole("button").filter((b) => b.textContent === "+");
 		await userEvent.click(cells[0]);
 		await waitFor(() => {
-			expect(
-				screen.getByRole("dialog", { name: "Row editor" }),
-			).toBeInTheDocument();
+			expect(screen.getByRole("dialog", { name: "Row editor" })).toBeInTheDocument();
 		});
 	});
 
@@ -109,7 +104,7 @@ describe("RosterPage", () => {
 		);
 		render(<RosterPage />);
 		await waitFor(() => {
-			expect(screen.getByText("Roster")).toBeInTheDocument();
+			expect(screen.getByText("Roster Planning")).toBeInTheDocument();
 			expect(screen.getByText("Build Roster")).toBeInTheDocument();
 		});
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();

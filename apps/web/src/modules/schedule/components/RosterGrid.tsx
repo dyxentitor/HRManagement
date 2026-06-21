@@ -2,17 +2,26 @@ import { useEffect, useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-import type {
-	CalendarAssignment,
-	CalendarHoliday,
-	CalendarPayload,
-	CalendarTeam,
-} from "../api";
+import type { CalendarAssignment, CalendarHoliday, CalendarPayload, CalendarTeam } from "../api";
 import { resolveCellTone } from "../lib/cell-tone";
 import { todayIsoLocal } from "../lib/local-date";
 import { isWeekendIso, weekdayLabel } from "../lib/weekday";
 
 import { RosterCell } from "./RosterCell";
+
+const AVATAR_BG = ["bg-lavender", "bg-sky", "bg-mint", "bg-peach", "bg-yellow", "bg-coral"];
+
+function initials(name: string): string {
+	const parts = name.trim().split(/\s+/);
+	return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
+}
+
+/** Stable avatar colour per employee id (no Math.random — deterministic). */
+function avatarIndex(id: string): number {
+	let h = 0;
+	for (const ch of id) h = (h + ch.charCodeAt(0)) % AVATAR_BG.length;
+	return h;
+}
 
 interface SelectionKey {
 	employee_id: string;
@@ -25,10 +34,7 @@ interface Props {
 	pendingEdits: Map<string, string | null>;
 	focusedEmployeeId?: string;
 	focusedDate?: string;
-	onCellOpen: (
-		key: SelectionKey,
-		assignment: CalendarAssignment | undefined,
-	) => void;
+	onCellOpen: (key: SelectionKey, assignment: CalendarAssignment | undefined) => void;
 	onRowOpen: (employeeId: string) => void;
 	onSelectionApply: (selection: SelectionKey[]) => void;
 }
@@ -63,10 +69,7 @@ export function RosterGrid({
 	const [shiftId, setShiftId] = useState<string>(payload.shifts[0]?.id ?? "");
 
 	useEffect(() => {
-		localStorage.setItem(
-			"roster.collapsed_teams",
-			JSON.stringify([...collapsed]),
-		);
+		localStorage.setItem("roster.collapsed_teams", JSON.stringify([...collapsed]));
 	}, [collapsed]);
 
 	const dates = useMemo(
@@ -100,13 +103,9 @@ export function RosterGrid({
 
 	function handleShiftClick(key: SelectionKey) {
 		setSelection((prev) => {
-			const exists = prev.some(
-				(s) => s.employee_id === key.employee_id && s.date === key.date,
-			);
+			const exists = prev.some((s) => s.employee_id === key.employee_id && s.date === key.date);
 			if (exists)
-				return prev.filter(
-					(s) => !(s.employee_id === key.employee_id && s.date === key.date),
-				);
+				return prev.filter((s) => !(s.employee_id === key.employee_id && s.date === key.date));
 			return [...prev, key];
 		});
 	}
@@ -170,16 +169,15 @@ export function RosterGrid({
 										title={holiday?.name}
 										className={cn(
 											"text-label uppercase text-center px-1 py-1 align-bottom",
-											weekend && !holiday && "bg-surface-elevated",
-											holiday && "bg-peach/10",
-											isToday &&
-												"ring-1 ring-inset ring-accent-500/60 rounded",
+											weekend && !holiday && "bg-lavender/8",
+											holiday && "bg-yellow/10",
+											isToday && "ring-1 ring-inset ring-sky/70 rounded",
 										)}
 									>
 										<span
 											className={cn(
 												"block text-[10px] leading-none",
-												holiday ? "text-peach" : "text-text-tertiary",
+												holiday ? "text-yellow" : isToday ? "text-sky" : "text-text-tertiary",
 											)}
 										>
 											{weekdayLabel(d, viewMode === "month" ? "narrow" : "short")}
@@ -187,9 +185,7 @@ export function RosterGrid({
 										<span
 											className={cn(
 												"block leading-tight",
-												holiday
-													? "text-peach font-semibold"
-													: "text-text-secondary",
+												holiday ? "text-yellow font-semibold" : "text-text-secondary",
 											)}
 										>
 											{new Date(`${d}T00:00:00Z`).getUTCDate()}
@@ -230,8 +226,8 @@ export function RosterGrid({
 					{payload.holidays.map((h) => (
 						<span key={h.date} className="inline-flex items-center gap-1">
 							<span className="text-peach">●</span>
-							{weekdayLabel(h.date, "short")}{" "}
-							{new Date(`${h.date}T00:00:00Z`).getUTCDate()} — {h.name}
+							{weekdayLabel(h.date, "short")} {new Date(`${h.date}T00:00:00Z`).getUTCDate()} —{" "}
+							{h.name}
 						</span>
 					))}
 				</div>
@@ -263,19 +259,14 @@ function TeamRows(p: TeamRowsProps) {
 	return (
 		<>
 			<tr>
-				<td
-					colSpan={teamColspan}
-					className="bg-surface-hover px-2 py-1 sticky left-0"
-				>
+				<td colSpan={teamColspan} className="bg-surface-hover px-2 py-1 sticky left-0">
 					<button
 						type="button"
 						onClick={p.onToggle}
 						className="text-small font-semibold text-text-primary hover:text-accent-200"
 					>
 						{p.collapsed ? "▶" : "▼"} {p.team.name}{" "}
-						<span className="text-text-tertiary">
-							[{p.team.members.length}]
-						</span>
+						<span className="text-text-tertiary">[{p.team.members.length}]</span>
 					</button>
 				</td>
 			</tr>
@@ -285,10 +276,27 @@ function TeamRows(p: TeamRowsProps) {
 						<td className="px-2 py-0.5 text-small sticky left-0 bg-canvas whitespace-nowrap">
 							<button
 								type="button"
+								aria-label={`Open ${emp.full_name}`}
 								onClick={() => p.onRowOpen(emp.id)}
-								className="text-text-primary hover:text-accent-200"
+								className="flex items-center gap-2 text-left hover:opacity-80"
 							>
-								{emp.full_name}
+								<span
+									className={cn(
+										"size-6 rounded-md grid place-items-center text-[9px] font-bold text-canvas shrink-0",
+										AVATAR_BG[avatarIndex(emp.id)],
+									)}
+									aria-hidden
+								>
+									{initials(emp.full_name)}
+								</span>
+								<span className="min-w-0">
+									<span className="block text-text-primary leading-tight">{emp.full_name}</span>
+									{emp.role_title && (
+										<span className="block text-[10px] text-text-tertiary leading-tight">
+											{emp.role_title}
+										</span>
+									)}
+								</span>
 							</button>
 						</td>
 						{p.dates.map((d) => {
@@ -304,8 +312,7 @@ function TeamRows(p: TeamRowsProps) {
 												...(serverAssignment ?? {}),
 												shift_id: pendingShiftId,
 												shift_code:
-													p.payload.shifts.find((s) => s.id === pendingShiftId)
-														?.code ?? "?",
+													p.payload.shifts.find((s) => s.id === pendingShiftId)?.code ?? "?",
 												is_published: false,
 											} as CalendarAssignment);
 							const tone = resolveCellTone({
@@ -315,16 +322,11 @@ function TeamRows(p: TeamRowsProps) {
 								leaves: p.payload.leaves,
 								holidays: p.payload.holidays,
 							});
-							const selected = p.selection.some(
-								(s) => s.employee_id === emp.id && s.date === d,
-							);
-							const focused =
-								p.focusedEmployeeId === emp.id && p.focusedDate === d;
+							const selected = p.selection.some((s) => s.employee_id === emp.id && s.date === d);
+							const focused = p.focusedEmployeeId === emp.id && p.focusedDate === d;
 							const pendingEdit = p.pendingEdits.has(key);
 							const shift = effectiveAssignment
-								? p.payload.shifts.find(
-										(s) => s.id === effectiveAssignment.shift_id,
-									)
+								? p.payload.shifts.find((s) => s.id === effectiveAssignment.shift_id)
 								: null;
 							return (
 								<td key={d} className="px-0.5 py-0.5">
@@ -340,15 +342,8 @@ function TeamRows(p: TeamRowsProps) {
 										focused={focused}
 										pendingEdit={pendingEdit}
 										isHoliday={p.holidayDates.has(d)}
-										onClick={() =>
-											p.onCellOpen(
-												{ employee_id: emp.id, date: d },
-												serverAssignment,
-											)
-										}
-										onShiftClick={() =>
-											p.onShiftClick({ employee_id: emp.id, date: d })
-										}
+										onClick={() => p.onCellOpen({ employee_id: emp.id, date: d }, serverAssignment)}
+										onShiftClick={() => p.onShiftClick({ employee_id: emp.id, date: d })}
 									/>
 								</td>
 							);

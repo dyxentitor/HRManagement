@@ -1,10 +1,15 @@
 import type { Tone } from "./cell-tone";
 
-/** Shift-code → tone, shared with the roster grid so colours stay consistent. */
+/**
+ * Shift-code → tone, shared with the roster grid so colours stay consistent.
+ * Aligned to the Roster spec's shift semantics: Morning/Day = blue, Night =
+ * purple, Evening = orange, Swing = amber.
+ */
 export const SHIFT_CODE_TONE: Record<string, Tone> = {
-	M: "accent",
-	D: "lavender",
-	N: "sky",
+	M: "sky",
+	D: "sky",
+	N: "lavender",
+	E: "peach",
 	S: "yellow",
 };
 

@@ -4,51 +4,41 @@ import { describe, expect, it, vi } from "vitest";
 
 import { RosterToolbar } from "./RosterToolbar";
 
+function props(over: Partial<Parameters<typeof RosterToolbar>[0]> = {}) {
+	return {
+		rangeLabel: "Mar 2026",
+		viewMode: "month" as const,
+		onViewMode: vi.fn(),
+		onPrev: vi.fn(),
+		onToday: vi.fn(),
+		onNext: vi.fn(),
+		teams: [],
+		teamId: "",
+		onTeamId: vi.fn(),
+		search: "",
+		onSearch: vi.fn(),
+		onBuild: vi.fn(),
+		onValidate: vi.fn(),
+		...over,
+	};
+}
+
 describe("RosterToolbar", () => {
-	it("renders range label and view mode toggle", () => {
-		render(
-			<RosterToolbar
-				rangeLabel="Mar 2026"
-				viewMode="month"
-				onViewMode={vi.fn()}
-				onPrev={vi.fn()}
-				onNext={vi.fn()}
-				teams={[]}
-				teamId=""
-				onTeamId={vi.fn()}
-				search=""
-				onSearch={vi.fn()}
-				warningCount={0}
-				unpublishedCount={5}
-				onPublish={vi.fn()}
-				onBuild={vi.fn()}
-			/>,
-		);
+	it("renders range label, view toggle, and grouped actions", () => {
+		render(<RosterToolbar {...props()} />);
 		expect(screen.getByText("Mar 2026")).toBeInTheDocument();
-		expect(screen.getByText("Publish (5)")).toBeInTheDocument();
+		expect(screen.getByText("Week")).toBeInTheDocument();
+		expect(screen.getByText("Validate")).toBeInTheDocument();
+		expect(screen.getByText("Build Roster")).toBeInTheDocument();
 	});
 
-	it("calls onPublish when clicked", async () => {
-		const onPublish = vi.fn();
-		render(
-			<RosterToolbar
-				rangeLabel="Mar 2026"
-				viewMode="month"
-				onViewMode={vi.fn()}
-				onPrev={vi.fn()}
-				onNext={vi.fn()}
-				teams={[]}
-				teamId=""
-				onTeamId={vi.fn()}
-				search=""
-				onSearch={vi.fn()}
-				warningCount={2}
-				unpublishedCount={5}
-				onPublish={onPublish}
-				onBuild={vi.fn()}
-			/>,
-		);
-		await userEvent.click(screen.getByText("Publish (5)"));
-		expect(onPublish).toHaveBeenCalled();
+	it("calls onValidate and onBuild when clicked", async () => {
+		const onValidate = vi.fn();
+		const onBuild = vi.fn();
+		render(<RosterToolbar {...props({ onValidate, onBuild })} />);
+		await userEvent.click(screen.getByText("Validate"));
+		await userEvent.click(screen.getByText("Build Roster"));
+		expect(onValidate).toHaveBeenCalled();
+		expect(onBuild).toHaveBeenCalled();
 	});
 });

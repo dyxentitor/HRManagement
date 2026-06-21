@@ -63,6 +63,7 @@ const payload: CalendarPayload = {
 	leaves: [],
 	holidays: [],
 	stats: { by_day: [], totals: { hours: 0, headcount: 0 }, coverage: [] },
+	warnings: [],
 };
 
 const baseProps = {
@@ -96,9 +97,7 @@ describe("RosterGrid", () => {
 	it("invokes onCellOpen on plain click", async () => {
 		const onCellOpen = vi.fn();
 		render(<RosterGrid {...baseProps} onCellOpen={onCellOpen} />);
-		const cells = screen
-			.getAllByRole("button")
-			.filter((b) => b.textContent === "X");
+		const cells = screen.getAllByRole("button").filter((b) => b.textContent === "+");
 		await userEvent.click(cells[0]);
 		expect(onCellOpen).toHaveBeenCalled();
 		const arg = onCellOpen.mock.calls[0][0];
@@ -109,14 +108,12 @@ describe("RosterGrid", () => {
 	it("invokes onRowOpen when employee name is clicked", async () => {
 		const onRowOpen = vi.fn();
 		render(<RosterGrid {...baseProps} onRowOpen={onRowOpen} />);
-		await userEvent.click(screen.getByRole("button", { name: "Syafiq" }));
+		await userEvent.click(screen.getByRole("button", { name: "Open Syafiq" }));
 		expect(onRowOpen).toHaveBeenCalledWith("e1");
 	});
 
 	it("renders draft dot when pending edit exists for cell", () => {
-		const pendingEdits = new Map<string, string | null>([
-			["e1|2026-03-05", "s1"],
-		]);
+		const pendingEdits = new Map<string, string | null>([["e1|2026-03-05", "s1"]]);
 		render(<RosterGrid {...baseProps} pendingEdits={pendingEdits} />);
 		expect(screen.getAllByTestId("draft-dot").length).toBeGreaterThanOrEqual(1);
 	});
@@ -138,9 +135,7 @@ describe("RosterGrid", () => {
 
 	it("shift-click extends selection and shows toolbar", async () => {
 		render(<RosterGrid {...baseProps} />);
-		const cells = screen
-			.getAllByRole("button")
-			.filter((b) => b.textContent === "X");
+		const cells = screen.getAllByRole("button").filter((b) => b.textContent === "+");
 		const user = userEvent.setup();
 		await user.keyboard("{Shift>}");
 		await user.click(cells[0]);

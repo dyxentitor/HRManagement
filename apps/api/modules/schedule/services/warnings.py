@@ -37,6 +37,85 @@ def compute_warnings(
     return warnings
 
 
+def calendar_warnings(
+    *,
+    assignments: list,
+    employees: list,
+    leaves_payload: list[dict],
+    coverage: list[dict],
+) -> list[dict]:
+    """Display-only conflicts for the EXISTING assignments in a calendar range.
+
+    Reuses the same rule family as bulk-fill (leave overlap, weekly overtime,
+    team coverage) but reads the data already gathered by build_calendar — no
+    extra queries. Never blocks anything.
+    """
+    name = {str(e.id): e.full_name for e in employees}
+    out: list[dict] = []
+
+    # leave_overlap — an assignment on a day the employee is on approved leave
+    leave_days = {(lp["employee_id"], lp["date"]) for lp in leaves_payload}
+    for a in assignments:
+        key = (str(a.employee_id), a.work_date.isoformat())
+        if key in leave_days:
+            who = name.get(str(a.employee_id), "Employee")
+            out.append(
+                {
+                    "rule": "leave_overlap",
+                    "employee_id": str(a.employee_id),
+                    "employee_name": who,
+                    "date": a.work_date.isoformat(),
+                    "message": (
+                        f"{who} is scheduled on {a.work_date.isoformat()} "
+                        "but is on approved leave"
+                    ),
+                }
+            )
+
+    # overtime — per (employee, ISO week) total scheduled hours over the threshold
+    per_week: dict[tuple[str, tuple[int, int]], float] = defaultdict(float)
+    for a in assignments:
+        iso = (a.work_date.isocalendar().year, a.work_date.isocalendar().week)
+        per_week[(str(a.employee_id), iso)] += _shift_hours(a.shift)
+    for (emp_id, iso), total in per_week.items():
+        if total > OT_THRESHOLD_HOURS_PER_WEEK:
+            who = name.get(emp_id, "Employee")
+            out.append(
+                {
+                    "rule": "overtime",
+                    "employee_id": emp_id,
+                    "employee_name": who,
+                    "iso_year": iso[0],
+                    "iso_week": iso[1],
+                    "hours": round(total, 1),
+                    "message": (
+                        f"{who} has {round(total, 1)}h scheduled in week "
+                        f"{iso[1]}/{iso[0]} (over {OT_THRESHOLD_HOURS_PER_WEEK}h)"
+                    ),
+                }
+            )
+
+    # coverage_drop — derived from the per-team/day stats already computed
+    for team in coverage:
+        for d in team["by_day"]:
+            if d["min"] and d["scheduled"] < d["min"]:
+                out.append(
+                    {
+                        "rule": "coverage_drop",
+                        "team_id": team["team_id"],
+                        "team_name": team["team_name"],
+                        "date": d["date"],
+                        "scheduled": d["scheduled"],
+                        "min": d["min"],
+                        "message": (
+                            f"{team['team_name']} coverage on {d['date']}: "
+                            f"{d['scheduled']}/{d['min']}"
+                        ),
+                    }
+                )
+    return out
+
+
 def _shift_hours(shift: Shift) -> float:
     s = shift.start_time.hour + shift.start_time.minute / 60
     e = shift.end_time.hour + shift.end_time.minute / 60

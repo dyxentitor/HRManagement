@@ -85,6 +85,43 @@ def test_calendar_returns_teams_with_members(org_setup):
     assert any(m["id"] == str(emp.id) for m in found["members"])
 
 
+def test_calendar_warnings_overtime(org_setup):
+    """7×9h in one ISO week (63h) exceeds the 48h threshold → an overtime warning,
+    and a fully-staffed week raises no coverage_drop."""
+    org, _, _, emp, shift = org_setup
+    for day in range(2, 9):  # Mon 2026-03-02 … Sun 2026-03-08
+        ShiftAssignment.all_objects.create(
+            org_id=org.id,
+            employee=emp,
+            shift=shift,
+            work_date=dt.date(2026, 3, day),
+            assigned_by=uuid.uuid4(),
+        )
+    payload = build_calendar(
+        org_id=org.id,
+        date_from=dt.date(2026, 3, 2),
+        date_to=dt.date(2026, 3, 8),
+    )
+    rules = {w["rule"] for w in payload["warnings"]}
+    assert "overtime" in rules
+    assert "coverage_drop" not in rules  # min_headcount=1, employee scheduled daily
+    ot = next(w for w in payload["warnings"] if w["rule"] == "overtime")
+    assert ot["hours"] == 63.0
+    assert ot["employee_id"] == str(emp.id)
+
+
+def test_calendar_warnings_coverage_drop(org_setup):
+    """A day with nobody scheduled (min_headcount=1) produces a coverage_drop."""
+    org, _, _, _, _ = org_setup
+    payload = build_calendar(
+        org_id=org.id,
+        date_from=dt.date(2026, 3, 2),
+        date_to=dt.date(2026, 3, 2),
+    )
+    cov = [w for w in payload["warnings"] if w["rule"] == "coverage_drop"]
+    assert cov and cov[0]["scheduled"] == 0 and cov[0]["min"] == 1
+
+
 def test_calendar_returns_assignments_in_range(org_setup):
     org, _, _, emp, shift = org_setup
     ShiftAssignment.all_objects.create(

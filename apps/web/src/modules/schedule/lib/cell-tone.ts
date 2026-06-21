@@ -1,20 +1,8 @@
-import type {
-	CalendarAssignment,
-	CalendarEmployee,
-	CalendarHoliday,
-	CalendarLeave,
-} from "../api";
+import type { CalendarAssignment, CalendarEmployee, CalendarHoliday, CalendarLeave } from "../api";
 import { SHIFT_CODE_TONE } from "./shift-tone";
 import { isWeekendIso } from "./weekday";
 
-export type Tone =
-	| "accent"
-	| "lavender"
-	| "sky"
-	| "yellow"
-	| "mint"
-	| "peach"
-	| "coral";
+export type Tone = "accent" | "lavender" | "sky" | "yellow" | "mint" | "peach" | "coral";
 
 export type CellTone =
 	| { kind: "inactive"; letter: ""; tone: "muted" }
@@ -41,9 +29,7 @@ export function resolveCellTone(inp: CellInputs): CellTone {
 	if (inp.employee.status !== "active") {
 		return { kind: "inactive", letter: "", tone: "muted" };
 	}
-	const onLeave = inp.leaves.some(
-		(l) => l.employee_id === inp.employee.id && l.date === inp.date,
-	);
+	const onLeave = inp.leaves.some((l) => l.employee_id === inp.employee.id && l.date === inp.date);
 	if (onLeave) {
 		return { kind: "leave", letter: "L", tone: "mint" };
 	}

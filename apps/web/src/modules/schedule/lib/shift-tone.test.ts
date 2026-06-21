@@ -4,8 +4,8 @@ import { TONE_DOT, shiftCodeTone } from "./shift-tone";
 
 describe("shiftCodeTone", () => {
 	it("maps known codes", () => {
-		expect(shiftCodeTone("M")).toBe("accent");
-		expect(shiftCodeTone("N")).toBe("sky");
+		expect(shiftCodeTone("M")).toBe("sky");
+		expect(shiftCodeTone("N")).toBe("lavender");
 	});
 	it("falls back to accent", () => {
 		expect(shiftCodeTone("Z")).toBe("accent");
