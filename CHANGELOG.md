@@ -2,6 +2,36 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.20.0] — 2026-06-21
+
+My Payslips + My Profile — premium redesign (employee pages). Spec:
+`docs/superpowers/specs/2026-06-21-payslips-profile-redesign.md`.
+
+### My Payslips (`/payslips`)
+
+- **Aurora hero** — latest take-home **net** + month/pay-date + gross context + **Download
+  payslip** CTA + a glass **YTD ring** (net vs deducted this year, payslip count).
+- **Breakdown** card — the latest payslip as Earnings → Gross → Deductions → **Net** (generic
+  over `components`/`deductions`).
+- **History** — bounded, scrollable list with month label, net, status, one-tap **PDF**.
+- Backend: `PayslipRecordSerializer` now exposes the period's `period_start`/`period_end`/
+  `pay_date` (so the employee view can label months without the HR-only periods endpoint).
+
+### My Profile (`/me/profile`)
+
+- **Identity sidebar** (aurora) — photo (change-photo), name, role · department, status, and a
+  quick-facts list (code · employment+tenure+joined · email · phone).
+- **Full record as glass cards** — **Personal details** (full name, DOB, gender, nationality,
+  marital status, masked IC — now surfaced from `/me`), **Employment** (read-only), **Contact
+  details**, **Address**, **Banking** (🔒 MFA), **Emergency**. Inline-edit, MFA-on-bank, and the
+  photo flow are unchanged.
+
+### Tests
+
+- Frontend: **371 passed** (payslip-ui + page; profile read-only fields + edit/MFA). Backend:
+  **787 passed** (payslip record now also asserts `period_start`/`pay_date`). Contracts
+  regenerated. No migration, no new perms.
+
 ## [1.19.1] — 2026-06-21
 
 Fixes: a claim stayed "Submitted" on `/claims/me` after the manager approved it.
