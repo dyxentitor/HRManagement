@@ -51,11 +51,26 @@ export function ReviewStep({ ctx }: { ctx: StepCtx }) {
 	const [me, setMe] = useState<Me | null>(null);
 	const p = (user?.preferences ?? {}) as Record<string, unknown>;
 
+	const [loading, setLoading] = useState(true);
 	useEffect(() => {
-		(async () => setMe((await employeeApi.getMe()) as Me | null))();
+		let cancelled = false;
+		(async () => {
+			try {
+				const profile = (await employeeApi.getMe()) as Me | null;
+				if (!cancelled) setMe(profile);
+			} catch {
+				if (!cancelled) setMe(null);
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
-	if (me === null) return <Skeleton className="h-72 rounded-xl" />;
+	if (loading) return <Skeleton className="h-72 rounded-xl" />;
+	const m = me ?? {};
 
 	return (
 		<div className="flex flex-col h-full">
@@ -66,13 +81,13 @@ export function ReviewStep({ ctx }: { ctx: StepCtx }) {
 			/>
 			<div className="grid sm:grid-cols-2 gap-3">
 				<Section title="Contact" editTo="profile" ctx={ctx}>
-					<Row k="Mobile" v={me.phone ?? ""} />
-					<Row k="Address" v={me.address_line1 ?? ""} />
+					<Row k="Mobile" v={m.phone ?? ""} />
+					<Row k="Address" v={m.address_line1 ?? ""} />
 					<Row
 						k="Emergency"
 						v={
-							me.emergency_contact_name
-								? `${me.emergency_contact_name} · ${me.emergency_contact_phone ?? ""}`
+							m.emergency_contact_name
+								? `${m.emergency_contact_name} · ${m.emergency_contact_phone ?? ""}`
 								: ""
 						}
 					/>

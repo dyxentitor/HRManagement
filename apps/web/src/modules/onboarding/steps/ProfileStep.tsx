@@ -36,25 +36,40 @@ function Field({
 
 export function ProfileStep({ ctx }: { ctx: StepCtx }) {
 	const [me, setMe] = useState<Me | null>(null);
+	const [loading, setLoading] = useState(true);
 	const [d, setD] = useState<Record<string, string>>({});
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
+		let cancelled = false;
 		(async () => {
-			const profile = (await employeeApi.getMe()) as Me | null;
-			setMe(profile);
-			setD({
-				phone: profile?.phone ?? "",
-				alt_phone: profile?.alt_phone ?? "",
-				address_line1: profile?.address_line1 ?? "",
-				city: profile?.city ?? "",
-				postcode: profile?.postcode ?? "",
-				emergency_contact_name: profile?.emergency_contact_name ?? "",
-				emergency_contact_phone: profile?.emergency_contact_phone ?? "",
-				emergency_contact_relationship: profile?.emergency_contact_relationship ?? "",
-			});
+			try {
+				const profile = (await employeeApi.getMe()) as Me | null;
+				if (cancelled) return;
+				setMe(profile);
+				if (profile) {
+					setD({
+						phone: profile.phone ?? "",
+						alt_phone: profile.alt_phone ?? "",
+						address_line1: profile.address_line1 ?? "",
+						city: profile.city ?? "",
+						postcode: profile.postcode ?? "",
+						emergency_contact_name: profile.emergency_contact_name ?? "",
+						emergency_contact_phone: profile.emergency_contact_phone ?? "",
+						emergency_contact_relationship: profile.emergency_contact_relationship ?? "",
+					});
+				}
+			} catch {
+				// surface but don't hang — the step stays continueable
+				if (!cancelled) setMe(null);
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
 		})();
+		return () => {
+			cancelled = true;
+		};
 	}, []);
 
 	const set = (k: string) => (v: string) => setD((p) => ({ ...p, [k]: v }));
@@ -73,7 +88,22 @@ export function ProfileStep({ ctx }: { ctx: StepCtx }) {
 		}
 	}
 
-	if (me === null) return <Skeleton className="h-72 rounded-xl" />;
+	if (loading) return <Skeleton className="h-72 rounded-xl" />;
+
+	// Some invited accounts aren't linked to an employee record yet (e.g. an
+	// admin/contractor invite). There's nothing to self-edit — let them continue.
+	if (!me) {
+		return (
+			<div className="flex flex-col h-full">
+				<StepHeader
+					n="Step 3"
+					title="Your profile"
+					subtitle="Your HR team is still setting up your employee profile. There's nothing for you to fill in here yet — you can continue, and you'll be able to edit your details later from your profile page."
+				/>
+				<StepFooter onBack={ctx.goBack} primaryLabel="Continue →" onPrimary={ctx.goNext} />
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex flex-col h-full">
