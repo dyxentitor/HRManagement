@@ -29,7 +29,7 @@ export function OnboardingWizard({ mode }: { mode: "activate" | "resume" }) {
 	const [params] = useSearchParams();
 	const token = params.get("token") ?? "";
 	const navigate = useNavigate();
-	const { user, loading } = useAuth();
+	const { user, loading, refreshMe } = useAuth();
 
 	const [step, setStep] = useState<StepKey>(mode === "activate" ? "welcome" : "profile");
 	const [preview, setPreview] = useState<InvitationPreview | null>(null);
@@ -87,9 +87,17 @@ export function OnboardingWizard({ mode }: { mode: "activate" | "resume" }) {
 		setStep(ORDER[Math.max(i - 1, min)]);
 	}, [step, mode]);
 
-	const finish = useCallback(() => {
-		void onboardingApi.complete().finally(() => navigate("/", { replace: true }));
-	}, [navigate]);
+	const finish = useCallback(async () => {
+		// Persist completion AND refresh the auth context first — otherwise the
+		// SignedOutGate still sees onboarding incomplete and bounces back here.
+		try {
+			await onboardingApi.complete();
+			await refreshMe();
+		} catch {
+			// ignore — navigate anyway; the gate re-checks on the next load
+		}
+		navigate("/", { replace: true });
+	}, [navigate, refreshMe]);
 
 	const ctx: StepCtx = useMemo(
 		() => ({ mode, token, preview, goNext, goBack, goTo, finish, markSaved }),
