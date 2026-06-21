@@ -84,9 +84,8 @@ describe("Sidebar", () => {
 			</MemoryRouter>,
 		);
 		expect(getGroupLabel("Admin")).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: /employees/i }),
-		).toBeInTheDocument();
+		// the Employees directory now lives under the People hub
+		expect(screen.getByRole("link", { name: /people/i })).toBeInTheDocument();
 	});
 
 	it("hides Payroll when the payslip feature flag is disabled, even if perm is granted", () => {

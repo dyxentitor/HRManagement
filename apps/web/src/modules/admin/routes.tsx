@@ -21,6 +21,8 @@ const UserCreatePage = lazy(() =>
 );
 const ArchivedEmployeesPage = lazy(() => import("./settings/ArchivedEmployeesPage"));
 const InvitationsPage = lazy(() => import("./settings/InvitationsPage"));
+const PeopleShell = lazy(() => import("./people/PeopleShell"));
+const EmployeesPage = lazy(() => import("@/modules/employee/pages/EmployeesPage"));
 
 function RedirectRoleDetail() {
 	const { code } = useParams<{ code: string }>();
@@ -57,15 +59,28 @@ export const adminRoutes: RouteObject[] = [
 			{ path: "modules", element: <AdminModulesPage /> },
 			{ path: "departments", element: <DepartmentsAdminPage /> },
 			{ path: "teams", element: <AdminTeamsPage /> },
-			{ path: "users", element: <UsersLinkingPage /> },
-			{ path: "users/new", element: <UserCreatePage /> },
-			{ path: "invitations", element: <InvitationsPage /> },
+			// Moved to the People hub (v1.25.0) — redirect old links.
+			{ path: "users", element: <Navigate to="/admin/people/accounts" replace /> },
+			{ path: "users/new", element: <Navigate to="/admin/people/accounts/new" replace /> },
+			{ path: "invitations", element: <Navigate to="/admin/people/invitations" replace /> },
 			{ path: "archived", element: <ArchivedEmployeesPage /> },
 			{ path: "roles", element: <AdminRolesPage /> },
 			{ path: "roles/:code", element: <AdminRoleDetailPage /> },
 			{ path: "leave-types", element: <AdminLeaveTypesPage /> },
 			{ path: "announcements", element: <AdminAnnouncementsPage /> },
 			{ path: "audit", element: <AdminAuditLogPage /> },
+		],
+	},
+
+	// v1.25.0 — dedicated People hub (Directory · Invitations · Accounts).
+	{
+		path: "/admin/people",
+		element: <PeopleShell />,
+		children: [
+			{ index: true, element: <EmployeesPage /> },
+			{ path: "invitations", element: <InvitationsPage /> },
+			{ path: "accounts", element: <UsersLinkingPage /> },
+			{ path: "accounts/new", element: <UserCreatePage /> },
 		],
 	},
 ];

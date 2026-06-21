@@ -85,10 +85,22 @@ const PAGES = [
 		module: "approvals",
 	},
 	{
-		label: "Employees",
-		to: "/employees",
+		label: "People · Directory",
+		to: "/admin/people",
 		icon: Users,
 		perm: "employee:read:org",
+	},
+	{
+		label: "People · Invitations",
+		to: "/admin/people/invitations",
+		icon: Users,
+		perm: "user:create",
+	},
+	{
+		label: "People · Accounts",
+		to: "/admin/people/accounts",
+		icon: Users,
+		perm: "employee:write:org",
 	},
 	// v1.9.0 — admin pages now live under /admin/settings/* shell.
 	{
@@ -108,12 +120,6 @@ const PAGES = [
 		to: "/admin/settings/departments",
 		icon: Settings,
 		perm: "department:read",
-	},
-	{
-		label: "Settings · Users & Linking",
-		to: "/admin/settings/users",
-		icon: Users,
-		perm: "employee:write:org",
 	},
 	{
 		label: "Settings · Archived Employees",

@@ -112,8 +112,8 @@ export const NAV: NavGroup[] = [
 		label: "Admin",
 		items: [
 			{
-				label: "Employees",
-				to: "/employees",
+				label: "People",
+				to: "/admin/people",
 				icon: Users,
 				perm: "employee:read:org",
 			},
