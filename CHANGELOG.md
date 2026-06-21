@@ -2,6 +2,39 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.24.0] — 2026-06-21
+
+Employee Onboarding **Phase 2** — the guided onboarding wizard (lean). Source:
+`References/Employee_creation.md`. Spec:
+`docs/superpowers/specs/2026-06-21-onboarding-wizard-phase2.md`.
+
+### Added
+
+- **Onboarding wizard** (`modules/onboarding`) — `/activate?token=` renders a premium split-shell
+  wizard: **Welcome → Security (password + MFA) → Profile → Preferences → Review → Ready**. Aurora
+  rail with a step journey, progress bar, "Draft saved" chip; mobile collapses the rail to a top
+  progress bar. Reuses MFA enrol/confirm, `/employees/me` self-edit + `AvatarUpload`, the
+  password-strength UI, and the Phase-1 `verify`.
+- **Activate-early auto-login** — `POST /invitations/activate/` now returns `{access_token,
+  refresh_token}` and seeds `User.preferences.onboarding = {step, completed}`, so the wizard
+  continues authenticated and **auto-saves each step**.
+- **`PATCH /api/v1/me/preferences`** — deep-merges the caller's own preferences (theme / locale /
+  timezone / notifications / onboarding progress).
+- **Resume** — `SignedOutGate` routes a hire whose onboarding is incomplete to **`/onboarding`**
+  (authenticated), which resumes the wizard past Security. Existing users (no `onboarding` key) are
+  unaffected.
+
+### Changed
+
+- Removed the interim `ActivatePage` (Phase 1's set-password landing) — the wizard supersedes it;
+  the `/activate` token contract is unchanged.
+
+### Tests
+
+- Backend **802 passed** (activate issues tokens + seeds onboarding; preferences merge). Frontend
+  **393 passed** (wizard welcome→security, invalid-token state; + the known RosterPage flake passes
+  on isolated re-run). No migration, no new perm. Contracts regenerated.
+
 ## [1.23.0] — 2026-06-21
 
 Employee Onboarding **Phase 1** — a dedicated invitation system + HR Invitation Dashboard.
