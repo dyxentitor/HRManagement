@@ -2,6 +2,31 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.26.0] — 2026-06-21
+
+Employee Onboarding **Phase 3** — the HR Onboarding Dashboard. Completes the onboarding loop
+(HR creates → invites → employee self-onboards → **HR watches progress**). Spec:
+`docs/superpowers/specs/2026-06-21-onboarding-dashboard-phase3.md`.
+
+### Added
+
+- **`GET /api/v1/onboarding/progress`** (action on `OnboardingChecklistViewSet`, perm
+  `onboarding:read`) — aggregates existing signals into one row per onboarding-cohort member:
+  invitation lifecycle, the wizard's `preferences.onboarding`, `profile_completeness`,
+  `mfa_enabled`, and the onboarding checklist, plus a derived **`overall`** status
+  (invited · activating · in-progress · needs-attention · complete). Batched queries, no new
+  storage (`services/progress.py`).
+- **Onboarding tab** in the People hub (`/admin/people/onboarding`) — aurora funnel (in-progress ·
+  need-help · complete) + per-hire rows with a mini **Invite → Password → Profile → Prefs → Tasks**
+  step track + an overall status pill, and a **detail drawer** (at-a-glance cards + a toggleable
+  onboarding checklist, reusing the existing `items/{id}/toggle` + start-checklist endpoints).
+
+### Tests
+
+- Backend **804 passed** (progress aggregation + perm-gating). Frontend **404 passed**
+  (`onboarding-board-ui` derive helpers, board page + drawer). No migration, no new perm.
+  Contracts regenerated.
+
 ## [1.25.0] — 2026-06-21
 
 Dedicated **People** hub — relocate people/onboarding operations out of Settings. Spec:
