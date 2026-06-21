@@ -2,6 +2,42 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.23.0] — 2026-06-21
+
+Employee Onboarding **Phase 1** — a dedicated invitation system + HR Invitation Dashboard.
+Source: `References/Employee_creation.md`. Spec:
+`docs/superpowers/specs/2026-06-21-employee-invitations-phase1.md`. (Phases 2–3 — the onboarding
+wizard + HR onboarding dashboard — follow.)
+
+### Added
+
+- **`Invitation` model** (migration `identity.0006`) — a single-use, **sha256-hashed** token (the
+  raw token is emailed, never stored), `status` lifecycle (draft/sent/opened/activated/revoked)
+  with a derived **`expired`**, 48–72h expiry (`INVITATION_EXPIRY_HOURS`, default 72), **device/IP
+  capture**, and resend/revoke/extend stamps.
+- **`services/invitation.py`** — create (branded HTML welcome email) · verify (marks opened, logs
+  IP/UA) · activate (sets the password, single-use) · resend · revoke · extend · regenerate-link.
+  Every event writes an `AuditLog` row (the dashboard's activity log).
+- **HR Invitation Dashboard** (`/admin/settings/invitations`, perm `user:create`) — aurora funnel
+  (pending · activated · expired), filter pills, status pills + **expiry countdown**, an actions
+  menu (Resend · Extend 48h · Copy link · View activity · Revoke), and an audit-driven **activity
+  drawer**.
+- **Public `/activate`** page — verifies the token, welcomes the new hire, and lets them set a
+  password (with a strength meter) → "workspace ready". `GET /invitations/verify/` + `POST
+  /invitations/activate/` (AllowAny); HR `InvitationViewSet` for list + lifecycle actions.
+
+### Changed
+
+- `provision_user(credential_method="invite")` now mints an `Invitation` (single-use, expiring,
+  audited) instead of reusing the 1-hour password-reset token. The `temp` path is unchanged.
+
+### Tests
+
+- Backend **800 passed** (token hashing/single-use, verify-opens + IP, activate, expiry block,
+  resend/revoke, provision-invite, HR perm-gating, public HTTP). Frontend **394 passed**
+  (invitation-ui, dashboard, activate flow). No new perm code (reuses `user:create`). Contracts
+  regenerated.
+
 ## [1.22.1] — 2026-06-21
 
 ### Fixed
