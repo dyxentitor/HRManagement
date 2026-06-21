@@ -2,6 +2,18 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.26.1] — 2026-06-21
+
+### Changed
+
+- **Merged Invitations + Onboarding into one two-column page** (People hub → Onboarding tab),
+  mirroring the Growth page: **Invitations** (left) + **Onboarding progress** (right). Both reuse
+  the shared `GrowthHero`, so the heroes are **pixel-matched in height** with the richer anatomy
+  (status ring · composition segment-bar · 3 stat tiles · "next up" callout). The standalone
+  Invitations tab is removed; `/admin/people/invitations` and `/admin/settings/invitations`
+  redirect to the hub. Supersedes the separate `InvitationsPage` + `OnboardingBoardPage` (rows kept
+  their actions menu / detail drawer). Frontend-only; backend unchanged (804).
+
 ## [1.26.0] — 2026-06-21
 
 Employee Onboarding **Phase 3** — the HR Onboarding Dashboard. Completes the onboarding loop
