@@ -2,6 +2,20 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.28.1] — 2026-06-22
+
+### Changed
+
+- **Split the leave UI into view vs edit** (UX fix). The employee **view** page (`/employees/:id`)
+  now shows only a **redesigned read-only** "Leave & Holidays" balance card (per-type bars +
+  remaining) — **no edit / adjust / override controls** — gated to Admin/HR
+  (`leave:balance:read:org`). Employees see **their own** balance on **My Profile** (`read:self`).
+- All leave **management** lives on the **edit** page (`/employees/:id/edit`): **"Leave Override"**
+  (inline CRUD) and **"Adjust leave ±"** (inline composer with a live before→after preview) sit
+  **side by side**, HR-only. The sidebar **drawer is removed** (`AdjustLeaveDrawer` + `LeaveSection`
+  deleted). Audit unchanged — every adjustment still writes a `leave.balance.adjusted` audit row +
+  an append-only ledger entry.
+- Frontend-only; backend unchanged (**816**). Frontend **409 passed**.
 ## [1.28.0] — 2026-06-22
 
 Employees can see their leave/holiday balance on the employee profile, and **org_admin + hr_manager**
