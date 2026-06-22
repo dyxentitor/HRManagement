@@ -10,7 +10,7 @@ const api = vi.hoisted(() => ({
 vi.mock("@/modules/leave/api", () => ({ leaveApi: api }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-import { AdjustLeaveDrawer } from "./AdjustLeaveDrawer";
+import { AdjustLeaveCard } from "./AdjustLeaveCard";
 
 beforeEach(() => {
 	for (const m of Object.values(api)) m.mockReset();
@@ -23,19 +23,16 @@ beforeEach(() => {
 	api.adjustBalance.mockResolvedValue({});
 });
 
-describe("AdjustLeaveDrawer", () => {
+describe("AdjustLeaveCard", () => {
 	it("shows a live before→after preview and submits the adjustment", async () => {
 		const user = userEvent.setup();
 		const onChanged = vi.fn();
-		render(<AdjustLeaveDrawer employeeId="e1" open onClose={() => {}} onChanged={onChanged} />);
+		render(<AdjustLeaveCard employeeId="e1" onChanged={onChanged} />);
 		await waitFor(() => expect(api.balancesFor).toHaveBeenCalled());
-
-		// current balance shows
 		await waitFor(() => expect(screen.getByText("10")).toBeInTheDocument());
 
 		await user.type(screen.getByLabelText(/days \(\+\/-\)/i), "2");
-		// preview shows the result 10 → 12
-		await waitFor(() => expect(screen.getByText("12")).toBeInTheDocument());
+		await waitFor(() => expect(screen.getByText("12")).toBeInTheDocument()); // preview
 
 		await user.type(screen.getByLabelText(/^reason/i), "goodwill day");
 		await user.click(screen.getByRole("button", { name: /apply adjustment/i }));

@@ -1,9 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const perm = vi.hoisted(() => ({ can: vi.fn() }));
 const api = vi.hoisted(() => ({ balancesFor: vi.fn() }));
-vi.mock("@/lib/perm", () => ({ useCan: (p: string) => perm.can(p) }));
 vi.mock("@/modules/leave/api", () => ({ leaveApi: api }));
 
 import { LeaveBalanceCard } from "./LeaveBalanceCard";
@@ -23,33 +21,18 @@ const balance = {
 };
 
 beforeEach(() => {
-	perm.can.mockReturnValue(false);
 	api.balancesFor.mockReset();
 });
 
-describe("LeaveBalanceCard", () => {
-	it("renders the balance row with the remaining amount", async () => {
+describe("LeaveBalanceCard (read-only)", () => {
+	it("renders the type and remaining, with no edit controls", async () => {
 		api.balancesFor.mockResolvedValue([balance]);
 		render(<LeaveBalanceCard employeeId="e1" />);
 		await waitFor(() => expect(screen.getByText("Annual")).toBeInTheDocument());
-		expect(screen.getByText("10.00")).toBeInTheDocument(); // available / remaining
+		expect(screen.getByText("10")).toBeInTheDocument(); // remaining
 		expect(screen.getByText("Leave & Holidays")).toBeInTheDocument();
-	});
-
-	it("hides the Adjust button without the adjust permission", async () => {
-		api.balancesFor.mockResolvedValue([balance]);
-		render(<LeaveBalanceCard employeeId="e1" />);
-		await waitFor(() => screen.getByText("Annual"));
-		expect(screen.queryByRole("button", { name: /adjust leave/i })).not.toBeInTheDocument();
-	});
-
-	it("shows the Adjust button for HR/Admin", async () => {
-		perm.can.mockReturnValue(true);
-		api.balancesFor.mockResolvedValue([balance]);
-		render(<LeaveBalanceCard employeeId="e1" />);
-		await waitFor(() =>
-			expect(screen.getByRole("button", { name: /adjust leave/i })).toBeInTheDocument(),
-		);
+		// pure view — no adjust / manage / edit buttons
+		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 
 	it("renders nothing when the viewer isn't allowed (403)", async () => {

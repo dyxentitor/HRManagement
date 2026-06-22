@@ -12,8 +12,10 @@ import { cn } from "@/lib/utils";
 
 import { type EmployeeWritePayload, employeeApi } from "../api";
 import { AvatarUpload } from "../components/AvatarUpload";
+import { LeaveBalanceCard } from "../components/LeaveBalanceCard";
 
 interface EmployeeProfile {
+	id: string;
 	employee_code: string;
 	full_name: string;
 	first_name?: string;
@@ -250,6 +252,7 @@ export default function MyProfilePage() {
 				</aside>
 
 				<div className="space-y-4">
+					<LeaveBalanceCard employeeId={profile.id} />
 					<ReadOnlySection
 						title="Personal details"
 						fields={[

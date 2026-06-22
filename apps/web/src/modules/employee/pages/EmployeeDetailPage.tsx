@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 import { RolesCard } from "@/modules/admin/components/RolesCard";
-import { LeaveSection } from "../components/LeaveSection";
+import { LeaveBalanceCard } from "../components/LeaveBalanceCard";
 
 import { type Employee, type ReportingChainEntry, employeeApi } from "../api";
 import { ProfileCompletenessBanner } from "../components/ProfileCompletenessBanner";
@@ -99,6 +99,7 @@ export default function EmployeeDetailPage() {
 	const canReadOrg = useCan("employee:read:org");
 	const canEdit = useCan("employee:write:org");
 	const canArchive = useCan("employee:archive");
+	const canViewLeave = useCan("leave:balance:read:org");
 
 	const [employee, setEmployee] = useState<Employee | null>(null);
 	const [chain, setChain] = useState<ReportingChainEntry[]>([]);
@@ -281,8 +282,8 @@ export default function EmployeeDetailPage() {
 						/>
 					)}
 
-					{/* Leave — balances (+ inline override CRUD for HR); read-scoped */}
-					<LeaveSection employeeId={employee.id} />
+					{/* Leave & holidays — read-only; Admin/HR only on the directory page */}
+					{canViewLeave && <LeaveBalanceCard employeeId={employee.id} />}
 
 					{/* Reporting chain */}
 					{chain.length > 0 && (

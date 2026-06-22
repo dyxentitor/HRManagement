@@ -1,24 +1,30 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { useCan } from "@/lib/perm";
+import { cn } from "@/lib/utils";
 
 import { type LeaveBalance, leaveApi } from "@/modules/leave/api";
-import { AdjustLeaveDrawer } from "./AdjustLeaveDrawer";
 
+const TONES = ["bg-mint", "bg-sky", "bg-lavender", "bg-peach", "bg-yellow", "bg-coral"];
+const TEXT_TONES = [
+	"text-mint",
+	"text-sky",
+	"text-lavender",
+	"text-peach",
+	"text-yellow",
+	"text-coral",
+];
+
+/** Read-only leave/holiday balances. No edit affordances — viewing only. */
 export function LeaveBalanceCard({ employeeId }: { employeeId: string }) {
-	const canAdjust = useCan("leave:balance:adjust:org");
 	const [balances, setBalances] = useState<LeaveBalance[] | null>(null);
 	const [denied, setDenied] = useState(false);
-	const [drawer, setDrawer] = useState(false);
 
 	const load = useCallback(async () => {
 		try {
 			setBalances(await leaveApi.balancesFor(employeeId));
 			setDenied(false);
 		} catch {
-			// 403 (not allowed to view) or fetch error → hide the card entirely
-			setDenied(true);
+			setDenied(true); // 403 / error → hide the card entirely
 		}
 	}, [employeeId]);
 
@@ -30,13 +36,11 @@ export function LeaveBalanceCard({ employeeId }: { employeeId: string }) {
 
 	return (
 		<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-			<header className="flex items-center justify-between mb-3">
+			<header className="mb-3">
 				<h2 className="text-h3 text-text-primary">Leave &amp; Holidays</h2>
-				{canAdjust && (
-					<Button variant="outline" size="sm" onClick={() => setDrawer(true)}>
-						Adjust leave
-					</Button>
-				)}
+				<p className="text-small text-text-tertiary">
+					Remaining balance · {new Date().getFullYear()}
+				</p>
 			</header>
 
 			{balances === null ? (
@@ -44,47 +48,45 @@ export function LeaveBalanceCard({ employeeId }: { employeeId: string }) {
 			) : balances.length === 0 ? (
 				<p className="text-small text-text-tertiary">No leave balances for this year yet.</p>
 			) : (
-				<div className="overflow-x-auto">
-					<table className="w-full text-small">
-						<thead>
-							<tr className="text-text-tertiary text-label uppercase text-left">
-								<th className="py-1.5 pr-3">Type</th>
-								<th className="py-1.5 px-2 text-right">Entitled</th>
-								<th className="py-1.5 px-2 text-right">Taken</th>
-								<th className="py-1.5 px-2 text-right">Pending</th>
-								<th className="py-1.5 px-2 text-right">Remaining</th>
-								<th className="py-1.5 pl-2 text-right">Carried</th>
-							</tr>
-						</thead>
-						<tbody>
-							{balances.map((b) => (
-								<tr key={b.id} className="border-t border-border-subtle/60">
-									<td className="py-1.5 pr-3 text-text-primary">
+				<ul className="space-y-2.5">
+					{balances.map((b, i) => {
+						const remaining = Number(b.available);
+						const entitled = Number(b.entitled) || Number(b.accrued) || 0;
+						const pct = entitled > 0 ? Math.max(0, Math.min(100, (remaining / entitled) * 100)) : 0;
+						const noCap = entitled <= 0;
+						return (
+							<li key={b.id} className="flex items-center gap-3">
+								<div className="w-28 min-w-0">
+									<p className="text-small text-text-primary truncate">
 										{b.leave_type_name ?? b.leave_type_code}
-									</td>
-									<td className="py-1.5 px-2 text-right tabular-nums">{b.entitled}</td>
-									<td className="py-1.5 px-2 text-right tabular-nums">{b.taken}</td>
-									<td className="py-1.5 px-2 text-right tabular-nums">{b.pending}</td>
-									<td className="py-1.5 px-2 text-right tabular-nums font-semibold text-mint">
-										{b.available}
-									</td>
-									<td className="py-1.5 pl-2 text-right tabular-nums text-text-tertiary">
-										{b.carried_forward}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
-
-			{canAdjust && (
-				<AdjustLeaveDrawer
-					employeeId={employeeId}
-					open={drawer}
-					onClose={() => setDrawer(false)}
-					onChanged={load}
-				/>
+									</p>
+									<p className="text-[10px] text-text-tertiary">
+										{Number(b.taken)} taken
+										{Number(b.pending) > 0 ? ` · ${Number(b.pending)} pending` : ""}
+									</p>
+								</div>
+								<div className="flex-1 h-1.5 rounded-full bg-surface-elevated/60 overflow-hidden">
+									{!noCap && (
+										<div
+											className={cn("h-full rounded-full", TONES[i % TONES.length])}
+											style={{ width: `${pct}%` }}
+										/>
+									)}
+								</div>
+								<div className="w-16 text-right tabular-nums text-small">
+									{noCap ? (
+										<span className="text-text-tertiary text-[11px]">no cap</span>
+									) : (
+										<>
+											<b className={TEXT_TONES[i % TEXT_TONES.length]}>{remaining}</b>
+											<span className="text-text-tertiary">/{entitled}</span>
+										</>
+									)}
+								</div>
+							</li>
+						);
+					})}
+				</ul>
 			)}
 		</section>
 	);

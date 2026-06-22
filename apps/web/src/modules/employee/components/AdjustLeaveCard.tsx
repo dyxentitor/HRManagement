@@ -1,29 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { DetailPanel } from "@/components/hrms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { type LeaveBalance, type LeaveType, leaveApi } from "@/modules/leave/api";
 
-const SELECT = "bg-canvas border border-border-subtle rounded px-2 py-1.5 text-body w-full";
+const SELECT = "bg-canvas border border-border-subtle rounded px-2 py-1.5 text-small w-full";
 
-export interface AdjustLeaveDrawerProps {
+export interface AdjustLeaveCardProps {
 	employeeId: string;
-	open: boolean;
-	onClose: () => void;
-	/** Called after a successful adjustment so the parent can refresh balances. */
+	/** Called after a successful adjustment (e.g. to refresh a balance card). */
 	onChanged?: () => void;
 }
 
-/** One-off +/- balance correction composer with a live before→after preview. */
-export function AdjustLeaveDrawer({
-	employeeId,
-	open,
-	onClose,
-	onChanged,
-}: AdjustLeaveDrawerProps) {
+/** HR one-off +/- balance correction, with a live before→after preview. */
+export function AdjustLeaveCard({ employeeId, onChanged }: AdjustLeaveCardProps) {
 	const [types, setTypes] = useState<LeaveType[]>([]);
 	const [balances, setBalances] = useState<LeaveBalance[]>([]);
 	const [typeId, setTypeId] = useState("");
@@ -42,8 +34,8 @@ export function AdjustLeaveDrawer({
 	}, [employeeId]);
 
 	useEffect(() => {
-		if (open) void load();
-	}, [open, load]);
+		void load();
+	}, [load]);
 
 	const current = balances.find((b) => b.leave_type === typeId);
 	const now = current ? Number(current.available) : null;
@@ -76,40 +68,50 @@ export function AdjustLeaveDrawer({
 	}
 
 	return (
-		<DetailPanel open={open} onClose={onClose} title="Adjust leave balance">
-			<div className="space-y-4">
-				<select
-					aria-label="Leave type"
-					className={SELECT}
-					value={typeId}
-					onChange={(e) => setTypeId(e.target.value)}
-				>
-					{types.map((t) => (
-						<option key={t.id} value={t.id}>
-							{t.name}
-						</option>
-					))}
-				</select>
+		<section className="bg-surface-hover border border-accent-500/30 rounded-lg p-4">
+			<header className="flex items-center justify-between mb-1">
+				<h2 className="text-h3 text-text-primary">Adjust leave ±</h2>
+				<span className="text-[10px] font-bold uppercase tracking-wider text-accent-200 bg-accent-500/15 border border-accent-500/40 px-2 py-0.5 rounded-full">
+					HR only
+				</span>
+			</header>
+			<p className="text-small text-text-tertiary mb-3">
+				One-off correction. Recorded as an append-only audit ledger entry.
+			</p>
 
-				{/* live before → after preview */}
-				<div className="glass-surface rounded-2xl px-4 py-5 text-center">
-					<p className="layer-eyebrow">Remaining</p>
-					<p className="text-3xl font-extralight tabular-nums mt-1">
-						<span className="text-text-secondary">{now ?? "—"}</span>
-						{next !== null && (
-							<>
-								<span className="text-accent-200 mx-2">→</span>
-								<span className={next < 0 ? "text-coral" : "text-mint"}>{next}</span>
-							</>
-						)}
-					</p>
-					<p className="text-small text-text-tertiary mt-1">
-						{delta !== "" && !Number.isNaN(deltaNum)
-							? `${deltaNum > 0 ? "+" : ""}${deltaNum} days`
-							: "Enter an amount"}
-					</p>
-				</div>
+			<select
+				aria-label="Leave type"
+				className={SELECT}
+				value={typeId}
+				onChange={(e) => setTypeId(e.target.value)}
+			>
+				{types.map((t) => (
+					<option key={t.id} value={t.id}>
+						{t.name}
+					</option>
+				))}
+			</select>
 
+			{/* live before → after preview */}
+			<div className="glass-surface rounded-xl px-4 py-4 text-center my-3">
+				<p className="layer-eyebrow">Remaining</p>
+				<p className="text-2xl font-extralight tabular-nums mt-1">
+					<span className="text-text-secondary">{now ?? "—"}</span>
+					{next !== null && (
+						<>
+							<span className="text-accent-200 mx-2">→</span>
+							<span className={next < 0 ? "text-coral" : "text-mint"}>{next}</span>
+						</>
+					)}
+				</p>
+				<p className="text-[11px] text-text-tertiary mt-0.5">
+					{delta !== "" && !Number.isNaN(deltaNum)
+						? `${deltaNum > 0 ? "+" : ""}${deltaNum} days`
+						: "Enter an amount"}
+				</p>
+			</div>
+
+			<div className="space-y-2">
 				<Input
 					aria-label="Days (+/-)"
 					type="number"
@@ -127,10 +129,7 @@ export function AdjustLeaveDrawer({
 				<Button onClick={submit} disabled={busy} className="soft-glow rounded-xl w-full">
 					Apply adjustment
 				</Button>
-				<p className="text-[11px] text-text-tertiary text-center">
-					Recorded as an append-only ledger entry by you.
-				</p>
 			</div>
-		</DetailPanel>
+		</section>
 	);
 }
