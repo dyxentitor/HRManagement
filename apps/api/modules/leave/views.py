@@ -139,19 +139,54 @@ class EmployeeLeaveOverrideViewSet(viewsets.ModelViewSet):
             qs = qs.filter(employee_id=employee_id)
         return qs
 
+    def _assert_no_overlap(self, *, employee_id, leave_type, eff_from, eff_to, exclude_id=None):
+        """Reject a new/edited override whose date range intersects an existing one
+        for the same employee + leave type. `effective_to=None` = open-ended."""
+        qs = EmployeeLeaveOverride.all_objects.filter(
+            org_id=self.request.user.org_id,
+            employee_id=employee_id,
+            leave_type=leave_type,
+            deleted_at__isnull=True,
+        )
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+        for ov in qs:
+            # ranges [f1,t1] and [f2,t2] overlap iff f1 <= t2 and f2 <= t1 (None = ∞)
+            if (eff_to is None or ov.effective_from <= eff_to) and (
+                ov.effective_to is None or eff_from <= ov.effective_to
+            ):
+                raise ValidationError(
+                    {"effective_from": "Overlaps an existing override for this leave type."}
+                )
+
     def perform_create(self, serializer):
         employee_id = self.request.data.get("employee_id") or self.request.query_params.get(
             "employee"
         )
         if not employee_id:
-            from rest_framework.exceptions import ValidationError
-
             raise ValidationError({"employee_id": "Required."})
+        self._assert_no_overlap(
+            employee_id=employee_id,
+            leave_type=serializer.validated_data["leave_type"],
+            eff_from=serializer.validated_data["effective_from"],
+            eff_to=serializer.validated_data.get("effective_to"),
+        )
         serializer.save(
             org_id=self.request.user.org_id,
             employee_id=employee_id,
             created_by=self.request.user.id,
         )
+
+    def perform_update(self, serializer):
+        inst = serializer.instance
+        self._assert_no_overlap(
+            employee_id=inst.employee_id,
+            leave_type=serializer.validated_data.get("leave_type", inst.leave_type),
+            eff_from=serializer.validated_data.get("effective_from", inst.effective_from),
+            eff_to=serializer.validated_data.get("effective_to", inst.effective_to),
+            exclude_id=inst.id,
+        )
+        serializer.save()
 
     def perform_destroy(self, instance):
         instance.delete()
@@ -199,7 +234,7 @@ class LeaveBalanceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes: ClassVar[list] = [HRMSPermission]
 
     def get_required_perms(self):
-        if self.action == "adjust":
+        if self.action in ("adjust", "history"):
             return ["leave:balance:adjust:org"]
         return []  # list/retrieve/me use the custom self/team/org check below
 
@@ -292,19 +327,61 @@ class LeaveBalanceViewSet(viewsets.ReadOnlyModelViewSet):
             delta=delta,
             actor_id=request.user.id,
         )
+        after_avail = Decimal(bal.available)
+        before_avail = after_avail - delta
         audit_append(
             org_id=request.user.org_id,
             action="leave.balance.adjusted",
             entity="leave_balance",
             entity_id=bal.id,
+            actor_id=request.user.id,
             after={
                 "employee_id": str(employee_id),
                 "leave_type": leave_type.code,
+                "leave_type_name": leave_type.name,
                 "delta": str(delta),
+                "before": str(before_avail),
+                "after": str(after_avail),
                 "note": note,
             },
         )
         return Response(self.get_serializer(bal).data)
+
+    @action(detail=False, methods=["get"], url_path="history")
+    def history(self, request):
+        """Read-only adjustment history for an employee (manual corrections)."""
+        from common.audit.models import AuditLog
+        from modules.identity.models import User
+
+        employee_id = request.query_params.get("employee")
+        if not employee_id:
+            raise ValidationError({"employee": "Required."})
+        rows = list(
+            AuditLog.objects.filter(
+                org_id=request.user.org_id,
+                action="leave.balance.adjusted",
+                after__employee_id=str(employee_id),
+            ).order_by("-ts")[:50]
+        )
+        actors = {
+            u.id: u.email
+            for u in User.objects.filter(id__in=[r.actor_id for r in rows if r.actor_id])
+        }
+        out = []
+        for r in rows:
+            a = r.after or {}
+            out.append(
+                {
+                    "ts": r.ts.isoformat(),
+                    "leave_type": a.get("leave_type_name") or a.get("leave_type"),
+                    "delta": a.get("delta"),
+                    "before": a.get("before"),
+                    "after": a.get("after"),
+                    "note": a.get("note"),
+                    "performed_by": actors.get(r.actor_id, "—"),
+                }
+            )
+        return Response(out)
 
 
 @requires_feature("leave")

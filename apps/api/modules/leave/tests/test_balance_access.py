@@ -145,6 +145,50 @@ def test_employee_cannot_adjust(stack):
     assert r.status_code == 403
 
 
+def test_adjustment_is_recorded_in_history(stack):
+    emp_id = stack["emp_emp"].id
+    hr = stack["c"]["hr"]
+    hr.post(
+        "/api/v1/leave/balances/adjust/",
+        {"employee_id": str(emp_id), "leave_type_id": str(stack["lt"].id),
+         "delta": "2", "note": "goodwill day"},
+        format="json",
+    )
+    r = hr.get(f"/api/v1/leave/balances/history/?employee={emp_id}")
+    assert r.status_code == 200, r.content
+    rows = r.json()
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["delta"] == "2"
+    assert row["before"] == "14.00" and row["after"] == "16.00"
+    assert row["note"] == "goodwill day"
+    assert "@" in row["performed_by"]  # actor email resolved
+
+
+def test_history_forbidden_for_employee(stack):
+    r = stack["c"]["emp"].get(f"/api/v1/leave/balances/history/?employee={stack['emp_emp'].id}")
+    assert r.status_code == 403
+
+
+def test_override_overlap_rejected(stack):
+    emp_id = stack["emp_emp"].id
+    hr = stack["c"]["hr"]
+    base = {
+        "leave_type": str(stack["lt"].id),
+        "days_override": "18",
+        "effective_from": "2026-01-01",
+    }
+    r1 = hr.post(f"/api/v1/leave/employee-overrides/?employee={emp_id}", base, format="json")
+    assert r1.status_code == 201, r1.content
+    # second open-ended override for the same type overlaps → 400
+    r2 = hr.post(
+        f"/api/v1/leave/employee-overrides/?employee={emp_id}",
+        {**base, "effective_from": "2026-06-01"},
+        format="json",
+    )
+    assert r2.status_code == 400
+
+
 def test_zero_delta_rejected(stack):
     r = stack["c"]["hr"].post(
         "/api/v1/leave/balances/adjust/",
