@@ -4,10 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
 	listTypes: vi.fn(),
-	overridesFor: vi.fn(),
+	balancesFor: vi.fn(),
 	adjustBalance: vi.fn(),
-	createOverride: vi.fn(),
-	deleteOverride: vi.fn(),
 }));
 vi.mock("@/modules/leave/api", () => ({ leaveApi: api }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -19,18 +17,26 @@ beforeEach(() => {
 	api.listTypes.mockResolvedValue([
 		{ id: "lt1", code: "ANNUAL", name: "Annual", is_paid: true, is_statutory: true },
 	]);
-	api.overridesFor.mockResolvedValue([]);
+	api.balancesFor.mockResolvedValue([
+		{ id: "b1", leave_type: "lt1", leave_type_code: "ANNUAL", year: 2026, available: "10" },
+	]);
 	api.adjustBalance.mockResolvedValue({});
 });
 
 describe("AdjustLeaveDrawer", () => {
-	it("submits a one-off adjustment with delta + note", async () => {
+	it("shows a live before→after preview and submits the adjustment", async () => {
 		const user = userEvent.setup();
 		const onChanged = vi.fn();
 		render(<AdjustLeaveDrawer employeeId="e1" open onClose={() => {}} onChanged={onChanged} />);
-		await waitFor(() => expect(api.listTypes).toHaveBeenCalled());
+		await waitFor(() => expect(api.balancesFor).toHaveBeenCalled());
+
+		// current balance shows
+		await waitFor(() => expect(screen.getByText("10")).toBeInTheDocument());
 
 		await user.type(screen.getByLabelText(/days \(\+\/-\)/i), "2");
+		// preview shows the result 10 → 12
+		await waitFor(() => expect(screen.getByText("12")).toBeInTheDocument());
+
 		await user.type(screen.getByLabelText(/^reason/i), "goodwill day");
 		await user.click(screen.getByRole("button", { name: /apply adjustment/i }));
 
@@ -42,23 +48,5 @@ describe("AdjustLeaveDrawer", () => {
 			note: "goodwill day",
 		});
 		expect(onChanged).toHaveBeenCalled();
-	});
-
-	it("adds an entitlement override", async () => {
-		const user = userEvent.setup();
-		api.createOverride.mockResolvedValue({ id: "o1" });
-		render(<AdjustLeaveDrawer employeeId="e1" open onClose={() => {}} />);
-		await waitFor(() => expect(api.listTypes).toHaveBeenCalled());
-
-		await user.type(screen.getByLabelText(/override days/i), "18");
-		await user.type(screen.getByLabelText(/effective from/i), "2026-01-01");
-		await user.click(screen.getByRole("button", { name: /add override/i }));
-
-		await waitFor(() => expect(api.createOverride).toHaveBeenCalled());
-		expect(api.createOverride).toHaveBeenCalledWith("e1", {
-			leave_type: "lt1",
-			days_override: "18",
-			effective_from: "2026-01-01",
-		});
 	});
 });

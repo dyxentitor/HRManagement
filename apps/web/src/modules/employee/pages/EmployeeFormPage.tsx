@@ -186,7 +186,7 @@ export default function EmployeeFormPage() {
 								onClick={() => setLeaveDrawer(true)}
 								className="text-small text-accent-200 hover:text-accent-50"
 							>
-								Manage leave →
+								Adjust leave ±
 							</button>
 						)}
 						<a href="/employees" className="text-small text-accent-200 hover:text-accent-50">

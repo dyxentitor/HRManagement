@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 import { RolesCard } from "@/modules/admin/components/RolesCard";
-import { LeaveBalanceCard } from "../components/LeaveBalanceCard";
+import { LeaveSection } from "../components/LeaveSection";
 
 import { type Employee, type ReportingChainEntry, employeeApi } from "../api";
 import { ProfileCompletenessBanner } from "../components/ProfileCompletenessBanner";
@@ -281,8 +281,8 @@ export default function EmployeeDetailPage() {
 						/>
 					)}
 
-					{/* Leave & holidays — read-scoped; hidden if not permitted */}
-					<LeaveBalanceCard employeeId={employee.id} />
+					{/* Leave — balances (+ inline override CRUD for HR); read-scoped */}
+					<LeaveSection employeeId={employee.id} />
 
 					{/* Reporting chain */}
 					{chain.length > 0 && (
