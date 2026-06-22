@@ -35,7 +35,7 @@ describe("AdjustLeaveCard", () => {
 		await waitFor(() => expect(screen.getByText("12")).toBeInTheDocument()); // preview
 
 		await user.type(screen.getByLabelText(/^reason/i), "goodwill day");
-		await user.click(screen.getByRole("button", { name: /apply adjustment/i }));
+		await user.click(screen.getByRole("button", { name: /^apply/i }));
 
 		await waitFor(() => expect(api.adjustBalance).toHaveBeenCalled());
 		expect(api.adjustBalance).toHaveBeenCalledWith({

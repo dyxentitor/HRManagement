@@ -5,17 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { type LeaveBalance, type LeaveType, leaveApi } from "@/modules/leave/api";
+import { LeaveSubsection } from "./LeaveSubsection";
 
-const SELECT = "bg-canvas border border-border-subtle rounded px-2 py-1.5 text-small w-full";
+const SELECT = "bg-canvas border border-border-subtle rounded px-2 py-1.5 text-small";
 
 export interface AdjustLeaveCardProps {
 	employeeId: string;
-	/** Called after a successful adjustment (e.g. to refresh a balance card). */
 	onChanged?: () => void;
+	embedded?: boolean;
 }
 
-/** HR one-off +/- balance correction, with a live before→after preview. */
-export function AdjustLeaveCard({ employeeId, onChanged }: AdjustLeaveCardProps) {
+/** HR one-off +/- balance correction, with a compact live before→after preview. */
+export function AdjustLeaveCard({ employeeId, onChanged, embedded = false }: AdjustLeaveCardProps) {
 	const [types, setTypes] = useState<LeaveType[]>([]);
 	const [balances, setBalances] = useState<LeaveBalance[]>([]);
 	const [typeId, setTypeId] = useState("");
@@ -40,7 +41,8 @@ export function AdjustLeaveCard({ employeeId, onChanged }: AdjustLeaveCardProps)
 	const current = balances.find((b) => b.leave_type === typeId);
 	const now = current ? Number(current.available) : null;
 	const deltaNum = Number(delta);
-	const next = now !== null && delta !== "" && !Number.isNaN(deltaNum) ? now + deltaNum : null;
+	const hasDelta = delta !== "" && !Number.isNaN(deltaNum);
+	const next = now !== null && hasDelta ? now + deltaNum : null;
 
 	async function submit() {
 		if (!typeId || delta === "" || deltaNum === 0 || !note.trim()) {
@@ -68,68 +70,62 @@ export function AdjustLeaveCard({ employeeId, onChanged }: AdjustLeaveCardProps)
 	}
 
 	return (
-		<section className="bg-surface-hover border border-accent-500/30 rounded-lg p-4">
-			<header className="flex items-center justify-between mb-1">
-				<h2 className="text-h3 text-text-primary">Adjust leave ±</h2>
-				<span className="text-[10px] font-bold uppercase tracking-wider text-accent-200 bg-accent-500/15 border border-accent-500/40 px-2 py-0.5 rounded-full">
-					HR only
-				</span>
-			</header>
-			<p className="text-small text-text-tertiary mb-3">
-				One-off correction. Recorded as an append-only audit ledger entry.
-			</p>
-
-			<select
-				aria-label="Leave type"
-				className={SELECT}
-				value={typeId}
-				onChange={(e) => setTypeId(e.target.value)}
-			>
-				{types.map((t) => (
-					<option key={t.id} value={t.id}>
-						{t.name}
-					</option>
-				))}
-			</select>
-
-			{/* live before → after preview */}
-			<div className="glass-surface rounded-xl px-4 py-4 text-center my-3">
-				<p className="layer-eyebrow">Remaining</p>
-				<p className="text-2xl font-extralight tabular-nums mt-1">
+		<LeaveSubsection
+			embedded={embedded}
+			title="Adjust balance"
+			description="One-off +/- correction, recorded in the audit ledger."
+		>
+			<div className="flex flex-wrap items-end gap-2">
+				<label className="flex flex-col gap-1">
+					<span className="text-[10px] uppercase tracking-wide text-text-tertiary">Type</span>
+					<select
+						aria-label="Leave type"
+						className={SELECT}
+						value={typeId}
+						onChange={(e) => setTypeId(e.target.value)}
+					>
+						{types.map((t) => (
+							<option key={t.id} value={t.id}>
+								{t.name}
+							</option>
+						))}
+					</select>
+				</label>
+				<label className="flex flex-col gap-1 w-24">
+					<span className="text-[10px] uppercase tracking-wide text-text-tertiary">Days ±</span>
+					<Input
+						aria-label="Days (+/-)"
+						type="number"
+						step="0.5"
+						placeholder="+2 / -1"
+						value={delta}
+						onChange={(e) => setDelta(e.target.value)}
+						className="h-9"
+					/>
+				</label>
+				{/* compact inline preview */}
+				<div className="flex items-center gap-1.5 h-9 px-3 rounded-lg glass-surface tabular-nums text-small">
 					<span className="text-text-secondary">{now ?? "—"}</span>
-					{next !== null && (
-						<>
-							<span className="text-accent-200 mx-2">→</span>
-							<span className={next < 0 ? "text-coral" : "text-mint"}>{next}</span>
-						</>
-					)}
-				</p>
-				<p className="text-[11px] text-text-tertiary mt-0.5">
-					{delta !== "" && !Number.isNaN(deltaNum)
-						? `${deltaNum > 0 ? "+" : ""}${deltaNum} days`
-						: "Enter an amount"}
-				</p>
+					<span className="text-accent-200">→</span>
+					<b
+						className={next === null ? "text-text-tertiary" : next < 0 ? "text-coral" : "text-mint"}
+					>
+						{next ?? "—"}
+					</b>
+				</div>
 			</div>
-
-			<div className="space-y-2">
-				<Input
-					aria-label="Days (+/-)"
-					type="number"
-					step="0.5"
-					placeholder="Days (e.g. 2 or -1)"
-					value={delta}
-					onChange={(e) => setDelta(e.target.value)}
-				/>
+			<div className="flex items-center gap-2 mt-2">
 				<Input
 					aria-label="Reason"
 					placeholder="Reason — shows in the audit log (required)"
 					value={note}
 					onChange={(e) => setNote(e.target.value)}
+					className="h-9 flex-1"
 				/>
-				<Button onClick={submit} disabled={busy} className="soft-glow rounded-xl w-full">
-					Apply adjustment
+				<Button onClick={submit} disabled={busy} className="soft-glow rounded-xl shrink-0">
+					Apply
 				</Button>
 			</div>
-		</section>
+		</LeaveSubsection>
 	);
 }

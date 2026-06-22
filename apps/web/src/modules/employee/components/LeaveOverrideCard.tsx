@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { LeaveSubsection } from "./LeaveSubsection";
 import { Input } from "@/components/ui/input";
 
 import { type LeaveOverride, type LeaveType, leaveApi } from "@/modules/leave/api";
@@ -16,9 +17,11 @@ const EMPTY: Draft = { days_override: "", effective_from: "", effective_to: "", 
 export function LeaveOverrideCard({
 	employeeId,
 	onChanged,
+	embedded = false,
 }: {
 	employeeId: string;
 	onChanged?: () => void;
+	embedded?: boolean;
 }) {
 	const [types, setTypes] = useState<LeaveType[]>([]);
 	const [overrides, setOverrides] = useState<LeaveOverride[]>([]);
@@ -116,17 +119,11 @@ export function LeaveOverrideCard({
 	}
 
 	return (
-		<section className="bg-surface-hover border border-accent-500/30 rounded-lg p-4">
-			<header className="flex items-center justify-between mb-1">
-				<h2 className="text-h3 text-text-primary">Leave overrides</h2>
-				<span className="text-[10px] font-bold uppercase tracking-wider text-accent-200 bg-accent-500/15 border border-accent-500/40 px-2 py-0.5 rounded-full">
-					HR only
-				</span>
-			</header>
-			<p className="text-small text-text-tertiary mb-3">
-				Give this employee a different entitlement for a leave type (drives future accrual).
-			</p>
-
+		<LeaveSubsection
+			embedded={embedded}
+			title="Leave overrides"
+			description="Give this employee a different entitlement for a leave type (drives future accrual)."
+		>
 			<ul className="space-y-1.5 mb-3">
 				{overrides.length === 0 && (
 					<li className="text-small text-text-tertiary">No overrides — policy defaults apply.</li>
@@ -266,7 +263,7 @@ export function LeaveOverrideCard({
 			<Button variant="outline" size="sm" className="w-full" onClick={add} disabled={busy}>
 				<Plus className="size-4 mr-1" /> Add override
 			</Button>
-		</section>
+		</LeaveSubsection>
 	);
 }
 

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 import { type LeaveBalance, leaveApi } from "@/modules/leave/api";
+import { LeaveSubsection } from "./LeaveSubsection";
 
 const TONES = ["bg-mint", "bg-sky", "bg-lavender", "bg-peach", "bg-yellow", "bg-coral"];
 const TEXT = ["text-mint", "text-sky", "text-lavender", "text-peach", "text-yellow", "text-coral"];
@@ -11,10 +12,12 @@ const TEXT = ["text-mint", "text-sky", "text-lavender", "text-peach", "text-yell
 export function LeaveBalanceCard({
 	employeeId,
 	refreshSignal = 0,
+	embedded = false,
 }: {
 	employeeId: string;
 	/** Bump to force a refetch (e.g. after an adjustment). */
 	refreshSignal?: number;
+	embedded?: boolean;
 }) {
 	const [balances, setBalances] = useState<LeaveBalance[] | null>(null);
 	const [denied, setDenied] = useState(false);
@@ -35,14 +38,11 @@ export function LeaveBalanceCard({
 	if (denied) return null;
 
 	return (
-		<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-			<header className="mb-3">
-				<h2 className="text-h3 text-text-primary">Current balance</h2>
-				<p className="text-small text-text-tertiary">
-					Leave &amp; Holidays · {new Date().getFullYear()}
-				</p>
-			</header>
-
+		<LeaveSubsection
+			embedded={embedded}
+			title="Current balance"
+			description={`Leave & Holidays · ${new Date().getFullYear()}`}
+		>
 			{balances === null ? (
 				<p className="text-small text-text-tertiary">Loading…</p>
 			) : balances.length === 0 ? (
@@ -92,6 +92,6 @@ export function LeaveBalanceCard({
 					})}
 				</div>
 			)}
-		</section>
+		</LeaveSubsection>
 	);
 }

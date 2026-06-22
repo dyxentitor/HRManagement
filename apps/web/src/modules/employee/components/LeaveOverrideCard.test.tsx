@@ -38,12 +38,12 @@ beforeEach(() => {
 });
 
 describe("LeaveOverrideCard", () => {
-	it("lists overrides with the HR-only badge", async () => {
+	it("lists existing overrides", async () => {
 		render(<LeaveOverrideCard employeeId="e1" />);
 		await waitFor(() =>
 			expect(screen.getByRole("button", { name: /edit annual/i })).toBeInTheDocument(),
 		);
-		expect(screen.getByText(/HR only/i)).toBeInTheDocument();
+		expect(screen.getByText("18")).toBeInTheDocument();
 	});
 
 	it("adds an override with effective range + reason", async () => {

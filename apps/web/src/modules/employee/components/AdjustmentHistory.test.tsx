@@ -24,9 +24,10 @@ describe("AdjustmentHistory", () => {
 			},
 		]);
 		render(<AdjustmentHistory employeeId="e1" />);
-		await waitFor(() => expect(screen.getByText("Manual correction")).toBeInTheDocument());
-		expect(screen.getByText("11.00")).toBeInTheDocument(); // after
-		expect(screen.getByText("hr@x.com")).toBeInTheDocument();
+		// timeline groups the entry under a relative bucket; text nodes are combined
+		await waitFor(() => expect(screen.getByText(/Manual correction/)).toBeInTheDocument());
+		expect(screen.getByText(/9\.00 → 11\.00/)).toBeInTheDocument(); // before → after
+		expect(screen.getByText(/hr@x\.com/)).toBeInTheDocument();
 	});
 
 	it("shows an empty state when there are no adjustments", async () => {
