@@ -2,6 +2,13 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.29.1] — 2026-06-22
+
+### Fixed
+
+- Tightened the employee-form bottom padding (`pb-24` → `pb-2`) to remove the large gap below the
+  form sections; moved the fixed Save-bar clearance to the page wrapper so the Leave Management
+  workspace rendered below the form isn't hidden behind the bar. Frontend-only.
 ## [1.29.0] — 2026-06-22
 
 Consolidate the employee Leave Management section into one cohesive workspace; remove the duplicate

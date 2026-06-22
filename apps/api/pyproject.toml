@@ -1,6 +1,6 @@
 [project]
 name = "hrms-api"
-version = "1.29.0"
+version = "1.29.1"
 description = "HRMS Phase 1 backend (Django + DRF)"
 requires-python = ">=3.12"
 dependencies = [
