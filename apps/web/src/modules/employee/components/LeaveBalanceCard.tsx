@@ -5,17 +5,17 @@ import { cn } from "@/lib/utils";
 import { type LeaveBalance, leaveApi } from "@/modules/leave/api";
 
 const TONES = ["bg-mint", "bg-sky", "bg-lavender", "bg-peach", "bg-yellow", "bg-coral"];
-const TEXT_TONES = [
-	"text-mint",
-	"text-sky",
-	"text-lavender",
-	"text-peach",
-	"text-yellow",
-	"text-coral",
-];
+const TEXT = ["text-mint", "text-sky", "text-lavender", "text-peach", "text-yellow", "text-coral"];
 
-/** Read-only leave/holiday balances. No edit affordances — viewing only. */
-export function LeaveBalanceCard({ employeeId }: { employeeId: string }) {
+/** Read-only leave/holiday balances — Allocated · Used · Remaining + progress. */
+export function LeaveBalanceCard({
+	employeeId,
+	refreshSignal = 0,
+}: {
+	employeeId: string;
+	/** Bump to force a refetch (e.g. after an adjustment). */
+	refreshSignal?: number;
+}) {
 	const [balances, setBalances] = useState<LeaveBalance[] | null>(null);
 	const [denied, setDenied] = useState(false);
 
@@ -24,22 +24,22 @@ export function LeaveBalanceCard({ employeeId }: { employeeId: string }) {
 			setBalances(await leaveApi.balancesFor(employeeId));
 			setDenied(false);
 		} catch {
-			setDenied(true); // 403 / error → hide the card entirely
+			setDenied(true);
 		}
 	}, [employeeId]);
 
 	useEffect(() => {
 		void load();
-	}, [load]);
+	}, [load, refreshSignal]);
 
 	if (denied) return null;
 
 	return (
 		<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
 			<header className="mb-3">
-				<h2 className="text-h3 text-text-primary">Leave &amp; Holidays</h2>
+				<h2 className="text-h3 text-text-primary">Current balance</h2>
 				<p className="text-small text-text-tertiary">
-					Remaining balance · {new Date().getFullYear()}
+					Leave &amp; Holidays · {new Date().getFullYear()}
 				</p>
 			</header>
 
@@ -48,45 +48,49 @@ export function LeaveBalanceCard({ employeeId }: { employeeId: string }) {
 			) : balances.length === 0 ? (
 				<p className="text-small text-text-tertiary">No leave balances for this year yet.</p>
 			) : (
-				<ul className="space-y-2.5">
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 					{balances.map((b, i) => {
+						const allocated = Number(b.accrued) + Number(b.carried_forward);
+						const used = Number(b.taken);
+						const pending = Number(b.pending);
 						const remaining = Number(b.available);
-						const entitled = Number(b.entitled) || Number(b.accrued) || 0;
-						const pct = entitled > 0 ? Math.max(0, Math.min(100, (remaining / entitled) * 100)) : 0;
-						const noCap = entitled <= 0;
+						const noCap = allocated <= 0;
+						const usedPct = noCap ? 0 : Math.min(100, (used / allocated) * 100);
+						const pendPct = noCap ? 0 : Math.min(100 - usedPct, (pending / allocated) * 100);
 						return (
-							<li key={b.id} className="flex items-center gap-3">
-								<div className="w-28 min-w-0">
-									<p className="text-small text-text-primary truncate">
+							<div key={b.id} className="glass-surface rounded-xl p-3">
+								<div className="flex items-baseline justify-between">
+									<span className="text-small text-text-primary font-medium">
 										{b.leave_type_name ?? b.leave_type_code}
-									</p>
-									<p className="text-[10px] text-text-tertiary">
-										{Number(b.taken)} taken
-										{Number(b.pending) > 0 ? ` · ${Number(b.pending)} pending` : ""}
-									</p>
+									</span>
+									<span className="tabular-nums text-small">
+										{noCap ? (
+											<span className="text-text-tertiary text-[11px]">no cap</span>
+										) : (
+											<>
+												<b className={TEXT[i % TEXT.length]}>{remaining}</b>
+												<span className="text-text-tertiary text-[11px]"> left</span>
+											</>
+										)}
+									</span>
 								</div>
-								<div className="flex-1 h-1.5 rounded-full bg-surface-elevated/60 overflow-hidden">
-									{!noCap && (
-										<div
-											className={cn("h-full rounded-full", TONES[i % TONES.length])}
-											style={{ width: `${pct}%` }}
-										/>
-									)}
+								<div className="my-2 h-2 rounded-full bg-surface-elevated/60 overflow-hidden flex">
+									<div
+										className={cn("h-full", TONES[i % TONES.length])}
+										style={{ width: `${usedPct}%` }}
+									/>
+									<div className="h-full bg-yellow/50" style={{ width: `${pendPct}%` }} />
 								</div>
-								<div className="w-16 text-right tabular-nums text-small">
-									{noCap ? (
-										<span className="text-text-tertiary text-[11px]">no cap</span>
-									) : (
-										<>
-											<b className={TEXT_TONES[i % TEXT_TONES.length]}>{remaining}</b>
-											<span className="text-text-tertiary">/{entitled}</span>
-										</>
-									)}
+								<div className="flex justify-between text-[11px] text-text-tertiary tabular-nums">
+									<span>{noCap ? "—" : `${allocated} allocated`}</span>
+									<span>
+										{used} used{pending > 0 ? ` · ${pending} pending` : ""}
+									</span>
 								</div>
-							</li>
+							</div>
 						);
 					})}
-				</ul>
+				</div>
 			)}
 		</section>
 	);

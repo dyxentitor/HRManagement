@@ -118,6 +118,22 @@ async function _delete(url: string): Promise<void> {
 	if (error) throw new Error(_errorMessage(error, `DELETE ${url} failed`));
 }
 
+async function _patch<T>(url: string, body: unknown): Promise<T> {
+	const { data, error } = await api.PATCH(url as never, { body } as never);
+	if (error) throw new Error(_errorMessage(error, `PATCH ${url} failed`));
+	return data as T;
+}
+
+export type LeaveAdjustment = {
+	ts: string;
+	leave_type: string;
+	delta: string;
+	before: string;
+	after: string;
+	note: string;
+	performed_by: string;
+};
+
 export const leaveApi = {
 	listTypes: () =>
 		_get<{ results?: LeaveType[] } | LeaveType[]>("/api/v1/leave/types/").then((d) =>
@@ -133,9 +149,26 @@ export const leaveApi = {
 		).then((d) => (Array.isArray(d) ? d : d.results || [])),
 	createOverride: (
 		employeeId: string,
-		body: { leave_type: string; days_override: string; effective_from: string; note?: string },
+		body: {
+			leave_type: string;
+			days_override: string;
+			effective_from: string;
+			effective_to?: string | null;
+			note?: string;
+		},
 	) => _post<LeaveOverride>(`/api/v1/leave/employee-overrides/?employee=${employeeId}`, body),
+	updateOverride: (
+		id: string,
+		body: {
+			days_override: string;
+			effective_from: string;
+			effective_to?: string | null;
+			note?: string;
+		},
+	) => _patch<LeaveOverride>(`/api/v1/leave/employee-overrides/${id}/`, body),
 	deleteOverride: (id: string) => _delete(`/api/v1/leave/employee-overrides/${id}/`),
+	adjustmentHistory: (employeeId: string) =>
+		_get<LeaveAdjustment[]>(`/api/v1/leave/balances/history/?employee=${employeeId}`),
 	adjustBalance: (body: {
 		employee_id: string;
 		leave_type_id: string;

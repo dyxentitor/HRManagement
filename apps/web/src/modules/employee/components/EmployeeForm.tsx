@@ -10,7 +10,6 @@ import type { Employee, EmployeeWritePayload } from "../api";
 import { useFieldPerm } from "../lib/useFieldPerm";
 import { AvatarUpload } from "./AvatarUpload";
 import { EncryptedFieldInput } from "./EncryptedFieldInput";
-import { LeaveOverrideEditor } from "./LeaveOverrideEditor";
 import { ManagerPicker } from "./ManagerPicker";
 
 type Mode = "create" | "edit";
@@ -247,12 +246,6 @@ export function EmployeeForm({
 					</section>
 				);
 			})}
-
-			{mode === "edit" && initial?.id ? (
-				<section className="mt-6">
-					<LeaveOverrideEditor employeeId={initial.id} />
-				</section>
-			) : null}
 
 			{showProvision && (
 				<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">

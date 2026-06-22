@@ -25,13 +25,15 @@ beforeEach(() => {
 });
 
 describe("LeaveBalanceCard (read-only)", () => {
-	it("renders the type and remaining, with no edit controls", async () => {
+	it("shows allocated / used / remaining with no edit controls", async () => {
 		api.balancesFor.mockResolvedValue([balance]);
 		render(<LeaveBalanceCard employeeId="e1" />);
 		await waitFor(() => expect(screen.getByText("Annual")).toBeInTheDocument());
+		expect(screen.getByText("Current balance")).toBeInTheDocument();
 		expect(screen.getByText("10")).toBeInTheDocument(); // remaining
-		expect(screen.getByText("Leave & Holidays")).toBeInTheDocument();
-		// pure view — no adjust / manage / edit buttons
+		expect(screen.getByText("14 allocated")).toBeInTheDocument();
+		expect(screen.getByText(/3 used/)).toBeInTheDocument();
+		// pure view — no controls
 		expect(screen.queryByRole("button")).not.toBeInTheDocument();
 	});
 
