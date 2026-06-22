@@ -2,6 +2,45 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.29.0] — 2026-06-22
+
+Consolidate the employee Leave Management section into one cohesive workspace; remove the duplicate
+override card; add adjustment history. Spec: `docs/superpowers/specs/2026-06-22-leave-management-workspace.md`.
+
+### Removed
+
+- The **duplicate** `LeaveOverrideEditor` card (the old "Leave Override (Optional)" inside
+  `EmployeeForm`) and its `leave-overrides-api` — all override functionality is preserved in the
+  single Leave Overrides card.
+
+### Added
+
+- **Adjustment history** — `GET /api/v1/leave/balances/history/?employee=` (gated
+  `leave:balance:adjust:org`) returns the manual-adjustment audit trail; the adjust endpoint now
+  records **before/after** balance + leave-type name + actor in the audit row. UI: a read-only
+  **Adjustment history** section (date · type · before→after · reason · performed-by).
+- **Override overlap validation** — create + update reject date-range overlaps for the same
+  employee + leave type; overrides are now **edited in place via PATCH** (was delete+recreate), with
+  **expires (effective_to)** and **reason** fields.
+
+### Changed
+
+- **Single vertical Leave Management workspace** on `/employees/:id/edit` (priority order): **Current
+  balance** (allocated / used / **remaining** + progress) → **Adjust balance** (live before→after
+  preview) → **Leave overrides** (inline CRUD) → **Adjustment history**. Supersedes the prior
+  side-by-side layout. The redesigned balance card (allocated/used/remaining) also serves the view
+  page + My Profile. `leaveApi` gains `updateOverride` + `adjustmentHistory`.
+- **Workspace polish** — the section now matches the other employee-form sections (one card; the four
+  areas are embedded sub-blocks divided by hairlines via a shared `LeaveSubsection`). The Adjust form
+  is compressed (inline type/days/preview + reason/Apply rows — no oversized empty containers).
+  **Adjustment history is a grouped timeline** (Today / Yesterday / This week / … with connectors).
+  Every sub-area carries a one-line description; a single "HR only" badge sits on the workspace header.
+
+### Tests
+
+- Backend **819 passed** (+3: history records + perm gate, override overlap). Frontend **408 passed**
+  (adjustment history, override edit-via-PATCH, balance detail). No new perms/models/migration;
+  public-holiday + accrual logic untouched; audit trail intact. Contracts regenerated.
 ## [1.28.1] — 2026-06-22
 
 ### Changed
