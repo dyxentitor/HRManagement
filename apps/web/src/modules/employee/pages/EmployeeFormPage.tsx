@@ -172,7 +172,7 @@ export default function EmployeeFormPage() {
 	if (loading) return <p className="text-text-tertiary">Loading…</p>;
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-4 pb-24">
 			<PageHeader
 				breadcrumb="Employees"
 				title={mode === "create" ? "New employee" : "Edit employee"}

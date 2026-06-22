@@ -188,7 +188,7 @@ export function EmployeeForm({
 	}
 
 	return (
-		<form onSubmit={handleSave} className="space-y-4 pb-24">
+		<form onSubmit={handleSave} className="space-y-4 pb-2">
 			{topError && (
 				<p role="alert" className="text-coral text-small">
 					{topError}
