@@ -9,6 +9,7 @@ function row(over: Partial<InvitationRow>): InvitationRow {
 		user_id: "u",
 		employee_id: null,
 		email: "x@y.com",
+		sent_to_email: "x@y.com",
 		status: "sent",
 		effective_status: "sent",
 		expires_at: new Date(Date.now() + 60 * 3_600_000).toISOString(),

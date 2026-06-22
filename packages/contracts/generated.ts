@@ -3488,6 +3488,8 @@ export interface components {
             readonly full_name: string;
             /** Format: email */
             email: string;
+            /** Format: email */
+            personal_email?: string;
             phone?: string | null;
             alt_phone?: string;
             readonly ic_last4: string;
@@ -3575,6 +3577,8 @@ export interface components {
             preferred_name?: string;
             /** Format: email */
             email: string;
+            /** Format: email */
+            personal_email?: string;
             phone?: string | null;
             alt_phone?: string;
             /** Format: byte */
@@ -3696,6 +3700,8 @@ export interface components {
             /** Format: uuid */
             readonly employee_id: string | null;
             readonly email: string;
+            /** Format: email */
+            readonly sent_to_email: string;
             readonly status: components["schemas"]["InvitationStatusEnum"];
             readonly effective_status: string;
             /** Format: date-time */
@@ -4192,6 +4198,8 @@ export interface components {
             preferred_name?: string;
             /** Format: email */
             email?: string;
+            /** Format: email */
+            personal_email?: string;
             phone?: string | null;
             alt_phone?: string;
             /** Format: byte */

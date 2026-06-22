@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.25.0
+  version: 1.26.2
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -6559,6 +6559,10 @@ components:
           type: string
           format: email
           maxLength: 254
+        personal_email:
+          type: string
+          format: email
+          maxLength: 254
         phone:
           type: string
           nullable: true
@@ -6800,6 +6804,10 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
+        personal_email:
+          type: string
+          format: email
           maxLength: 254
         phone:
           type: string
@@ -7082,6 +7090,10 @@ components:
         email:
           type: string
           readOnly: true
+        sent_to_email:
+          type: string
+          format: email
+          readOnly: true
         status:
           allOf:
           - $ref: '#/components/schemas/InvitationStatusEnum'
@@ -7141,6 +7153,7 @@ components:
       - revoked_at
       - sent_at
       - sent_count
+      - sent_to_email
       - status
       - user_id
     InvitationStatusEnum:
@@ -8297,6 +8310,10 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
+        personal_email:
+          type: string
+          format: email
           maxLength: 254
         phone:
           type: string

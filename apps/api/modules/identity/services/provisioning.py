@@ -35,6 +35,7 @@ def provision_user(
     credential_method,
     temp_password=None,
     actor_id=None,
+    invite_email=None,
 ) -> User:
     """Create a User in the org, assign one role, audit, and set credentials.
 
@@ -77,6 +78,6 @@ def provision_user(
     if credential_method == "invite":
         from .invitation import create_invitation
 
-        create_invitation(user, created_by=actor_id)
+        create_invitation(user, created_by=actor_id, sent_to=invite_email or None)
 
     return user

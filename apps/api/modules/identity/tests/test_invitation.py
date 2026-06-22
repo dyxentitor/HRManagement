@@ -53,6 +53,32 @@ def test_create_invitation_hashes_token_and_emails(org, user):
     assert raw in _email_text(mail.outbox[0])  # link carries the raw token
 
 
+def test_invitation_delivered_to_personal_email_not_login(org, user):
+    mail.outbox.clear()
+    inv, _ = inv_service.create_invitation(user, created_by=None, sent_to="home@gmail.com")
+    assert inv.sent_to_email == "home@gmail.com"
+    assert mail.outbox[0].to == ["home@gmail.com"]  # delivered to personal, not the login
+
+
+def test_invitation_falls_back_to_login_when_no_personal(org, user):
+    inv, _ = inv_service.create_invitation(user, created_by=None)
+    assert inv.sent_to_email == user.email
+
+
+def test_provision_invite_email_routes_delivery(org):
+    mail.outbox.clear()
+    u = provision_user(
+        org_id=org.id,
+        email="company@x.com",
+        role_code="employee",
+        credential_method="invite",
+        invite_email="home@gmail.com",
+    )
+    inv = Invitation.objects.get(user=u)
+    assert inv.sent_to_email == "home@gmail.com"
+    assert mail.outbox[-1].to == ["home@gmail.com"]
+
+
 def test_verify_marks_opened_with_ip(org, user):
     _, raw = inv_service.create_invitation(user, created_by=None)
     got = inv_service.verify(raw, ip="1.2.3.4", ua="Chrome/macOS")

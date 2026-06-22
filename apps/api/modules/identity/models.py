@@ -277,6 +277,9 @@ class Invitation(models.Model):
         related_name="invitations",
     )
     employee_id = models.UUIDField(null=True, blank=True)
+    # Where THIS invitation was delivered (snapshot for audit — the login stays
+    # the company User.email; this is usually the employee's personal_email).
+    sent_to_email = models.EmailField(blank=True)
     token_hash = models.CharField(max_length=64, unique=True, db_index=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="sent")
     expires_at = models.DateTimeField()

@@ -20,6 +20,7 @@ interface EmployeeProfile {
 	last_name?: string;
 	preferred_name?: string;
 	email: string;
+	personal_email?: string;
 	phone: string;
 	alt_phone?: string;
 	role_title?: string;
@@ -109,6 +110,7 @@ export default function MyProfilePage() {
 		setDraft({
 			phone: profile.phone ?? "",
 			alt_phone: profile.alt_phone ?? "",
+			personal_email: profile.personal_email ?? "",
 			preferred_name: profile.preferred_name ?? "",
 			address_line1: profile.address_line1 ?? "",
 			address_line2: profile.address_line2 ?? "",
@@ -157,7 +159,7 @@ export default function MyProfilePage() {
 
 	function saveSection(section: SectionId) {
 		const fieldsBySection: Record<SectionId, (keyof EmployeeWritePayload)[]> = {
-			personal: ["phone", "alt_phone", "preferred_name"],
+			personal: ["phone", "alt_phone", "personal_email", "preferred_name"],
 			address: ["address_line1", "address_line2", "city", "state", "postcode", "country_code"],
 			banking: ["bank_name"],
 			emergency: [
@@ -276,7 +278,8 @@ export default function MyProfilePage() {
 							<dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-body">
 								<Field k="Phone" v={profile.phone || "—"} />
 								<Field k="Alt phone" v={profile.alt_phone || "—"} />
-								<Field k="Email" v={profile.email} />
+								<Field k="Company email" v={profile.email} />
+								<Field k="Personal email" v={profile.personal_email || "—"} />
 								<Field k="Preferred name" v={profile.preferred_name || profile.full_name} />
 							</dl>
 						}
@@ -291,6 +294,11 @@ export default function MyProfilePage() {
 									label="Alt phone"
 									value={draft.alt_phone ?? ""}
 									onChange={(v) => setField("alt_phone", v)}
+								/>
+								<LabeledInput
+									label="Personal email"
+									value={draft.personal_email ?? ""}
+									onChange={(v) => setField("personal_email", v)}
 								/>
 								<LabeledInput
 									label="Preferred name"

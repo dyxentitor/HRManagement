@@ -32,6 +32,7 @@ class InvitationSerializer(serializers.ModelSerializer):
             "user_id",
             "employee_id",
             "email",
+            "sent_to_email",
             "status",
             "effective_status",
             "expires_at",

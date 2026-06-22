@@ -163,7 +163,11 @@ export function InvitationsColumn() {
 									</span>
 									<div className="min-w-0 flex-1">
 										<p className="text-small text-text-primary truncate">{inv.employee_name}</p>
-										<p className="text-[10px] text-text-tertiary truncate">{timingLabel(inv)}</p>
+										<p className="text-[10px] text-text-tertiary truncate">
+											{inv.sent_to_email && inv.sent_to_email !== inv.email
+												? `→ ${inv.sent_to_email} · ${timingLabel(inv)}`
+												: timingLabel(inv)}
+										</p>
 									</div>
 									<StatusPill
 										tone={STATUS_TONE[inv.effective_status]}

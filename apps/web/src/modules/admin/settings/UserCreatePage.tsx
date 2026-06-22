@@ -11,8 +11,7 @@ import { useCan } from "@/lib/perm";
 import { type RoleSummary, roleApi, userApi } from "../api";
 import { type Department, settingsApi } from "./settings-api";
 
-const SELECT_CLASS =
-	"bg-canvas border border-border-subtle rounded px-2 py-1.5";
+const SELECT_CLASS = "bg-canvas border border-border-subtle rounded px-2 py-1.5";
 
 const EMPLOYMENT_TYPES: { value: string; label: string }[] = [
 	{ value: "fulltime", label: "Full-time" },
@@ -29,10 +28,9 @@ export function UserCreatePage() {
 	const [departments, setDepartments] = useState<Department[]>([]);
 
 	const [email, setEmail] = useState("");
+	const [personalEmail, setPersonalEmail] = useState("");
 	const [roleCode, setRoleCode] = useState("employee");
-	const [credentialMethod, setCredentialMethod] = useState<"invite" | "temp">(
-		"invite",
-	);
+	const [credentialMethod, setCredentialMethod] = useState<"invite" | "temp">("invite");
 	const [tempPassword, setTempPassword] = useState("");
 
 	const [alsoCreateEmployee, setAlsoCreateEmployee] = useState(false);
@@ -84,9 +82,8 @@ export function UserCreatePage() {
 				email,
 				role_code: roleCode,
 				credential_method: credentialMethod,
-				...(credentialMethod === "temp"
-					? { temp_password: tempPassword }
-					: {}),
+				...(credentialMethod === "temp" ? { temp_password: tempPassword } : {}),
+				...(personalEmail ? { invite_email: personalEmail } : {}),
 			};
 			if (alsoCreateEmployee) {
 				body.employee = {
@@ -94,6 +91,7 @@ export function UserCreatePage() {
 					first_name: firstName,
 					last_name: lastName,
 					email: employeeEmail || email,
+					...(personalEmail ? { personal_email: personalEmail } : {}),
 					hire_date: hireDate,
 					department,
 					employment_type: employmentType,
@@ -101,7 +99,7 @@ export function UserCreatePage() {
 			}
 			await userApi.create(body);
 			toast.success("User created");
-			navigate("/admin/settings/users");
+			navigate("/admin/people/accounts");
 		} catch (ex: unknown) {
 			const msg = ex instanceof Error ? ex.message : "Could not create user";
 			setError(msg);
@@ -132,12 +130,21 @@ export function UserCreatePage() {
 						Fields marked <span className="text-coral">*</span> are required.
 					</p>
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						<Field id="email" label="Email" required>
+						<Field id="email" label="Company email (login)" required>
 							<Input
 								id="email"
 								type="email"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
+							/>
+						</Field>
+						<Field id="invite_email" label="Personal email (invite sent here)">
+							<Input
+								id="invite_email"
+								type="email"
+								placeholder="e.g. jane@gmail.com — defaults to the company email"
+								value={personalEmail}
+								onChange={(e) => setPersonalEmail(e.target.value)}
 							/>
 						</Field>
 						<Field id="role" label="Role" required>
@@ -159,9 +166,7 @@ export function UserCreatePage() {
 								id="credential_method"
 								className={SELECT_CLASS}
 								value={credentialMethod}
-								onChange={(e) =>
-									setCredentialMethod(e.target.value as "invite" | "temp")
-								}
+								onChange={(e) => setCredentialMethod(e.target.value as "invite" | "temp")}
 							>
 								<option value="invite">Send email invite</option>
 								<option value="temp">Set temporary password</option>
@@ -182,9 +187,7 @@ export function UserCreatePage() {
 
 				<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
 					<header className="flex items-center justify-between mb-3">
-						<h2 className="text-h3 text-text-primary">
-							Also create an employee record
-						</h2>
+						<h2 className="text-h3 text-text-primary">Also create an employee record</h2>
 						<Switch
 							aria-label="Also create an employee record"
 							checked={alsoCreateEmployee}

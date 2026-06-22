@@ -56,6 +56,10 @@ class Employee(TenantBaseModel):
     last_name = models.CharField(max_length=100)
     preferred_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField()
+    # Personal/home email — used for pre-boarding (invites before the company
+    # mailbox is live), offboarding, and account recovery. Distinct from the
+    # company `email` used as the login.
+    personal_email = models.EmailField(blank=True)
     phone = models.CharField(max_length=32, null=True, blank=True)
     alt_phone = models.CharField(max_length=32, blank=True)
 

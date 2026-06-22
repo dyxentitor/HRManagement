@@ -58,7 +58,9 @@ def build_activation_link(raw_token: str) -> str:
     return f"{base}/activate?token={raw_token}"
 
 
-def send_invitation_email(user: User, raw_token: str, expires_at) -> None:
+def send_invitation_email(
+    user: User, raw_token: str, expires_at, to_email: str | None = None
+) -> None:
     link = build_activation_link(raw_token)
     org = _org_name(user.org_id)
     hours = _expiry_hours()
@@ -86,7 +88,7 @@ def send_invitation_email(user: User, raw_token: str, expires_at) -> None:
         subject=f"Welcome to {org} — activate your account",
         message=text,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
+        recipient_list=[to_email or user.email],
         html_message=html,
         fail_silently=False,
     )
@@ -97,14 +99,18 @@ def create_invitation(
     *,
     created_by=None,
     employee_id=None,
+    sent_to: str | None = None,
     hours: int | None = None,
 ) -> tuple[Invitation, str]:
     raw = secrets.token_urlsafe(32)
     now = timezone.now()
+    # deliver to the personal/invite email when given, else the company login.
+    to_email = sent_to or user.email
     inv = Invitation.objects.create(
         org_id=user.org_id,
         user=user,
         employee_id=employee_id,
+        sent_to_email=to_email,
         token_hash=_hash(raw),
         status="sent",
         expires_at=now + timedelta(hours=_expiry_hours(hours)),
@@ -112,8 +118,13 @@ def create_invitation(
         sent_at=now,
     )
     _audit(inv, "invitation.created", {"email": user.email}, created_by)
-    _audit(inv, "invitation.sent", {"expires_at": inv.expires_at.isoformat()}, created_by)
-    send_invitation_email(user, raw, inv.expires_at)
+    _audit(
+        inv,
+        "invitation.sent",
+        {"to": to_email, "expires_at": inv.expires_at.isoformat()},
+        created_by,
+    )
+    send_invitation_email(user, raw, inv.expires_at, to_email)
     return inv, raw
 
 
@@ -164,7 +175,7 @@ def resend(inv: Invitation, *, by=None) -> str:
         update_fields=["token_hash", "expires_at", "sent_count", "status", "sent_at", "opened_at"]
     )
     _audit(inv, "invitation.resent", {"sent_count": inv.sent_count}, by)
-    send_invitation_email(inv.user, raw, inv.expires_at)
+    send_invitation_email(inv.user, raw, inv.expires_at, inv.sent_to_email or None)
     return raw
 
 

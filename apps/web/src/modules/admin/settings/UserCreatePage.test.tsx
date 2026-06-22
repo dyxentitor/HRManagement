@@ -56,9 +56,10 @@ function renderPage() {
 describe("UserCreatePage", () => {
 	it("creates a user-only account", async () => {
 		renderPage();
-		await waitFor(() => screen.getByLabelText(/^email/i));
+		await waitFor(() => screen.getByLabelText(/company email/i));
 
-		await userEvent.type(screen.getByLabelText(/^email/i), "newhire@x.com");
+		await userEvent.type(screen.getByLabelText(/company email/i), "newhire@x.com");
+		await userEvent.type(screen.getByLabelText(/personal email/i), "home@gmail.com");
 		await userEvent.selectOptions(
 			screen.getByLabelText(/^role/i),
 			"hr_manager",
@@ -71,15 +72,17 @@ describe("UserCreatePage", () => {
 			email: "newhire@x.com",
 			role_code: "hr_manager",
 			credential_method: "invite",
+			// the personal email is where the invite is delivered (login stays the company email)
+			invite_email: "home@gmail.com",
 		});
 		expect(body.employee).toBeUndefined();
 	});
 
 	it("creates user + employee when toggled", async () => {
 		renderPage();
-		await waitFor(() => screen.getByLabelText(/^email/i));
+		await waitFor(() => screen.getByLabelText(/company email/i));
 
-		await userEvent.type(screen.getByLabelText(/^email/i), "newhire@x.com");
+		await userEvent.type(screen.getByLabelText(/company email/i), "newhire@x.com");
 		await userEvent.click(
 			screen.getByRole("switch", { name: /create an employee record/i }),
 		);
@@ -121,9 +124,9 @@ describe("UserCreatePage", () => {
 			new Error(reason),
 		);
 		renderPage();
-		await waitFor(() => screen.getByLabelText(/^email/i));
+		await waitFor(() => screen.getByLabelText(/company email/i));
 
-		await userEvent.type(screen.getByLabelText(/^email/i), "newhire@x.com");
+		await userEvent.type(screen.getByLabelText(/company email/i), "newhire@x.com");
 		await userEvent.selectOptions(
 			screen.getByLabelText(/^role/i),
 			"hr_manager",

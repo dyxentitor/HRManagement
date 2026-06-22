@@ -8,6 +8,7 @@ export interface Employee {
 	preferred_name?: string;
 	role_title?: string;
 	email?: string;
+	personal_email?: string;
 	phone?: string;
 	alt_phone?: string;
 	department_id?: string;
@@ -58,6 +59,7 @@ export interface EmployeeWritePayload {
 	last_name: string;
 	preferred_name?: string;
 	email: string;
+	personal_email?: string;
 	// Employment
 	department: string;
 	team?: string | null;
@@ -100,11 +102,9 @@ export interface DepartmentRef {
 	name: string;
 }
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
-async function authHeaders(
-	extra: Record<string, string> = {},
-): Promise<Record<string, string>> {
+async function authHeaders(extra: Record<string, string> = {}): Promise<Record<string, string>> {
 	const { tokenStorage } = await import("@/lib/token-storage");
 	const token = tokenStorage.getAccess();
 	const headers: Record<string, string> = { ...extra };
@@ -152,19 +152,13 @@ export const employeeApi = {
 	},
 	getReportingChain: async (id: string): Promise<ReportingChainEntry[]> => {
 		const headers = await authHeaders();
-		const resp = await fetch(
-			`${BASE_URL}/api/v1/employees/${id}/reporting-chain/`,
-			{ headers },
-		);
+		const resp = await fetch(`${BASE_URL}/api/v1/employees/${id}/reporting-chain/`, { headers });
 		if (!resp.ok) return [];
 		return resp.json() as Promise<ReportingChainEntry[]>;
 	},
 	getDirectReports: async (id: string): Promise<Employee[]> => {
 		const headers = await authHeaders();
-		const resp = await fetch(
-			`${BASE_URL}/api/v1/employees/${id}/direct-reports/`,
-			{ headers },
-		);
+		const resp = await fetch(`${BASE_URL}/api/v1/employees/${id}/direct-reports/`, { headers });
 		if (!resp.ok) return [];
 		return resp.json() as Promise<Employee[]>;
 	},
@@ -235,10 +229,7 @@ export const employeeApi = {
 		});
 		if (!resp.ok) throw new Error("Assign-team failed");
 	},
-	updateMe: async (
-		payload: Partial<EmployeeWritePayload>,
-		mfaCode?: string,
-	): Promise<void> => {
+	updateMe: async (payload: Partial<EmployeeWritePayload>, mfaCode?: string): Promise<void> => {
 		const extra: Record<string, string> = {
 			"Content-Type": "application/json",
 		};
@@ -325,7 +316,7 @@ export const departmentApi = {
 		const resp = await fetch(`${BASE_URL}/api/v1/departments/`, { headers });
 		if (!resp.ok) throw new Error("Could not load departments");
 		const body = await resp.json();
-		const rows = (Array.isArray(body) ? body : body.results ?? []) as {
+		const rows = (Array.isArray(body) ? body : (body.results ?? [])) as {
 			id: string;
 			name: string;
 		}[];

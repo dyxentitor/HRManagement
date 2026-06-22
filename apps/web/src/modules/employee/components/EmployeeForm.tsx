@@ -105,6 +105,7 @@ export function EmployeeForm({
 		last_name: initial?.last_name ?? "",
 		preferred_name: initial?.preferred_name ?? "",
 		email: initial?.email ?? "",
+		personal_email: initial?.personal_email ?? "",
 		phone: initial?.phone ?? "",
 		alt_phone: initial?.alt_phone ?? "",
 		date_of_birth: initial?.date_of_birth ?? "",
@@ -413,7 +414,7 @@ function renderSection(id: Section["id"], a: SectionRenderArgs): React.ReactNode
 					)}
 					{field(
 						"email",
-						"Email",
+						"Company email (login)",
 						<Input
 							id="email"
 							type="email"
@@ -423,6 +424,19 @@ function renderSection(id: Section["id"], a: SectionRenderArgs): React.ReactNode
 						/>,
 						a.fieldErrors.email,
 						true,
+					)}
+					{field(
+						"personal_email",
+						"Personal email (invite is sent here)",
+						<Input
+							id="personal_email"
+							type="email"
+							readOnly={ro}
+							placeholder="e.g. jane@gmail.com"
+							value={a.draft.personal_email ?? ""}
+							onChange={(e) => a.set("personal_email", e.target.value)}
+						/>,
+						a.fieldErrors.personal_email,
 					)}
 					{field(
 						"employee_code",

@@ -70,41 +70,29 @@ export const roleApi = {
 		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 
-	setPermissions: async (
-		code: string,
-		permissions: string[],
-	): Promise<RoleDetail> => {
+	setPermissions: async (code: string, permissions: string[]): Promise<RoleDetail> => {
 		// drf-spectacular emits `requestBody?: never` for this APIView —
 		// body is cast at the call site. Response shape is also unknown
 		// to spectacular, so we re-decode via toRoleDetail.
-		const { data, error } = await api.PATCH(
-			"/api/v1/roles/{code}/permissions/",
-			{
-				params: { path: { code } },
-				body: { permission_codes: permissions } as never,
-			},
-		);
+		const { data, error } = await api.PATCH("/api/v1/roles/{code}/permissions/", {
+			params: { path: { code } },
+			body: { permission_codes: permissions } as never,
+		});
 		if (error || !data) throw new Error("Could not save permissions");
 		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 
 	reset: async (code: string): Promise<RoleDetail> => {
-		const { data, error } = await api.POST(
-			"/api/v1/roles/{code}/reset-to-defaults/",
-			{
-				params: { path: { code } },
-			},
-		);
+		const { data, error } = await api.POST("/api/v1/roles/{code}/reset-to-defaults/", {
+			params: { path: { code } },
+		});
 		if (error || !data) throw new Error("Could not reset role");
 		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 };
 
 export const userRolesApi = {
-	assign: async (
-		userId: string,
-		roleCodes: string[],
-	): Promise<UserRolesResponse> => {
+	assign: async (userId: string, roleCodes: string[]): Promise<UserRolesResponse> => {
 		// Backend route is /users/<uuid:user_id>/roles/ — generated path
 		// param is `user_id`. drf-spectacular emits `requestBody?: never`
 		// for this APIView so the body is cast at the call site.
@@ -140,6 +128,7 @@ export const userApi = {
 		role_code: string;
 		credential_method: "invite" | "temp";
 		temp_password?: string;
+		invite_email?: string;
 		employee?: Record<string, unknown>;
 	}): Promise<{ id: string }> => {
 		// The auth/user views lack @extend_schema, so the request body is
@@ -147,8 +136,7 @@ export const userApi = {
 		const { data, error } = await api.POST("/api/v1/users/", {
 			body: body as never,
 		});
-		if (error)
-			throw new Error(extractErrMessage(error, "Could not create user"));
+		if (error) throw new Error(extractErrMessage(error, "Could not create user"));
 		return data as unknown as { id: string };
 	},
 };
@@ -163,13 +151,10 @@ export const featureFlagApi = {
 	setEnabled: async (key: string, enabled: boolean): Promise<FeatureFlag> => {
 		// drf-spectacular emits `requestBody?: never` for this APIView —
 		// body is cast at the call site.
-		const { data, error } = await api.PATCH(
-			"/api/v1/org/feature-flags/{key}/",
-			{
-				params: { path: { key } },
-				body: { enabled } as never,
-			},
-		);
+		const { data, error } = await api.PATCH("/api/v1/org/feature-flags/{key}/", {
+			params: { path: { key } },
+			body: { enabled } as never,
+		});
 		if (error || !data) throw new Error("Could not update feature flag");
 		return data as unknown as FeatureFlag;
 	},

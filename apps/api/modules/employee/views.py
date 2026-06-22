@@ -124,6 +124,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     credential_method=provision.get("credential_method"),
                     temp_password=provision.get("temp_password"),
                     actor_id=request.user.id,
+                    # deliver the invite to the new hire's personal email when set
+                    invite_email=emp.personal_email or None,
                 )
                 emp.user_id = user.id
                 emp.save(update_fields=["user_id", "updated_at"])

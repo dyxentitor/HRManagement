@@ -69,7 +69,7 @@ describe("EmployeeForm", () => {
 		await user.type(screen.getByLabelText(/employee code/i), "E100");
 		await user.type(screen.getByLabelText(/first name/i), "Ada");
 		await user.type(screen.getByLabelText(/last name/i), "Lovelace");
-		await user.type(screen.getByLabelText(/email/i), "ada@example.com");
+		await user.type(screen.getByLabelText(/company email/i), "ada@example.com");
 		await user.type(screen.getByLabelText(/hire date/i), "2026-01-01");
 		await user.selectOptions(screen.getByLabelText(/department/i), "d1");
 
@@ -84,7 +84,7 @@ describe("EmployeeForm", () => {
 		await user.type(screen.getByLabelText(/employee code/i), "E100");
 		await user.type(screen.getByLabelText(/first name/i), "Ada");
 		await user.type(screen.getByLabelText(/last name/i), "Lovelace");
-		await user.type(screen.getByLabelText(/email/i), "ada@example.com");
+		await user.type(screen.getByLabelText(/company email/i), "ada@example.com");
 		await user.type(screen.getByLabelText(/hire date/i), "2026-01-01");
 		await user.selectOptions(screen.getByLabelText(/department/i), "d1");
 		await user.click(screen.getByRole("button", { name: /^save$/i }));
@@ -131,7 +131,7 @@ describe("EmployeeForm", () => {
 		await user.type(screen.getByLabelText(/employee code/i), "E100");
 		await user.type(screen.getByLabelText(/first name/i), "Ada");
 		await user.type(screen.getByLabelText(/last name/i), "Lovelace");
-		await user.type(screen.getByLabelText(/email/i), "ada@example.com");
+		await user.type(screen.getByLabelText(/company email/i), "ada@example.com");
 		await user.type(screen.getByLabelText(/hire date/i), "2026-01-01");
 		await user.selectOptions(screen.getByLabelText(/department/i), "d1");
 

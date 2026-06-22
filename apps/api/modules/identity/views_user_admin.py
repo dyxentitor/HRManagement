@@ -28,6 +28,10 @@ class UserCreateView(APIView):
         s = UserCreateSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         v = s.validated_data
+        emp_data = v.get("employee")
+        # deliver the invite to the personal email (top-level invite_email, or the
+        # employee block's personal_email); the login stays the company email.
+        invite_email = v.get("invite_email") or (emp_data or {}).get("personal_email") or None
         with transaction.atomic():
             user = provision_user(
                 org_id=request.user.org_id,
@@ -36,8 +40,8 @@ class UserCreateView(APIView):
                 credential_method=v["credential_method"],
                 temp_password=v.get("temp_password") or None,
                 actor_id=request.user.id,
+                invite_email=invite_email,
             )
-            emp_data = v.get("employee")
             if emp_data:
                 from modules.employee.serializers import EmployeeSerializer
 

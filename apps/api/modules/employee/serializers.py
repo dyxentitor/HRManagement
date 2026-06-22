@@ -12,6 +12,7 @@ from .models import Employee, Team
 # list requires `employee:write:org` (HR).
 SELF_EDIT_WHITELIST = frozenset(
     {
+        "personal_email",
         "phone",
         "alt_phone",
         "address_line1",
@@ -78,6 +79,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "preferred_name",
             "full_name",
             "email",
+            "personal_email",
             "phone",
             "alt_phone",
             "ic_number",

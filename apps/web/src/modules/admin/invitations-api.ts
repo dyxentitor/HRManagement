@@ -7,6 +7,7 @@ export interface InvitationRow {
 	user_id: string;
 	employee_id: string | null;
 	email: string;
+	sent_to_email: string;
 	status: InvitationStatus;
 	effective_status: InvitationStatus;
 	expires_at: string;
