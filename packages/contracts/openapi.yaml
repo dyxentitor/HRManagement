@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.26.2
+  version: 1.27.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -2649,6 +2649,22 @@ paths:
         schema:
           type: string
         required: true
+      tags:
+      - leave
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveBalance'
+          description: ''
+  /api/v1/leave/balances/adjust/:
+    post:
+      operationId: leave_balances_adjust_create
+      description: HR one-off balance adjustment (+/- days) → append-only ledger +
+        audit.
       tags:
       - leave
       security:

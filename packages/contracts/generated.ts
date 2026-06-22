@@ -1512,6 +1512,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/leave/balances/adjust/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description HR one-off balance adjustment (+/- days) → append-only ledger + audit. */
+        post: operations["leave_balances_adjust_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/leave/balances/me/": {
         parameters: {
             query?: never;
@@ -7613,6 +7630,25 @@ export interface operations {
             path: {
                 id: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveBalance"];
+                };
+            };
+        };
+    };
+    leave_balances_adjust_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
