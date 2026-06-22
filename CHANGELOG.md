@@ -2,6 +2,37 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.28.0] — 2026-06-22
+
+Employees can see their leave/holiday balance on the employee profile, and **org_admin + hr_manager**
+can manage it. Spec: `docs/superpowers/specs/2026-06-22-employee-leave-balance-management.md`.
+
+### Added
+
+- **Per-employee balance read** — `GET /api/v1/leave/balances/?employee={id}`, access-checked by
+  reusing existing perms: own → `read:self`, a direct report (`Employee.manager_id`) → `read:team`,
+  anyone → `read:org`. (`/me` unchanged.)
+- **One-off balance adjustment** — `POST /api/v1/leave/balances/adjust/` (gated
+  `leave:balance:adjust:org`): `{employee_id, leave_type_id, delta, note}` posts a +/- correction via
+  new `BalanceService.manual_adjust` (append-only `manual_adjustment` ledger row) + an `audit_log`
+  row. Reuses `EmployeeLeaveOverride` for entitlement overrides.
+- **Employee profile UI** — the profile gains a **two-column Leave section** for org_admin +
+  hr_manager: a **"Leave & Holidays"** balance card (type → entitled / taken / pending /
+  **remaining** / carried) on the left and a **"Leave Override"** card on the right with **inline
+  CRUD** — list, add, **edit-in-place** (value → input + save/cancel), delete, plus an *HR only*
+  badge. Non-HR (own / managers) see just the read-only balance card, full width. One-off
+  corrections use a focused **"Adjust ±"** composer with a live **before → after** preview (also on
+  the edit page). `leaveApi` gains `balancesFor` / `overridesFor` / `createOverride` /
+  `deleteOverride` / `adjustBalance`.
+
+### Tests
+
+- Backend **816 passed** (+9: read scopes self/team/org, adjustment +/-, 403 gates, zero-delta).
+  Frontend **411 passed** (balance card, inline override CRUD, adjust composer). No new perms,
+  models, or migration. Contracts regenerated.
+- **Carried forward:** the Monday-only `MySchedulePage` date-fragile test + the long-standing
+  `attendance/test_clock_flow` date flake (both unrelated; schedule/attendance untouched).
+
 ## [1.27.0] — 2026-06-22
 
 Separate the **invitation-delivery email** from the **company login email**, so a new hire whose
