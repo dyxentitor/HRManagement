@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 import { RolesCard } from "@/modules/admin/components/RolesCard";
+import { LeaveBalanceCard } from "../components/LeaveBalanceCard";
 
 import { type Employee, type ReportingChainEntry, employeeApi } from "../api";
 import { ProfileCompletenessBanner } from "../components/ProfileCompletenessBanner";
@@ -33,9 +34,7 @@ function ArchiveButton({ employee }: { employee: Employee }) {
 
 	return (
 		<div className="flex items-center gap-2">
-			<span className="text-small text-coral">
-				Archive {employee.full_name}?
-			</span>
+			<span className="text-small text-coral">Archive {employee.full_name}?</span>
 			<button
 				type="button"
 				onClick={async () => {
@@ -66,10 +65,7 @@ function tenureFromHireDate(hireDate?: string): string {
 	if (!hireDate) return "—";
 	const months = Math.max(
 		0,
-		Math.floor(
-			(Date.now() - new Date(hireDate).getTime()) /
-				(1000 * 60 * 60 * 24 * 30.42),
-		),
+		Math.floor((Date.now() - new Date(hireDate).getTime()) / (1000 * 60 * 60 * 24 * 30.42)),
 	);
 	return `${Math.floor(months / 12)}y ${months % 12}m`;
 }
@@ -88,12 +84,7 @@ function Section({ title, fields }: { title: string; fields: Field[] }) {
 				{fields.map((f) => (
 					<div key={f.k}>
 						<dt className="text-label uppercase text-text-tertiary">{f.k}</dt>
-						<dd
-							className={cn(
-								"text-text-primary mt-0.5",
-								f.mono && "font-mono text-small",
-							)}
-						>
+						<dd className={cn("text-text-primary mt-0.5", f.mono && "font-mono text-small")}>
 							{f.v}
 						</dd>
 					</div>
@@ -140,9 +131,7 @@ export default function EmployeeDetailPage() {
 			})
 			.catch((err: unknown) => {
 				if (cancelled) return;
-				setError(
-					err instanceof Error ? err.message : "Could not load employee",
-				);
+				setError(err instanceof Error ? err.message : "Could not load employee");
 				setLoading(false);
 			});
 
@@ -175,10 +164,7 @@ export default function EmployeeDetailPage() {
 				title={employee.full_name}
 				actions={
 					<div className="flex items-center gap-2">
-						<a
-							href="/employees"
-							className="text-small text-accent-200 hover:text-accent-50"
-						>
+						<a href="/employees" className="text-small text-accent-200 hover:text-accent-50">
 							← All employees
 						</a>
 						{canEdit && (
@@ -238,9 +224,7 @@ export default function EmployeeDetailPage() {
 						{employee.employment_type && (
 							<div className="flex justify-between border-t border-border-subtle pt-1.5">
 								<dt className="text-text-tertiary">Type</dt>
-								<dd className="text-text-primary">
-									{employee.employment_type}
-								</dd>
+								<dd className="text-text-primary">{employee.employment_type}</dd>
 							</div>
 						)}
 					</dl>
@@ -292,25 +276,21 @@ export default function EmployeeDetailPage() {
 							userId={employee.user_id}
 							currentRoles={employee.user_roles ?? []}
 							onChange={(roles) =>
-								setEmployee((prev) =>
-									prev ? { ...prev, user_roles: roles } : prev,
-								)
+								setEmployee((prev) => (prev ? { ...prev, user_roles: roles } : prev))
 							}
 						/>
 					)}
 
+					{/* Leave & holidays — read-scoped; hidden if not permitted */}
+					<LeaveBalanceCard employeeId={employee.id} />
+
 					{/* Reporting chain */}
 					{chain.length > 0 && (
 						<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-							<h2 className="text-h3 text-text-primary mb-3">
-								Reporting chain
-							</h2>
+							<h2 className="text-h3 text-text-primary mb-3">Reporting chain</h2>
 							<ol className="space-y-2">
 								{chain.map((entry) => (
-									<li
-										key={entry.id}
-										className="flex items-center gap-2 text-body"
-									>
+									<li key={entry.id} className="flex items-center gap-2 text-body">
 										<span className="text-label text-text-tertiary w-5 text-right shrink-0">
 											L{entry.level}
 										</span>
@@ -321,9 +301,7 @@ export default function EmployeeDetailPage() {
 											{entry.full_name}
 										</a>
 										{entry.role_title && (
-											<span className="text-small text-text-tertiary">
-												· {entry.role_title}
-											</span>
+											<span className="text-small text-text-tertiary">· {entry.role_title}</span>
 										)}
 									</li>
 								))}
@@ -334,22 +312,15 @@ export default function EmployeeDetailPage() {
 					{/* Direct reports */}
 					{reports.length > 0 && (
 						<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-							<h2 className="text-h3 text-text-primary mb-3">
-								Direct reports ({reports.length})
-							</h2>
+							<h2 className="text-h3 text-text-primary mb-3">Direct reports ({reports.length})</h2>
 							<ul className="space-y-2">
 								{reports.map((r) => (
 									<li key={r.id} className="flex items-center gap-2 text-body">
-										<a
-											href={`/employees/${r.id}`}
-											className="text-accent-200 hover:text-accent-50"
-										>
+										<a href={`/employees/${r.id}`} className="text-accent-200 hover:text-accent-50">
 											{r.full_name}
 										</a>
 										{r.role_title && (
-											<span className="text-small text-text-tertiary">
-												· {r.role_title}
-											</span>
+											<span className="text-small text-text-tertiary">· {r.role_title}</span>
 										)}
 									</li>
 								))}

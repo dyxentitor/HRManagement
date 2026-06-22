@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { MfaPrompt } from "@/components/hrms/MfaPrompt";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { useCan } from "@/lib/perm";
+
+import { AdjustLeaveDrawer } from "../components/AdjustLeaveDrawer";
 import { roleApi } from "@/modules/admin/api";
 import { teamApi } from "@/modules/admin/teams-api";
 
@@ -69,6 +71,8 @@ export default function EmployeeFormPage() {
 	const [roles, setRoles] = useState<{ code: string; name: string }[]>([]);
 	const [loading, setLoading] = useState(true);
 	const canProvision = useCan("user:create");
+	const canAdjustLeave = useCan("leave:balance:adjust:org");
+	const [leaveDrawer, setLeaveDrawer] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 	const [topError, setTopError] = useState<string | undefined>(undefined);
@@ -175,9 +179,20 @@ export default function EmployeeFormPage() {
 				breadcrumb="Employees"
 				title={mode === "create" ? "New employee" : "Edit employee"}
 				actions={
-					<a href="/employees" className="text-small text-accent-200 hover:text-accent-50">
-						← All employees
-					</a>
+					<div className="flex items-center gap-4">
+						{mode === "edit" && id && canAdjustLeave && (
+							<button
+								type="button"
+								onClick={() => setLeaveDrawer(true)}
+								className="text-small text-accent-200 hover:text-accent-50"
+							>
+								Manage leave →
+							</button>
+						)}
+						<a href="/employees" className="text-small text-accent-200 hover:text-accent-50">
+							← All employees
+						</a>
+					</div>
 				}
 			/>
 
@@ -195,6 +210,14 @@ export default function EmployeeFormPage() {
 				topError={topError}
 				saving={saving}
 			/>
+
+			{mode === "edit" && id && canAdjustLeave && (
+				<AdjustLeaveDrawer
+					employeeId={id}
+					open={leaveDrawer}
+					onClose={() => setLeaveDrawer(false)}
+				/>
+			)}
 
 			{pendingMfa && <MfaPrompt onCancel={() => setPendingMfa(null)} onSubmit={submitMfa} />}
 		</div>
