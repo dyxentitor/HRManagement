@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -6,6 +6,7 @@ import { MfaPrompt } from "@/components/hrms/MfaPrompt";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { useCan } from "@/lib/perm";
 
+import { EmployeeEditHero } from "../components/EmployeeEditHero";
 import { EmployeeLeaveEditor } from "../components/EmployeeLeaveEditor";
 import { roleApi } from "@/modules/admin/api";
 import { teamApi } from "@/modules/admin/teams-api";
@@ -71,6 +72,12 @@ export default function EmployeeFormPage() {
 	const [roles, setRoles] = useState<{ code: string; name: string }[]>([]);
 	const [loading, setLoading] = useState(true);
 	const canProvision = useCan("user:create");
+	const reloadEmployee = useCallback(async () => {
+		if (mode === "edit" && id) {
+			const emp = await employeeApi.retrieve(id).catch(() => null);
+			if (emp) setInitial(emp);
+		}
+	}, [mode, id]);
 	const [saving, setSaving] = useState(false);
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 	const [topError, setTopError] = useState<string | undefined>(undefined);
@@ -182,6 +189,10 @@ export default function EmployeeFormPage() {
 					</a>
 				}
 			/>
+
+			{mode === "edit" && initial && (
+				<EmployeeEditHero employee={initial} onPhotoChange={reloadEmployee} />
+			)}
 
 			<EmployeeForm
 				mode={mode}
