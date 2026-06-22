@@ -2,6 +2,30 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.30.0] — 2026-06-22
+
+Premium redesign of the employee **edit** page (`/employees/:id/edit`) to match the reference design.
+Spec: `docs/superpowers/specs/` analysis (reference image as source of truth). Presentation-only —
+no logic, API, validation, routing, or business-rule changes; reuses existing components.
+
+### Added
+
+- **`EmployeeEditHero`** — a profile-summary hero at the top of the edit page (avatar upload · name ·
+  *role · department* · status pill · identity chips for code/email/phone · **profile-completeness
+  bar**), giving context before editing. Reuses `AvatarUpload`.
+
+### Changed
+
+- **Leave Management layout** now mirrors the reference: **Current balance** spans the top, then a
+  **two-column** grid pairs the editing controls (**Adjust + Overrides**) with the read-only
+  **Adjustment history**; collapses to a single column on tablet/mobile.
+- **Current-balance tiles** redesigned as **accent stat cards** — per-type pastel ring + a large
+  "remaining" figure (up to three across), used as the section's single moment of colour.
+
+### Tests
+
+- Frontend **408 passed** (+ `EmployeeEditHero`); backend unchanged (**819**). Only the known
+  date-sensitive `MySchedulePage`/`RosterPage` schedule flakes fail (schedule code untouched).
 ## [1.29.1] — 2026-06-22
 
 ### Fixed
