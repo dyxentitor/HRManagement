@@ -2,6 +2,41 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.27.0] — 2026-06-22
+
+Separate the **invitation-delivery email** from the **company login email**, so a new hire whose
+company mailbox isn't live yet can still receive the invite. Spec:
+`docs/superpowers/specs/2026-06-22-invitation-vs-login-email.md`.
+
+### Added
+
+- **`Employee.personal_email`** (migration `employee.0006`) — a persistent home/personal email
+  (HRMS-standard: pre-boarding, offboarding, account recovery). Self-editable on **My Profile** and
+  editable on the employee form. Added to `SELF_EDIT_WHITELIST`.
+- **`Invitation.sent_to_email`** (migration `identity.0007`) — immutable snapshot of where each
+  invite was delivered (audit; survives later personal-email changes / re-sends).
+
+### Changed
+
+- The invite is **delivered to the personal email** (`create_invitation(sent_to=)` →
+  `send_invitation_email(to_email)`), falling back to the **company email** when blank. The login
+  **always stays the company email** (`User.email`) — the activation token / wizard are unchanged.
+  `provision_user(invite_email=)` threads it through; the user-first (`UserCreateSerializer.invite_email`)
+  and employee-first (`provision` → `employee.personal_email`) create paths both route it.
+- Forms now show **"Company email (login)"** + **"Personal email (invite sent here)"**; invitation
+  rows in People → Onboarding show the delivery address (`→ personal@…`).
+
+### Tests
+
+- Backend **807 passed** (+3: delivery to personal email, company-email fallback, provision routing).
+  Frontend **401 passed** (UserCreatePage routes `invite_email`; form/profile label updates).
+  Contracts regenerated. No new perm, no behaviour change to existing invites.
+- **Carried forward (pre-existing, date-triggered, unrelated):** `MySchedulePage` "renders the KPI
+  strip…" fails only when run on a Monday (its single mock shift lands on the ISO week-start = today,
+  rendering in both the today-highlight and the week grid → duplicate match). Schedule code untouched
+  here; fix the test's date-pinning separately. (Plus the long-standing
+  `attendance/test_clock_flow.py::test_clock_out_completes_record` date-sensitive failure.)
+
 ## [1.26.2] — 2026-06-21
 
 ### Changed
