@@ -165,6 +165,32 @@ class BalanceService:
         return bal
 
     @staticmethod
+    def manual_adjust(
+        *,
+        org_id: uuid.UUID,
+        employee_id: uuid.UUID,
+        leave_type: LeaveType,
+        year: int,
+        delta: Decimal,
+        actor_id: uuid.UUID | None = None,
+    ) -> LeaveBalance:
+        """HR one-off balance correction (+/-), recorded as a manual_adjustment ledger row.
+
+        A fresh reference_id per call defeats idempotency dedup, so every adjustment applies.
+        """
+        return BalanceService.accrue(
+            org_id=org_id,
+            employee_id=employee_id,
+            leave_type=leave_type,
+            year=year,
+            days=delta,
+            reason="manual_adjustment",
+            reference_type="manual",
+            reference_id=uuid.uuid4(),
+            actor_id=actor_id,
+        )
+
+    @staticmethod
     def grant_replacement(
         *,
         org_id: uuid.UUID,

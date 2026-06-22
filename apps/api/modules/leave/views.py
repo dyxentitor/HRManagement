@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import ClassVar
 
+from django.utils import timezone
 from rest_framework import status as drf_status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -195,10 +197,45 @@ class AdminAccrualViewSet(viewsets.ViewSet):
 class LeaveBalanceViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LeaveBalanceSerializer
     permission_classes: ClassVar[list] = [HRMSPermission]
-    required_perms: ClassVar[list] = ["leave:balance:read:self"]
+
+    def get_required_perms(self):
+        if self.action == "adjust":
+            return ["leave:balance:adjust:org"]
+        return []  # list/retrieve/me use the custom self/team/org check below
+
+    @property
+    def required_perms(self):
+        return self.get_required_perms()
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if self.action in ("list", "retrieve"):
+            target = request.query_params.get("employee")
+            if target and not self._can_read(request, target):
+                raise PermissionDenied()
+
+    def _can_read(self, request, employee_id) -> bool:
+        from modules.identity.services.permissions import get_user_perms
+
+        perms = get_user_perms(request.user)
+        if "leave:balance:read:org" in perms:
+            return True
+        viewer = Employee.all_objects.filter(user_id=request.user.id).first()
+        if viewer is None:
+            return False
+        if str(viewer.id) == str(employee_id):
+            return "leave:balance:read:self" in perms
+        # direct report → team scope
+        target = Employee.all_objects.filter(
+            id=employee_id, org_id=request.user.org_id
+        ).first()
+        if target and str(target.manager_id) == str(viewer.id):
+            return "leave:balance:read:team" in perms
+        return False
 
     def get_queryset(self):
-        emp_id = self._employee_id_for_request()
+        target = self.request.query_params.get("employee")
+        emp_id = target or self._employee_id_for_request()
         if emp_id is None:
             return LeaveBalance.all_objects.none()
         return LeaveBalance.all_objects.filter(
@@ -213,7 +250,61 @@ class LeaveBalanceViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
-        return Response(self.get_serializer(self.get_queryset(), many=True).data)
+        emp_id = self._employee_id_for_request()
+        qs = (
+            LeaveBalance.all_objects.filter(
+                org_id=request.user.org_id, employee_id=emp_id, deleted_at__isnull=True
+            )
+            if emp_id
+            else LeaveBalance.all_objects.none()
+        )
+        return Response(self.get_serializer(qs, many=True).data)
+
+    @action(detail=False, methods=["post"], url_path="adjust")
+    def adjust(self, request):
+        """HR one-off balance adjustment (+/- days) → append-only ledger + audit."""
+        from common.audit.service import append as audit_append
+
+        from .services.balance import BalanceService
+
+        employee_id = request.data.get("employee_id")
+        leave_type_id = request.data.get("leave_type_id")
+        note = (request.data.get("note") or "").strip()
+        try:
+            delta = Decimal(str(request.data.get("delta")))
+        except (TypeError, ArithmeticError):
+            raise ValidationError({"delta": "A non-zero number is required."}) from None
+        if delta == 0:
+            raise ValidationError({"delta": "Must be non-zero."})
+        if not note:
+            raise ValidationError({"note": "A reason is required."})
+        leave_type = LeaveType.all_objects.filter(
+            id=leave_type_id, org_id=request.user.org_id, deleted_at__isnull=True
+        ).first()
+        if leave_type is None:
+            raise ValidationError({"leave_type_id": "Unknown leave type."})
+
+        bal = BalanceService.manual_adjust(
+            org_id=request.user.org_id,
+            employee_id=employee_id,
+            leave_type=leave_type,
+            year=timezone.now().year,
+            delta=delta,
+            actor_id=request.user.id,
+        )
+        audit_append(
+            org_id=request.user.org_id,
+            action="leave.balance.adjusted",
+            entity="leave_balance",
+            entity_id=bal.id,
+            after={
+                "employee_id": str(employee_id),
+                "leave_type": leave_type.code,
+                "delta": str(delta),
+                "note": note,
+            },
+        )
+        return Response(self.get_serializer(bal).data)
 
 
 @requires_feature("leave")
