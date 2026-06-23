@@ -177,15 +177,25 @@ describe("EmployeeFormPage — edit", () => {
 		});
 	});
 
+	// Sections are collapsed-by-default on the edit page → expand before asserting fields.
+	const expand = async (user: ReturnType<typeof userEvent.setup>, section: RegExp) => {
+		await waitFor(() => screen.getByRole("button", { name: section }));
+		await user.click(screen.getByRole("button", { name: section }));
+	};
+
 	it("pre-fills the form from the loaded employee", async () => {
+		const user = userEvent.setup();
 		renderAt("/employees/e1/edit");
-		await waitFor(() => screen.getByDisplayValue("Wei"));
+		await expand(user, /toggle identity/i);
+		expect(screen.getByDisplayValue("Wei")).toBeInTheDocument();
 		expect(screen.getByDisplayValue("Lin")).toBeInTheDocument();
 		expect(screen.getByDisplayValue("PVT-100")).toBeInTheDocument();
 	});
 
 	it("shows IC last4 in the encrypted field summary", async () => {
+		const user = userEvent.setup();
 		renderAt("/employees/e1/edit");
+		await expand(user, /toggle personal/i);
 		await waitFor(() => screen.getByText(/IC ending in/i));
 		expect(screen.getByText(/5475/)).toBeInTheDocument();
 	});
@@ -194,7 +204,7 @@ describe("EmployeeFormPage — edit", () => {
 		const user = userEvent.setup();
 		mocks.update.mockResolvedValue(undefined);
 		renderAt("/employees/e1/edit");
-		await waitFor(() => screen.getByDisplayValue("Wei"));
+		await expand(user, /toggle employment/i);
 		const role = screen.getByLabelText(/role title/i);
 		await user.clear(role);
 		await user.type(role, "Lead Eng");
@@ -204,8 +214,9 @@ describe("EmployeeFormPage — edit", () => {
 
 	it("renders fields read-only when user only has employee:assign:team", async () => {
 		mocks.perms = new Set(["employee:assign:team", "employee:read:team"]);
+		const user = userEvent.setup();
 		renderAt("/employees/e1/edit");
-		await waitFor(() => screen.getByDisplayValue("Wei"));
+		await expand(user, /toggle identity/i);
 		expect(screen.getByLabelText(/first name/i)).toHaveAttribute("readonly");
 	});
 

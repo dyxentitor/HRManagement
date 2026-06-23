@@ -1,5 +1,15 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import {
+	Briefcase,
+	ChevronDown,
+	ChevronRight,
+	Heart,
+	Landmark,
+	MapPin,
+	Phone,
+	User,
+} from "lucide-react";
 import type React from "react";
+import type { ComponentType } from "react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,16 +25,18 @@ import { ManagerPicker } from "./ManagerPicker";
 type Mode = "create" | "edit";
 
 interface Section {
-	id: "identity" | "employment" | "personal" | "address" | "banking";
+	id: "identity" | "employment" | "personal" | "address" | "banking" | "emergency";
 	label: string;
+	icon: ComponentType<{ className?: string }>;
 }
 
 const SECTIONS: Section[] = [
-	{ id: "identity", label: "Identity" },
-	{ id: "employment", label: "Employment" },
-	{ id: "personal", label: "Personal" },
-	{ id: "address", label: "Address" },
-	{ id: "banking", label: "Banking & Tax IDs" },
+	{ id: "identity", label: "Identity", icon: User },
+	{ id: "employment", label: "Employment", icon: Briefcase },
+	{ id: "personal", label: "Personal", icon: Heart },
+	{ id: "address", label: "Address", icon: MapPin },
+	{ id: "banking", label: "Banking & Tax IDs", icon: Landmark },
+	{ id: "emergency", label: "Emergency Contact", icon: Phone },
 ];
 
 interface DeptRef {
@@ -96,7 +108,11 @@ export function EmployeeForm({
 	const bank = useFieldPerm("employee:bank:read", "employee:bank:write");
 
 	const [collapsed, setCollapsed] = useState<Set<string>>(() =>
-		mode === "create" ? new Set(["personal", "address", "banking"]) : new Set(),
+		mode === "edit"
+			? // edit: collapsed-by-default (progressive disclosure, scannable summaries)
+				new Set(SECTIONS.map((s) => s.id))
+			: // create: keep the required-field sections open, collapse the optional ones
+				new Set(["personal", "address", "banking", "emergency"]),
 	);
 	const [draft, setDraft] = useState<Partial<EmployeeWritePayload>>(() => ({
 		employee_code: initial?.employee_code ?? "",
@@ -165,6 +181,34 @@ export function EmployeeForm({
 		});
 	}
 
+	/** One-line preview of a collapsed section's data (— when empty). */
+	function summaryFor(id: Section["id"]): string {
+		const d = draft;
+		const dash = "—";
+		const join = (parts: (string | undefined)[], sep = " · ") =>
+			parts.filter(Boolean).join(sep) || dash;
+		switch (id) {
+			case "identity":
+				return join([`${d.first_name ?? ""} ${d.last_name ?? ""}`.trim(), d.employee_code]);
+			case "employment":
+				return join([
+					d.role_title,
+					departments.find((x) => x.id === d.department)?.name,
+					d.employment_type,
+				]);
+			case "personal":
+				return join([d.gender, d.nationality, d.date_of_birth]);
+			case "address":
+				return join([d.city, d.state, d.country_code], ", ");
+			case "banking":
+				return d.bank_name ? `${d.bank_name} · tax IDs encrypted` : dash;
+			case "emergency":
+				return join([d.emergency_contact_name, d.emergency_contact_relationship]);
+			default:
+				return dash;
+		}
+	}
+
 	function handleSave(e: React.FormEvent) {
 		e.preventDefault();
 		// Drop blank optional fields. An empty string sent for a nullable date /
@@ -206,28 +250,29 @@ export function EmployeeForm({
 				if (s.id === "banking" && !bank.canRead) return null;
 				const isCollapsed = collapsed.has(s.id);
 				return (
-					<section
-						key={s.id}
-						className="bg-surface-hover border border-border-subtle rounded-lg p-4"
-					>
-						<header className="flex items-center justify-between mb-3">
-							<h2 className="text-h3 text-text-primary">{s.label}</h2>
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								aria-label={`Toggle ${s.label}`}
-								onClick={() => toggle(s.id)}
-							>
-								{isCollapsed ? (
-									<ChevronRight className="size-4" />
-								) : (
-									<ChevronDown className="size-4" />
+					<section key={s.id} className="bg-surface-hover border border-border-subtle rounded-lg">
+						<button
+							type="button"
+							aria-label={`Toggle ${s.label}`}
+							aria-expanded={!isCollapsed}
+							onClick={() => toggle(s.id)}
+							className="w-full flex items-center gap-3 p-4 text-left hover:bg-surface-elevated/20 rounded-lg"
+						>
+							<s.icon className="size-4 text-text-tertiary shrink-0" />
+							<div className="min-w-0 flex-1">
+								<h2 className="text-h3 text-text-primary">{s.label}</h2>
+								{isCollapsed && (
+									<p className="text-small text-text-tertiary truncate">{summaryFor(s.id)}</p>
 								)}
-							</Button>
-						</header>
+							</div>
+							{isCollapsed ? (
+								<ChevronRight className="size-4 text-text-tertiary shrink-0" />
+							) : (
+								<ChevronDown className="size-4 text-text-tertiary shrink-0" />
+							)}
+						</button>
 						{!isCollapsed && (
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 pb-4">
 								{renderSection(s.id, {
 									draft,
 									set,
@@ -761,6 +806,11 @@ function renderSection(id: Section["id"], a: SectionRenderArgs): React.ReactNode
 							/>
 						</div>
 					))}
+				</>
+			);
+		case "emergency":
+			return (
+				<>
 					{field(
 						"emergency_contact_name",
 						"Emergency contact name",
