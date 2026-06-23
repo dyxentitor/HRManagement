@@ -65,12 +65,12 @@ class AssignmentRecipient(models.Model):
         ]
         indexes: ClassVar = [models.Index(fields=["employee_id", "status"])]
 
+    def __str__(self) -> str:
+        return f"{self.assignment_id}/{self.employee_id}/{self.status}"
+
     @property
     def effective_status(self) -> str:
         """Derives 'overdue' without a cron flip (mirrors Invitation.effective_status)."""
         if self.status == "pending" and self.due_date and self.due_date < dt.date.today():
             return "overdue"
         return self.status
-
-    def __str__(self) -> str:
-        return f"{self.assignment_id}/{self.employee_id}/{self.status}"
