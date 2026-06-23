@@ -14,6 +14,8 @@ interface Props {
 	onUploaded: () => void;
 	onDeleted: () => void;
 	uploadFor?: { kind: "self" } | { kind: "employee"; id: string };
+	/** Hide the inline "Remove photo" caption (editing stays via the camera badge). */
+	showRemove?: boolean;
 }
 
 export function AvatarUpload({
@@ -23,13 +25,13 @@ export function AvatarUpload({
 	onUploaded,
 	onDeleted,
 	uploadFor = { kind: "self" },
+	showRemove = true,
 }: Props) {
 	const inputId = useId();
 	const inputRef = useRef<HTMLInputElement | null>(null);
 	const [busy, setBusy] = useState(false);
 
-	const sizeClass =
-		size === "lg" ? "size-20" : size === "md" ? "size-12" : "size-8";
+	const sizeClass = size === "lg" ? "size-20" : size === "md" ? "size-12" : "size-8";
 
 	async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0];
@@ -109,7 +111,7 @@ export function AvatarUpload({
 					/>
 				</label>
 			</div>
-			{photoUrl && (
+			{photoUrl && showRemove && (
 				<button
 					type="button"
 					onClick={handleRemove}

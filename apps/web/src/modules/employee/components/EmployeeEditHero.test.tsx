@@ -34,13 +34,15 @@ describe("EmployeeEditHero", () => {
 		render(<EmployeeEditHero employee={employee} onPhotoChange={() => {}} />);
 
 		expect(screen.getByText("Tan Wei Ming")).toBeInTheDocument();
-		expect(screen.getByText(/Senior Engineer · Engineering/)).toBeInTheDocument();
+		expect(screen.getByText(/Senior Engineer/)).toBeInTheDocument();
+		expect(screen.getByText("Engineering")).toBeInTheDocument(); // department, accented span
+		expect(screen.getByText("Joined")).toBeInTheDocument(); // meta-grid label
 		expect(screen.getByText("PVT-DEMO-005")).toBeInTheDocument(); // meta strip
 		expect(screen.getByText("80%")).toBeInTheDocument();
 		expect(screen.getByText(/Bank Details/i)).toBeInTheDocument();
 
 		await waitFor(() => expect(inv.list).toHaveBeenCalled());
-		expect(screen.getByRole("button", { name: /send invite/i })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /send invitation/i })).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: /reset password/i })).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: /archive/i })).toBeInTheDocument();
 	});

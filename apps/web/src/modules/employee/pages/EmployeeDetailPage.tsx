@@ -7,6 +7,7 @@ import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 import { RolesCard } from "@/modules/admin/components/RolesCard";
 import { LeaveBalanceCard } from "../components/LeaveBalanceCard";
+import { tenureFromHireDate } from "../lib/format";
 
 import { type Employee, type ReportingChainEntry, employeeApi } from "../api";
 import { ProfileCompletenessBanner } from "../components/ProfileCompletenessBanner";
@@ -59,15 +60,6 @@ function ArchiveButton({ employee }: { employee: Employee }) {
 			</button>
 		</div>
 	);
-}
-
-function tenureFromHireDate(hireDate?: string): string {
-	if (!hireDate) return "—";
-	const months = Math.max(
-		0,
-		Math.floor((Date.now() - new Date(hireDate).getTime()) / (1000 * 60 * 60 * 24 * 30.42)),
-	);
-	return `${Math.floor(months / 12)}y ${months % 12}m`;
 }
 
 interface Field {

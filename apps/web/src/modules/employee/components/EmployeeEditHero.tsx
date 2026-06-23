@@ -1,4 +1,14 @@
-import { Archive, Hash, KeyRound, Link2, Mail, Phone, Send } from "lucide-react";
+import {
+	AlertTriangle,
+	Archive,
+	CalendarDays,
+	Hash,
+	KeyRound,
+	Link2,
+	Mail,
+	Phone,
+	Send,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -10,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 import { type InvitationRow, invitationsApi } from "@/modules/admin/invitations-api";
 import { type Employee, employeeApi } from "../api";
+import { formatJoinedDate, tenureFromHireDate } from "../lib/format";
 import { AvatarUpload } from "./AvatarUpload";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
@@ -18,7 +29,7 @@ function humanize(s: string): string {
 	return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-/** Profile summary + quick actions for the employee edit page. */
+/** Profile summary + quick actions for the employee edit page (3 bands). */
 export function EmployeeEditHero({
 	employee,
 	onPhotoChange,
@@ -110,33 +121,49 @@ export function EmployeeEditHero({
 			}
 		});
 
-	const meta = [
-		employee.employee_code && { icon: Hash, value: employee.employee_code },
-		employee.email && { icon: Mail, value: employee.email },
-		employee.phone && { icon: Phone, value: employee.phone },
-	].filter(Boolean) as { icon: typeof Hash; value: string }[];
+	const meta: { icon: typeof Hash; label: string; value: string }[] = [
+		{ icon: Hash, label: "Employee ID", value: employee.employee_code || "—" },
+		{ icon: Mail, label: "Work email", value: employee.email || "—" },
+		{
+			icon: CalendarDays,
+			label: "Joined",
+			value: employee.hire_date
+				? `${formatJoinedDate(employee.hire_date)} (${tenureFromHireDate(employee.hire_date)})`
+				: "—",
+		},
+		{ icon: Phone, label: "Phone", value: employee.phone || "—" },
+	];
 
 	const pct = employee.profile_completeness?.percent ?? null;
 	const missing = (employee.profile_completeness?.missing ?? []).map(humanize);
 	const complete = pct === null || pct >= 100;
+	const message = complete
+		? "Profile complete."
+		: (pct ?? 0) >= 80
+			? "Almost complete — only a few items left."
+			: (pct ?? 0) >= 50
+				? "Getting there — keep filling in the details."
+				: "This profile needs more details.";
 
 	return (
-		<section className="relative overflow-hidden rounded-lg border border-border-subtle bg-surface-hover p-5">
+		<section className="relative overflow-hidden rounded-lg border border-border-subtle bg-surface-hover">
 			<div
 				className="absolute inset-0 pointer-events-none"
 				style={{
 					background:
-						"radial-gradient(520px 180px at 0% 0%, rgb(124 92 255 / 0.14), transparent 65%)",
+						"radial-gradient(560px 200px at 0% 0%, rgb(124 92 255 / 0.13), transparent 65%)",
 				}}
 				aria-hidden
 			/>
-			<div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
-				{/* identity */}
-				<div className="flex items-center gap-4 min-w-0">
+
+			{/* Band 1 — identity + actions */}
+			<div className="relative z-10 flex flex-wrap items-start justify-between gap-4 p-5">
+				<div className="flex items-center gap-3.5 min-w-0">
 					<AvatarUpload
 						photoUrl={employee.photo_url ?? null}
 						fullName={employee.full_name}
-						size="lg"
+						size="md"
+						showRemove={false}
 						uploadFor={{ kind: "employee", id: employee.id }}
 						onUploaded={onPhotoChange}
 						onDeleted={onPhotoChange}
@@ -154,27 +181,31 @@ export function EmployeeEditHero({
 						</div>
 						<p className="text-body text-text-secondary mt-0.5">
 							{employee.role_title || "—"}
-							{employee.department_name ? ` · ${employee.department_name}` : ""}
+							{employee.department_name ? (
+								<>
+									{" · "}
+									<span className="text-accent-200">{employee.department_name}</span>
+								</>
+							) : null}
 						</p>
 					</div>
 				</div>
 
-				{/* quick actions */}
 				<div className="flex flex-wrap items-center gap-2">
+					{canWrite && employee.user_id && (
+						<Button variant="outline" size="sm" onClick={resetPassword} disabled={busy === "reset"}>
+							<KeyRound className="size-4 mr-1.5" /> Reset password
+						</Button>
+					)}
 					{canInvite && employee.user_id && !activated && (
 						<Button variant="outline" size="sm" onClick={sendInvite} disabled={busy === "invite"}>
 							<Send className="size-4 mr-1.5" />
-							{hasLiveInvite ? "Resend invite" : "Send invite"}
+							{hasLiveInvite ? "Resend invitation" : "Send invitation"}
 						</Button>
 					)}
 					{canInvite && hasLiveInvite && (
 						<Button variant="outline" size="sm" onClick={copyLink} disabled={busy === "copy"}>
 							<Link2 className="size-4 mr-1.5" /> Copy link
-						</Button>
-					)}
-					{canWrite && employee.user_id && (
-						<Button variant="outline" size="sm" onClick={resetPassword} disabled={busy === "reset"}>
-							<KeyRound className="size-4 mr-1.5" /> Reset password
 						</Button>
 					)}
 					{canArchive &&
@@ -199,46 +230,54 @@ export function EmployeeEditHero({
 								onClick={() => setArmArchive(true)}
 								className="text-coral hover:text-coral border-coral/40"
 							>
-								<Archive className="size-4 mr-1.5" /> Archive
+								<Archive className="size-4 mr-1.5" /> Archive employee
 							</Button>
 						))}
 				</div>
 			</div>
 
-			{/* horizontal meta strip */}
-			{meta.length > 0 && (
-				<div className="relative z-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-text-secondary mt-3">
-					{meta.map((m, i) => (
-						<span key={m.value} className="inline-flex items-center gap-1.5 min-w-0">
-							{i > 0 && <span className="text-text-tertiary mr-1">·</span>}
-							<m.icon className="size-3.5 text-text-tertiary shrink-0" aria-hidden />
-							<span className="truncate">{m.value}</span>
-						</span>
-					))}
-				</div>
-			)}
-
-			{/* completeness */}
-			<div className="relative z-10 mt-4">
-				<div className="flex items-center justify-between text-small mb-1.5">
-					<span className="layer-eyebrow">Profile completeness</span>
-					<span
-						className={cn("tabular-nums font-semibold", complete ? "text-mint" : "text-yellow")}
-					>
-						{pct ?? 100}%
-					</span>
-				</div>
-				<div className="h-1.5 rounded-full bg-surface-elevated/60 overflow-hidden">
+			{/* Band 2 — meta grid */}
+			<div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-border-subtle">
+				{meta.map((m, i) => (
 					<div
-						className={cn("h-full rounded-full transition-all", complete ? "bg-mint" : "bg-yellow")}
-						style={{ width: `${pct ?? 100}%` }}
-					/>
+						key={m.label}
+						className={cn(
+							"flex items-start gap-2.5 px-5 py-3",
+							i > 0 && "lg:border-l border-border-subtle",
+						)}
+					>
+						<m.icon className="size-4 text-text-tertiary mt-0.5 shrink-0" aria-hidden />
+						<div className="min-w-0">
+							<p className="layer-eyebrow">{m.label}</p>
+							<p className="text-small text-text-primary truncate mt-0.5">{m.value}</p>
+						</div>
+					</div>
+				))}
+			</div>
+
+			{/* Band 3 — completeness */}
+			<div className="relative z-10 flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6 px-5 py-3.5 border-t border-border-subtle">
+				<div className="lg:flex-1 min-w-0">
+					<div className="flex items-center justify-between text-small mb-1.5">
+						<span className="layer-eyebrow">Profile completion</span>
+						<span className="tabular-nums font-semibold text-accent-200">{pct ?? 100}%</span>
+					</div>
+					<div className="h-1.5 rounded-full bg-surface-elevated/60 overflow-hidden">
+						<div
+							className="h-full rounded-full bg-gradient-to-r from-accent-500 to-accent-300 transition-all"
+							style={{ width: `${pct ?? 100}%` }}
+						/>
+					</div>
 				</div>
-				{!complete && missing.length > 0 && (
-					<p className="text-[11px] text-text-tertiary mt-1.5">
-						Missing: <span className="text-text-secondary">{missing.join(", ")}</span>
-					</p>
-				)}
+				<div className="flex items-center gap-2.5 lg:justify-end shrink-0">
+					<span className="text-small text-text-tertiary">{message}</span>
+					{!complete && missing.length > 0 && (
+						<span className="inline-flex items-center gap-1.5 text-[11px] text-yellow bg-yellow/10 border border-yellow/30 rounded-full px-2.5 py-1">
+							<AlertTriangle className="size-3.5 shrink-0" aria-hidden />
+							Missing: {missing.join(", ")}
+						</span>
+					)}
+				</div>
 			</div>
 		</section>
 	);
