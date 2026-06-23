@@ -2,6 +2,35 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.31.0] — 2026-06-23
+
+Employee edit-page **hero** gains quick actions + a horizontal meta strip, matching the reference.
+
+### Added
+
+- **Hero quick-action row** (top-right): **Send / Resend invite**, **Copy activation link**,
+  **Reset password**, and **Archive** (two-step confirm) — each permission-gated
+  (`user:create` / `employee:write:org` / `employee:archive`) and hidden otherwise.
+- **`POST /api/v1/employees/{id}/invite`** — create-or-resend the linked user's onboarding
+  invitation (gated `user:create`; 400 if no linked account or already activated). The hero shows
+  "Send invite" when none exists and "Resend invite" / "Copy link" when a live one does; an
+  *Activated* pill shows once onboarded.
+
+### Changed
+
+- **Hero rebuilt as a 3-band "stat hero"** (matching the high-res reference): **Band 1** identity +
+  actions (clean avatar — caption suppressed, department accented in the role line); **Band 2** a
+  **4-column labelled meta grid** — Employee ID · Work email · **Joined (+ tenure)** · Phone — with
+  leading icons + dividers; **Band 3** a single completeness row with a **violet accent bar** + a
+  status message + a "Missing" chip. Reset reuses `/auth/password/forgot`; archive reuses the
+  existing soft-delete → returns to the People hub.
+- `tenureFromHireDate` extracted to `modules/employee/lib/format` (+ `formatJoinedDate`) and shared
+  with the detail page — no duplicated date logic. `AvatarUpload` gains a `showRemove` flag.
+
+### Tests
+
+- Backend **820 passed** (+1: employee invite create-or-resend). Frontend **410 passed**
+  (hero actions/meta). Contracts regenerated. No new perms.
 ## [1.30.0] — 2026-06-22
 
 Premium redesign of the employee **edit** page (`/employees/:id/edit`) to match the reference design.
