@@ -2,6 +2,15 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.32.1] — 2026-06-23
+
+### Changed
+
+- **Leave Management — current-balance cards** refined toward the reference: per-type **accent dot**
+  beside the label, a prominent **"{N} days remaining"** figure, an *of {allocated} allocated ·
+  {used} used* sub-line, and a thin bar that now fills with the accent colour to the **remaining**
+  proportion. The Adjustment **history stays a timeline** (kept per preference, diverging from the
+  reference's table). Frontend-only; backend unchanged (820).
 ## [1.32.0] — 2026-06-23
 
 Premium **collapsible field sections** on the employee edit page (continuing the reference pass).
