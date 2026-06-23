@@ -63,43 +63,49 @@ export function LeaveBalanceCard({
 						const pending = Number(b.pending);
 						const remaining = Number(b.available);
 						const noCap = allocated <= 0;
-						const usedPct = noCap ? 0 : Math.min(100, (used / allocated) * 100);
-						const pendPct = noCap ? 0 : Math.min(100 - usedPct, (pending / allocated) * 100);
+						const remainingPct = noCap
+							? 0
+							: Math.max(0, Math.min(100, (remaining / allocated) * 100));
 						return (
 							<div
 								key={b.id}
 								className={cn(
-									"rounded-xl p-3.5 border bg-gradient-to-b to-transparent",
+									"rounded-xl p-4 border bg-gradient-to-b to-transparent",
 									RING[i % RING.length],
 								)}
 							>
-								<p className="text-small text-text-secondary font-medium truncate">
-									{b.leave_type_name ?? b.leave_type_code}
-								</p>
-								<p className="mt-1 mb-2 tabular-nums leading-none">
+								<div className="flex items-center gap-2 mb-1.5">
+									<span
+										className={cn("size-2 rounded-full shrink-0", TONES[i % TONES.length])}
+										aria-hidden
+									/>
+									<span className="text-small text-text-secondary font-medium truncate">
+										{b.leave_type_name ?? b.leave_type_code}
+									</span>
+								</div>
+								<p className="tabular-nums leading-none">
 									{noCap ? (
-										<span className="text-2xl font-extralight text-text-secondary">∞</span>
+										<span className="text-2xl font-extralight text-text-secondary">No cap</span>
 									) : (
 										<>
 											<span className={cn("text-3xl font-extralight", TEXT[i % TEXT.length])}>
 												{remaining}
 											</span>
-											<span className="text-small text-text-tertiary"> remaining</span>
+											<span className="text-small text-text-tertiary"> days remaining</span>
 										</>
 									)}
 								</p>
-								<div className="h-1.5 rounded-full bg-surface-elevated/60 overflow-hidden flex">
+								{!noCap && (
+									<p className="text-[11px] text-text-tertiary tabular-nums mt-1">
+										of {allocated} allocated · {used} used
+										{pending > 0 ? ` · ${pending} pending` : ""}
+									</p>
+								)}
+								<div className="h-1.5 rounded-full bg-surface-elevated/60 overflow-hidden mt-2.5">
 									<div
-										className={cn("h-full", TONES[i % TONES.length])}
-										style={{ width: `${usedPct}%` }}
+										className={cn("h-full rounded-full", TONES[i % TONES.length])}
+										style={{ width: `${remainingPct}%` }}
 									/>
-									<div className="h-full bg-yellow/50" style={{ width: `${pendPct}%` }} />
-								</div>
-								<div className="flex justify-between text-[11px] text-text-tertiary tabular-nums mt-1.5">
-									<span>{noCap ? "no cap" : `${allocated} allocated`}</span>
-									<span>
-										{used} used{pending > 0 ? ` · ${pending} pending` : ""}
-									</span>
 								</div>
 							</div>
 						);

@@ -31,7 +31,7 @@ describe("LeaveBalanceCard (read-only)", () => {
 		await waitFor(() => expect(screen.getByText("Annual")).toBeInTheDocument());
 		expect(screen.getByText("Current balance")).toBeInTheDocument();
 		expect(screen.getByText("10")).toBeInTheDocument(); // remaining
-		expect(screen.getByText("14 allocated")).toBeInTheDocument();
+		expect(screen.getByText(/14 allocated/)).toBeInTheDocument();
 		expect(screen.getByText(/3 used/)).toBeInTheDocument();
 		// pure view — no controls
 		expect(screen.queryByRole("button")).not.toBeInTheDocument();
