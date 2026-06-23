@@ -196,6 +196,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assignments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["assignments_list"];
+        put?: never;
+        post: operations["assignments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assignments/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["assignments_retrieve"];
+        put: operations["assignments_update"];
+        post?: never;
+        delete: operations["assignments_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["assignments_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/assignments/{id}/archive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assignments_archive_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assignments/{id}/complete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assignments_complete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assignments/{id}/publish/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assignments_publish_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assignments/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["assignments_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/attendance/clock-in/": {
         parameters: {
             query?: never;
@@ -3215,6 +3311,44 @@ export interface components {
             /** Format: date-time */
             expires_at?: string | null;
         };
+        Assignment: {
+            /** Format: uuid */
+            readonly id: string;
+            title: string;
+            description?: string;
+            type?: components["schemas"]["AssignmentTypeEnum"];
+            link_url?: string;
+            link_target?: components["schemas"]["LinkTargetEnum"];
+            /** Format: date */
+            default_due_date?: string | null;
+            readonly status: components["schemas"]["AssignmentStatusEnum"];
+            /** Format: uuid */
+            readonly created_by: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        AssignmentRequest: {
+            title: string;
+            description?: string;
+            type?: components["schemas"]["AssignmentTypeEnum"];
+            link_url?: string;
+            link_target?: components["schemas"]["LinkTargetEnum"];
+            /** Format: date */
+            default_due_date?: string | null;
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `published` - Published
+         *     * `archived` - Archived
+         * @enum {string}
+         */
+        AssignmentStatusEnum: "draft" | "published" | "archived";
+        /**
+         * @description * `task` - Task
+         *     * `acknowledge` - Acknowledge
+         * @enum {string}
+         */
+        AssignmentTypeEnum: "task" | "acknowledge";
         AttendanceRecord: {
             /** Format: uuid */
             readonly id: string;
@@ -4075,6 +4209,13 @@ export interface components {
             max_per_lifetime_events?: number | null;
         };
         /**
+         * @description * `none` - None
+         *     * `internal` - Internal
+         *     * `external` - External
+         * @enum {string}
+         */
+        LinkTargetEnum: "none" | "internal" | "external";
+        /**
          * @description * `single` - Single
          *     * `married` - Married
          *     * `divorced` - Divorced
@@ -4179,6 +4320,15 @@ export interface components {
             published_at?: string;
             /** Format: date-time */
             expires_at?: string | null;
+        };
+        PatchedAssignmentRequest: {
+            title?: string;
+            description?: string;
+            type?: components["schemas"]["AssignmentTypeEnum"];
+            link_url?: string;
+            link_target?: components["schemas"]["LinkTargetEnum"];
+            /** Format: date */
+            default_due_date?: string | null;
         };
         PatchedCertificationWriteRequest: {
             name?: string;
@@ -5139,6 +5289,239 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    assignments_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"][];
+                };
+            };
+        };
+    };
+    assignments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentRequest"];
+                "multipart/form-data": components["schemas"]["AssignmentRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
+    assignments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
+    assignments_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentRequest"];
+                "multipart/form-data": components["schemas"]["AssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
+    assignments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    assignments_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedAssignmentRequest"];
+                "multipart/form-data": components["schemas"]["PatchedAssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
+    assignments_archive_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentRequest"];
+                "multipart/form-data": components["schemas"]["AssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
+    assignments_complete_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentRequest"];
+                "multipart/form-data": components["schemas"]["AssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
+    assignments_publish_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentRequest"];
+                "multipart/form-data": components["schemas"]["AssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
+    assignments_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
             };
         };
     };

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.30.0
+  version: 1.32.1
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -256,6 +256,235 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/assignments/:
+    get:
+      operationId: assignments_list
+      tags:
+      - assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Assignment'
+          description: ''
+    post:
+      operationId: assignments_create
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/v1/assignments/{id}/:
+    get:
+      operationId: assignments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+    put:
+      operationId: assignments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+    patch:
+      operationId: assignments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAssignmentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+    delete:
+      operationId: assignments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/assignments/{id}/archive/:
+    post:
+      operationId: assignments_archive_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/v1/assignments/{id}/complete/:
+    post:
+      operationId: assignments_complete_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/v1/assignments/{id}/publish/:
+    post:
+      operationId: assignments_publish_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/v1/assignments/me/:
+    get:
+      operationId: assignments_me_retrieve
+      tags:
+      - assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
   /api/v1/attendance/clock-in/:
     post:
       operationId: attendance_clock_in_create
@@ -5853,6 +6082,88 @@ components:
       required:
       - body
       - title
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/AssignmentTypeEnum'
+        link_url:
+          type: string
+          maxLength: 1000
+        link_target:
+          $ref: '#/components/schemas/LinkTargetEnum'
+        default_due_date:
+          type: string
+          format: date
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AssignmentStatusEnum'
+          readOnly: true
+        created_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - id
+      - status
+      - title
+    AssignmentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/AssignmentTypeEnum'
+        link_url:
+          type: string
+          maxLength: 1000
+        link_target:
+          $ref: '#/components/schemas/LinkTargetEnum'
+        default_due_date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - title
+    AssignmentStatusEnum:
+      enum:
+      - draft
+      - published
+      - archived
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `published` - Published
+        * `archived` - Archived
+    AssignmentTypeEnum:
+      enum:
+      - task
+      - acknowledge
+      type: string
+      description: |-
+        * `task` - Task
+        * `acknowledge` - Acknowledge
     AttendanceRecord:
       type: object
       properties:
@@ -7949,6 +8260,16 @@ components:
       - accrual_type
       - code
       - name
+    LinkTargetEnum:
+      enum:
+      - none
+      - internal
+      - external
+      type: string
+      description: |-
+        * `none` - None
+        * `internal` - Internal
+        * `external` - External
     MaritalStatusEnum:
       enum:
       - single
@@ -8223,6 +8544,26 @@ components:
         expires_at:
           type: string
           format: date-time
+          nullable: true
+    PatchedAssignmentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/AssignmentTypeEnum'
+        link_url:
+          type: string
+          maxLength: 1000
+        link_target:
+          $ref: '#/components/schemas/LinkTargetEnum'
+        default_due_date:
+          type: string
+          format: date
           nullable: true
     PatchedCertificationWriteRequest:
       type: object
