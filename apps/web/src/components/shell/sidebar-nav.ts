@@ -3,10 +3,12 @@ import {
 	Briefcase,
 	Calendar,
 	ClipboardCheck,
+	ClipboardList,
 	FileSpreadsheet,
 	GraduationCap,
 	Inbox,
 	LayoutDashboard,
+	ListChecks,
 	Receipt,
 	Settings,
 	Target,
@@ -41,6 +43,7 @@ export const NAV: NavGroup[] = [
 		label: "Personal",
 		items: [
 			{ label: "Dashboard", to: "/", icon: LayoutDashboard, perm: "" },
+			{ label: "Action Center", to: "/action-center", icon: ListChecks, perm: "" },
 			{ label: "My Profile", to: "/me/profile", icon: UserCircle, perm: "" },
 			{
 				label: "Leave",
@@ -105,12 +108,24 @@ export const NAV: NavGroup[] = [
 				perm: "schedule:assignment:write:team",
 				module: "schedule",
 			},
+			{
+				label: "Assignments",
+				to: "/admin/assignments",
+				icon: ClipboardList,
+				perm: "assignment:create:team",
+			},
 		],
 	},
 	{
 		id: "admin",
 		label: "Admin",
 		items: [
+			{
+				label: "Assignments",
+				to: "/admin/assignments",
+				icon: ClipboardList,
+				perm: "assignment:read:org",
+			},
 			{
 				label: "People",
 				to: "/admin/people",

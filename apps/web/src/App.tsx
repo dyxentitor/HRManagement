@@ -8,6 +8,7 @@ import { FeaturesProvider, withFeature } from "./lib/feature-flags";
 import { adminRoutes } from "./modules/admin/routes";
 import { approvalsRoutes } from "./modules/approvals/routes";
 import { authRoutes } from "./modules/auth/routes";
+import { assignmentsRoutes } from "./modules/assignments/routes";
 import { certificationRoutes } from "./modules/certification/routes";
 import { claimsRoutes } from "./modules/claims/routes";
 import { dashboardRoutes } from "./modules/dashboard/routes";
@@ -19,9 +20,7 @@ import { payslipRoutes } from "./modules/payslip/routes";
 import { reportsRoutes } from "./modules/reports/routes";
 import { scheduleRoutes } from "./modules/schedule/routes";
 
-const DashboardPageLazy = lazy(
-	() => import("./modules/dashboard/pages/DashboardPage"),
-);
+const DashboardPageLazy = lazy(() => import("./modules/dashboard/pages/DashboardPage"));
 
 const router = createBrowserRouter([
 	...authRoutes,
@@ -38,6 +37,11 @@ const router = createBrowserRouter([
 				),
 			},
 			...employeeRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...assignmentsRoutes.map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,

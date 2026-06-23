@@ -6,6 +6,7 @@ import {
 	GraduationCap,
 	Inbox,
 	LayoutDashboard,
+	ListChecks,
 	Receipt,
 	Settings,
 	Shield,
@@ -34,6 +35,8 @@ import { type Employee, employeeApi } from "@/modules/employee/api";
 
 const PAGES = [
 	{ label: "Dashboard", to: "/", icon: LayoutDashboard, perm: "" },
+	{ label: "Action Center", to: "/action-center", icon: ListChecks, perm: "" },
+	{ label: "Assignments", to: "/admin/assignments", icon: ListChecks, perm: "assignment:read:org" },
 	{ label: "My Profile", to: "/me/profile", icon: UserCircle, perm: "" },
 	{
 		label: "Leave",
