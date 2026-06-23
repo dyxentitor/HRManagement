@@ -2,6 +2,41 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.33.0] — 2026-06-23
+
+**Action Center & Assignments (v1)** — a general, link-based assignment engine + an employee
+workspace. Spec/plan: `docs/superpowers/specs|plans/2026-06-23-action-center-assignments*.md`.
+
+### Added
+
+- **New `modules.assignments` app** — `Assignment` (title · type `task`/`acknowledge` · link
+  [internal route / external URL] · default due date · draft/published/archived) and per-employee
+  `AssignmentRecipient` (`pending`/`completed`; **overdue derived**, no cron flip). Self-attested
+  completion captures `completed_at` + IP (audit-lite); designed extensible via `type`/`link_target`.
+- **Engine + endpoints** — `POST /assignments/` (create + publish fan-out), `GET /assignments/me/`,
+  `POST /assignments/{id}/complete/` (owner-only), `{id}/publish`, `{id}/archive`, list/retrieve
+  (+ `done/total/overdue` summary). **HR/Admin assign to anyone; managers to their direct reports**
+  (server-enforced via `Employee.manager_id`).
+- **Permissions (+3 → 120):** `assignment:create:org` (org_admin, hr_manager),
+  `assignment:create:team` (manager, team_lead), `assignment:read:org`.
+- **Notifications** — `assignment.assigned` on publish + a daily Celery task for
+  `assignment.reminder` (due tomorrow) / `assignment.overdue`.
+- **Frontend** — **Action Center** (`/action-center`, all employees): Overdue · Due soon · Upcoming ·
+  Completed, with Open-link + Mark complete/Acknowledge, and a read-only **Training** section merging
+  existing training assignments (deep-link to `/growth`). **Assignments** admin (`/admin/assignments`):
+  create drawer (type · link · due · target picker; managers auto-scoped) + per-assignment tracking.
+  Sidebar + command-palette entries.
+
+### Non-goals (deferred, designed-around)
+
+Native questionnaire/poll/quiz builder, recurrence, completion auto-detection, evidence-upload,
+grading — all slot in later behind the `type` field.
+
+### Tests
+
+- Backend **832 passed** (+12: model overdue-derivation, perm seeding, engine manager-scope/publish/
+  complete, endpoint gating + owner-only complete, reminder task). Frontend **414 passed** (+4: Action
+  Center buckets/acknowledge, admin list/create). Contracts regenerated.
 ## [1.32.1] — 2026-06-23
 
 ### Changed
