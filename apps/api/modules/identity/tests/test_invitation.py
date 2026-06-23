@@ -146,6 +146,41 @@ def _make_user(org, email, role_code):
     return u
 
 
+@pytest.mark.django_db
+def test_employee_invite_action_sends_and_resends(org):
+    import datetime as _dt
+
+    from modules.employee.models import Employee
+    from modules.organization.models import Department
+
+    dept = Department.all_objects.create(org_id=org.id, name="Eng")
+    target = User.objects.create_user(email="newhire2@x.com", password="x", org_id=org.id)
+    emp = Employee.all_objects.create(
+        org_id=org.id,
+        user=target,
+        employee_code="E9",
+        first_name="New",
+        last_name="Hire",
+        email="newhire2@x.com",
+        department=dept,
+        employment_type="fulltime",
+        hire_date=_dt.date(2024, 1, 1),
+    )
+    c = APIClient()
+    c.force_authenticate(_make_user(org, "hr2@x.com", "org_admin"))  # has user:create
+
+    # no invitation yet → "sent" + created
+    r = c.post(f"/api/v1/employees/{emp.id}/invite/")
+    assert r.status_code == 200, r.content
+    assert r.json()["status"] == "sent"
+    assert Invitation.objects.filter(user_id=target.id, status="sent").exists()
+
+    # second call → "resent"
+    r2 = c.post(f"/api/v1/employees/{emp.id}/invite/")
+    assert r2.status_code == 200, r2.content
+    assert r2.json()["status"] == "resent"
+
+
 def test_public_verify_and_activate_http(org, user):
     _, raw = inv_service.create_invitation(user, created_by=None)
     c = APIClient()

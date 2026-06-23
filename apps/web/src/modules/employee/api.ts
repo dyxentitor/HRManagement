@@ -220,6 +220,19 @@ export const employeeApi = {
 			throw new Error("Archive failed");
 		}
 	},
+	/** Send or resend the onboarding invitation for the employee's linked user. */
+	sendInvite: async (id: string): Promise<{ status: "sent" | "resent" }> => {
+		const headers = await authHeaders({ "Content-Type": "application/json" });
+		const resp = await fetch(`${BASE_URL}/api/v1/employees/${id}/invite/`, {
+			method: "POST",
+			headers,
+		});
+		if (!resp.ok) {
+			const body = await resp.json().catch(() => ({}));
+			throw new Error(body?.detail || body?.errors?.[0]?.message || "Could not send invite");
+		}
+		return resp.json() as Promise<{ status: "sent" | "resent" }>;
+	},
 	assignTeam: async (id: string, teamId: string | null): Promise<void> => {
 		const headers = await authHeaders({ "Content-Type": "application/json" });
 		const resp = await fetch(`${BASE_URL}/api/v1/employees/${id}/`, {

@@ -72,6 +72,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return ["employee:archive"]
         if action == "link_user":
             return ["employee:write:org"]
+        if action == "invite":
+            return ["user:create"]
         if action in ("me_photo_presigned_upload", "me_photo"):
             # Same gate as the existing /me action: any authenticated user with
             # a linked Employee record. Inline 404 in the action handles the
@@ -303,6 +305,36 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 after={"employee_id": str(emp.id)},
             )
         return Response(self.get_serializer(emp).data)
+
+    @action(detail=True, methods=["post"], url_path="invite")
+    def invite(self, request, pk=None):
+        """Send or resend the onboarding invitation for this employee's linked user."""
+        from rest_framework.exceptions import ValidationError
+
+        from modules.identity.models import Invitation, User
+        from modules.identity.services import invitation as inv_service
+
+        emp = self.get_object()
+        if not emp.user_id:
+            raise ValidationError({"detail": "Employee has no linked login account."})
+        user = User.objects.filter(id=emp.user_id, org_id=request.user.org_id).first()
+        if user is None:
+            raise ValidationError({"detail": "Linked account not found."})
+        if Invitation.objects.filter(user_id=user.id, status="activated").exists():
+            raise ValidationError({"detail": "This account is already activated."})
+        existing = (
+            Invitation.objects.filter(user_id=user.id)
+            .exclude(status="activated")
+            .order_by("-created_at")
+            .first()
+        )
+        if existing is not None:
+            inv_service.resend(existing, by=request.user.id)
+            return Response({"status": "resent"})
+        inv_service.create_invitation(
+            user, created_by=request.user.id, sent_to=emp.personal_email or None
+        )
+        return Response({"status": "sent"})
 
     @action(detail=True, methods=["get"], url_path="direct-reports")
     def direct_reports(self, request, pk=None):
