@@ -45,4 +45,9 @@ app.conf.beat_schedule = {
         "task": "modules.leave.tasks.carry_forward_expiry_sweep",
         "schedule": crontab(hour=2, minute=30),
     },
+    "assignment-reminders": {
+        # Daily 02:45 KL: reminders for assignments due tomorrow + overdue notices.
+        "task": "modules.assignments.tasks.assignment_reminders",
+        "schedule": crontab(hour=2, minute=45),
+    },
 }

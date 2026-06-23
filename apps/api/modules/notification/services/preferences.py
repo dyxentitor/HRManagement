@@ -36,6 +36,10 @@ DEFAULT_PREFERENCES: list[tuple[str, bool, bool, bool]] = [
     ("cert.expiring_soon", True, True, False),
     # schedule
     ("schedule.roster_published", True, True, False),
+    # assignments / action center
+    ("assignment.assigned", True, True, False),
+    ("assignment.reminder", True, True, False),
+    ("assignment.overdue", True, True, False),
 ]
 
 SECURITY_TYPES: frozenset[str] = frozenset(t for t, _i, _e, sec in DEFAULT_PREFERENCES if sec)
