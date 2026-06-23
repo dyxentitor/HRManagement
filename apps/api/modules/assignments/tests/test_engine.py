@@ -70,9 +70,7 @@ def test_publish_fans_out_and_is_idempotent(stack):
     assert AssignmentRecipient.objects.filter(assignment=a).count() == 2
     assert a.recipients.first().due_date == a.default_due_date
     # re-publish same targets → no duplicates
-    engine.publish(
-        a, target_employee_ids=[stack["r1"].id, stack["r2"].id], actor_id=stack["mu"].id
-    )
+    engine.publish(a, target_employee_ids=[stack["r1"].id, stack["r2"].id], actor_id=stack["mu"].id)
     assert AssignmentRecipient.objects.filter(assignment=a).count() == 2
 
 

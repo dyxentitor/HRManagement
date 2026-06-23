@@ -45,9 +45,7 @@ class Assignment(models.Model):
 class AssignmentRecipient(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     org_id = models.UUIDField(db_index=True)
-    assignment = models.ForeignKey(
-        Assignment, on_delete=models.CASCADE, related_name="recipients"
-    )
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="recipients")
     employee_id = models.UUIDField(db_index=True)
     due_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=RECIPIENT_STATUS, default="pending")

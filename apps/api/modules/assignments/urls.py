@@ -1,6 +1,8 @@
 from rest_framework.routers import DefaultRouter
 
+from .views import AssignmentViewSet
+
 router = DefaultRouter()
-# AssignmentViewSet registered in Task 4.
+router.register(r"assignments", AssignmentViewSet, basename="assignment")
 
 urlpatterns = router.urls
