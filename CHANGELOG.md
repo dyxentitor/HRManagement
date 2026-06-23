@@ -2,6 +2,23 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.32.0] — 2026-06-23
+
+Premium **collapsible field sections** on the employee edit page (continuing the reference pass).
+
+### Changed
+
+- Each field section now has a **leading icon** and, when collapsed, a **one-line summary** of its
+  data (Identity → *name · code*, Employment → *role · dept · type*, Address → *city, state*, Banking
+  → *bank · tax IDs encrypted*, Emergency → *name · relationship*). The full header row is the toggle.
+- **Edit page sections are collapsed by default** (scannable progressive disclosure); **create** keeps
+  the required-field sections (Identity, Employment) open and the rest collapsed.
+- **Emergency Contact is now its own section** (split out of Banking & Tax IDs) — 6 sections total.
+
+### Tests
+
+- Frontend **410 passed** (edit tests expand a section before asserting fields). No field /
+  validation / API change; backend unchanged (**820**).
 ## [1.31.0] — 2026-06-23
 
 Employee edit-page **hero** gains quick actions + a horizontal meta strip, matching the reference.
