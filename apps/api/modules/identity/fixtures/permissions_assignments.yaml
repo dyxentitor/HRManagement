@@ -1,0 +1,5 @@
+# Permission codes added in v1.33.0 (Action Center & Assignments).
+
+- { code: "assignment:create:org",  description: Create/assign assignments to anyone in the org }
+- { code: "assignment:create:team", description: Assign assignments to own direct reports }
+- { code: "assignment:read:org",    description: View all assignments + completion across the org }

@@ -121,6 +121,8 @@
     - "announcement:write"
     - "onboarding:read"
     - "onboarding:write"
+    - "assignment:create:org"
+    - "assignment:read:org"
     - "payroll:exception:read"
     - "payroll:exception:write"
 
@@ -238,6 +240,8 @@
     - "announcement:write"
     - "onboarding:read"
     - "onboarding:write"
+    - "assignment:create:org"
+    - "assignment:read:org"
     - "payroll:exception:read"
 
 - code: finance
@@ -293,6 +297,7 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - assignment:create:team
     - user:read:self
     - user:read:team
     - role:read
@@ -357,6 +362,7 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - assignment:create:team
     - user:read:self
     - user:read:team
     - role:read
