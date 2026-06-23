@@ -1,4 +1,4 @@
-import { CheckCircle2, ExternalLink, ListChecks, ShieldCheck } from "lucide-react";
+import { CheckCircle2, ExternalLink, GraduationCap, ListChecks, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { type TrainingAssignment, certificationApi } from "@/modules/certification/api";
 import { type RecipientRow, assignmentsApi } from "../api";
 
 type Bucket = "Overdue" | "Due soon" | "Upcoming" | "Completed";
@@ -26,6 +27,7 @@ const ORDER: Bucket[] = ["Overdue", "Due soon", "Upcoming", "Completed"];
 
 export default function ActionCenterPage() {
 	const [rows, setRows] = useState<RecipientRow[] | null>(null);
+	const [training, setTraining] = useState<TrainingAssignment[]>([]);
 	const [busy, setBusy] = useState<string | null>(null);
 
 	const load = useCallback(async () => {
@@ -33,6 +35,13 @@ export default function ActionCenterPage() {
 			setRows(await assignmentsApi.myAssignments());
 		} catch {
 			setRows([]);
+		}
+		// read-only aggregation of existing training assignments (graceful if module off)
+		try {
+			const t = await certificationApi.myAssignments();
+			setTraining(t.filter((a) => a.status !== "completed"));
+		} catch {
+			setTraining([]);
 		}
 	}, []);
 
@@ -138,6 +147,28 @@ export default function ActionCenterPage() {
 						</ul>
 					</section>
 				))
+			)}
+
+			{training.length > 0 && (
+				<section className="space-y-2">
+					<p className="layer-eyebrow">Training</p>
+					<ul className="space-y-2">
+						{training.map((t) => (
+							<li key={t.id} className="glass-surface rounded-xl px-4 py-3 flex items-center gap-3">
+								<GraduationCap className="size-5 text-peach shrink-0" aria-hidden />
+								<div className="min-w-0 flex-1">
+									<p className="text-body text-text-primary truncate">{t.plan_name}</p>
+									<p className="text-[11px] text-text-tertiary">
+										{t.due_date ? `Due ${t.due_date}` : "Training"} · complete in Growth
+									</p>
+								</div>
+								<Button asChild variant="outline" size="sm">
+									<Link to="/growth">Open</Link>
+								</Button>
+							</li>
+						))}
+					</ul>
+				</section>
 			)}
 		</div>
 	);

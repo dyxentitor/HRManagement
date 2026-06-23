@@ -5,6 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({ myAssignments: vi.fn(), complete: vi.fn() }));
 vi.mock("../api", () => ({ assignmentsApi: api }));
+vi.mock("@/modules/certification/api", () => ({
+	certificationApi: { myAssignments: vi.fn().mockResolvedValue([]) },
+}));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import ActionCenterPage from "./ActionCenterPage";
