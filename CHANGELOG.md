@@ -2,6 +2,31 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.34.0] — 2026-06-24
+
+**Native questionnaires & polls (Assignments Phase 2)** — assignments can now carry their own
+questions instead of only linking out. Builds on v1.33.0's extensible `type` field.
+
+### Added
+
+- **`questionnaire` assignment type** + `AssignmentQuestion` (single-choice · multi-choice ·
+  short-text · rating 1-5; ordered; required flag) and `AssignmentResponse` (one row per
+  recipient+question, **attributed**). Submitting answers **auto-completes** the recipient.
+- **Endpoints:** `GET /assignments/{id}/questionnaire/` (take — owner-only), `POST
+  /assignments/{id}/submit/` (validates required answers → completes + audits), `GET
+  /assignments/{id}/responses/` (HR aggregate — choice counts / text list, gated `assignment:read:org`).
+- **Frontend:** create-drawer **question builder** (add/remove, per-question type + options);
+  dedicated **taker page** `/action-center/q/:id` (radio / checkbox / text / rating + required
+  validation); questionnaire cards in the Action Center route to the taker.
+
+### Non-goals (still deferred)
+
+Branching/skip-logic, scoring/grading, anonymous responses, recurrence (next phase).
+
+### Tests
+
+- Backend **835** (+3). Frontend **415** (+1). Contracts regenerated.
+
 ## [1.33.0] — 2026-06-23
 
 **Action Center & Assignments (v1)** — a general, link-based assignment engine + an employee
