@@ -260,6 +260,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assignments/{id}/evidence-url/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assignments_evidence_url_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assignments/{id}/publish/": {
         parameters: {
             query?: never;
@@ -302,6 +318,22 @@ export interface paths {
         get: operations["assignments_responses_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assignments/{id}/revise/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assignments_revise_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3391,6 +3423,8 @@ export interface components {
             /** Format: date-time */
             readonly created_at: string;
             complete_on?: string;
+            requires_evidence?: boolean;
+            readonly version: number;
             recurrence?: components["schemas"]["RecurrenceEnum"];
             recurrence_interval?: number;
             /** Format: date */
@@ -3408,6 +3442,7 @@ export interface components {
             /** Format: date */
             default_due_date?: string | null;
             complete_on?: string;
+            requires_evidence?: boolean;
             recurrence?: components["schemas"]["RecurrenceEnum"];
             recurrence_interval?: number;
             /** Format: date */
@@ -4408,6 +4443,7 @@ export interface components {
             /** Format: date */
             default_due_date?: string | null;
             complete_on?: string;
+            requires_evidence?: boolean;
             recurrence?: components["schemas"]["RecurrenceEnum"];
             recurrence_interval?: number;
             /** Format: date */
@@ -5572,6 +5608,32 @@ export interface operations {
             };
         };
     };
+    assignments_evidence_url_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentRequest"];
+                "multipart/form-data": components["schemas"]["AssignmentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
     assignments_publish_create: {
         parameters: {
             query?: never;
@@ -5629,6 +5691,32 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+        };
+    };
+    assignments_revise_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignmentRequest"];
+                "multipart/form-data": components["schemas"]["AssignmentRequest"];
+            };
+        };
         responses: {
             200: {
                 headers: {
