@@ -1,22 +1,25 @@
-import { BarChart3, Plus } from "lucide-react";
+import { BarChart3, ChevronRight, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import { DetailPanel, StatusPill } from "@/components/hrms";
+import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { useCan } from "@/lib/perm";
 
 import { type AssignmentDef, type AssignmentDetail, assignmentsApi } from "../api";
 import { AnalyticsPanel } from "../components/AnalyticsPanel";
+import { AssignmentTrackingPanel } from "../components/AssignmentTrackingPanel";
 
 export default function AssignmentsAdminPage() {
 	const canReadOrg = useCan("assignment:read:org");
 	const canTeam = useCan("assignment:create:team");
 	const [rows, setRows] = useState<AssignmentDef[] | null>(null);
-	const [detail, setDetail] = useState<AssignmentDetail | null>(null);
+	const [openId, setOpenId] = useState<string | null>(null);
+	const [details, setDetails] = useState<Record<string, AssignmentDetail>>({});
 	const [showAnalytics, setShowAnalytics] = useState(false);
 
 	const load = useCallback(async () => {
@@ -30,6 +33,33 @@ export default function AssignmentsAdminPage() {
 	useEffect(() => {
 		void load();
 	}, [load]);
+
+	async function toggle(id: string) {
+		if (openId === id) {
+			setOpenId(null);
+			return;
+		}
+		setOpenId(id); // single-open accordion
+		if (!details[id]) {
+			try {
+				const d = await assignmentsApi.retrieve(id);
+				setDetails((p) => ({ ...p, [id]: d }));
+			} catch {
+				/* leave the skeleton; the row can be re-clicked */
+			}
+		}
+	}
+
+	async function revise(id: string) {
+		try {
+			const res = await assignmentsApi.revise(id);
+			toast.success(`Re-issued as v${res.version} · ${res.reopened} to re-acknowledge`);
+			const d = await assignmentsApi.retrieve(id);
+			setDetails((p) => ({ ...p, [id]: d }));
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Could not re-issue");
+		}
+	}
 
 	if (!canReadOrg && !canTeam) {
 		return (
@@ -79,127 +109,52 @@ export default function AssignmentsAdminPage() {
 				</p>
 			) : (
 				<ul className="glass-surface rounded-2xl px-1.5 py-1">
-					{rows.map((a) => (
-						<li key={a.id}>
-							<button
-								type="button"
-								onClick={() => assignmentsApi.retrieve(a.id).then(setDetail)}
-								className="w-full flex items-center gap-3 px-3 py-2.5 border-t border-border-subtle first:border-t-0 text-left hover:bg-surface-elevated/30"
-							>
-								<div className="min-w-0 flex-1">
-									<p className="text-small text-text-primary truncate">{a.title}</p>
-									<p className="text-[11px] text-text-tertiary capitalize">
-										{a.type} · {a.status}
-										{a.default_due_date ? ` · due ${a.default_due_date}` : ""}
-										{a.recurrence && a.recurrence !== "none" ? ` · ↻ ${a.recurrence}` : ""}
-									</p>
-								</div>
-								<StatusPill
-									tone={a.status === "published" ? "mint" : "lavender"}
-									label={a.status}
-								/>
-							</button>
-						</li>
-					))}
-				</ul>
-			)}
-
-			{detail && (
-				<DetailPanel
-					open={!!detail}
-					onClose={() => setDetail(null)}
-					title={detail.title}
-					footer={
-						detail.type === "acknowledge" ? (
-							<Button
-								variant="outline"
-								className="w-full rounded-xl"
-								onClick={async () => {
-									const res = await assignmentsApi.revise(detail.id);
-									toast.success(`Re-issued as v${res.version} · ${res.reopened} to re-acknowledge`);
-									setDetail(await assignmentsApi.retrieve(detail.id));
-								}}
-							>
-								Re-issue (new version)
-							</Button>
-						) : undefined
-					}
-				>
-					<div className="space-y-4">
-						{/* progress summary */}
-						<div className="space-y-2">
-							<div className="flex items-baseline justify-between">
-								<p className="text-h2 text-text-primary tabular-nums">
-									{rate(detail.summary.done, detail.summary.total)}%
-								</p>
-								<p className="text-[11px] text-text-tertiary">
-									{detail.summary.done}/{detail.summary.total} done
-									{detail.summary.overdue > 0 && (
-										<span className="text-coral"> · {detail.summary.overdue} overdue</span>
-									)}
-									{detail.version && detail.version > 1 ? (
-										<span className="text-text-tertiary"> · v{detail.version}</span>
-									) : null}
-								</p>
-							</div>
-							<div className="h-2 rounded-full bg-surface/60 overflow-hidden">
-								<div
-									className="h-full bg-mint transition-all"
-									style={{ width: `${rate(detail.summary.done, detail.summary.total)}%` }}
-								/>
-							</div>
-						</div>
-
-						{/* recipient list */}
-						<ul className="space-y-1.5">
-							{detail.recipients.map((r) => (
-								<li
-									key={r.id}
-									className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-surface/40"
+					{rows.map((a) => {
+						const open = openId === a.id;
+						return (
+							<li key={a.id} className="border-t border-border-subtle first:border-t-0">
+								<button
+									type="button"
+									aria-expanded={open}
+									onClick={() => toggle(a.id)}
+									className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-elevated/30 rounded-lg"
 								>
-									<span className="size-7 shrink-0 rounded-full grid place-items-center bg-accent-500/15 text-accent-100 text-[10px] font-semibold uppercase">
-										{initials(r.employee_name)}
-									</span>
+									<ChevronRight
+										className={cn(
+											"size-4 shrink-0 text-text-tertiary transition-transform duration-fast",
+											open && "rotate-90 text-accent-200",
+										)}
+									/>
 									<div className="min-w-0 flex-1">
-										<p className="text-small text-text-primary truncate">
-											{r.employee_name || "Unknown employee"}
-										</p>
-										<p className="text-[10px] text-text-tertiary truncate">
-											{r.status === "completed" && r.completed_at
-												? `Completed ${new Date(r.completed_at).toLocaleDateString()}`
-												: r.employee_code || "—"}
+										<p className="text-small text-text-primary truncate">{a.title}</p>
+										<p className="text-[11px] text-text-tertiary capitalize">
+											{a.type} · {a.status}
+											{a.default_due_date ? ` · due ${a.default_due_date}` : ""}
+											{a.recurrence && a.recurrence !== "none" ? ` · ↻ ${a.recurrence}` : ""}
 										</p>
 									</div>
 									<StatusPill
-										tone={
-											r.effective_status === "completed"
-												? "mint"
-												: r.effective_status === "overdue"
-													? "coral"
-													: "yellow"
-										}
-										label={r.effective_status}
+										tone={a.status === "published" ? "mint" : "lavender"}
+										label={a.status}
 									/>
-								</li>
-							))}
-						</ul>
-					</div>
-				</DetailPanel>
+								</button>
+
+								{open &&
+									(details[a.id] ? (
+										<AssignmentTrackingPanel
+											detail={details[a.id]}
+											onRevise={() => revise(a.id)}
+										/>
+									) : (
+										<div className="px-4 pb-4">
+											<Skeleton className="h-28 rounded-xl" />
+										</div>
+									))}
+							</li>
+						);
+					})}
+				</ul>
 			)}
 		</div>
-	);
-}
-
-function rate(done: number, total: number): number {
-	return total ? Math.round((done / total) * 100) : 0;
-}
-
-function initials(name?: string): string {
-	if (!name) return "?";
-	const parts = name.trim().split(/\s+/);
-	return (
-		(
-			(parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "")
-		).toUpperCase() || "?"
 	);
 }
