@@ -114,6 +114,10 @@ export default function ActionCenterPage() {
 										<span className="inline-flex items-center gap-1.5 text-small text-mint">
 											<CheckCircle2 className="size-4" /> Done
 										</span>
+									) : r.assignment.type === "questionnaire" ? (
+										<Button asChild size="sm" className="soft-glow rounded-xl shrink-0">
+											<Link to={`/action-center/q/${r.assignment.id}`}>Answer</Link>
+										</Button>
 									) : (
 										<>
 											{r.assignment.link_url &&

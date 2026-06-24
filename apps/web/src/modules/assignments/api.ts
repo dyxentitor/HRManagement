@@ -1,6 +1,36 @@
 import { api } from "@/lib/api";
 
-export type AssignmentType = "task" | "acknowledge";
+export type AssignmentType = "task" | "acknowledge" | "questionnaire";
+export type QuestionType = "single_choice" | "multi_choice" | "short_text" | "rating";
+
+export interface Question {
+	id: string;
+	order: number;
+	text: string;
+	qtype: QuestionType;
+	options: string[];
+	required: boolean;
+}
+export interface QuestionnairePayload {
+	assignment: AssignmentDef;
+	questions: Question[];
+	completed: boolean;
+}
+export type QuestionDraft = {
+	text: string;
+	qtype: QuestionType;
+	options: string[];
+	required: boolean;
+};
+export type ResponseAggregate =
+	| {
+			id: string;
+			text: string;
+			qtype: "single_choice" | "multi_choice";
+			counts: Record<string, number>;
+			total: number;
+	  }
+	| { id: string; text: string; qtype: "short_text" | "rating"; answers: unknown[] };
 export type AssignmentStatus = "draft" | "published" | "archived";
 export type RecipientStatus = "pending" | "completed";
 export type EffectiveStatus = "pending" | "completed" | "overdue";
@@ -50,6 +80,7 @@ export interface CreateAssignmentBody {
 	default_due_date?: string | null;
 	target: { kind: "employee" | "team" | "department" | "org"; ids: string[] };
 	publish?: boolean;
+	questions?: QuestionDraft[];
 }
 
 function _msg(error: unknown, fallback: string): string {
@@ -86,4 +117,9 @@ export const assignmentsApi = {
 	retrieve: (id: string) => _get<AssignmentDetail>(`/api/v1/assignments/${id}/`),
 	create: (body: CreateAssignmentBody) => _post<AssignmentDef>("/api/v1/assignments/", body),
 	archive: (id: string) => _post<AssignmentDef>(`/api/v1/assignments/${id}/archive/`),
+	questionnaire: (id: string) =>
+		_get<QuestionnairePayload>(`/api/v1/assignments/${id}/questionnaire/`),
+	submit: (id: string, answers: Record<string, unknown>) =>
+		_post<RecipientRow>(`/api/v1/assignments/${id}/submit/`, { answers }),
+	responses: (id: string) => _get<ResponseAggregate[]>(`/api/v1/assignments/${id}/responses/`),
 };
