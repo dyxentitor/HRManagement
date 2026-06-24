@@ -2,6 +2,25 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.39.0] — 2026-06-24
+
+**Dedicated assignment create page** — replaces the cramped create drawer with a proper workspace.
+
+### Changed
+
+- New route **`/admin/assignments/new`** (`AssignmentCreatePage`): a premium, sectioned form in the
+  command-center language — a **type-chooser** (Task / Acknowledge / Questionnaire) as the signature
+  element, glass-surface sections (Details · Link & completion / Document / Questions · Audience ·
+  Schedule), and a full-width sticky action bar (matches `EmployeeForm`). Carries the full feature set:
+  questionnaire builder, audience picker (manager-scoped), recurrence, auto-complete trigger, proof
+  upload. The admin **New assignment** button now links here.
+- Removed `CreateAssignmentDrawer` (superseded). Tests updated.
+
+### Tests
+
+- Frontend **416** (admin links to `/new`; create-page publish + question-builder). Backend unchanged
+  at **843** (no backend code changed).
+
 ## [1.38.0] — 2026-06-24
 
 **Evidence upload + versioned acknowledgement (Assignments Phase 6)** — proof-of-completion and
