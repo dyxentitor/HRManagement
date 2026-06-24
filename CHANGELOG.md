@@ -2,6 +2,28 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.39.1] — 2026-06-24
+
+**Fix: blank rows in the assignment tracking panel + redesign.**
+
+### Fixed
+
+- The admin assignment detail listed recipients as **blank bars** — the recipient payload only carried
+  an (unshown) UUID, never a name. `GET /assignments/{id}/` now enriches each recipient with
+  `employee_name` + `employee_code`.
+
+### Changed
+
+- The tracking view is redesigned from an inline block (which sat awkwardly below the list) into a
+  **`DetailPanel` slide-over**: a big completion-% with a progress bar, then a clean recipient list with
+  **avatar initials, names, employee code / completed date, and status pills** — consistent with the
+  rest of the app. Re-issue moved into the panel footer.
+
+### Tests
+
+- Backend **845** (retrieve enriches recipients with a real name; + the `seed_assignments` demo
+  command's test). Frontend **417**. Contracts regenerated.
+
 ## [1.39.0] — 2026-06-24
 
 **Dedicated assignment create page** — replaces the cramped create drawer with a proper workspace.
