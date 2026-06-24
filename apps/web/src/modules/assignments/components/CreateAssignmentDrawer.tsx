@@ -10,6 +10,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { type Employee, employeeApi } from "@/modules/employee/api";
 import {
 	type AssignmentType,
+	type CompleteOn,
 	type QuestionDraft,
 	type QuestionType,
 	type Recurrence,
@@ -43,6 +44,7 @@ export function CreateAssignmentDrawer({
 	const [questions, setQuestions] = useState<QuestionDraft[]>([]);
 	const [recurrence, setRecurrence] = useState<Recurrence>("none");
 	const [recurrenceUntil, setRecurrenceUntil] = useState("");
+	const [completeOn, setCompleteOn] = useState<CompleteOn>("manual");
 	const [busy, setBusy] = useState(false);
 
 	const addQuestion = () =>
@@ -92,6 +94,7 @@ export function CreateAssignmentDrawer({
 				target,
 				recurrence,
 				recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
+				complete_on: type === "task" ? completeOn : "manual",
 				questions:
 					type === "questionnaire"
 						? questions
@@ -156,6 +159,21 @@ export function CreateAssignmentDrawer({
 						onChange={(e) => setLinkUrl(e.target.value)}
 					/>
 				</Field>
+
+				{type === "task" && (
+					<Field label="Mark complete">
+						<select
+							aria-label="Mark complete"
+							className={SELECT}
+							value={completeOn}
+							onChange={(e) => setCompleteOn(e.target.value as CompleteOn)}
+						>
+							<option value="manual">Manually (employee marks done)</option>
+							<option value="profile_completed">Auto — when their profile is 100% complete</option>
+							<option value="leave_requested">Auto — when they submit a leave request</option>
+						</select>
+					</Field>
+				)}
 
 				{type === "questionnaire" && (
 					<div className="space-y-2 border border-border-subtle rounded-xl p-3">

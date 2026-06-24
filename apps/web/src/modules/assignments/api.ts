@@ -32,6 +32,7 @@ export type ResponseAggregate =
 	  }
 	| { id: string; text: string; qtype: "short_text" | "rating"; answers: unknown[] };
 export type Recurrence = "none" | "daily" | "weekly" | "monthly" | "yearly";
+export type CompleteOn = "manual" | "profile_completed" | "leave_requested";
 export type AssignmentStatus = "draft" | "published" | "archived";
 export type RecipientStatus = "pending" | "completed";
 export type EffectiveStatus = "pending" | "completed" | "overdue";
@@ -47,6 +48,7 @@ export interface AssignmentDef {
 	default_due_date: string | null;
 	status: AssignmentStatus;
 	created_at: string;
+	complete_on?: CompleteOn;
 	recurrence?: Recurrence;
 	recurrence_interval?: number;
 	recurrence_until?: string | null;
@@ -87,6 +89,7 @@ export interface CreateAssignmentBody {
 	target: { kind: "employee" | "team" | "department" | "org"; ids: string[] };
 	publish?: boolean;
 	questions?: QuestionDraft[];
+	complete_on?: CompleteOn;
 	recurrence?: Recurrence;
 	recurrence_interval?: number;
 	recurrence_until?: string | null;
