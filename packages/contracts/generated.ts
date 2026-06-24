@@ -3374,6 +3374,7 @@ export interface components {
             readonly created_by: string | null;
             /** Format: date-time */
             readonly created_at: string;
+            complete_on?: string;
             recurrence?: components["schemas"]["RecurrenceEnum"];
             recurrence_interval?: number;
             /** Format: date */
@@ -3390,6 +3391,7 @@ export interface components {
             link_target?: components["schemas"]["LinkTargetEnum"];
             /** Format: date */
             default_due_date?: string | null;
+            complete_on?: string;
             recurrence?: components["schemas"]["RecurrenceEnum"];
             recurrence_interval?: number;
             /** Format: date */
@@ -4389,6 +4391,7 @@ export interface components {
             link_target?: components["schemas"]["LinkTargetEnum"];
             /** Format: date */
             default_due_date?: string | null;
+            complete_on?: string;
             recurrence?: components["schemas"]["RecurrenceEnum"];
             recurrence_interval?: number;
             /** Format: date */
