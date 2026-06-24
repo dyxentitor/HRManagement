@@ -1,5 +1,6 @@
 import { BarChart3, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { StatusPill } from "@/components/hrms";
@@ -10,13 +11,11 @@ import { useCan } from "@/lib/perm";
 
 import { type AssignmentDef, type AssignmentDetail, assignmentsApi } from "../api";
 import { AnalyticsPanel } from "../components/AnalyticsPanel";
-import { CreateAssignmentDrawer } from "../components/CreateAssignmentDrawer";
 
 export default function AssignmentsAdminPage() {
 	const canReadOrg = useCan("assignment:read:org");
 	const canTeam = useCan("assignment:create:team");
 	const [rows, setRows] = useState<AssignmentDef[] | null>(null);
-	const [drawer, setDrawer] = useState(false);
 	const [detail, setDetail] = useState<AssignmentDetail | null>(null);
 	const [showAnalytics, setShowAnalytics] = useState(false);
 
@@ -61,8 +60,10 @@ export default function AssignmentsAdminPage() {
 								<BarChart3 className="size-4 mr-1" /> {showAnalytics ? "Hide" : "Analytics"}
 							</Button>
 						)}
-						<Button size="sm" className="soft-glow rounded-xl" onClick={() => setDrawer(true)}>
-							<Plus className="size-4 mr-1" /> New assignment
+						<Button asChild size="sm" className="soft-glow rounded-xl">
+							<Link to="/admin/assignments/new">
+								<Plus className="size-4 mr-1" /> New assignment
+							</Link>
 						</Button>
 					</div>
 				}
@@ -102,13 +103,6 @@ export default function AssignmentsAdminPage() {
 					))}
 				</ul>
 			)}
-
-			<CreateAssignmentDrawer
-				open={drawer}
-				onClose={() => setDrawer(false)}
-				onCreated={load}
-				managerScoped={!canReadOrg && canTeam}
-			/>
 
 			{detail && (
 				<div className="glass-surface rounded-2xl p-4">
