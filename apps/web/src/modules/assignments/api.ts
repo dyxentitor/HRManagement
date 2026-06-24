@@ -85,6 +85,8 @@ export interface AssignmentDetail extends AssignmentDef {
 	recipients: {
 		id: string;
 		employee_id?: string;
+		employee_name?: string;
+		employee_code?: string;
 		due_date: string | null;
 		status: RecipientStatus;
 		effective_status: EffectiveStatus;

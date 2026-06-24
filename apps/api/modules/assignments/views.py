@@ -92,7 +92,24 @@ class AssignmentViewSet(viewsets.ModelViewSet):
             "done": sum(1 for r in recips if r.status == "completed"),
             "overdue": sum(1 for r in recips if r.effective_status == "overdue"),
         }
-        data["recipients"] = RecipientSerializer(recips, many=True).data
+        emps = {
+            e["id"]: e
+            for e in Employee.all_objects.filter(org_id=a.org_id).values(
+                "id", "first_name", "last_name", "employee_code"
+            )
+        }
+        rows = []
+        for r in recips:
+            d = RecipientSerializer(r).data
+            e = emps.get(r.employee_id)
+            name = f"{e['first_name']} {e['last_name']}".strip() if e else ""
+            d["employee_id"] = str(r.employee_id)
+            d["employee_name"] = name or "Unknown employee"
+            d["employee_code"] = e["employee_code"] if e else ""
+            rows.append(d)
+        # show completed first-done last? keep pending-then-completed for a clean glance
+        rows.sort(key=lambda x: (x["status"] == "completed", x["employee_name"]))
+        data["recipients"] = rows
         return Response(data)
 
     @action(detail=False, methods=["get"], url_path="analytics")

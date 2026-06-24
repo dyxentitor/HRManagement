@@ -149,3 +149,21 @@ def test_complete_404_when_not_a_recipient(stack):
     )
     a = Assignment.objects.get(title="Only R1")
     assert stack["c"]["r2"].post(f"/api/v1/assignments/{a.id}/complete/").status_code == 404
+
+
+def test_retrieve_enriches_recipients_with_employee_name(stack):
+    e = stack["emp"]
+    stack["c"]["hr"].post(
+        "/api/v1/assignments/",
+        {
+            "title": "Named",
+            "type": "task",
+            "target": {"kind": "employee", "ids": [str(e["r1"].id)]},
+        },
+        format="json",
+    )
+    a = Assignment.objects.get(title="Named")
+    body = stack["c"]["hr"].get(f"/api/v1/assignments/{a.id}/").json()
+    rec = body["recipients"][0]
+    assert rec["employee_name"] and rec["employee_name"] != rec["employee_id"]
+    assert "employee_code" in rec

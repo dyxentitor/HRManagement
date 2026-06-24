@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import { StatusPill } from "@/components/hrms";
+import { DetailPanel, StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -105,67 +105,101 @@ export default function AssignmentsAdminPage() {
 			)}
 
 			{detail && (
-				<div className="glass-surface rounded-2xl p-4">
-					<header className="flex items-center justify-between mb-2">
-						<h2 className="text-h3 text-text-primary">
-							{detail.title}
-							{detail.version && detail.version > 1 ? (
-								<span className="text-small text-text-tertiary ml-2">v{detail.version}</span>
-							) : null}
-						</h2>
-						<div className="flex items-center gap-3">
-							{detail.type === "acknowledge" && (
-								<button
-									type="button"
-									className="text-small text-accent-200 hover:text-accent-50"
-									onClick={async () => {
-										const res = await assignmentsApi.revise(detail.id);
-										toast.success(
-											`Re-issued as v${res.version} · ${res.reopened} to re-acknowledge`,
-										);
-										setDetail(await assignmentsApi.retrieve(detail.id));
-									}}
-								>
-									Re-issue (new version)
-								</button>
-							)}
-							<button
-								type="button"
-								className="text-small text-text-tertiary"
-								onClick={() => setDetail(null)}
+				<DetailPanel
+					open={!!detail}
+					onClose={() => setDetail(null)}
+					title={detail.title}
+					footer={
+						detail.type === "acknowledge" ? (
+							<Button
+								variant="outline"
+								className="w-full rounded-xl"
+								onClick={async () => {
+									const res = await assignmentsApi.revise(detail.id);
+									toast.success(`Re-issued as v${res.version} · ${res.reopened} to re-acknowledge`);
+									setDetail(await assignmentsApi.retrieve(detail.id));
+								}}
 							>
-								Close
-							</button>
-						</div>
-					</header>
-					<p className="text-small text-text-secondary mb-3">
-						<b className="text-mint">{detail.summary.done}</b> / {detail.summary.total} done ·{" "}
-						<b className="text-coral">{detail.summary.overdue}</b> overdue
-					</p>
-					<ul className="space-y-1 text-small">
-						{detail.recipients.map((r) => (
-							<li
-								key={r.id}
-								className="flex items-center justify-between glass-surface rounded-lg px-3 py-1.5"
-							>
-								<span className="text-text-secondary font-mono text-[11px] truncate">
-									{r.employee_id}
-								</span>
-								<StatusPill
-									tone={
-										r.effective_status === "completed"
-											? "mint"
-											: r.effective_status === "overdue"
-												? "coral"
-												: "yellow"
-									}
-									label={r.effective_status}
+								Re-issue (new version)
+							</Button>
+						) : undefined
+					}
+				>
+					<div className="space-y-4">
+						{/* progress summary */}
+						<div className="space-y-2">
+							<div className="flex items-baseline justify-between">
+								<p className="text-h2 text-text-primary tabular-nums">
+									{rate(detail.summary.done, detail.summary.total)}%
+								</p>
+								<p className="text-[11px] text-text-tertiary">
+									{detail.summary.done}/{detail.summary.total} done
+									{detail.summary.overdue > 0 && (
+										<span className="text-coral"> · {detail.summary.overdue} overdue</span>
+									)}
+									{detail.version && detail.version > 1 ? (
+										<span className="text-text-tertiary"> · v{detail.version}</span>
+									) : null}
+								</p>
+							</div>
+							<div className="h-2 rounded-full bg-surface/60 overflow-hidden">
+								<div
+									className="h-full bg-mint transition-all"
+									style={{ width: `${rate(detail.summary.done, detail.summary.total)}%` }}
 								/>
-							</li>
-						))}
-					</ul>
-				</div>
+							</div>
+						</div>
+
+						{/* recipient list */}
+						<ul className="space-y-1.5">
+							{detail.recipients.map((r) => (
+								<li
+									key={r.id}
+									className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-surface/40"
+								>
+									<span className="size-7 shrink-0 rounded-full grid place-items-center bg-accent-500/15 text-accent-100 text-[10px] font-semibold uppercase">
+										{initials(r.employee_name)}
+									</span>
+									<div className="min-w-0 flex-1">
+										<p className="text-small text-text-primary truncate">
+											{r.employee_name || "Unknown employee"}
+										</p>
+										<p className="text-[10px] text-text-tertiary truncate">
+											{r.status === "completed" && r.completed_at
+												? `Completed ${new Date(r.completed_at).toLocaleDateString()}`
+												: r.employee_code || "—"}
+										</p>
+									</div>
+									<StatusPill
+										tone={
+											r.effective_status === "completed"
+												? "mint"
+												: r.effective_status === "overdue"
+													? "coral"
+													: "yellow"
+										}
+										label={r.effective_status}
+									/>
+								</li>
+							))}
+						</ul>
+					</div>
+				</DetailPanel>
 			)}
 		</div>
+	);
+}
+
+function rate(done: number, total: number): number {
+	return total ? Math.round((done / total) * 100) : 0;
+}
+
+function initials(name?: string): string {
+	if (!name) return "?";
+	const parts = name.trim().split(/\s+/);
+	return (
+		(
+			(parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "")
+		).toUpperCase() || "?"
 	);
 }
