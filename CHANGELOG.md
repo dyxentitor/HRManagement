@@ -2,6 +2,25 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.40.0] — 2026-06-24
+
+**Collapsible assignment tracking** — redesign of the admin tracking UX (designed in the visual
+companion; "Power" option chosen).
+
+### Changed
+
+- The admin assignment list is now an **accordion**: clicking a row expands it **in place**
+  (single-open) into an `AssignmentTrackingPanel` instead of opening a side panel. The panel shows a
+  **completion % + progress bar**, **status filter tabs** (All / Done / Pending / Overdue, with live
+  counts), a **people search**, and a **scrollable** recipient list (avatar · name · code/completed
+  date · status pill) — so large org-wide assignments stay glanceable. Detail is lazy-loaded on first
+  expand and cached. Added the `.assignment-scroll` thin-scrollbar utility.
+
+### Tests
+
+- Frontend **418** (+1: expand row → names + filter tabs; filtering to Done hides pending). Backend
+  unchanged at **845**.
+
 ## [1.39.1] — 2026-06-24
 
 **Fix: blank rows in the assignment tracking panel + redesign.**
