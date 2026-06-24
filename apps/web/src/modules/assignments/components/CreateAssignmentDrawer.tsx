@@ -8,7 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Plus, Trash2 } from "lucide-react";
 
 import { type Employee, employeeApi } from "@/modules/employee/api";
-import { type AssignmentType, type QuestionDraft, type QuestionType, assignmentsApi } from "../api";
+import {
+	type AssignmentType,
+	type QuestionDraft,
+	type QuestionType,
+	type Recurrence,
+	assignmentsApi,
+} from "../api";
 
 const SELECT = "bg-canvas border border-border-subtle rounded px-2 py-1.5 text-small w-full";
 
@@ -35,6 +41,8 @@ export function CreateAssignmentDrawer({
 	const [employees, setEmployees] = useState<Employee[]>([]);
 	const [picked, setPicked] = useState<string[]>([]);
 	const [questions, setQuestions] = useState<QuestionDraft[]>([]);
+	const [recurrence, setRecurrence] = useState<Recurrence>("none");
+	const [recurrenceUntil, setRecurrenceUntil] = useState("");
 	const [busy, setBusy] = useState(false);
 
 	const addQuestion = () =>
@@ -82,6 +90,8 @@ export function CreateAssignmentDrawer({
 				link_target: linkUrl.trim() ? (linkUrl.startsWith("/") ? "internal" : "external") : "none",
 				default_due_date: due || null,
 				target,
+				recurrence,
+				recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
 				questions:
 					type === "questionnaire"
 						? questions
@@ -244,8 +254,35 @@ export function CreateAssignmentDrawer({
 					</select>
 				)}
 
+				<div className="grid grid-cols-2 gap-3">
+					<Field label="Repeat">
+						<select
+							aria-label="Repeat"
+							className={SELECT}
+							value={recurrence}
+							onChange={(e) => setRecurrence(e.target.value as Recurrence)}
+						>
+							<option value="none">Does not repeat</option>
+							<option value="daily">Daily</option>
+							<option value="weekly">Weekly</option>
+							<option value="monthly">Monthly</option>
+							<option value="yearly">Yearly</option>
+						</select>
+					</Field>
+					{recurrence !== "none" && (
+						<Field label="Repeat until (optional)">
+							<Input
+								aria-label="Repeat until"
+								type="date"
+								value={recurrenceUntil}
+								onChange={(e) => setRecurrenceUntil(e.target.value)}
+							/>
+						</Field>
+					)}
+				</div>
+
 				<Button onClick={submit} disabled={busy} className="soft-glow rounded-xl w-full">
-					Publish assignment
+					{recurrence === "none" ? "Publish assignment" : "Schedule recurring assignment"}
 				</Button>
 			</div>
 		</DetailPanel>

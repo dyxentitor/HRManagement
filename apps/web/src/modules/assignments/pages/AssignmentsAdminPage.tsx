@@ -73,6 +73,7 @@ export default function AssignmentsAdminPage() {
 									<p className="text-[11px] text-text-tertiary capitalize">
 										{a.type} · {a.status}
 										{a.default_due_date ? ` · due ${a.default_due_date}` : ""}
+										{a.recurrence && a.recurrence !== "none" ? ` · ↻ ${a.recurrence}` : ""}
 									</p>
 								</div>
 								<StatusPill
