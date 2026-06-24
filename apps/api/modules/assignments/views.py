@@ -26,7 +26,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 
     @property
     def required_perms(self):
-        if self.action in ("list", "retrieve", "archive", "responses", "analytics"):
+        if self.action in ("list", "retrieve", "archive", "responses", "analytics", "revise"):
             return ["assignment:read:org"]
         # create: custom org/team check; me / complete: own rows (ownership-checked).
         return []
@@ -158,10 +158,30 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         ).first()
         if r is None:
             raise NotFound("No assignment for you.")
+        evidence_key = request.data.get("evidence_s3_key", "")
+        if r.assignment.requires_evidence and not evidence_key:
+            raise ValidationError({"evidence_s3_key": "Proof upload is required to complete this."})
         engine.complete(
-            r, ip=request.META.get("REMOTE_ADDR", ""), note=request.data.get("note", "")
+            r,
+            ip=request.META.get("REMOTE_ADDR", ""),
+            note=request.data.get("note", ""),
+            evidence_s3_key=evidence_key,
         )
         return Response(RecipientSerializer(r).data)
+
+    @action(detail=True, methods=["post"], url_path="evidence-url")
+    def evidence_url(self, request, pk=None):
+        r = self._own_recipient(request, pk)
+        url, key = engine.evidence_upload_url(
+            pk, r.employee_id, request.data.get("content_type", "")
+        )
+        return Response({"url": url, "key": key})
+
+    @action(detail=True, methods=["post"], url_path="revise")
+    def revise(self, request, pk=None):
+        a = self.get_object()
+        reopened = engine.revise(a, actor_id=request.user.id)
+        return Response({"version": a.version, "reopened": reopened})
 
     @action(detail=True, methods=["post"], url_path="publish")
     def publish(self, request, pk=None):

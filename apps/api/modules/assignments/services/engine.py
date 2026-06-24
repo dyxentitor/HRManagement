@@ -160,12 +160,26 @@ def spawn_instance(template: Assignment) -> Assignment:
     return inst
 
 
-def complete(recipient: AssignmentRecipient, *, ip: str, note: str = "") -> AssignmentRecipient:
+def complete(
+    recipient: AssignmentRecipient, *, ip: str, note: str = "", evidence_s3_key: str = ""
+) -> AssignmentRecipient:
     recipient.status = "completed"
     recipient.completed_at = timezone.now()
     recipient.completed_ip = (ip or "")[:64]
     recipient.note = (note or "")[:500]
-    recipient.save(update_fields=["status", "completed_at", "completed_ip", "note"])
+    if evidence_s3_key:
+        recipient.evidence_s3_key = evidence_s3_key[:500]
+    recipient.acked_version = recipient.assignment.version
+    recipient.save(
+        update_fields=[
+            "status",
+            "completed_at",
+            "completed_ip",
+            "note",
+            "evidence_s3_key",
+            "acked_version",
+        ]
+    )
     audit_append(
         org_id=recipient.org_id,
         action="assignment.completed",
@@ -177,3 +191,41 @@ def complete(recipient: AssignmentRecipient, *, ip: str, note: str = "") -> Assi
         },
     )
     return recipient
+
+
+@transaction.atomic
+def revise(assignment: Assignment, *, actor_id) -> int:
+    """Bump the version and reopen completed recipients so they re-acknowledge."""
+    assignment.version += 1
+    assignment.save(update_fields=["version", "updated_at"])
+    reopened = assignment.recipients.filter(status="completed")
+    n = reopened.count()
+    reopened.update(status="pending", completed_at=None)
+    audit_append(
+        org_id=assignment.org_id,
+        action="assignment.revised",
+        entity="assignment",
+        entity_id=assignment.id,
+        actor_id=actor_id,
+        after={"version": assignment.version, "reopened": n},
+    )
+    return n
+
+
+def evidence_upload_url(assignment_id, employee_id, content_type: str) -> tuple[str, str]:
+    """Presigned PUT url + key for uploading completion evidence."""
+    import uuid as _uuid
+
+    from common.storage.s3 import bucket, public_s3_client
+
+    key = f"assignments/{assignment_id}/{employee_id}/{_uuid.uuid4().hex}"
+    url = public_s3_client().generate_presigned_url(
+        "put_object",
+        Params={
+            "Bucket": bucket(),
+            "Key": key,
+            "ContentType": content_type or "application/octet-stream",
+        },
+        ExpiresIn=300,
+    )
+    return url, key

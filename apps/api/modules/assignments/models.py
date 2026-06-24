@@ -49,6 +49,9 @@ class Assignment(models.Model):
     created_by = models.UUIDField(null=True, blank=True)
     # Completion auto-detection (Phase 4): a trigger key; "manual" = self-attest.
     complete_on = models.CharField(max_length=32, default="manual")
+    # Evidence + versioning (Phase 6).
+    requires_evidence = models.BooleanField(default=False)
+    version = models.PositiveIntegerField(default=1)
     # Recurrence (Phase 3): a recurring assignment is a template that spawns instances.
     recurrence = models.CharField(max_length=12, choices=RECURRENCE, default="none")
     recurrence_interval = models.PositiveIntegerField(default=1)
@@ -81,6 +84,8 @@ class AssignmentRecipient(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     completed_ip = models.CharField(max_length=64, blank=True)
     note = models.CharField(max_length=500, blank=True)
+    evidence_s3_key = models.CharField(max_length=500, blank=True)
+    acked_version = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:

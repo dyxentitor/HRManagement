@@ -25,6 +25,8 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "created_by",
             "created_at",
             "complete_on",
+            "requires_evidence",
+            "version",
             "recurrence",
             "recurrence_interval",
             "recurrence_until",
@@ -38,6 +40,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "created_at",
             "is_template",
             "next_run_at",
+            "version",
         )
 
 
@@ -55,6 +58,8 @@ class RecipientSerializer(serializers.ModelSerializer):
             "effective_status",
             "completed_at",
             "note",
+            "evidence_s3_key",
+            "acked_version",
             "created_at",
         )
         read_only_fields = fields
