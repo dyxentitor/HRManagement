@@ -60,6 +60,8 @@ export interface AssignmentDef {
 	status: AssignmentStatus;
 	created_at: string;
 	complete_on?: CompleteOn;
+	requires_evidence?: boolean;
+	version?: number;
 	recurrence?: Recurrence;
 	recurrence_interval?: number;
 	recurrence_until?: string | null;
@@ -101,6 +103,7 @@ export interface CreateAssignmentBody {
 	publish?: boolean;
 	questions?: QuestionDraft[];
 	complete_on?: CompleteOn;
+	requires_evidence?: boolean;
 	recurrence?: Recurrence;
 	recurrence_interval?: number;
 	recurrence_until?: string | null;
@@ -131,8 +134,17 @@ const unwrap = <T>(d: { results?: T[] } | T[]): T[] => (Array.isArray(d) ? d : (
 
 export const assignmentsApi = {
 	myAssignments: () => _get<RecipientRow[]>("/api/v1/assignments/me/"),
-	complete: (assignmentId: string, note = "") =>
-		_post<RecipientRow>(`/api/v1/assignments/${assignmentId}/complete/`, { note }),
+	complete: (assignmentId: string, note = "", evidenceS3Key = "") =>
+		_post<RecipientRow>(`/api/v1/assignments/${assignmentId}/complete/`, {
+			note,
+			evidence_s3_key: evidenceS3Key,
+		}),
+	evidenceUrl: (assignmentId: string, contentType: string) =>
+		_post<{ url: string; key: string }>(`/api/v1/assignments/${assignmentId}/evidence-url/`, {
+			content_type: contentType,
+		}),
+	revise: (id: string) =>
+		_post<{ version: number; reopened: number }>(`/api/v1/assignments/${id}/revise/`),
 	list: (status?: AssignmentStatus) =>
 		_get<{ results?: AssignmentDef[] } | AssignmentDef[]>(
 			`/api/v1/assignments/${status ? `?status=${status}` : ""}`,

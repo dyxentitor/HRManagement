@@ -45,6 +45,7 @@ export function CreateAssignmentDrawer({
 	const [recurrence, setRecurrence] = useState<Recurrence>("none");
 	const [recurrenceUntil, setRecurrenceUntil] = useState("");
 	const [completeOn, setCompleteOn] = useState<CompleteOn>("manual");
+	const [requiresEvidence, setRequiresEvidence] = useState(false);
 	const [busy, setBusy] = useState(false);
 
 	const addQuestion = () =>
@@ -95,6 +96,7 @@ export function CreateAssignmentDrawer({
 				recurrence,
 				recurrence_until: recurrence !== "none" && recurrenceUntil ? recurrenceUntil : null,
 				complete_on: type === "task" ? completeOn : "manual",
+				requires_evidence: type === "task" ? requiresEvidence : false,
 				questions:
 					type === "questionnaire"
 						? questions
@@ -173,6 +175,17 @@ export function CreateAssignmentDrawer({
 							<option value="leave_requested">Auto — when they submit a leave request</option>
 						</select>
 					</Field>
+				)}
+
+				{type === "task" && (
+					<label className="flex items-center gap-2 text-small text-text-secondary">
+						<input
+							type="checkbox"
+							checked={requiresEvidence}
+							onChange={(e) => setRequiresEvidence(e.target.checked)}
+						/>
+						Require a proof upload to complete
+					</label>
 				)}
 
 				{type === "questionnaire" && (

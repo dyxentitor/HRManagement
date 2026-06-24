@@ -66,6 +66,27 @@ export default function ActionCenterPage() {
 		}
 	}
 
+	async function uploadAndComplete(r: RecipientRow, file: File) {
+		setBusy(r.id);
+		try {
+			const ct = file.type || "application/octet-stream";
+			const { url, key } = await assignmentsApi.evidenceUrl(r.assignment.id, ct);
+			const put = await fetch(url, { method: "PUT", body: file, headers: { "Content-Type": ct } });
+			if (!put.ok) throw new Error("Upload failed");
+			await assignmentsApi.complete(r.assignment.id, "", key);
+			toast.success("Uploaded & completed");
+			setRows((prev) =>
+				(prev ?? []).map((x) =>
+					x.id === r.id ? { ...x, status: "completed", effective_status: "completed" } : x,
+				),
+			);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Could not upload");
+		} finally {
+			setBusy(null);
+		}
+	}
+
 	if (rows === null) return <Skeleton className="h-64 rounded-2xl" />;
 
 	const groups = new Map<Bucket, RecipientRow[]>();
@@ -118,6 +139,19 @@ export default function ActionCenterPage() {
 										<Button asChild size="sm" className="soft-glow rounded-xl shrink-0">
 											<Link to={`/action-center/q/${r.assignment.id}`}>Answer</Link>
 										</Button>
+									) : r.assignment.requires_evidence ? (
+										<label className="soft-glow rounded-xl shrink-0 inline-flex items-center px-3 h-8 text-small bg-accent-500 text-white cursor-pointer">
+											<input
+												type="file"
+												className="hidden"
+												disabled={busy === r.id}
+												onChange={(e) => {
+													const f = e.target.files?.[0];
+													if (f) void uploadAndComplete(r, f);
+												}}
+											/>
+											Upload proof
+										</label>
 									) : (
 										<>
 											{r.assignment.link_url &&

@@ -1,5 +1,6 @@
 import { BarChart3, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -112,14 +113,36 @@ export default function AssignmentsAdminPage() {
 			{detail && (
 				<div className="glass-surface rounded-2xl p-4">
 					<header className="flex items-center justify-between mb-2">
-						<h2 className="text-h3 text-text-primary">{detail.title}</h2>
-						<button
-							type="button"
-							className="text-small text-text-tertiary"
-							onClick={() => setDetail(null)}
-						>
-							Close
-						</button>
+						<h2 className="text-h3 text-text-primary">
+							{detail.title}
+							{detail.version && detail.version > 1 ? (
+								<span className="text-small text-text-tertiary ml-2">v{detail.version}</span>
+							) : null}
+						</h2>
+						<div className="flex items-center gap-3">
+							{detail.type === "acknowledge" && (
+								<button
+									type="button"
+									className="text-small text-accent-200 hover:text-accent-50"
+									onClick={async () => {
+										const res = await assignmentsApi.revise(detail.id);
+										toast.success(
+											`Re-issued as v${res.version} · ${res.reopened} to re-acknowledge`,
+										);
+										setDetail(await assignmentsApi.retrieve(detail.id));
+									}}
+								>
+									Re-issue (new version)
+								</button>
+							)}
+							<button
+								type="button"
+								className="text-small text-text-tertiary"
+								onClick={() => setDetail(null)}
+							>
+								Close
+							</button>
+						</div>
 					</header>
 					<p className="text-small text-text-secondary mb-3">
 						<b className="text-mint">{detail.summary.done}</b> / {detail.summary.total} done ·{" "}
