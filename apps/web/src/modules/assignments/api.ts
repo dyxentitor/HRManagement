@@ -31,6 +31,17 @@ export type ResponseAggregate =
 			total: number;
 	  }
 	| { id: string; text: string; qtype: "short_text" | "rating"; answers: unknown[] };
+export interface Analytics {
+	totals: {
+		total: number;
+		completed: number;
+		overdue: number;
+		pending: number;
+		completion_rate: number;
+	};
+	by_department: { department: string; total: number; completed: number; overdue: number }[];
+	by_type: { type: string; total: number; completed: number }[];
+}
 export type Recurrence = "none" | "daily" | "weekly" | "monthly" | "yearly";
 export type CompleteOn = "manual" | "profile_completed" | "leave_requested";
 export type AssignmentStatus = "draft" | "published" | "archived";
@@ -134,4 +145,5 @@ export const assignmentsApi = {
 	submit: (id: string, answers: Record<string, unknown>) =>
 		_post<RecipientRow>(`/api/v1/assignments/${id}/submit/`, { answers }),
 	responses: (id: string) => _get<ResponseAggregate[]>(`/api/v1/assignments/${id}/responses/`),
+	analytics: () => _get<Analytics>("/api/v1/assignments/analytics/"),
 };

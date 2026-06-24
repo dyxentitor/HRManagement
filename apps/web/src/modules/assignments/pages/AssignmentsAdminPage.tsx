@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { BarChart3, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { StatusPill } from "@/components/hrms";
@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCan } from "@/lib/perm";
 
 import { type AssignmentDef, type AssignmentDetail, assignmentsApi } from "../api";
+import { AnalyticsPanel } from "../components/AnalyticsPanel";
 import { CreateAssignmentDrawer } from "../components/CreateAssignmentDrawer";
 
 export default function AssignmentsAdminPage() {
@@ -16,6 +17,7 @@ export default function AssignmentsAdminPage() {
 	const [rows, setRows] = useState<AssignmentDef[] | null>(null);
 	const [drawer, setDrawer] = useState(false);
 	const [detail, setDetail] = useState<AssignmentDetail | null>(null);
+	const [showAnalytics, setShowAnalytics] = useState(false);
 
 	const load = useCallback(async () => {
 		try {
@@ -47,11 +49,25 @@ export default function AssignmentsAdminPage() {
 				title="Assignments"
 				subtitle="Assign mandatory tasks and track completion"
 				actions={
-					<Button size="sm" className="soft-glow rounded-xl" onClick={() => setDrawer(true)}>
-						<Plus className="size-4 mr-1" /> New assignment
-					</Button>
+					<div className="flex items-center gap-2">
+						{canReadOrg && (
+							<Button
+								size="sm"
+								variant="outline"
+								className="rounded-xl"
+								onClick={() => setShowAnalytics((v) => !v)}
+							>
+								<BarChart3 className="size-4 mr-1" /> {showAnalytics ? "Hide" : "Analytics"}
+							</Button>
+						)}
+						<Button size="sm" className="soft-glow rounded-xl" onClick={() => setDrawer(true)}>
+							<Plus className="size-4 mr-1" /> New assignment
+						</Button>
+					</div>
 				}
 			/>
+
+			{showAnalytics && canReadOrg && <AnalyticsPanel />}
 
 			{rows === null ? (
 				<Skeleton className="h-48 rounded-2xl" />
