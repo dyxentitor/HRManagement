@@ -3374,6 +3374,13 @@ export interface components {
             readonly created_by: string | null;
             /** Format: date-time */
             readonly created_at: string;
+            recurrence?: components["schemas"]["RecurrenceEnum"];
+            recurrence_interval?: number;
+            /** Format: date */
+            recurrence_until?: string | null;
+            readonly is_template: boolean;
+            /** Format: date */
+            readonly next_run_at: string | null;
         };
         AssignmentRequest: {
             title: string;
@@ -3383,6 +3390,10 @@ export interface components {
             link_target?: components["schemas"]["LinkTargetEnum"];
             /** Format: date */
             default_due_date?: string | null;
+            recurrence?: components["schemas"]["RecurrenceEnum"];
+            recurrence_interval?: number;
+            /** Format: date */
+            recurrence_until?: string | null;
         };
         /**
          * @description * `draft` - Draft
@@ -4378,6 +4389,10 @@ export interface components {
             link_target?: components["schemas"]["LinkTargetEnum"];
             /** Format: date */
             default_due_date?: string | null;
+            recurrence?: components["schemas"]["RecurrenceEnum"];
+            recurrence_interval?: number;
+            /** Format: date */
+            recurrence_until?: string | null;
         };
         PatchedCertificationWriteRequest: {
             name?: string;
@@ -4783,6 +4798,15 @@ export interface components {
          * @enum {string}
          */
         PriorityEnum: "low" | "normal" | "high" | "urgent";
+        /**
+         * @description * `none` - None
+         *     * `daily` - Daily
+         *     * `weekly` - Weekly
+         *     * `monthly` - Monthly
+         *     * `yearly` - Yearly
+         * @enum {string}
+         */
+        RecurrenceEnum: "none" | "daily" | "weekly" | "monthly" | "yearly";
         /** @description Used for retrieve. Includes full permission_codes[]. */
         RoleDetail: {
             /** Format: uuid */

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.33.0
+  version: 1.34.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -6187,10 +6187,30 @@ components:
           type: string
           format: date-time
           readOnly: true
+        recurrence:
+          $ref: '#/components/schemas/RecurrenceEnum'
+        recurrence_interval:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        recurrence_until:
+          type: string
+          format: date
+          nullable: true
+        is_template:
+          type: boolean
+          readOnly: true
+        next_run_at:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
       required:
       - created_at
       - created_by
       - id
+      - is_template
+      - next_run_at
       - status
       - title
     AssignmentRequest:
@@ -6210,6 +6230,16 @@ components:
         link_target:
           $ref: '#/components/schemas/LinkTargetEnum'
         default_due_date:
+          type: string
+          format: date
+          nullable: true
+        recurrence:
+          $ref: '#/components/schemas/RecurrenceEnum'
+        recurrence_interval:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        recurrence_until:
           type: string
           format: date
           nullable: true
@@ -8636,6 +8666,16 @@ components:
           type: string
           format: date
           nullable: true
+        recurrence:
+          $ref: '#/components/schemas/RecurrenceEnum'
+        recurrence_interval:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        recurrence_until:
+          type: string
+          format: date
+          nullable: true
     PatchedCertificationWriteRequest:
       type: object
       properties:
@@ -9533,6 +9573,20 @@ components:
         * `normal` - Normal
         * `high` - High
         * `urgent` - Urgent
+    RecurrenceEnum:
+      enum:
+      - none
+      - daily
+      - weekly
+      - monthly
+      - yearly
+      type: string
+      description: |-
+        * `none` - None
+        * `daily` - Daily
+        * `weekly` - Weekly
+        * `monthly` - Monthly
+        * `yearly` - Yearly
     RoleDetail:
       type: object
       description: Used for retrieve. Includes full permission_codes[].
