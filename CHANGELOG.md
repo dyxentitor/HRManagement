@@ -2,6 +2,33 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.38.0] — 2026-06-24
+
+**Evidence upload + versioned acknowledgement (Assignments Phase 6)** — proof-of-completion and
+re-acknowledge-on-change, the last roadmap phase before AI.
+
+### Added
+
+- **Evidence upload:** `Assignment.requires_evidence` + `AssignmentRecipient.evidence_s3_key`.
+  `POST /assignments/{id}/evidence-url/` presigns a PUT (reuses `common.storage.s3`); `complete`
+  now **requires** an `evidence_s3_key` when the assignment demands proof. Frontend: a create-drawer
+  "Require proof upload" checkbox and an **Upload proof** control on evidence-required Action Center
+  cards (presign → PUT → complete).
+- **Versioned acknowledgement:** `Assignment.version` + `AssignmentRecipient.acked_version` (recorded
+  at completion). `POST /assignments/{id}/revise/` (gated `read:org`) bumps the version and **reopens
+  completed recipients to pending** so they re-acknowledge the new version. Frontend: a **Re-issue
+  (new version)** action + version badge on the acknowledge detail.
+
+### Non-goals
+
+AI (nudges, risk prediction, NL search, summarization) — **Phase 7 is deliberately not built**: wiring
+an external LLM to HR data is an infra/privacy/cost decision left to the user.
+
+### Tests
+
+- Backend **843** (+2: evidence-required gate + key persisted; revise bumps version + reopens).
+  Frontend **416**. Contracts regenerated.
+
 ## [1.37.0] — 2026-06-24
 
 **Assignment analytics (Assignments Phase 5)** — org-wide completion insight for HR.
