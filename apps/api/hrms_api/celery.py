@@ -50,4 +50,9 @@ app.conf.beat_schedule = {
         "task": "modules.assignments.tasks.assignment_reminders",
         "schedule": crontab(hour=2, minute=45),
     },
+    "assignment-recurrence": {
+        # Daily 03:00 KL: spawn the next occurrence of due recurring templates.
+        "task": "modules.assignments.tasks.spawn_recurring_assignments",
+        "schedule": crontab(hour=3, minute=0),
+    },
 }

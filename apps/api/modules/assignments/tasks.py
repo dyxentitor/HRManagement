@@ -10,7 +10,8 @@ from modules.employee.models import Employee
 from modules.identity.models import User
 from modules.notification.services.notify import notify
 
-from .models import AssignmentRecipient
+from .models import Assignment, AssignmentRecipient
+from .services import engine
 
 
 @shared_task
@@ -36,3 +37,23 @@ def assignment_reminders() -> int:
         )
         sent += 1
     return sent
+
+
+@shared_task
+def spawn_recurring_assignments() -> int:
+    """Spawn the next occurrence of each due recurring template. Returns count spawned."""
+    today = date.today()
+    spawned = 0
+    templates = Assignment.objects.filter(
+        is_template=True,
+        recurrence__in=["daily", "weekly", "monthly", "yearly"],
+        next_run_at__lte=today,
+    )
+    for t in templates:
+        if t.recurrence_until and t.next_run_at > t.recurrence_until:
+            continue
+        engine.spawn_instance(t)
+        t.next_run_at = engine.advance_date(t.next_run_at, t.recurrence, t.recurrence_interval)
+        t.save(update_fields=["next_run_at"])
+        spawned += 1
+    return spawned

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 from typing import ClassVar
 
 from rest_framework import status as drf_status
@@ -68,7 +69,17 @@ class AssignmentViewSet(viewsets.ModelViewSet):
                     options=q.get("options") or [],
                     required=q.get("required", True),
                 )
-        if request.data.get("publish", True):
+        if a.recurrence != "none":
+            # Recurring → template; store the *resolved* ids so manager-scope survives
+            # each re-fan-out, spawn the first occurrence now, schedule the next.
+            a.is_template = True
+            a.target_spec = {"kind": "employee", "ids": [str(x) for x in resolved]}
+            a.next_run_at = engine.advance_date(
+                dt.date.today(), a.recurrence, a.recurrence_interval
+            )
+            a.save(update_fields=["is_template", "target_spec", "next_run_at"])
+            engine.spawn_instance(a)
+        elif request.data.get("publish", True):
             engine.publish(a, target_employee_ids=resolved, actor_id=request.user.id)
         return Response(AssignmentSerializer(a).data, status=drf_status.HTTP_201_CREATED)
 

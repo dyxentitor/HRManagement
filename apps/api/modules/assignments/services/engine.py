@@ -1,6 +1,9 @@
-"""Assignment engine — target resolution, manager scoping, publish, complete."""
+"""Assignment engine — target resolution, manager scoping, publish, complete, recurrence."""
 
 from __future__ import annotations
+
+import calendar
+import datetime as dt
 
 from django.db import transaction
 from django.utils import timezone
@@ -10,7 +13,7 @@ from modules.employee.models import Employee
 from modules.identity.models import User
 from modules.notification.services.notify import notify
 
-from ..models import Assignment, AssignmentRecipient
+from ..models import Assignment, AssignmentQuestion, AssignmentRecipient
 
 
 def manager_report_ids(manager_user_id, org_id) -> set:
@@ -85,6 +88,59 @@ def publish(assignment: Assignment, *, target_employee_ids: list, actor_id) -> i
                 deep_link="/action-center",
             )
     return len(rows)
+
+
+def advance_date(d: dt.date, recurrence: str, interval: int) -> dt.date:
+    """Next occurrence date for a cadence (month/year arithmetic clamps the day)."""
+    interval = max(1, interval)
+    if recurrence == "daily":
+        return d + dt.timedelta(days=interval)
+    if recurrence == "weekly":
+        return d + dt.timedelta(weeks=interval)
+    if recurrence == "monthly":
+        month = d.month - 1 + interval
+        year = d.year + month // 12
+        month = month % 12 + 1
+        day = min(d.day, calendar.monthrange(year, month)[1])
+        return dt.date(year, month, day)
+    if recurrence == "yearly":
+        try:
+            return d.replace(year=d.year + interval)
+        except ValueError:  # Feb 29 → Feb 28
+            return d.replace(year=d.year + interval, day=28)
+    return d
+
+
+@transaction.atomic
+def spawn_instance(template: Assignment) -> Assignment:
+    """Clone a recurring template into a fresh published instance for this period."""
+    inst = Assignment.objects.create(
+        org_id=template.org_id,
+        title=template.title,
+        description=template.description,
+        type=template.type,
+        link_url=template.link_url,
+        link_target=template.link_target,
+        default_due_date=template.default_due_date,
+        created_by=template.created_by,
+        parent=template,
+        recurrence="none",
+        is_template=False,
+    )
+    for q in template.questions.all():
+        AssignmentQuestion.objects.create(
+            org_id=inst.org_id,
+            assignment=inst,
+            order=q.order,
+            text=q.text,
+            qtype=q.qtype,
+            options=q.options,
+            required=q.required,
+        )
+    spec = template.target_spec or {}
+    targets = resolve_targets(template.org_id, spec.get("kind", ""), spec.get("ids") or [])
+    publish(inst, target_employee_ids=targets, actor_id=template.created_by)
+    return inst
 
 
 def complete(recipient: AssignmentRecipient, *, ip: str, note: str = "") -> AssignmentRecipient:

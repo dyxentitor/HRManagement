@@ -27,6 +27,13 @@ ASSIGNMENT_STATUS: ClassVar = [
     ("archived", "Archived"),
 ]
 RECIPIENT_STATUS: ClassVar = [("pending", "Pending"), ("completed", "Completed")]
+RECURRENCE: ClassVar = [
+    ("none", "None"),
+    ("daily", "Daily"),
+    ("weekly", "Weekly"),
+    ("monthly", "Monthly"),
+    ("yearly", "Yearly"),
+]
 
 
 class Assignment(models.Model):
@@ -40,6 +47,16 @@ class Assignment(models.Model):
     default_due_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=ASSIGNMENT_STATUS, default="draft")
     created_by = models.UUIDField(null=True, blank=True)
+    # Recurrence (Phase 3): a recurring assignment is a template that spawns instances.
+    recurrence = models.CharField(max_length=12, choices=RECURRENCE, default="none")
+    recurrence_interval = models.PositiveIntegerField(default=1)
+    recurrence_until = models.DateField(null=True, blank=True)
+    target_spec = models.JSONField(default=dict, blank=True)  # {kind, ids} for re-fan-out
+    is_template = models.BooleanField(default=False)
+    next_run_at = models.DateField(null=True, blank=True)
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="instances"
+    )
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
 

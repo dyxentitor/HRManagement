@@ -24,8 +24,20 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "status",
             "created_by",
             "created_at",
+            "recurrence",
+            "recurrence_interval",
+            "recurrence_until",
+            "is_template",
+            "next_run_at",
         )
-        read_only_fields = ("id", "status", "created_by", "created_at")
+        read_only_fields = (
+            "id",
+            "status",
+            "created_by",
+            "created_at",
+            "is_template",
+            "next_run_at",
+        )
 
 
 class RecipientSerializer(serializers.ModelSerializer):
