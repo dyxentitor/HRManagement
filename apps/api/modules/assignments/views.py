@@ -26,7 +26,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 
     @property
     def required_perms(self):
-        if self.action in ("list", "retrieve", "archive", "responses"):
+        if self.action in ("list", "retrieve", "archive", "responses", "analytics"):
             return ["assignment:read:org"]
         # create: custom org/team check; me / complete: own rows (ownership-checked).
         return []
@@ -94,6 +94,47 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         }
         data["recipients"] = RecipientSerializer(recips, many=True).data
         return Response(data)
+
+    @action(detail=False, methods=["get"], url_path="analytics")
+    def analytics(self, request):
+        org_id = request.user.org_id
+        recips = list(
+            AssignmentRecipient.objects.filter(org_id=org_id).select_related("assignment")
+        )
+        total = len(recips)
+        completed = sum(1 for r in recips if r.status == "completed")
+        overdue = sum(1 for r in recips if r.effective_status == "overdue")
+        emp_dept = dict(
+            Employee.all_objects.filter(org_id=org_id, deleted_at__isnull=True).values_list(
+                "id", "department__name"
+            )
+        )
+        by_dept: dict = {}
+        by_type: dict = {}
+        for r in recips:
+            d = emp_dept.get(r.employee_id) or "—"
+            bd = by_dept.setdefault(d, {"department": d, "total": 0, "completed": 0, "overdue": 0})
+            bd["total"] += 1
+            bd["completed"] += r.status == "completed"
+            bd["overdue"] += r.effective_status == "overdue"
+            bt = by_type.setdefault(
+                r.assignment.type, {"type": r.assignment.type, "total": 0, "completed": 0}
+            )
+            bt["total"] += 1
+            bt["completed"] += r.status == "completed"
+        return Response(
+            {
+                "totals": {
+                    "total": total,
+                    "completed": completed,
+                    "overdue": overdue,
+                    "pending": total - completed,
+                    "completion_rate": round(completed / total * 100) if total else 0,
+                },
+                "by_department": sorted(by_dept.values(), key=lambda x: -x["total"]),
+                "by_type": list(by_type.values()),
+            }
+        )
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
