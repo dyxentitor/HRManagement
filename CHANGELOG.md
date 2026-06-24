@@ -2,6 +2,28 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.37.0] — 2026-06-24
+
+**Assignment analytics (Assignments Phase 5)** — org-wide completion insight for HR.
+
+### Added
+
+- **`GET /assignments/analytics/`** (gated `assignment:read:org`): `totals` (total · completed ·
+  pending · overdue · completion_rate) plus `by_department` and `by_type` breakdowns, computed across
+  all recipient rows in the org.
+- **Frontend:** an HR-toggleable **Analytics panel** on `/admin/assignments` — stat tiles
+  (completion % / completed / pending / overdue) and a per-department completion-bar breakdown.
+
+### Non-goals (still deferred)
+
+Evidence-upload + versioned acknowledgement (next phase), AI nudges/risk-prediction (deferred —
+external-LLM decision pending).
+
+### Tests
+
+- Backend **841** (+1: totals + department/type breakdown). Frontend **416** (+1: panel renders rate +
+  department bar). Contracts regenerated.
+
 ## [1.36.0] — 2026-06-24
 
 **Completion auto-detection (Assignments Phase 4)** — task assignments can complete themselves when
