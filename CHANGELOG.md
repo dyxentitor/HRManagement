@@ -2,6 +2,25 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.40.1] — 2026-06-24
+
+**Fix: "Assignments" appeared twice in the sidebar (Team + Admin).**
+
+### Fixed
+
+- v1.33.0 added two `Assignments` nav items (one per audience) because `NavItem.perm` only supported a
+  single permission. Both pointed at `/admin/assignments`, and the sidebar's visibility map is **keyed
+  by path** — so an org_admin's `read:org` visibility collided onto the Team item, rendering the link
+  in **both** groups.
+- Collapsed to **one** entry gated by the new **`NavItem.anyPerm`** (OR semantics): visible to
+  `assignment:read:org` (HR/admin) **or** `assignment:create:team` (managers/team-leads). The sidebar
+  now reads the permission set once via `useAuth` and evaluates `anyPerm`/`perm` with plain predicates
+  (defensive against a missing set). +1 regression test.
+
+### Tests
+
+- Frontend **419** (+1: Assignments renders exactly once for either permission). Backend unchanged.
+
 ## [1.40.0] — 2026-06-24
 
 **Collapsible assignment tracking** — redesign of the admin tracking UX (designed in the visual
