@@ -1,6 +1,13 @@
 from rest_framework import serializers
 
-from .models import Assignment, AssignmentRecipient
+from .models import Assignment, AssignmentQuestion, AssignmentRecipient
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssignmentQuestion
+        fields = ("id", "order", "text", "qtype", "options", "required")
+        read_only_fields = ("id",)
 
 
 class AssignmentSerializer(serializers.ModelSerializer):

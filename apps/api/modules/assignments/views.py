@@ -7,15 +7,15 @@ from typing import ClassVar
 from rest_framework import status as drf_status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
 from modules.identity.services.permissions import get_user_perms
 
-from .models import Assignment, AssignmentRecipient
-from .serializers import AssignmentSerializer, RecipientSerializer
+from .models import Assignment, AssignmentQuestion, AssignmentRecipient, AssignmentResponse
+from .serializers import AssignmentSerializer, QuestionSerializer, RecipientSerializer
 from .services import engine
 
 
@@ -25,7 +25,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 
     @property
     def required_perms(self):
-        if self.action in ("list", "retrieve", "archive"):
+        if self.action in ("list", "retrieve", "archive", "responses"):
             return ["assignment:read:org"]
         # create: custom org/team check; me / complete: own rows (ownership-checked).
         return []
@@ -57,6 +57,17 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         s = AssignmentSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         a = s.save(org_id=request.user.org_id, created_by=request.user.id)
+        if a.type == "questionnaire":
+            for i, q in enumerate(request.data.get("questions") or []):
+                AssignmentQuestion.objects.create(
+                    org_id=request.user.org_id,
+                    assignment=a,
+                    order=i,
+                    text=(q.get("text") or "")[:500],
+                    qtype=q.get("qtype") or "single_choice",
+                    options=q.get("options") or [],
+                    required=q.get("required", True),
+                )
         if request.data.get("publish", True):
             engine.publish(a, target_employee_ids=resolved, actor_id=request.user.id)
         return Response(AssignmentSerializer(a).data, status=drf_status.HTTP_201_CREATED)
@@ -113,3 +124,82 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         a.status = "archived"
         a.save(update_fields=["status", "updated_at"])
         return Response(AssignmentSerializer(a).data)
+
+    def _own_recipient(self, request, pk):
+        emp = self._employee(request)
+        if emp is None:
+            raise PermissionDenied("No linked employee record.")
+        r = AssignmentRecipient.objects.filter(
+            org_id=request.user.org_id, assignment_id=pk, employee_id=emp.id
+        ).first()
+        if r is None:
+            raise NotFound("No assignment for you.")
+        return r
+
+    @action(detail=True, methods=["get"], url_path="questionnaire")
+    def questionnaire(self, request, pk=None):
+        r = self._own_recipient(request, pk)
+        a = self.get_object()
+        return Response(
+            {
+                "assignment": AssignmentSerializer(a).data,
+                "questions": QuestionSerializer(a.questions.all(), many=True).data,
+                "completed": r.status == "completed",
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="submit")
+    def submit(self, request, pk=None):
+        r = self._own_recipient(request, pk)
+        a = self.get_object()
+        answers = request.data.get("answers") or {}
+        questions = list(a.questions.all())
+        for q in questions:
+            val = answers.get(str(q.id))
+            if q.required and (val is None or val == "" or val == []):
+                raise ValidationError({"answers": f"'{q.text}' is required."})
+        for q in questions:
+            if str(q.id) in answers:
+                AssignmentResponse.objects.update_or_create(
+                    recipient=r,
+                    question=q,
+                    defaults={
+                        "org_id": request.user.org_id,
+                        "answer": {"value": answers[str(q.id)]},
+                    },
+                )
+        engine.complete(r, ip=request.META.get("REMOTE_ADDR", ""), note="")
+        return Response(RecipientSerializer(r).data)
+
+    @action(detail=True, methods=["get"], url_path="responses")
+    def responses(self, request, pk=None):
+        a = self.get_object()
+        out = []
+        for q in a.questions.all():
+            resp = list(AssignmentResponse.objects.filter(question=q))
+            if q.qtype in ("single_choice", "multi_choice"):
+                counts = {opt: 0 for opt in q.options}
+                for r in resp:
+                    val = (r.answer or {}).get("value")
+                    for v in val if isinstance(val, list) else [val]:
+                        if v in counts:
+                            counts[v] += 1
+                out.append(
+                    {
+                        "id": str(q.id),
+                        "text": q.text,
+                        "qtype": q.qtype,
+                        "counts": counts,
+                        "total": len(resp),
+                    }
+                )
+            else:
+                out.append(
+                    {
+                        "id": str(q.id),
+                        "text": q.text,
+                        "qtype": q.qtype,
+                        "answers": [(r.answer or {}).get("value") for r in resp],
+                    }
+                )
+        return Response(out)

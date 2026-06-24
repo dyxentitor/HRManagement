@@ -9,7 +9,17 @@ from typing import ClassVar
 from django.db import models
 from django.utils import timezone
 
-TYPES: ClassVar = [("task", "Task"), ("acknowledge", "Acknowledge")]
+TYPES: ClassVar = [
+    ("task", "Task"),
+    ("acknowledge", "Acknowledge"),
+    ("questionnaire", "Questionnaire"),
+]
+QUESTION_TYPES: ClassVar = [
+    ("single_choice", "Single choice"),
+    ("multi_choice", "Multiple choice"),
+    ("short_text", "Short text"),
+    ("rating", "Rating (1-5)"),
+]
 LINK_TARGETS: ClassVar = [("none", "None"), ("internal", "Internal"), ("external", "External")]
 ASSIGNMENT_STATUS: ClassVar = [
     ("draft", "Draft"),
@@ -72,3 +82,49 @@ class AssignmentRecipient(models.Model):
         if self.status == "pending" and self.due_date and self.due_date < dt.date.today():
             return "overdue"
         return self.status
+
+
+class AssignmentQuestion(models.Model):
+    """A question on a questionnaire-type assignment (Phase 2)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    org_id = models.UUIDField(db_index=True)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="questions")
+    order = models.PositiveIntegerField(default=0)
+    text = models.CharField(max_length=500)
+    qtype = models.CharField(max_length=16, choices=QUESTION_TYPES, default="single_choice")
+    options = models.JSONField(default=list, blank=True)  # choice labels (choice types)
+    required = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "assignment_question"
+        ordering: ClassVar = ["order"]
+
+    def __str__(self) -> str:
+        return f"{self.assignment_id}/Q{self.order}"
+
+
+class AssignmentResponse(models.Model):
+    """A recipient's answer to one question (attributed)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    org_id = models.UUIDField(db_index=True)
+    recipient = models.ForeignKey(
+        AssignmentRecipient, on_delete=models.CASCADE, related_name="responses"
+    )
+    question = models.ForeignKey(
+        AssignmentQuestion, on_delete=models.CASCADE, related_name="responses"
+    )
+    answer = models.JSONField(default=dict)  # str | list[str] | int, wrapped as {"value": …}
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        db_table = "assignment_response"
+        constraints: ClassVar = [
+            models.UniqueConstraint(
+                fields=["recipient", "question"], name="assignment_response_unique"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.recipient_id}/{self.question_id}"
