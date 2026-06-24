@@ -2,6 +2,33 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.35.0] — 2026-06-24
+
+**Recurring assignments + expiry (Assignments Phase 3)** — assignments can now repeat on a cadence.
+
+### Added
+
+- **Recurrence** on `Assignment`: `recurrence` (daily/weekly/monthly/yearly) × `recurrence_interval`,
+  with `recurrence_until` (= expiry). A recurring assignment becomes a **template** (`is_template`):
+  the first occurrence spawns on create, and a daily Celery beat task (03:00 KL,
+  `spawn_recurring_assignments`) spawns each subsequent **instance** (`parent` FK) and advances
+  `next_run_at`, stopping at `recurrence_until`. Each instance is a self-contained published
+  assignment with its own recipients/tracking (clean per-period history).
+- The template stores the **resolved** recipient ids in `target_spec`, so manager-scope survives
+  each re-fan-out. `engine.advance_date` (month/year arithmetic clamps the day) + `engine.spawn_instance`
+  (clones fields + questions).
+- **Frontend:** create-drawer **Repeat** selector (none/daily/weekly/monthly/yearly) + Repeat-until;
+  admin list shows a `↻ <cadence>` badge.
+
+### Non-goals (still deferred)
+
+Completion auto-detection (next phase), analytics dashboards, anonymous responses.
+
+### Tests
+
+- Backend **838** (+3: advance-date math, create→template+first-instance, beat spawns next + respects
+  until). Frontend **415**. Contracts regenerated.
+
 ## [1.34.0] — 2026-06-24
 
 **Native questionnaires & polls (Assignments Phase 2)** — assignments can now carry their own
