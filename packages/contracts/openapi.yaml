@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.35.0
+  version: 1.36.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -531,6 +531,20 @@ paths:
             schema:
               $ref: '#/components/schemas/AssignmentRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/v1/assignments/analytics/:
+    get:
+      operationId: assignments_analytics_retrieve
+      tags:
+      - assignments
       security:
       - jwtAuth: []
       responses:
