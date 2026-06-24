@@ -2,6 +2,31 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.36.0] — 2026-06-24
+
+**Completion auto-detection (Assignments Phase 4)** — task assignments can complete themselves when
+the real action happens, instead of relying on self-attest.
+
+### Added
+
+- **`Assignment.complete_on`** trigger key (default `manual`). `engine.fire_trigger(org, employee,
+  key)` auto-completes that employee's matching pending recipients (audited, `note="auto:<key>"`).
+- **Signal listeners** (`modules/assignments/signals.py`, registered in `apps.ready()`): the
+  assignments app listens — **one-way, best-effort** (a trigger failure never breaks the host save) —
+  for `Employee` post-save (profile reaches 100% → `profile_completed`) and `LeaveRequest` create
+  (→ `leave_requested`). Other modules stay unaware. New trigger keys = add a receiver, no schema change.
+- **Frontend:** task assignments get a **Mark complete** select — Manually / Auto when profile 100% /
+  Auto when a leave request is submitted.
+
+### Non-goals (still deferred)
+
+Analytics dashboards (next phase), evidence-upload + versioned acknowledgement, AI.
+
+### Tests
+
+- Backend **840** (+2: fire_trigger matches only its key; LeaveRequest signal auto-completes).
+  Frontend **415**. Contracts regenerated.
+
 ## [1.35.0] — 2026-06-24
 
 **Recurring assignments + expiry (Assignments Phase 3)** — assignments can now repeat on a cadence.
