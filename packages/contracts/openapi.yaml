@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.32.1
+  version: 1.33.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -445,6 +445,75 @@ paths:
   /api/v1/assignments/{id}/publish/:
     post:
       operationId: assignments_publish_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/v1/assignments/{id}/questionnaire/:
+    get:
+      operationId: assignments_questionnaire_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/v1/assignments/{id}/responses/:
+    get:
+      operationId: assignments_responses_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - assignments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/v1/assignments/{id}/submit/:
+    post:
+      operationId: assignments_submit_create
       parameters:
       - in: path
         name: id
@@ -6160,10 +6229,12 @@ components:
       enum:
       - task
       - acknowledge
+      - questionnaire
       type: string
       description: |-
         * `task` - Task
         * `acknowledge` - Acknowledge
+        * `questionnaire` - Questionnaire
     AttendanceRecord:
       type: object
       properties:
