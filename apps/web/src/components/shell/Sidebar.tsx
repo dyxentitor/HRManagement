@@ -2,9 +2,9 @@ import { Search } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { OrgLogo } from "@/components/hrms/OrgLogo";
+import { useAuth } from "@/lib/auth";
 import { useCommandPalette } from "@/lib/cmdk";
 import { useFeature } from "@/lib/feature-flags";
-import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 
 import { UserMenu } from "./UserMenu";
@@ -39,24 +39,23 @@ function NavItemLink({ item }: { item: NavItem }) {
 export function Sidebar() {
 	const { setOpen: setCommandPaletteOpen } = useCommandPalette();
 
-	// Call useCan for every NAV item exactly once, in stable module-level order.
-	// ALL_ITEMS is a module-level constant so the hook count never changes across renders.
-	// biome-ignore lint/correctness/useHookAtTopLevel: ALL_ITEMS is module-constant; hook count fixed.
-	const canFlags = ALL_ITEMS.map((item) =>
-		item.perm === "" ? true : useCan(item.perm),
-	);
-	// biome-ignore lint/correctness/useHookAtTopLevel: ALL_ITEMS is module-constant; hook count fixed.
-	const featureFlags = ALL_ITEMS.map((item) =>
-		item.module ? useFeature(item.module) : true,
-	);
+	// Read the permission set once, then evaluate each item with plain predicates —
+	// this supports `anyPerm` (OR) and avoids calling a permission hook per item.
+	const { perms } = useAuth();
+	const has = (p: string) => Boolean(perms?.has(p));
+	const canItem = (item: NavItem): boolean => {
+		if (item.anyPerm?.length) return item.anyPerm.some(has);
+		return item.perm === "" ? true : has(item.perm);
+	};
 
-	// Build a visibility map keyed by route path.
-	// canFlags/featureFlags are tiny boolean arrays — building a Map inline is negligible.
+	// Feature flags still read per-item from the flags context (stable hook count —
+	// ALL_ITEMS is a module-level constant).
+	// biome-ignore lint/correctness/useHookAtTopLevel: ALL_ITEMS is module-constant; hook count fixed.
+	const featureFlags = ALL_ITEMS.map((item) => (item.module ? useFeature(item.module) : true));
+
+	// Build a visibility map keyed by route path (paths are unique across NAV).
 	const visibleByPath = new Map<string, boolean>(
-		ALL_ITEMS.map((item, i) => [
-			item.to,
-			(canFlags[i] ?? false) && (featureFlags[i] ?? true),
-		]),
+		ALL_ITEMS.map((item, i) => [item.to, canItem(item) && (featureFlags[i] ?? true)]),
 	);
 
 	const isVisible = (item: NavItem) => visibleByPath.get(item.to) ?? false;
@@ -96,9 +95,7 @@ export function Sidebar() {
 			{/* Personal group — label + remaining personal items */}
 			{personalRest.length > 0 && (
 				<>
-					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">
-						Personal
-					</div>
+					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">Personal</div>
 					{personalRest.map((item) => (
 						<NavItemLink key={item.to} item={item} />
 					))}
@@ -108,9 +105,7 @@ export function Sidebar() {
 			{/* Team group — only rendered when at least one item is visible */}
 			{visibleTeam.length > 0 && (
 				<>
-					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">
-						Team
-					</div>
+					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">Team</div>
 					{visibleTeam.map((item) => (
 						<NavItemLink key={item.to} item={item} />
 					))}
@@ -120,9 +115,7 @@ export function Sidebar() {
 			{/* Admin group — only rendered when at least one item is visible */}
 			{visibleAdmin.length > 0 && (
 				<>
-					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">
-						Admin
-					</div>
+					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">Admin</div>
 					{visibleAdmin.map((item) => (
 						<NavItemLink key={item.to} item={item} />
 					))}

@@ -25,6 +25,8 @@ export interface NavItem {
 	icon: ComponentType<{ className?: string }>;
 	/** permission code that gates visibility; "" means always visible */
 	perm: string;
+	/** if set, item is visible when ANY of these perms is granted (OR); overrides `perm` */
+	anyPerm?: string[];
 	/** module key — if set, item is hidden when the feature flag is off */
 	module?: string;
 	/** key used by useNotifBadge to read unread counts */
@@ -108,12 +110,6 @@ export const NAV: NavGroup[] = [
 				perm: "schedule:assignment:write:team",
 				module: "schedule",
 			},
-			{
-				label: "Assignments",
-				to: "/admin/assignments",
-				icon: ClipboardList,
-				perm: "assignment:create:team",
-			},
 		],
 	},
 	{
@@ -125,6 +121,8 @@ export const NAV: NavGroup[] = [
 				to: "/admin/assignments",
 				icon: ClipboardList,
 				perm: "assignment:read:org",
+				// HR/admin (read:org) OR managers/team-leads (create:team) — one entry, no duplicate.
+				anyPerm: ["assignment:read:org", "assignment:create:team"],
 			},
 			{
 				label: "People",

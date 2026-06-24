@@ -25,6 +25,7 @@ vi.mock("@/lib/auth", () => ({
 		user: mocks.user,
 		logout: mocks.logout,
 		roles: mocks.roles,
+		perms: mocks.perms,
 	}),
 }));
 vi.mock("@/lib/perm", () => ({
@@ -42,12 +43,8 @@ describe("Sidebar", () => {
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(
-			screen.getByRole("link", { name: /dashboard/i }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("link", { name: /my profile/i }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /dashboard/i })).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /my profile/i })).toBeInTheDocument();
 	});
 
 	it("hides items the user can't access", () => {
@@ -57,12 +54,8 @@ describe("Sidebar", () => {
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(
-			screen.queryByRole("link", { name: /payroll/i }),
-		).not.toBeInTheDocument();
-		expect(
-			screen.queryByRole("link", { name: /approvals/i }),
-		).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: /payroll/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: /approvals/i })).not.toBeInTheDocument();
 	});
 
 	it("hides the Team group when no team items are visible", () => {
@@ -88,6 +81,20 @@ describe("Sidebar", () => {
 		expect(screen.getByRole("link", { name: /people/i })).toBeInTheDocument();
 	});
 
+	it("shows Assignments once for read:org and once for create:team (anyPerm, no duplicate)", () => {
+		for (const perm of ["assignment:read:org", "assignment:create:team"]) {
+			mocks.perms = new Set([perm]);
+			mocks.flags = {};
+			const { unmount } = render(
+				<MemoryRouter>
+					<Sidebar />
+				</MemoryRouter>,
+			);
+			expect(screen.getAllByRole("link", { name: /^assignments$/i })).toHaveLength(1);
+			unmount();
+		}
+	});
+
 	it("hides Payroll when the payslip feature flag is disabled, even if perm is granted", () => {
 		// Payroll endpoints are gated by @requires_feature("payslip") on the
 		// backend (PayrollPeriodViewSet, PayrollRunViewSet). The sidebar item
@@ -99,9 +106,7 @@ describe("Sidebar", () => {
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(
-			screen.queryByRole("link", { name: /payroll/i }),
-		).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: /payroll/i })).not.toBeInTheDocument();
 	});
 
 	it("shows Payroll when the payslip feature flag is enabled and perm is granted", () => {
@@ -123,9 +128,7 @@ describe("Sidebar", () => {
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(
-			screen.getByRole("link", { name: /^settings$/i }),
-		).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /^settings$/i })).toBeInTheDocument();
 	});
 
 	it("hides Settings link without role:read perm", () => {
@@ -136,8 +139,6 @@ describe("Sidebar", () => {
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(
-			screen.queryByRole("link", { name: /^settings$/i }),
-		).not.toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: /^settings$/i })).not.toBeInTheDocument();
 	});
 });
