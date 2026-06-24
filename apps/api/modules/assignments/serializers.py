@@ -24,6 +24,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "status",
             "created_by",
             "created_at",
+            "complete_on",
             "recurrence",
             "recurrence_interval",
             "recurrence_until",

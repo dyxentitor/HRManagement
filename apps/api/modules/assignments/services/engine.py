@@ -90,6 +90,23 @@ def publish(assignment: Assignment, *, target_employee_ids: list, actor_id) -> i
     return len(rows)
 
 
+def fire_trigger(org_id, employee_id, trigger_key: str, *, ip: str = "") -> int:
+    """Auto-complete an employee's pending recipients whose assignment listens for this trigger."""
+    if not trigger_key or trigger_key == "manual":
+        return 0
+    rows = AssignmentRecipient.objects.filter(
+        org_id=org_id,
+        employee_id=employee_id,
+        status="pending",
+        assignment__complete_on=trigger_key,
+    )
+    n = 0
+    for r in rows:
+        complete(r, ip=ip, note=f"auto:{trigger_key}")
+        n += 1
+    return n
+
+
 def advance_date(d: dt.date, recurrence: str, interval: int) -> dt.date:
     """Next occurrence date for a cadence (month/year arithmetic clamps the day)."""
     interval = max(1, interval)

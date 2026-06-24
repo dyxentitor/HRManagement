@@ -47,6 +47,8 @@ class Assignment(models.Model):
     default_due_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=ASSIGNMENT_STATUS, default="draft")
     created_by = models.UUIDField(null=True, blank=True)
+    # Completion auto-detection (Phase 4): a trigger key; "manual" = self-attest.
+    complete_on = models.CharField(max_length=32, default="manual")
     # Recurrence (Phase 3): a recurring assignment is a template that spawns instances.
     recurrence = models.CharField(max_length=12, choices=RECURRENCE, default="none")
     recurrence_interval = models.PositiveIntegerField(default=1)
