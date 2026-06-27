@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.39.0
+  version: 1.40.1
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -2387,6 +2387,21 @@ paths:
             schema:
               $ref: '#/components/schemas/EmployeeRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/v1/employees/next-code/:
+    get:
+      operationId: employees_next_code_retrieve
+      description: HR-facing employee CRUD.
+      tags:
+      - employees
       security:
       - jwtAuth: []
       responses:
