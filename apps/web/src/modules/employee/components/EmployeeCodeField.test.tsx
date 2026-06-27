@@ -29,7 +29,7 @@ describe("EmployeeCodeField", () => {
 		const user = userEvent.setup();
 		render(<Harness mode="edit" />);
 		expect(screen.getByLabelText(/^employee code$/i)).toHaveValue("EMP-2026-0003");
-		await user.click(screen.getByRole("button", { name: /generate employee code/i }));
+		await user.click(screen.getByRole("button", { name: /regenerate code/i }));
 		await waitFor(() =>
 			expect(screen.getByLabelText(/^employee code$/i)).toHaveValue("EMP-2026-0007"),
 		);

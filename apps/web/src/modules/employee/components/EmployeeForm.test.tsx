@@ -3,15 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-	perms: new Set<string>([
-		"employee:write:org",
-		"employee:bank:read",
-		"employee:bank:write",
-	]),
+	perms: new Set<string>(["employee:write:org", "employee:bank:read", "employee:bank:write"]),
+	nextCode: vi.fn(),
 }));
 vi.mock("@/lib/perm", () => ({
 	useCan: (p: string) => (p === "" ? false : mocks.perms.has(p)),
 }));
+// EmployeeCodeField pre-fills via employeeApi.nextCode on create-mount; default to ""
+// so the existing tests keep typing their own codes into an empty field.
+vi.mock("@/modules/employee/api", () => ({ employeeApi: { nextCode: mocks.nextCode } }));
 
 import { EmployeeForm } from "./EmployeeForm";
 
@@ -26,15 +26,20 @@ const defaultProps = {
 };
 
 beforeEach(() => {
-	mocks.perms = new Set([
-		"employee:write:org",
-		"employee:bank:read",
-		"employee:bank:write",
-	]);
+	mocks.perms = new Set(["employee:write:org", "employee:bank:read", "employee:bank:write"]);
 	defaultProps.onSubmit.mockReset();
+	mocks.nextCode.mockReset().mockResolvedValue("");
 });
 
 describe("EmployeeForm", () => {
+	it("pre-fills the employee code on a create form", async () => {
+		mocks.nextCode.mockResolvedValue("EMP-2026-0007");
+		render(<EmployeeForm {...defaultProps} />);
+		await vi.waitFor(() =>
+			expect(screen.getByLabelText(/^employee code$/i)).toHaveValue("EMP-2026-0007"),
+		);
+	});
+
 	it("expands and collapses the employment section", async () => {
 		const user = userEvent.setup();
 		render(<EmployeeForm {...defaultProps} />);
@@ -135,9 +140,7 @@ describe("EmployeeForm", () => {
 		await user.type(screen.getByLabelText(/hire date/i), "2026-01-01");
 		await user.selectOptions(screen.getByLabelText(/department/i), "d1");
 
-		await user.click(
-			screen.getByRole("switch", { name: /provision login account/i }),
-		);
+		await user.click(screen.getByRole("switch", { name: /provision login account/i }));
 
 		await user.click(screen.getByRole("button", { name: /^save$/i }));
 
@@ -165,16 +168,9 @@ describe("EmployeeForm", () => {
 				roles={[{ code: "employee", name: "Employee" }]}
 			/>,
 		);
-		await user.click(
-			screen.getByRole("switch", { name: /provision login account/i }),
-		);
-		expect(
-			screen.queryByLabelText(/temporary password/i),
-		).not.toBeInTheDocument();
-		await user.selectOptions(
-			screen.getByLabelText(/credential method/i),
-			"temp",
-		);
+		await user.click(screen.getByRole("switch", { name: /provision login account/i }));
+		expect(screen.queryByLabelText(/temporary password/i)).not.toBeInTheDocument();
+		await user.selectOptions(screen.getByLabelText(/credential method/i), "temp");
 		expect(screen.getByLabelText(/temporary password/i)).toBeInTheDocument();
 	});
 });

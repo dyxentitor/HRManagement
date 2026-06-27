@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import type { Employee, EmployeeWritePayload } from "../api";
 import { useFieldPerm } from "../lib/useFieldPerm";
 import { AvatarUpload } from "./AvatarUpload";
+import { EmployeeCodeField } from "./EmployeeCodeField";
 import { EncryptedFieldInput } from "./EncryptedFieldInput";
 import { ManagerPicker } from "./ManagerPicker";
 
@@ -479,12 +480,15 @@ function renderSection(id: Section["id"], a: SectionRenderArgs): React.ReactNode
 					{field(
 						"employee_code",
 						"Employee code",
-						<Input
-							id="employee_code"
-							readOnly={ro}
-							value={a.draft.employee_code ?? ""}
-							onChange={(e) => a.set("employee_code", e.target.value)}
-						/>,
+						ro ? (
+							<Input id="employee_code" readOnly value={a.draft.employee_code ?? ""} />
+						) : (
+							<EmployeeCodeField
+								value={a.draft.employee_code ?? ""}
+								onChange={(v) => a.set("employee_code", v)}
+								mode={a.initial ? "edit" : "create"}
+							/>
+						),
 						a.fieldErrors.employee_code,
 						true,
 					)}

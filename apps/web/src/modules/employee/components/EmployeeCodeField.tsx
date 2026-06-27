@@ -53,7 +53,8 @@ export function EmployeeCodeField({
 				variant="outline"
 				size="icon"
 				disabled={loading}
-				aria-label="Generate employee code"
+				aria-label="Regenerate code"
+				title="Generate a new employee code"
 				onClick={regenerate}
 			>
 				<RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />

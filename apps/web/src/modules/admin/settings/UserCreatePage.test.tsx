@@ -7,8 +7,7 @@ import { UserCreatePage } from "./UserCreatePage";
 
 const navigate = vi.fn();
 vi.mock("react-router-dom", async () => {
-	const actual =
-		await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+	const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
 	return { ...actual, useNavigate: () => navigate };
 });
 
@@ -25,9 +24,15 @@ vi.mock("../api", () => ({
 vi.mock("./settings-api", () => ({
 	settingsApi: { listDepartments: vi.fn() },
 }));
+// EmployeeCodeField pre-fills via nextCode on mount; "" keeps the field empty for the typed code.
+vi.mock("@/modules/employee/api", () => ({
+	employeeApi: { nextCode: vi.fn().mockResolvedValue("") },
+}));
 
 const toast = { success: vi.fn(), error: vi.fn() };
-vi.mock("sonner", () => ({ toast: { success: () => toast.success(), error: () => toast.error() } }));
+vi.mock("sonner", () => ({
+	toast: { success: () => toast.success(), error: () => toast.error() },
+}));
 
 import { roleApi, userApi } from "../api";
 import { settingsApi } from "./settings-api";
@@ -60,10 +65,7 @@ describe("UserCreatePage", () => {
 
 		await userEvent.type(screen.getByLabelText(/company email/i), "newhire@x.com");
 		await userEvent.type(screen.getByLabelText(/personal email/i), "home@gmail.com");
-		await userEvent.selectOptions(
-			screen.getByLabelText(/^role/i),
-			"hr_manager",
-		);
+		await userEvent.selectOptions(screen.getByLabelText(/^role/i), "hr_manager");
 		await userEvent.click(screen.getByRole("button", { name: /create user/i }));
 
 		await waitFor(() => expect(userApi.create).toHaveBeenCalled());
@@ -83,25 +85,14 @@ describe("UserCreatePage", () => {
 		await waitFor(() => screen.getByLabelText(/company email/i));
 
 		await userEvent.type(screen.getByLabelText(/company email/i), "newhire@x.com");
-		await userEvent.click(
-			screen.getByRole("switch", { name: /create an employee record/i }),
-		);
+		await userEvent.click(screen.getByRole("switch", { name: /create an employee record/i }));
 
-		await userEvent.type(
-			screen.getByLabelText(/employee code/i),
-			"EMP-99",
-		);
+		await userEvent.type(screen.getByLabelText(/employee code/i), "EMP-99");
 		await userEvent.type(screen.getByLabelText(/first name/i), "Ada");
 		await userEvent.type(screen.getByLabelText(/last name/i), "Lovelace");
 		await userEvent.type(screen.getByLabelText(/hire date/i), "2026-06-01");
-		await userEvent.selectOptions(
-			screen.getByLabelText(/department/i),
-			"d1",
-		);
-		await userEvent.selectOptions(
-			screen.getByLabelText(/employment type/i),
-			"contract",
-		);
+		await userEvent.selectOptions(screen.getByLabelText(/department/i), "d1");
+		await userEvent.selectOptions(screen.getByLabelText(/employment type/i), "contract");
 
 		await userEvent.click(screen.getByRole("button", { name: /create user/i }));
 
@@ -120,17 +111,12 @@ describe("UserCreatePage", () => {
 
 	it("surfaces the backend error reason when create fails", async () => {
 		const reason = "A user with email x already exists. Link instead.";
-		(userApi.create as ReturnType<typeof vi.fn>).mockRejectedValue(
-			new Error(reason),
-		);
+		(userApi.create as ReturnType<typeof vi.fn>).mockRejectedValue(new Error(reason));
 		renderPage();
 		await waitFor(() => screen.getByLabelText(/company email/i));
 
 		await userEvent.type(screen.getByLabelText(/company email/i), "newhire@x.com");
-		await userEvent.selectOptions(
-			screen.getByLabelText(/^role/i),
-			"hr_manager",
-		);
+		await userEvent.selectOptions(screen.getByLabelText(/^role/i), "hr_manager");
 		await userEvent.click(screen.getByRole("button", { name: /create user/i }));
 
 		expect(await screen.findByText(reason)).toBeInTheDocument();
@@ -139,9 +125,7 @@ describe("UserCreatePage", () => {
 	it("renders no-permission state without user:create", async () => {
 		canCreate = false;
 		renderPage();
-		expect(
-			await screen.findByText(/don't have permission to create users/i),
-		).toBeInTheDocument();
+		expect(await screen.findByText(/don't have permission to create users/i)).toBeInTheDocument();
 		expect(screen.queryByLabelText(/^email/i)).not.toBeInTheDocument();
 	});
 });

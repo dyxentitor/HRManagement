@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useCan } from "@/lib/perm";
+import { EmployeeCodeField } from "@/modules/employee/components/EmployeeCodeField";
 
 import { type RoleSummary, roleApi, userApi } from "../api";
 import { type Department, settingsApi } from "./settings-api";
@@ -200,11 +201,7 @@ export function UserCreatePage() {
 					{alsoCreateEmployee && (
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<Field id="employee_code" label="Employee code" required>
-								<Input
-									id="employee_code"
-									value={employeeCode}
-									onChange={(e) => setEmployeeCode(e.target.value)}
-								/>
+								<EmployeeCodeField value={employeeCode} onChange={setEmployeeCode} mode="create" />
 							</Field>
 							<Field id="first_name" label="First name" required>
 								<Input
