@@ -2,6 +2,30 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.42.0] — 2026-06-27
+
+**Configurable employee-code format** — full control of the generator from the Organization settings
+page. Extends v1.41.0.
+
+### Added / Changed
+
+- **Settings (Standard tier)** stored as `Organization.settings.employee_code`: `prefix · separator
+  (-//none) · include_year + year_digits (2026/26) · counter_width (3-6) · reset (yearly/never) ·
+  autofill`. Backward-compatible with v1.41.0's flat `employee_code_prefix`. `include_year=false`
+  forces `reset=never`.
+- **Backend:** `next_employee_code` rebuilt to read the config via a deterministic fixed-width parse
+  (robust with no separator / continuous counter); `employee_code_config()` helper;
+  `GET /employees/next-code/` now returns `{code, autofill}`.
+- **Frontend:** the v1.41.0 prefix field is replaced by an **"Employee Codes"** section on the
+  Organization settings page — a **live preview hero** + Format / Behaviour controls (`EmployeeCodeSettings`).
+  `EmployeeCodeField` honors the `autofill` flag (no pre-fill when off; ↻ still generates).
+
+### Tests
+
+- Backend **852** (+4: config/format/continuous/no-year/fallback, endpoint autofill). Frontend **427**
+  (+4: field autofill-off, EmployeeCodeSettings ×3 incl. preview/constraint/separator). Contracts
+  regenerated.
+
 ## [1.41.0] — 2026-06-27
 
 **Employee code auto-generator** — generate a unique, editable employee code wherever one is entered.
