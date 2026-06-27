@@ -21,6 +21,7 @@ export default function OrganizationSettingsPage() {
 		default_timezone: "",
 		default_locale: "",
 	});
+	const [prefix, setPrefix] = useState("");
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	// GET /org/settings requires org:settings:read. Gate the fetch on it so
@@ -39,6 +40,7 @@ export default function OrganizationSettingsPage() {
 				default_timezone: fresh.default_timezone,
 				default_locale: fresh.default_locale,
 			});
+			setPrefix(((fresh.settings?.employee_code_prefix as string) ?? "").trim());
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Failed to load");
 		}
@@ -52,8 +54,13 @@ export default function OrganizationSettingsPage() {
 		setSaving(true);
 		setError(null);
 		try {
-			const fresh = await settingsApi.patchOrg(form);
+			// PATCH replaces the whole `settings` JSON, so send the merged object.
+			const fresh = await settingsApi.patchOrg({
+				...form,
+				settings: { ...(org?.settings ?? {}), employee_code_prefix: prefix.trim() || "EMP" },
+			});
 			setOrg(fresh);
+			setPrefix(((fresh.settings?.employee_code_prefix as string) ?? "").trim());
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Save failed");
 		} finally {
@@ -71,6 +78,7 @@ export default function OrganizationSettingsPage() {
 			default_timezone: org.default_timezone,
 			default_locale: org.default_locale,
 		});
+		setPrefix(((org.settings?.employee_code_prefix as string) ?? "").trim());
 		setError(null);
 	}
 
@@ -91,18 +99,11 @@ export default function OrganizationSettingsPage() {
 
 	return (
 		<div className="flex flex-col gap-5">
-			<PageHeader
-				title="Organization"
-				subtitle="Branding and identity shown across the app."
-			/>
+			<PageHeader title="Organization" subtitle="Branding and identity shown across the app." />
 
 			<Section title="Branding">
 				<FieldRow label="Company logo">
-					<LogoUploader
-						currentLogoUrl={org.logo_url}
-						orgName={org.name}
-						onChanged={refresh}
-					/>
+					<LogoUploader currentLogoUrl={org.logo_url} orgName={org.name} onChanged={refresh} />
 				</FieldRow>
 				<FieldRow label="Display name" htmlFor="org-name">
 					<Input
@@ -120,9 +121,7 @@ export default function OrganizationSettingsPage() {
 						id="org-cur"
 						aria-label="Default currency"
 						value={form.default_currency}
-						onChange={(e) =>
-							setForm({ ...form, default_currency: e.target.value })
-						}
+						onChange={(e) => setForm({ ...form, default_currency: e.target.value })}
 					/>
 				</FieldRow>
 				<FieldRow label="Default timezone" htmlFor="org-tz">
@@ -130,9 +129,7 @@ export default function OrganizationSettingsPage() {
 						id="org-tz"
 						aria-label="Default timezone"
 						value={form.default_timezone}
-						onChange={(e) =>
-							setForm({ ...form, default_timezone: e.target.value })
-						}
+						onChange={(e) => setForm({ ...form, default_timezone: e.target.value })}
 					/>
 				</FieldRow>
 				<FieldRow label="Default locale" htmlFor="org-loc">
@@ -140,22 +137,31 @@ export default function OrganizationSettingsPage() {
 						id="org-loc"
 						aria-label="Default locale"
 						value={form.default_locale}
-						onChange={(e) =>
-							setForm({ ...form, default_locale: e.target.value })
-						}
+						onChange={(e) => setForm({ ...form, default_locale: e.target.value })}
 					/>
+				</FieldRow>
+				<FieldRow label="Employee code prefix" htmlFor="org-empprefix">
+					<Input
+						id="org-empprefix"
+						aria-label="Employee code prefix"
+						placeholder="EMP"
+						value={prefix}
+						onChange={(e) => setPrefix(e.target.value.replace(/[^A-Za-z0-9-]/g, "").slice(0, 8))}
+					/>
+					<p className="text-[11px] text-text-tertiary mt-1">
+						Codes are generated as{" "}
+						<code>
+							{prefix.trim() || "EMP"}-{new Date().getFullYear()}-NNNN
+						</code>{" "}
+						(e.g. {prefix.trim() || "EMP"}-{new Date().getFullYear()}-0001).
+					</p>
 				</FieldRow>
 			</Section>
 
 			{error && <div className="text-coral text-small">{error}</div>}
 
 			<div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
-				<Button
-					type="button"
-					variant="ghost"
-					onClick={resetForm}
-					disabled={saving}
-				>
+				<Button type="button" variant="ghost" onClick={resetForm} disabled={saving}>
 					Cancel
 				</Button>
 				<Button type="button" onClick={save} disabled={saving}>
@@ -166,10 +172,7 @@ export default function OrganizationSettingsPage() {
 	);
 }
 
-function Section({
-	title,
-	children,
-}: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
 		<div className="rounded-lg border border-border-subtle bg-surface p-4">
 			<h4 className="text-label uppercase text-text-tertiary mb-3">{title}</h4>
