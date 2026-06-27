@@ -81,8 +81,8 @@ describe("OrganizationSettingsPage", () => {
 		);
 	});
 
-	it("shows the employee-code prefix and PATCHes it (merged) on save", async () => {
-		mockOrg({ settings: { employee_code_prefix: "PVT" } });
+	it("shows the Employee Codes section and PATCHes the nested config on save", async () => {
+		mockOrg({ settings: { employee_code: { prefix: "PVT" } } });
 		(settingsApi.patchOrg as ReturnType<typeof vi.fn>).mockResolvedValue({
 			id: "org-1",
 			name: "Acme",
@@ -91,7 +91,7 @@ describe("OrganizationSettingsPage", () => {
 			default_currency: "MYR",
 			default_timezone: "Asia/Kuala_Lumpur",
 			default_locale: "en-MY",
-			settings: { employee_code_prefix: "ACME" },
+			settings: { employee_code: { prefix: "ACME" } },
 			status: "active",
 			logo_url: null,
 		});
@@ -104,7 +104,9 @@ describe("OrganizationSettingsPage", () => {
 		await waitFor(() =>
 			expect(settingsApi.patchOrg).toHaveBeenCalledWith(
 				expect.objectContaining({
-					settings: expect.objectContaining({ employee_code_prefix: "ACME" }),
+					settings: expect.objectContaining({
+						employee_code: expect.objectContaining({ prefix: "ACME" }),
+					}),
 				}),
 			),
 		);

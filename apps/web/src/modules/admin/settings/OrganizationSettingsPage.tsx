@@ -6,7 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCan } from "@/lib/perm";
 
+import { type CodeCfg, DEFAULT_CFG, EmployeeCodeSettings } from "./EmployeeCodeSettings";
 import { type OrgSettings, settingsApi } from "./settings-api";
+
+function readCfg(settings: Record<string, unknown> | undefined): CodeCfg {
+	const nested = (settings?.employee_code ?? {}) as Partial<CodeCfg>;
+	const flatPrefix = settings?.employee_code_prefix as string | undefined;
+	return { ...DEFAULT_CFG, ...nested, prefix: nested.prefix || flatPrefix || DEFAULT_CFG.prefix };
+}
 
 type FormFields = Pick<
 	OrgSettings,
@@ -21,7 +28,7 @@ export default function OrganizationSettingsPage() {
 		default_timezone: "",
 		default_locale: "",
 	});
-	const [prefix, setPrefix] = useState("");
+	const [codeCfg, setCodeCfg] = useState<CodeCfg>(DEFAULT_CFG);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	// GET /org/settings requires org:settings:read. Gate the fetch on it so
@@ -40,7 +47,7 @@ export default function OrganizationSettingsPage() {
 				default_timezone: fresh.default_timezone,
 				default_locale: fresh.default_locale,
 			});
-			setPrefix(((fresh.settings?.employee_code_prefix as string) ?? "").trim());
+			setCodeCfg(readCfg(fresh.settings));
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Failed to load");
 		}
@@ -57,10 +64,10 @@ export default function OrganizationSettingsPage() {
 			// PATCH replaces the whole `settings` JSON, so send the merged object.
 			const fresh = await settingsApi.patchOrg({
 				...form,
-				settings: { ...(org?.settings ?? {}), employee_code_prefix: prefix.trim() || "EMP" },
+				settings: { ...(org?.settings ?? {}), employee_code: codeCfg },
 			});
 			setOrg(fresh);
-			setPrefix(((fresh.settings?.employee_code_prefix as string) ?? "").trim());
+			setCodeCfg(readCfg(fresh.settings));
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Save failed");
 		} finally {
@@ -78,7 +85,7 @@ export default function OrganizationSettingsPage() {
 			default_timezone: org.default_timezone,
 			default_locale: org.default_locale,
 		});
-		setPrefix(((org.settings?.employee_code_prefix as string) ?? "").trim());
+		setCodeCfg(readCfg(org.settings));
 		setError(null);
 	}
 
@@ -140,22 +147,10 @@ export default function OrganizationSettingsPage() {
 						onChange={(e) => setForm({ ...form, default_locale: e.target.value })}
 					/>
 				</FieldRow>
-				<FieldRow label="Employee code prefix" htmlFor="org-empprefix">
-					<Input
-						id="org-empprefix"
-						aria-label="Employee code prefix"
-						placeholder="EMP"
-						value={prefix}
-						onChange={(e) => setPrefix(e.target.value.replace(/[^A-Za-z0-9-]/g, "").slice(0, 8))}
-					/>
-					<p className="text-[11px] text-text-tertiary mt-1">
-						Codes are generated as{" "}
-						<code>
-							{prefix.trim() || "EMP"}-{new Date().getFullYear()}-NNNN
-						</code>{" "}
-						(e.g. {prefix.trim() || "EMP"}-{new Date().getFullYear()}-0001).
-					</p>
-				</FieldRow>
+			</Section>
+
+			<Section title="Employee Codes">
+				<EmployeeCodeSettings value={codeCfg} onChange={setCodeCfg} />
 			</Section>
 
 			{error && <div className="text-coral text-small">{error}</div>}
