@@ -37,6 +37,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     photo_url = serializers.SerializerMethodField()
     profile_completeness = serializers.SerializerMethodField()
+    # Read-only convenience fields so the edit form can pre-select the current
+    # department/team and the directory can show names. `team` itself (in
+    # Meta.fields) is the writable FK — without it a PATCH that changed the team
+    # was silently dropped by DRF, the bug this fixes.
+    department_id = serializers.PrimaryKeyRelatedField(source="department", read_only=True)
+    department_name = serializers.CharField(source="department.name", read_only=True)
+    team_name = serializers.CharField(source="team.name", read_only=True, allow_null=True)
 
     def get_photo_url(self, obj: Employee) -> str | None:
         if not obj.photo_s3_key:
@@ -96,6 +103,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "postcode",
             "country_code",
             "department",
+            "department_id",
+            "department_name",
+            "team",
+            "team_name",
             "manager",
             "role_title",
             "employment_type",
