@@ -2,6 +2,31 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.41.0] — 2026-06-27
+
+**Employee code auto-generator** — generate a unique, editable employee code wherever one is entered.
+
+### Added
+
+- **Format `{PREFIX}-{YYYY}-{NNNN}`** (e.g. `EMP-2026-0001`): per-org prefix from
+  `Organization.settings["employee_code_prefix"]` (default `EMP`), current year, 4-digit counter that
+  **resets yearly** and is **gap-tolerant** (next = highest existing for this prefix+year + 1; legacy
+  codes that don't match are ignored).
+- **Backend:** `modules/employee/services/code.py` (`next_employee_code`, `employee_code_prefix`) +
+  `GET /api/v1/employees/next-code/` (gated `employee:create`, org-scoped).
+- **Frontend:** reusable **`EmployeeCodeField`** (input + ↻ regenerate) — pre-fills on **create**
+  forms, shows the existing code with a regenerate button on **edit** forms; wired into the **employee
+  form** and the **account-creation page**. Race recovery is the manual regenerate + the existing
+  duplicate-code validation error.
+- **Settings:** an **"Employee code prefix"** field on the Organization settings page (gated
+  `org:settings:write`).
+
+### Tests
+
+- Backend **848** (+3: service max+1/year/prefix, endpoint gate + scope). Frontend **423** (+4:
+  EmployeeCodeField create-prefill/edit-regenerate, employee-form prefill, settings prefix). Contracts
+  regenerated.
+
 ## [1.40.1] — 2026-06-24
 
 **Fix: "Assignments" appeared twice in the sidebar (Team + Admin).**
