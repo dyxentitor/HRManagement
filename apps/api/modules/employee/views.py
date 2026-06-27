@@ -184,9 +184,15 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="next-code")
     def next_code(self, request):
-        from .services.code import next_employee_code
+        from .services.code import employee_code_config, next_employee_code
 
-        return Response({"code": next_employee_code(request.user.org_id)})
+        org_id = request.user.org_id
+        return Response(
+            {
+                "code": next_employee_code(org_id),
+                "autofill": employee_code_config(org_id)["autofill"],
+            }
+        )
 
     @action(detail=False, methods=["get", "patch"], url_path="me")
     def me(self, request, *args, **kwargs):

@@ -39,7 +39,28 @@ def test_next_code_endpoint_gated_and_scoped():
     r = ok.get("/api/v1/employees/next-code/")
     assert r.status_code == 200, r.content
     assert r.json()["code"] == f"PVT-{dt.date.today().year}-0001"
+    assert r.json()["autofill"] is True
 
     no = APIClient()
     no.force_authenticate(nobody)
     assert no.get("/api/v1/employees/next-code/").status_code == 403
+
+
+@pytest.mark.django_db
+def test_next_code_reports_autofill_off():
+    org = Organization.objects.create(
+        name="X",
+        slug="nc2",
+        country_code="MY",
+        default_currency="MYR",
+        default_timezone="Asia/Kuala_Lumpur",
+        default_locale="en-MY",
+        settings={"employee_code": {"autofill": False}},
+    )
+    creator = User.objects.create_user(email="hr2@x.com", password="x", org_id=org.id)
+    role = Role.objects.create(org_id=org.id, code="hr", name="hr", is_system=False)
+    _grant(role, "employee:create")
+    UserRole.objects.create(user=creator, role=role)
+    c = APIClient()
+    c.force_authenticate(creator)
+    assert c.get("/api/v1/employees/next-code/").json()["autofill"] is False
