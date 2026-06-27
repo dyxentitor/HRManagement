@@ -60,6 +60,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return []
         if action == "create":
             return ["employee:create"]
+        if action == "next_code":
+            return ["employee:create"]
         if action == "update":
             return ["employee:write:org"]
         if action == "partial_update":
@@ -179,6 +181,12 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return Response(EmployeeSerializer(instance, context={"request": request}).data)
 
         raise PermissionDenied("You do not have permission to edit this employee.")
+
+    @action(detail=False, methods=["get"], url_path="next-code")
+    def next_code(self, request):
+        from .services.code import next_employee_code
+
+        return Response({"code": next_employee_code(request.user.org_id)})
 
     @action(detail=False, methods=["get", "patch"], url_path="me")
     def me(self, request, *args, **kwargs):
