@@ -3,7 +3,11 @@ import datetime as dt
 import pytest
 
 from modules.employee.models import Employee
-from modules.employee.services.code import employee_code_prefix, next_employee_code
+from modules.employee.services.code import (
+    employee_code_config,
+    employee_code_prefix,
+    next_employee_code,
+)
 from modules.organization.models import Department, Organization
 
 
@@ -49,3 +53,41 @@ def test_next_code_is_max_plus_one_for_current_year():
     _emp(org, "01001")  # legacy, ignored
     _emp(org, f"EMP-{year - 1}-0099")  # prior year, ignored
     assert next_employee_code(org.id) == f"EMP-{year}-0008"  # max(7)+1, gap not reused
+
+
+@pytest.mark.django_db
+def test_config_drives_format_and_continuous_counter():
+    year = dt.date.today().year
+    org = _org(
+        "c-cfg",
+        employee_code={
+            "prefix": "PVT",
+            "separator": "/",
+            "year_digits": 2,
+            "counter_width": 3,
+            "reset": "never",
+        },
+    )
+    yy = f"{year % 100:02d}"
+    assert next_employee_code(org.id) == f"PVT/{yy}/001"
+    _emp(org, f"PVT/{yy}/004")
+    _emp(org, f"PVT/{(year - 1) % 100:02d}/009")  # prior year — counts (continuous)
+    nxt = next_employee_code(org.id)
+    assert nxt == f"PVT/{yy}/010"  # max(9) + 1, width 3
+
+
+@pytest.mark.django_db
+def test_no_year_and_no_separator():
+    org = _org(
+        "c-noyear",
+        employee_code={"prefix": "E", "separator": "", "include_year": False, "counter_width": 5},
+    )
+    assert next_employee_code(org.id) == "E00001"
+    _emp(org, "E00042")
+    assert next_employee_code(org.id) == "E00043"
+
+
+@pytest.mark.django_db
+def test_config_defaults_and_flat_prefix_fallback():
+    assert employee_code_config(_org("c-d").id)["counter_width"] == 4
+    assert employee_code_config(_org("c-f", employee_code_prefix="OLD").id)["prefix"] == "OLD"
