@@ -28,12 +28,12 @@ const defaultProps = {
 beforeEach(() => {
 	mocks.perms = new Set(["employee:write:org", "employee:bank:read", "employee:bank:write"]);
 	defaultProps.onSubmit.mockReset();
-	mocks.nextCode.mockReset().mockResolvedValue("");
+	mocks.nextCode.mockReset().mockResolvedValue({ code: "", autofill: true });
 });
 
 describe("EmployeeForm", () => {
 	it("pre-fills the employee code on a create form", async () => {
-		mocks.nextCode.mockResolvedValue("EMP-2026-0007");
+		mocks.nextCode.mockResolvedValue({ code: "EMP-2026-0007", autofill: true });
 		render(<EmployeeForm {...defaultProps} />);
 		await vi.waitFor(() =>
 			expect(screen.getByLabelText(/^employee code$/i)).toHaveValue("EMP-2026-0007"),

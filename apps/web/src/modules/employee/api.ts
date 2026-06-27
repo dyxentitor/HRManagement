@@ -287,10 +287,10 @@ export const employeeApi = {
 			throw new Error("Delete photo failed");
 		}
 	},
-	nextCode: async (): Promise<string> => {
+	nextCode: async (): Promise<{ code: string; autofill: boolean }> => {
 		const { data, error } = await api.GET("/api/v1/employees/next-code/" as never);
 		if (error) throw new Error("Could not generate an employee code");
-		return (data as { code: string }).code;
+		return data as { code: string; autofill: boolean };
 	},
 };
 

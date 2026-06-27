@@ -26,7 +26,7 @@ vi.mock("./settings-api", () => ({
 }));
 // EmployeeCodeField pre-fills via nextCode on mount; "" keeps the field empty for the typed code.
 vi.mock("@/modules/employee/api", () => ({
-	employeeApi: { nextCode: vi.fn().mockResolvedValue("") },
+	employeeApi: { nextCode: vi.fn().mockResolvedValue({ code: "", autofill: true }) },
 }));
 
 const toast = { success: vi.fn(), error: vi.fn() };

@@ -14,12 +14,24 @@ function Harness({ mode }: { mode: "create" | "edit" }) {
 }
 
 beforeEach(() => {
-	api.nextCode.mockReset().mockResolvedValue("EMP-2026-0007");
+	api.nextCode.mockReset().mockResolvedValue({ code: "EMP-2026-0007", autofill: true });
 });
 
 describe("EmployeeCodeField", () => {
 	it("pre-fills on mount in create mode", async () => {
 		render(<Harness mode="create" />);
+		await waitFor(() =>
+			expect(screen.getByLabelText(/^employee code$/i)).toHaveValue("EMP-2026-0007"),
+		);
+	});
+
+	it("skips pre-fill when autofill is off but ↻ still generates", async () => {
+		api.nextCode.mockResolvedValue({ code: "EMP-2026-0007", autofill: false });
+		const user = userEvent.setup();
+		render(<Harness mode="create" />);
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.getByLabelText(/^employee code$/i)).toHaveValue("");
+		await user.click(screen.getByRole("button", { name: /regenerate code/i }));
 		await waitFor(() =>
 			expect(screen.getByLabelText(/^employee code$/i)).toHaveValue("EMP-2026-0007"),
 		);

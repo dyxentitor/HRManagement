@@ -19,10 +19,11 @@ export function EmployeeCodeField({
 	const [loading, setLoading] = useState(false);
 	const prefilled = useRef(false);
 
-	async function regenerate() {
+	async function regenerate(force: boolean) {
 		setLoading(true);
 		try {
-			onChange(await employeeApi.nextCode());
+			const { code, autofill } = await employeeApi.nextCode();
+			if (force || autofill) onChange(code);
 		} catch {
 			/* leave the field as-is; the user can type one */
 		} finally {
@@ -30,11 +31,12 @@ export function EmployeeCodeField({
 		}
 	}
 
-	// Create-mode: pre-fill once on mount when empty. Edit-mode never auto-overwrites.
+	// Create-mode: pre-fill once on mount when empty (respecting the org's autofill
+	// setting). Edit-mode never auto-overwrites. The ↻ button always generates.
 	useEffect(() => {
 		if (mode === "create" && !value && !prefilled.current) {
 			prefilled.current = true;
-			void regenerate();
+			void regenerate(false);
 		}
 	}, [mode, value]);
 
@@ -55,7 +57,7 @@ export function EmployeeCodeField({
 				disabled={loading}
 				aria-label="Regenerate code"
 				title="Generate a new employee code"
-				onClick={regenerate}
+				onClick={() => regenerate(true)}
 			>
 				<RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />
 			</Button>
