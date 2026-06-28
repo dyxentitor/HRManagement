@@ -2,6 +2,24 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.42.1] — 2026-06-28
+
+**Fix: changing an employee's team didn't save.**
+
+### Fixed
+
+- `EmployeeSerializer` never declared the **`team`** field, so DRF's `ModelSerializer` **silently
+  dropped** `{"team": …}` on `PATCH /employees/{id}/` (200 "updated" but no write) and omitted it on
+  read (the edit form couldn't pre-select the current team) — so a team change appeared to reset.
+- Added `team` as a **writable FK**, plus read-only **`department_id` / `department_name` /
+  `team_name`** (also fixes the department dropdown not pre-selecting on the edit form). Backend-only —
+  the frontend already sent/read the right shape.
+
+### Tests
+
+- Backend **855** (+3 regression: read exposes team/department; PATCH changes + clears team and
+  round-trips). Full employee suite 124 passed. Contracts regenerated.
+
 ## [1.42.0] — 2026-06-27
 
 **Configurable employee-code format** — full control of the generator from the Organization settings
