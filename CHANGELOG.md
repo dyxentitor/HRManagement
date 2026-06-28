@@ -2,6 +2,25 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.43.0] — 2026-06-28
+
+**Premium employee directory card** — redesign of the `/admin/people` Directory cards.
+
+### Changed
+
+- `EmployeeCard` rebuilt as a **dark-glass** card (reference-driven, command-center theme): centered
+  avatar with accent ring · name · role · **StatusPill** (status→tone) · a details panel with
+  **Email/Phone (click-to-copy + toast)**, **Department**, and **Tenure**. Top-right **↗ View** +
+  **✎ Edit** (Edit shown only with `employee:write:org`).
+- **Removed** the Email/Call action buttons, the attendance progress bar, and (per the reference) any
+  Comments affordance. Frontend-only — `status`/`hire_date`/`department_name` already ship from
+  `EmployeeSerializer`.
+
+### Tests
+
+- Frontend **427 passed, 0 failures** (EmployeeCard rewritten: renders status/tenure, View/Edit fire,
+  Email copies to clipboard). Backend unchanged at **855**.
+
 ## [1.42.1] — 2026-06-28
 
 **Fix: changing an employee's team didn't save.**
