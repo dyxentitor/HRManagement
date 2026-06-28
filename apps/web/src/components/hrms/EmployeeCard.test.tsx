@@ -1,86 +1,62 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/modules/employee/lib/format", () => ({ tenureFromHireDate: () => "2 yrs 5 mo" }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
+
 import { EmployeeCard } from "./EmployeeCard";
 
 const employee = {
-	id: "1",
+	id: "e1",
 	full_name: "Ops Lead",
 	role_title: "SOC Lead",
-	email: "ops@provintell.local",
-	phone: "+60 12 345 6789",
+	email: "ops@x.com",
+	phone: "+60123",
+	status: "active",
+	hire_date: "2024-01-01",
+	department_name: "Engineering",
 };
 
+beforeEach(() => {
+	toast.success.mockReset();
+});
+
 describe("EmployeeCard", () => {
-	it("renders name and role", () => {
-		render(
-			<EmployeeCard
-				employee={employee}
-				metric={{ label: "Attendance", value: 98, max: 100 }}
-			/>,
-		);
+	it("renders name, role, status, department and tenure", () => {
+		render(<EmployeeCard employee={employee} />);
 		expect(screen.getByText("Ops Lead")).toBeInTheDocument();
 		expect(screen.getByText("SOC Lead")).toBeInTheDocument();
+		expect(screen.getByText("Active")).toBeInTheDocument();
+		expect(screen.getByText("Engineering")).toBeInTheDocument();
+		expect(screen.getByText("Tenure")).toBeInTheDocument();
+		expect(screen.getByText("2 yrs 5 mo")).toBeInTheDocument();
+		expect(screen.queryByText(/comments/i)).not.toBeInTheDocument();
 	});
 
-	it("calls onView when view icon is clicked", async () => {
-		const user = userEvent.setup();
+	it("fires onView and onEdit from the corner buttons", async () => {
 		const onView = vi.fn();
-		render(
-			<EmployeeCard
-				employee={employee}
-				metric={{ label: "Attendance", value: 98, max: 100 }}
-				onView={onView}
-			/>,
-		);
-		await user.click(screen.getByRole("button", { name: /view profile/i }));
-		expect(onView).toHaveBeenCalledWith(employee.id);
-	});
-
-	it("shows text labels next to the action icons", () => {
-		render(
-			<EmployeeCard
-				employee={employee}
-				metric={{ label: "Attendance", value: 98, max: 100 }}
-			/>,
-		);
-		expect(screen.getByText("Email")).toBeInTheDocument();
-		expect(screen.getByText("Call")).toBeInTheDocument();
-		expect(screen.getByText("View")).toBeInTheDocument();
-	});
-
-	it("shows an Edit button only when onEdit is provided", async () => {
-		const user = userEvent.setup();
 		const onEdit = vi.fn();
-		const { rerender } = render(
-			<EmployeeCard
-				employee={employee}
-				metric={{ label: "Attendance", value: 98, max: 100 }}
-			/>,
-		);
-		expect(
-			screen.queryByRole("button", { name: /edit/i }),
-		).not.toBeInTheDocument();
-
-		rerender(
-			<EmployeeCard
-				employee={employee}
-				metric={{ label: "Attendance", value: 98, max: 100 }}
-				onEdit={onEdit}
-			/>,
-		);
-		await user.click(screen.getByRole("button", { name: /edit/i }));
-		expect(onEdit).toHaveBeenCalledWith(employee.id);
+		const user = userEvent.setup();
+		render(<EmployeeCard employee={employee} onView={onView} onEdit={onEdit} />);
+		await user.click(screen.getByRole("button", { name: /view profile/i }));
+		expect(onView).toHaveBeenCalledWith("e1");
+		await user.click(screen.getByRole("button", { name: /^edit$/i }));
+		expect(onEdit).toHaveBeenCalledWith("e1");
 	});
 
-	it("renders metric label and value", () => {
-		render(
-			<EmployeeCard
-				employee={employee}
-				metric={{ label: "Attendance", value: 98, max: 100 }}
-			/>,
-		);
-		expect(screen.getByText(/Attendance/)).toBeInTheDocument();
-		expect(screen.getByText(/98%/)).toBeInTheDocument();
+	it("hides Edit when onEdit is absent", () => {
+		render(<EmployeeCard employee={employee} />);
+		expect(screen.queryByRole("button", { name: /^edit$/i })).not.toBeInTheDocument();
+	});
+
+	it("copies the email to the clipboard on click", async () => {
+		const user = userEvent.setup();
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+		render(<EmployeeCard employee={employee} />);
+		await user.click(screen.getByRole("button", { name: /copy email/i }));
+		expect(writeText).toHaveBeenCalledWith("ops@x.com");
 	});
 });
