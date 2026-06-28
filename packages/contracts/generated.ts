@@ -3823,6 +3823,12 @@ export interface components {
             /** Format: uuid */
             department: string;
             /** Format: uuid */
+            readonly department_id: string;
+            readonly department_name: string;
+            /** Format: uuid */
+            team?: string | null;
+            readonly team_name: string | null;
+            /** Format: uuid */
             manager?: string | null;
             role_title?: string | null;
             employment_type: components["schemas"]["EmploymentTypeEnum"];
@@ -3912,6 +3918,8 @@ export interface components {
             country_code?: string | null;
             /** Format: uuid */
             department: string;
+            /** Format: uuid */
+            team?: string | null;
             /** Format: uuid */
             manager?: string | null;
             role_title?: string | null;
@@ -4555,6 +4563,8 @@ export interface components {
             country_code?: string | null;
             /** Format: uuid */
             department?: string;
+            /** Format: uuid */
+            team?: string | null;
             /** Format: uuid */
             manager?: string | null;
             role_title?: string | null;

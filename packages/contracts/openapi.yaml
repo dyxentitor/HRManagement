@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.41.0
+  version: 1.42.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -7201,6 +7201,21 @@ components:
         department:
           type: string
           format: uuid
+        department_id:
+          type: string
+          format: uuid
+          readOnly: true
+        department_name:
+          type: string
+          readOnly: true
+        team:
+          type: string
+          format: uuid
+          nullable: true
+        team_name:
+          type: string
+          readOnly: true
+          nullable: true
         manager:
           type: string
           format: uuid
@@ -7275,6 +7290,8 @@ components:
       - bank_account_last4
       - created_at
       - department
+      - department_id
+      - department_name
       - email
       - employee_code
       - employment_type
@@ -7287,6 +7304,7 @@ components:
       - org_id
       - photo_url
       - profile_completeness
+      - team_name
       - updated_at
     EmployeeLeaveOverride:
       type: object
@@ -7449,6 +7467,10 @@ components:
         department:
           type: string
           format: uuid
+        team:
+          type: string
+          format: uuid
+          nullable: true
         manager:
           type: string
           format: uuid
@@ -9001,6 +9023,10 @@ components:
         department:
           type: string
           format: uuid
+        team:
+          type: string
+          format: uuid
+          nullable: true
         manager:
           type: string
           format: uuid
