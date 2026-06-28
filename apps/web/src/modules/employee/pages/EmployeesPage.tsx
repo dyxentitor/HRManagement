@@ -2,13 +2,7 @@ import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {
-	type Column,
-	DataTable,
-	EmployeeCard,
-	EmptyState,
-	StatusPill,
-} from "@/components/hrms";
+import { type Column, DataTable, EmployeeCard, EmptyState, StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useCan } from "@/lib/perm";
@@ -28,9 +22,7 @@ const tableColumns: Column<Employee>[] = [
 	{
 		key: "attn",
 		header: "Attendance",
-		render: (r) => (
-			<StatusPill tone="mint" label={`${r.attendance_pct ?? 0}%`} />
-		),
+		render: (r) => <StatusPill tone="mint" label={`${r.attendance_pct ?? 0}%`} />,
 		align: "right",
 	},
 ];
@@ -59,9 +51,7 @@ export default function EmployeesPage() {
 			})
 			.catch((err: unknown) => {
 				if (!cancelled) {
-					setError(
-						err instanceof Error ? err.message : "Could not load employees",
-					);
+					setError(err instanceof Error ? err.message : "Could not load employees");
 					setLoading(false);
 				}
 			});
@@ -89,9 +79,7 @@ export default function EmployeesPage() {
 		<div className="space-y-6">
 			<PageHeader
 				title="Employees"
-				subtitle={
-					loading ? "Loading…" : `${filtered.length} of ${employees.length}`
-				}
+				subtitle={loading ? "Loading…" : `${filtered.length} of ${employees.length}`}
 				actions={
 					canAdd ? (
 						<Button
@@ -152,9 +140,7 @@ export default function EmployeesPage() {
 					icon="🌴"
 					title="No employees here"
 					description={
-						dept
-							? "Try a different department filter."
-							: "Add your first employee to get started."
+						dept ? "Try a different department filter." : "Add your first employee to get started."
 					}
 				/>
 			) : view === "cards" ? (
@@ -163,32 +149,13 @@ export default function EmployeesPage() {
 						<EmployeeCard
 							key={e.id}
 							employee={e}
-							metric={{
-								label: "Attendance",
-								value: e.attendance_pct ?? 0,
-								max: 100,
-							}}
 							onView={(id) => navigate(`/employees/${id}`)}
-							onMail={(email) => {
-								window.location.href = `mailto:${email}`;
-							}}
-							onCall={(phone) => {
-								window.location.href = `tel:${phone}`;
-							}}
-							onEdit={
-								canEdit
-									? (id) => navigate(`/employees/${id}/edit`)
-									: undefined
-							}
+							onEdit={canEdit ? (id) => navigate(`/employees/${id}/edit`) : undefined}
 						/>
 					))}
 				</div>
 			) : (
-				<DataTable<Employee>
-					rows={filtered}
-					columns={tableColumns}
-					rowKey={(e) => e.id}
-				/>
+				<DataTable<Employee> rows={filtered} columns={tableColumns} rowKey={(e) => e.id} />
 			)}
 		</div>
 	);
