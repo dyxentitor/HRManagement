@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.43.0
+  version: 1.44.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -5468,6 +5468,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/PayslipRecord'
           description: ''
+  /api/v1/permissions/catalogue/:
+    get:
+      operationId: permissions_catalogue_retrieve
+      description: |-
+        GET /api/v1/permissions/catalogue/?role=<code>
+
+        Returns every permission grouped into product-area modules, with human label/description/scope/
+        requires/dangerous. When ?role= is supplied, each permission is annotated with ``granted``.
+      tags:
+      - permissions
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/reports:
     get:
       operationId: reports_retrieve
@@ -5589,7 +5604,8 @@ paths:
   /api/v1/roles/:
     get:
       operationId: roles_list
-      description: List + retrieve roles in the actor's org.
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
       tags:
       - roles
       security:
@@ -5603,10 +5619,35 @@ paths:
                 items:
                   $ref: '#/components/schemas/RoleListItem'
           description: ''
+    post:
+      operationId: roles_create
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
+      tags:
+      - roles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoleDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDetail'
+          description: ''
   /api/v1/roles/{code}/:
     get:
       operationId: roles_retrieve
-      description: List + retrieve roles in the actor's org.
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
       parameters:
       - in: path
         name: code
@@ -5624,6 +5665,188 @@ paths:
               schema:
                 $ref: '#/components/schemas/RoleDetail'
           description: ''
+    put:
+      operationId: roles_update
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoleDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDetail'
+          description: ''
+    patch:
+      operationId: roles_partial_update
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoleDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRoleDetailRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDetail'
+          description: ''
+    delete:
+      operationId: roles_destroy
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/roles/{code}/clone/:
+    post:
+      operationId: roles_clone_create
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoleDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDetail'
+          description: ''
+  /api/v1/roles/{code}/members/:
+    get:
+      operationId: roles_members_retrieve
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDetail'
+          description: ''
+    post:
+      operationId: roles_members_create
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoleDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDetail'
+          description: ''
+  /api/v1/roles/{code}/members/{user_id}/:
+    delete:
+      operationId: roles_members_destroy
+      description: List/retrieve roles, plus the custom-role lifecycle (create / rename
+        / delete / clone).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: user_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - roles
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/roles/{code}/permissions/:
     patch:
       operationId: roles_permissions_partial_update
@@ -10277,6 +10500,23 @@ components:
           type: boolean
         status:
           $ref: '#/components/schemas/ProjectStatusEnum'
+    PatchedRoleDetailRequest:
+      type: object
+      description: Used for retrieve. Includes full permission_codes[].
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 255
+        is_system:
+          type: boolean
     PatchedShiftAssignmentRequest:
       type: object
       properties:
@@ -10808,12 +11048,37 @@ components:
         user_count:
           type: string
           readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
       required:
       - code
       - id
       - name
       - permission_codes
+      - updated_at
       - user_count
+    RoleDetailRequest:
+      type: object
+      description: Used for retrieve. Includes full permission_codes[].
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        description:
+          type: string
+          maxLength: 255
+        is_system:
+          type: boolean
+      required:
+      - code
+      - name
     RoleListItem:
       type: object
       description: Used for the list endpoint.

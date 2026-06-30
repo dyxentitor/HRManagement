@@ -2932,6 +2932,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/permissions/catalogue/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /api/v1/permissions/catalogue/?role=<code>
+         *
+         *     Returns every permission grouped into product-area modules, with human label/description/scope/
+         *     requires/dangerous. When ?role= is supplied, each permission is annotated with ``granted``.
+         */
+        get: operations["permissions_catalogue_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports": {
         parameters: {
             query?: never;
@@ -3059,10 +3081,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List + retrieve roles in the actor's org. */
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
         get: operations["roles_list"];
         put?: never;
-        post?: never;
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
+        post: operations["roles_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3076,11 +3099,66 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List + retrieve roles in the actor's org. */
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
         get: operations["roles_retrieve"];
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
+        put: operations["roles_update"];
+        post?: never;
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
+        delete: operations["roles_destroy"];
+        options?: never;
+        head?: never;
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
+        patch: operations["roles_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/roles/{code}/clone/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
+        post: operations["roles_clone_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/{code}/members/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
+        get: operations["roles_members_retrieve"];
+        put?: never;
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
+        post: operations["roles_members_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/roles/{code}/members/{user_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** @description List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone). */
+        delete: operations["roles_members_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5045,6 +5123,13 @@ export interface components {
             include_soc?: boolean;
             status?: components["schemas"]["ProjectStatusEnum"];
         };
+        /** @description Used for retrieve. Includes full permission_codes[]. */
+        PatchedRoleDetailRequest: {
+            code?: string;
+            name?: string;
+            description?: string;
+            is_system?: boolean;
+        };
         PatchedShiftAssignmentRequest: {
             /** Format: uuid */
             employee?: string;
@@ -5300,6 +5385,15 @@ export interface components {
             is_system?: boolean;
             readonly permission_codes: string;
             readonly user_count: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /** @description Used for retrieve. Includes full permission_codes[]. */
+        RoleDetailRequest: {
+            code: string;
+            name: string;
+            description?: string;
+            is_system?: boolean;
         };
         /** @description Used for the list endpoint. */
         RoleListItem: {
@@ -11174,6 +11268,24 @@ export interface operations {
             };
         };
     };
+    permissions_catalogue_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     reports_retrieve: {
         parameters: {
             query?: never;
@@ -11347,6 +11459,30 @@ export interface operations {
             };
         };
     };
+    roles_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleDetailRequest"];
+                "multipart/form-data": components["schemas"]["RoleDetailRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"];
+                };
+            };
+        };
+    };
     roles_retrieve: {
         parameters: {
             query?: never;
@@ -11365,6 +11501,172 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RoleDetail"];
                 };
+            };
+        };
+    };
+    roles_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleDetailRequest"];
+                "multipart/form-data": components["schemas"]["RoleDetailRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"];
+                };
+            };
+        };
+    };
+    roles_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    roles_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedRoleDetailRequest"];
+                "multipart/form-data": components["schemas"]["PatchedRoleDetailRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"];
+                };
+            };
+        };
+    };
+    roles_clone_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleDetailRequest"];
+                "multipart/form-data": components["schemas"]["RoleDetailRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"];
+                };
+            };
+        };
+    };
+    roles_members_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"];
+                };
+            };
+        };
+    };
+    roles_members_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleDetailRequest"];
+                "multipart/form-data": components["schemas"]["RoleDetailRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"];
+                };
+            };
+        };
+    };
+    roles_members_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
