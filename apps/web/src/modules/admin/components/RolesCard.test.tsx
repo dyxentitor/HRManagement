@@ -1,49 +1,44 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { roleApi, userRolesApi } from "../api";
+
+const canList = vi.hoisted(() => vi.fn());
+vi.mock("../api", () => ({ roleApi: { list: canList } }));
+const useCan = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/perm", () => ({ useCan }));
+
 import { RolesCard } from "./RolesCard";
 
-vi.mock("../api", () => ({
-	userRolesApi: { assign: vi.fn() },
-	roleApi: { list: vi.fn() },
-}));
-
-vi.mock("@/lib/perm", () => ({
-	useCan: () => true,
-}));
-
 beforeEach(() => {
-	vi.clearAllMocks();
-	(roleApi.list as ReturnType<typeof vi.fn>).mockResolvedValue([
-		{ code: "manager", name: "Manager", is_system: true, member_count: 1 },
-		{ code: "team_lead", name: "Team Lead", is_system: true, member_count: 0 },
-		{ code: "employee", name: "Employee", is_system: true, member_count: 1 },
+	canList.mockResolvedValue([
+		{ code: "hr_manager", name: "HR Manager", is_system: true, member_count: 2 },
+		{ code: "employee", name: "Employee", is_system: true, member_count: 9 },
 	]);
+	useCan.mockReturnValue(true);
 });
 
-describe("RolesCard", () => {
-	it("renders the user's current role badges", async () => {
-		render(<RolesCard userId="u-1" currentRoles={["manager", "employee"]} />);
-		expect(await screen.findByText("Manager")).toBeInTheDocument();
-		expect(screen.getByText("Employee")).toBeInTheDocument();
+describe("RolesCard (read-only)", () => {
+	it("shows role names as links to the role's page; no edit dialog", async () => {
+		render(
+			<MemoryRouter>
+				<RolesCard userId="u1" currentRoles={["hr_manager"]} />
+			</MemoryRouter>,
+		);
+		await waitFor(() => expect(screen.getByText("HR Manager")).toBeInTheDocument());
+		const link = screen.getByRole("link", { name: "HR Manager" });
+		expect(link).toHaveAttribute("href", "/admin/settings/roles/hr_manager");
+		// the old "Edit roles" dialog trigger is gone
+		expect(screen.queryByRole("button", { name: /edit roles/i })).not.toBeInTheDocument();
 	});
 
-	it("opens edit dialog and assigns roles", async () => {
-		(userRolesApi.assign as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-			id: "u-1",
-			roles: ["manager", "team_lead", "employee"],
-		});
-
-		render(<RolesCard userId="u-1" currentRoles={["manager", "employee"]} />);
-		fireEvent.click(screen.getByRole("button", { name: /edit roles/i }));
-		await waitFor(() => screen.getByText(/team lead/i));
-		fireEvent.click(screen.getByRole("checkbox", { name: /team lead/i }));
-		fireEvent.click(screen.getByRole("button", { name: /save/i }));
-		await waitFor(() =>
-			expect(userRolesApi.assign).toHaveBeenCalledWith(
-				"u-1",
-				expect.arrayContaining(["manager", "employee", "team_lead"]),
-			),
+	it("renders plain chips (no links) without role:write", async () => {
+		useCan.mockReturnValue(false);
+		render(
+			<MemoryRouter>
+				<RolesCard userId="u1" currentRoles={["employee"]} />
+			</MemoryRouter>,
 		);
+		await waitFor(() => expect(screen.getByText("Employee")).toBeInTheDocument());
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 	});
 });
