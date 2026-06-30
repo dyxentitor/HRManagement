@@ -1,4 +1,4 @@
-import { Loader2, Lock, Plus, Search } from "lucide-react";
+import { Loader2, Lock, MoreHorizontal, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -17,7 +17,15 @@ import {
 	roleApi,
 	roleMembersApi,
 } from "../api";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PermissionAccordion } from "../components/PermissionAccordion";
+import { RenameRoleDialog } from "../components/RenameRoleDialog";
 import { RoleFormModal } from "../components/RoleFormModal";
 import { RoleMembersTab } from "../components/RoleMembersTab";
 
@@ -59,6 +67,14 @@ export default function AdminRolesPage() {
 		mode: "empty" | "clone";
 		source?: string;
 	}>({ open: false, mode: "empty" });
+	const [renaming, setRenaming] = useState<RoleSummary | null>(null);
+	const [confirm, setConfirm] = useState<{
+		title: string;
+		description?: string;
+		confirmLabel?: string;
+		variant?: "default" | "danger";
+		onConfirm: () => void;
+	} | null>(null);
 
 	const loadRoles = useCallback(async () => {
 		const list = await roleApi.list().catch(() => []);
@@ -145,16 +161,24 @@ export default function AdminRolesPage() {
 		}
 	}
 
-	async function resetRole() {
+	function resetRole() {
 		if (!detail) return;
-		try {
-			await roleApi.reset(detail.code);
-			await loadDetail(detail.code);
-			void loadRoles();
-			toast.success("Reset to defaults.");
-		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Could not reset.");
-		}
+		setConfirm({
+			title: "Reset to defaults?",
+			description: `This drops any customizations and restores the shipped permissions for ${detail.name}.`,
+			confirmLabel: "Reset",
+			variant: "default",
+			onConfirm: async () => {
+				try {
+					await roleApi.reset(detail.code);
+					await loadDetail(detail.code);
+					void loadRoles();
+					toast.success("Reset to defaults.");
+				} catch (e) {
+					toast.error(e instanceof Error ? e.message : "Could not reset.");
+				}
+			},
+		});
 	}
 
 	function openCreate() {
@@ -163,22 +187,32 @@ export default function AdminRolesPage() {
 	function cloneRole(src: RoleSummary) {
 		setModal({ open: true, mode: "clone", source: src.code });
 	}
+	function renameRole(src: RoleSummary) {
+		setRenaming(src);
+	}
 	async function onRoleCreated(r: RoleDetail) {
 		await loadRoles();
 		select(r.code);
 		toast.success(`Created "${r.name}".`);
 	}
 
-	async function deleteRole(role: RoleSummary) {
-		if (!window.confirm(`Delete "${role.name}"? This can't be undone.`)) return;
-		try {
-			await roleApi.remove(role.code);
-			const list = await loadRoles();
-			setSelected(list[0]?.code ?? null);
-			toast.success(`Deleted "${role.name}".`);
-		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Could not delete role.");
-		}
+	function deleteRole(role: RoleSummary) {
+		setConfirm({
+			title: `Delete "${role.name}"?`,
+			description: "This can't be undone.",
+			confirmLabel: "Delete",
+			variant: "danger",
+			onConfirm: async () => {
+				try {
+					await roleApi.remove(role.code);
+					const list = await loadRoles();
+					setSelected(list[0]?.code ?? null);
+					toast.success(`Deleted "${role.name}".`);
+				} catch (e) {
+					toast.error(e instanceof Error ? e.message : "Could not delete role.");
+				}
+			},
+		});
 	}
 
 	const systemRoles = roles.filter((r) => r.is_system);
@@ -224,6 +258,7 @@ export default function AdminRolesPage() {
 						selected={selected}
 						onSelect={select}
 						canWrite={canWrite}
+						onRename={renameRole}
 						onClone={cloneRole}
 						onDelete={deleteRole}
 					/>
@@ -358,6 +393,31 @@ export default function AdminRolesPage() {
 				initialSource={modal.source}
 				onCreated={onRoleCreated}
 			/>
+
+			{renaming && (
+				<RenameRoleDialog
+					open
+					onOpenChange={(o) => !o && setRenaming(null)}
+					role={renaming}
+					onSaved={async () => {
+						setRenaming(null);
+						await loadRoles();
+						if (selected) void loadDetail(selected);
+					}}
+				/>
+			)}
+
+			{confirm && (
+				<ConfirmDialog
+					open
+					onOpenChange={(o) => !o && setConfirm(null)}
+					title={confirm.title}
+					description={confirm.description}
+					confirmLabel={confirm.confirmLabel}
+					variant={confirm.variant}
+					onConfirm={confirm.onConfirm}
+				/>
+			)}
 		</div>
 	);
 }
@@ -368,6 +428,7 @@ function RailSection({
 	selected,
 	onSelect,
 	canWrite,
+	onRename,
 	onClone,
 	onDelete,
 }: {
@@ -376,6 +437,7 @@ function RailSection({
 	selected: string | null;
 	onSelect: (code: string) => void;
 	canWrite?: boolean;
+	onRename?: (r: RoleSummary) => void;
 	onClone?: (r: RoleSummary) => void;
 	onDelete?: (r: RoleSummary) => void;
 }) {
@@ -409,26 +471,28 @@ function RailSection({
 						</span>
 					</button>
 					{canWrite && onClone && (
-						<div className="opacity-0 group-hover:opacity-100 flex gap-1">
-							<button
-								type="button"
-								title="Clone"
-								onClick={() => onClone(r)}
-								className="text-[10px] text-text-tertiary hover:text-text-primary px-1"
-							>
-								Clone
-							</button>
-							{onDelete && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
 								<button
 									type="button"
-									title="Delete"
-									onClick={() => onDelete(r)}
-									className="text-[10px] text-coral/80 hover:text-coral px-1"
+									aria-label={`Actions for ${r.name}`}
+									className="opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100 text-text-tertiary hover:text-text-primary p-1"
 								>
-									Del
+									<MoreHorizontal className="size-4" />
 								</button>
-							)}
-						</div>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								{onRename && (
+									<DropdownMenuItem onClick={() => onRename(r)}>Rename</DropdownMenuItem>
+								)}
+								<DropdownMenuItem onClick={() => onClone(r)}>Clone</DropdownMenuItem>
+								{onDelete && (
+									<DropdownMenuItem className="text-coral" onClick={() => onDelete(r)}>
+										Delete
+									</DropdownMenuItem>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
 					)}
 				</div>
 			))}

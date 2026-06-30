@@ -86,7 +86,6 @@ export function RoleFormModal({
 							placeholder="e.g. Payroll Auditor"
 							aria-label="Role name"
 							className={field}
-							autoFocus
 						/>
 					</label>
 					<label className="block">
