@@ -1,6 +1,7 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import BondViewSet, ClaimViewSet, CustomerViewSet, ProjectViewSet
+from .views import BondViewSet, ClaimViewSet, CustomerViewSet, ProjectViewSet, overview_view
 
 router = DefaultRouter()
 router.register(r"incentive/customers", CustomerViewSet, basename="incentive-customer")
@@ -8,4 +9,7 @@ router.register(r"incentive/projects", ProjectViewSet, basename="incentive-proje
 router.register(r"incentive/claims", ClaimViewSet, basename="incentive-claim")
 router.register(r"incentive/bonds", BondViewSet, basename="incentive-bond")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("incentive/overview/", overview_view, name="incentive-overview"),
+    *router.urls,
+]

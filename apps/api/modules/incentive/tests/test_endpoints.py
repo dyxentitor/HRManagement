@@ -111,7 +111,12 @@ def test_project_deadline_persists(stack):
     cust = _customer_with_pool(stack)
     rp = stack["c"]["manager"].post(
         "/api/v1/incentive/projects/",
-        {"customer": str(cust.id), "name": "Dated", "budget_mandays": "10", "deadline": "2026-09-30"},
+        {
+            "customer": str(cust.id),
+            "name": "Dated",
+            "budget_mandays": "10",
+            "deadline": "2026-09-30",
+        },
         format="json",
     )
     assert rp.status_code == 201, rp.content

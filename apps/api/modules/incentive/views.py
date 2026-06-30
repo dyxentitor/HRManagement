@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from rest_framework import status as drf_status
 from rest_framework import viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from common.feature_flags.decorators import requires_feature
@@ -22,6 +24,18 @@ from modules.identity.services.permissions import get_user_perms
 from .models import Claim, Customer, EmployeeBond, Project
 from .serializers import BondSerializer, ClaimSerializer, CustomerSerializer, ProjectSerializer
 from .services import ledger
+from .services.overview import build_overview
+
+OVERVIEW_PERMS = {"incentive:admin", "incentive:project:write"}
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def overview_view(request):
+    """GET /api/v1/incentive/overview/ — the command-center aggregation (managers + admin)."""
+    if not (OVERVIEW_PERMS & set(get_user_perms(request.user))):
+        return Response({"detail": "Permission denied"}, status=drf_status.HTTP_403_FORBIDDEN)
+    return Response(build_overview(request.user.org_id))
 
 ADMIN = "incentive:admin"
 PROJECT_WRITE = "incentive:project:write"
