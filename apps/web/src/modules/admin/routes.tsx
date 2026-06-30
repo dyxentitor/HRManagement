@@ -2,7 +2,6 @@ import { lazy } from "react";
 import { Navigate, type RouteObject, useParams } from "react-router-dom";
 
 const AdminRolesPage = lazy(() => import("./pages/AdminRolesPage"));
-const AdminRoleDetailPage = lazy(() => import("./pages/AdminRoleDetailPage"));
 const AdminModulesPage = lazy(() => import("./pages/AdminModulesPage"));
 const AdminTeamsPage = lazy(() => import("./pages/AdminTeamsPage"));
 const AdminLeaveTypesPage = lazy(() => import("./pages/AdminLeaveTypesPage"));
@@ -65,7 +64,7 @@ export const adminRoutes: RouteObject[] = [
 			{ path: "invitations", element: <Navigate to="/admin/people/onboarding" replace /> },
 			{ path: "archived", element: <ArchivedEmployeesPage /> },
 			{ path: "roles", element: <AdminRolesPage /> },
-			{ path: "roles/:code", element: <AdminRoleDetailPage /> },
+			{ path: "roles/:code", element: <AdminRolesPage /> },
 			{ path: "leave-types", element: <AdminLeaveTypesPage /> },
 			{ path: "announcements", element: <AdminAnnouncementsPage /> },
 			{ path: "audit", element: <AdminAuditLogPage /> },
