@@ -2,6 +2,44 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.44.0] — 2026-06-30
+
+**Incentive (Mandays) module** — a new engagement-reward subsystem (Phase 1). A customer holds a pool of
+prepaid **mandays** (1 manday = RM 50, one global setting); a manager opens a **project** with a manday
+**budget** (a hard cap); eligible employees **claim** mandays for work they did; a manager approves or
+rejects; approved mandays accrue in an **immutable, append-only ledger** and are walked through a quarterly
+**Pending → Approved → Paid** payout. Reported **separately** — never flows into payroll.
+
+### Added
+
+- **Backend `modules/incentive`** — `Customer`, `Project`, `Claim`, `MandayLedger`, `EmployeeBond` models;
+  a money-critical ledger engine (`services/ledger.py`). The customer pool is **never pre-sliced** — it
+  drains only on approved claims; "mandays remaining" per customer and per project is **derived** from the
+  ledger (no stored balances). Ledger types: `pool_topup`, `claim_payout`, `reclaimed` (pool-perspective
+  signed `delta`).
+- **Atomic, idempotent approval** — locks Customer→Project (fixed order), re-checks eligibility and **both**
+  ceilings (project budget + customer pool), mints exactly one `claim_payout`, stamps the billing quarter.
+  Reject mints nothing; cancel/reverse appends a balancing `reclaimed` row (append-only undo).
+- **SOC visibility** — projects are hidden from the SOC group by default (`is_soc()` resolved from
+  settings-defined role codes; fail-open if unconfigured), with a manager **include-SOC** opt-in, enforced
+  server-side (queryset filter + submit re-check).
+- **Eligibility = mandays bond** — a per-employee bond (accept + active period) gates claiming and payout.
+  The repayment/clawback obligation and certificate/CME auto-linking are deferred to a later phase.
+- **Management amendment clause** — `incentive:admin` may amend anything (budgets, approved claims, bonds);
+  money amendments go through the append-only ledger, and every amendment is audited (reuses `common.audit`).
+- **REST API + RBAC** — customers/projects/claims/bonds endpoints; 3 perms
+  (`incentive:admin`, `incentive:project:write`, `incentive:claim`) granted across the 7 default roles;
+  registered as a per-org togglable module (`incentive`). Contracts regenerated.
+- **Frontend** — **My Mandays** page (bond accept · claim submit · my claims) and an **Incentive** admin
+  page (customer pools + top-up · open project + SOC toggle · approve/reject claims); sidebar entries gated
+  by the feature flag.
+
+### Tests
+
+- Backend **+19** (11 ledger engine, money-critical: single-mint approval, idempotent double-approve, both
+  ceilings, reject/reverse, eligibility, Decimal precision; 8 endpoint/RBAC/SOC). Frontend **+1**.
+- Permission codes **+3**.
+
 ## [1.43.0] — 2026-06-28
 
 **Premium employee directory card** — redesign of the `/admin/people` Directory cards.
