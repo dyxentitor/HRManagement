@@ -4,6 +4,7 @@ import {
 	Calendar,
 	ClipboardCheck,
 	ClipboardList,
+	Coins,
 	FileSpreadsheet,
 	GraduationCap,
 	Inbox,
@@ -46,6 +47,13 @@ export const NAV: NavGroup[] = [
 		items: [
 			{ label: "Dashboard", to: "/", icon: LayoutDashboard, perm: "" },
 			{ label: "Action Center", to: "/action-center", icon: ListChecks, perm: "" },
+			{
+				label: "My Mandays",
+				to: "/incentive",
+				icon: Coins,
+				perm: "incentive:claim",
+				module: "incentive",
+			},
 			{ label: "My Profile", to: "/me/profile", icon: UserCircle, perm: "" },
 			{
 				label: "Leave",
@@ -123,6 +131,15 @@ export const NAV: NavGroup[] = [
 				perm: "assignment:read:org",
 				// HR/admin (read:org) OR managers/team-leads (create:team) — one entry, no duplicate.
 				anyPerm: ["assignment:read:org", "assignment:create:team"],
+			},
+			{
+				label: "Incentive",
+				to: "/admin/incentive",
+				icon: Briefcase,
+				perm: "incentive:project:write",
+				// admin (full) OR managers/team-leads (open projects + review claims).
+				anyPerm: ["incentive:admin", "incentive:project:write"],
+				module: "incentive",
 			},
 			{
 				label: "People",

@@ -9,6 +9,7 @@ import { adminRoutes } from "./modules/admin/routes";
 import { approvalsRoutes } from "./modules/approvals/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { assignmentsRoutes } from "./modules/assignments/routes";
+import { incentiveRoutes } from "./modules/incentive/routes";
 import { certificationRoutes } from "./modules/certification/routes";
 import { claimsRoutes } from "./modules/claims/routes";
 import { dashboardRoutes } from "./modules/dashboard/routes";
@@ -42,6 +43,11 @@ const router = createBrowserRouter([
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
 			...assignmentsRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...withFeature("incentive", incentiveRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
