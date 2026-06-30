@@ -2,6 +2,36 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.46.0] — 2026-06-30
+
+**Role-management enhancements** — polishes the v1.45.0 RBAC: a proper New-Role modal, working member
+assignment, and a per-person effective-access view that answers "why does this person have X?".
+
+### Fixed
+
+- **Member assignment was silently broken** — `employeeApi.list()` returned the linked login as `user`, not
+  `user_id`, so the member-picker filtered everyone out. The list now surfaces `user_id`; the picker offers
+  only employees with a login.
+
+### Added
+
+- **New-Role modal** (`RoleFormModal`) replacing the `window.prompt` flows — name, description, and a
+  **Start from: Empty | Clone an existing role** choice; reused for the rail's Clone action. `clone_role` +
+  endpoint accept an optional description.
+- **Effective-access view** — `GET /api/v1/users/{id}/effective-access/` returns a person's roles + their
+  **merged (union) permissions grouped by module, each tagged with the source role(s)**. Surfaced as an
+  `EffectiveAccessDrawer` (Eye icon on each member). This is the real mitigation for multi-role confusion:
+  permissions are a conflict-free union, so the value is *visibility into who granted what*.
+- **Assignment guardrails** — the Members tab shows each member's **other roles** as chips, **confirms** before
+  adding people to a role that grants any *sensitive* permission, and **warns** before removing someone's
+  **only** role (the v1.45.0 hard `409` block is relaxed to an allow-with-warning, per the owner's choice).
+
+### Tests
+
+- Backend **+5** (members `roles[]`, last-role removal now allowed, clone-with-description, effective-access
+  union + sources). Frontend **+6** (modal create/clone/validation, members other-roles + zero-role warn,
+  effective-access sources). Frontend suite **432**.
+
 ## [1.45.0] — 2026-06-30
 
 **Roles & Permissions redesign** — `/admin/settings/roles` rebuilt as an enterprise-grade RBAC manager
