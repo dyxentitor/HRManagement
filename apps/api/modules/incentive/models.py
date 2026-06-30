@@ -89,13 +89,14 @@ class Project(models.Model):
 
     @property
     def mandays_approved(self) -> Decimal:
-        """Approved payouts for this project, net of reclaims (always <= budget).
+        """Net mandays consumed by approved claims on this project (always <= budget).
 
-        Project ledger rows are ``claim_payout`` (+) and ``reclaimed`` (-), so their signed sum is
-        the net approved mandays.
+        ``delta`` is pool-perspective: a ``claim_payout`` is negative (drains the pool) and a
+        ``reclaimed`` is positive. So the *consumed* amount is the negated signed sum of this
+        project's ledger rows.
         """
         agg = self.ledger_rows.aggregate(s=Sum("delta"))
-        return agg["s"] or ZERO
+        return -(agg["s"] or ZERO)
 
     @property
     def mandays_remaining(self) -> Decimal:
