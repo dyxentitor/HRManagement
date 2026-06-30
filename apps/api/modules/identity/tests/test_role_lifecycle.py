@@ -62,6 +62,17 @@ def test_clone_role_snapshots_permissions(admin):
     assert set(r.json()["permission_codes"]) == {"leave:request:read:self", "claim:read:self"}
 
 
+def test_clone_with_description(admin):
+    src = _role(admin["org"], "src2", "claim:read:self")
+    r = admin["client"].post(
+        f"/api/v1/roles/{src.code}/clone/",
+        {"name": "Copy2", "description": "My custom audit role"},
+        format="json",
+    )
+    assert r.status_code == 201, r.content
+    assert r.json()["description"] == "My custom audit role"
+
+
 def test_rename_custom_role(admin):
     role = _role(admin["org"], "custom1")
     r = admin["client"].patch(f"/api/v1/roles/{role.code}/", {"name": "Renamed"}, format="json")

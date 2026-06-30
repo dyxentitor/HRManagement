@@ -390,13 +390,14 @@ def create_role(*, actor, name: str, description: str = ""):
     return role
 
 
-def clone_role(*, actor, source_code: str, name: str):
+def clone_role(*, actor, source_code: str, name: str, description: str | None = None):
     """Clone a role's permissions into a new independent custom role (snapshot, no inheritance)."""
     from common.audit import service as audit
     from modules.identity.models import Role, RolePermission
 
     src = Role.objects.get(org_id=actor.org_id, code=source_code)
-    role = create_role(actor=actor, name=name, description=f"Cloned from {src.name}")
+    desc = description if description else f"Cloned from {src.name}"
+    role = create_role(actor=actor, name=name, description=desc)
     src_perm_ids = list(
         RolePermission.objects.filter(role=src).values_list("permission_id", flat=True)
     )

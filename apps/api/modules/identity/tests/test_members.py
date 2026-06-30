@@ -97,8 +97,18 @@ def test_remove_member_keeps_other_roles(setup):
     assert codes == {"employee"}  # viewer removed, employee kept
 
 
-def test_remove_only_role_blocked(setup):
+def test_remove_only_role_allowed(setup):
+    # Per the v1.46.0 change: removing a person's last role is allowed (the UI warns first).
     solo = _user(setup["org"], "solo@x.com", setup["viewer"])  # viewer is their ONLY role
     r = setup["client"].delete(f"/api/v1/roles/viewer/members/{solo.id}/")
-    assert r.status_code == 409
-    assert UserRole.objects.filter(user=solo).count() == 1  # not removed
+    assert r.status_code == 200, r.content
+    assert UserRole.objects.filter(user=solo).count() == 0  # removed; now has no roles
+
+
+def test_members_payload_includes_other_roles(setup):
+    UserRole.objects.create(user=setup["u1"], role=setup["viewer"])  # u1: employee + viewer
+    r = setup["client"].get("/api/v1/roles/viewer/members/")
+    assert r.status_code == 200
+    member = next(m for m in r.json() if m["user_id"] == str(setup["u1"].id))
+    role_codes = {x["code"] for x in member["roles"]}
+    assert {"employee", "viewer"} <= role_codes

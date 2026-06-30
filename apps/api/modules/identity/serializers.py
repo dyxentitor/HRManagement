@@ -179,6 +179,7 @@ class RoleCloneInputSerializer(serializers.Serializer):
     """Body for POST /roles/{code}/clone/."""
 
     name = serializers.CharField(max_length=128)
+    description = serializers.CharField(max_length=255, required=False, allow_blank=True)
 
 
 class AssignRolesInputSerializer(serializers.Serializer):

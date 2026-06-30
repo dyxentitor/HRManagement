@@ -309,7 +309,10 @@ class RoleViewSet(viewsets.ModelViewSet):
         body.is_valid(raise_exception=True)
         try:
             role = clone_role(
-                actor=request.user, source_code=code, name=body.validated_data["name"]
+                actor=request.user,
+                source_code=code,
+                name=body.validated_data["name"],
+                description=body.validated_data.get("description"),
             )
         except Role.DoesNotExist:
             return Response({"detail": "Source role not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -327,6 +330,12 @@ class RoleViewSet(viewsets.ModelViewSet):
             )
         }
         users = {u.id: u for u in UserModel.objects.filter(id__in=user_ids)}
+        # each member's full role set (so the UI can show their other roles)
+        roles_by_user: dict = {}
+        for uid, rcode, rname in UserRole.objects.filter(user_id__in=user_ids).values_list(
+            "user_id", "role__code", "role__name"
+        ):
+            roles_by_user.setdefault(uid, []).append({"code": rcode, "name": rname})
         out = []
         for uid in user_ids:
             e = emps.get(uid)
@@ -338,6 +347,7 @@ class RoleViewSet(viewsets.ModelViewSet):
                     "employee_id": str(e.id) if e else None,
                     "name": name,
                     "email": (u.email if u else (e.email if e else "")),
+                    "roles": roles_by_user.get(uid, []),
                 }
             )
         return out
@@ -370,12 +380,8 @@ class RoleViewSet(viewsets.ModelViewSet):
         target = UserModel.objects.filter(id=user_id, org_id=request.user.org_id).first()
         if target is None:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        # Removing a person's last role is allowed (they'll have no access); the UI warns first.
         current = set(UserRole.objects.filter(user=target).values_list("role__code", flat=True))
-        if current == {role.code}:
-            return Response(
-                {"detail": "This is the member's only role. Assign another role first."},
-                status=status.HTTP_409_CONFLICT,
-            )
         try:
             assign_roles_to_user(
                 actor=request.user, target=target, role_codes=list(current - {role.code})
