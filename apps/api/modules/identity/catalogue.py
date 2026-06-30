@@ -12,7 +12,7 @@ from typing import Any
 from .models import Permission, Role
 
 # Ordered product-area taxonomy mapping code prefixes to display groups; this is where split domains
-# are merged (payslip+payroll, cert+training, user+employee). Presentation config, versioned in code.
+# are merged (payslip+payroll, cert+training, user+employee). Presentation config in code.
 # A prefix not listed here falls into the synthetic "other" group at the end.
 MODULES: list[dict[str, Any]] = [
     {
