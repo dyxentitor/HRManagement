@@ -9,7 +9,6 @@ import pytest
 from rest_framework.exceptions import ValidationError
 
 from modules.employee.models import Employee
-from modules.identity.models import User
 from modules.incentive.models import Claim, Customer, EmployeeBond, MandayLedger, Project
 from modules.incentive.services import ledger
 from modules.organization.models import Department, Organization
@@ -56,15 +55,27 @@ def stack(db):
     _bond(org, claimant)
     customer = Customer.objects.create(org_id=org.id, name="Acme")
     project = Project.objects.create(
-        org_id=org.id, customer=customer, name="Pentest", budget_mandays=Decimal("40"),
+        org_id=org.id,
+        customer=customer,
+        name="Pentest",
+        budget_mandays=Decimal("40"),
         manager_id=mgr.id,
     )
-    return {"org": org, "dept": dept, "mgr": mgr, "clm": claimant, "cust": customer, "proj": project}
+    return {
+        "org": org,
+        "dept": dept,
+        "mgr": mgr,
+        "clm": claimant,
+        "cust": customer,
+        "proj": project,
+    }
 
 
 def _claim(s, mandays):
     return Claim.objects.create(
-        org_id=s["org"].id, project=s["proj"], employee_id=s["clm"].id,
+        org_id=s["org"].id,
+        project=s["proj"],
+        employee_id=s["clm"].id,
         mandays=Decimal(str(mandays)),
     )
 

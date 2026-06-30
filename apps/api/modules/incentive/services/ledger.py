@@ -1,12 +1,12 @@
 """Incentive ledger engine — the money-critical core.
 
-Sign convention: ``MandayLedger.delta`` is **pool-perspective** — ``pool_topup`` adds (+), ``claim_payout``
-drains (-), ``reclaimed`` restores (+). Therefore ``customer_remaining = Σ delta`` directly; a project's
-*consumed* mandays and an employee's *earnings* are the negated sums of the relevant rows.
+Sign convention: ``MandayLedger.delta`` is **pool-perspective** — ``pool_topup`` adds (+),
+``claim_payout`` drains (-), ``reclaimed`` restores (+). Therefore ``customer_remaining = Σ delta``
+directly; a project's *consumed* mandays and an employee's *earnings* are the negated row sums.
 
-All money-moving operations are atomic and lock the Customer then the Project (fixed order). Approval is the
-only event that mints a payout; reject mints nothing; reverse writes a balancing ``reclaimed`` row. The ledger
-is append-only — corrections (including management amendments) are new rows, never edits.
+Money-moving operations are atomic and lock the Customer then the Project (fixed order). Approval is
+the only event that mints a payout; reject mints nothing; reverse writes a balancing ``reclaimed``
+row. The ledger is append-only — corrections (incl. amendments) are new rows, never edits.
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ def can_see_project(employee, project: Project) -> bool:
     return not is_soc(employee)
 
 
-# --------------------------------------------------------------------------- eligibility (mandays bond)
+# ------------------------------------------------------------------ eligibility (mandays bond)
 def active_bond(employee_id, org_id, on: dt.date | None = None) -> EmployeeBond | None:
     bond = EmployeeBond.objects.filter(org_id=org_id, employee_id=employee_id).first()
     return bond if (bond and bond.is_active(on)) else None
@@ -127,10 +127,10 @@ def top_up(customer: Customer, mandays, *, actor_id, note: str = "") -> MandayLe
 def approve_claim(claim: Claim, *, actor_id) -> MandayLedger:
     """Approve a pending claim and mint exactly one ``claim_payout``.
 
-    Atomic + idempotent. Locks Customer then Project, re-checks eligibility and both ceilings (project
-    budget and customer pool) from the ledger, then mints the payout and stamps the billing quarter.
+    Atomic + idempotent. Locks Customer then Project, re-checks eligibility and both ceilings
+    (project budget and customer pool), then mints the payout and stamps the billing quarter.
     """
-    # Lock the customer then the project (fixed order) to serialise concurrent approvals on the pool.
+    # Lock customer then project (fixed order) to serialise concurrent approvals on the pool.
     project = Project.objects.select_for_update().get(pk=claim.project_id)
     customer = Customer.objects.select_for_update().get(pk=project.customer_id)
 
@@ -220,9 +220,7 @@ def reverse_claim(claim: Claim, *, actor_id, reason: str = "") -> MandayLedger:
         raise ValidationError("Only an approved claim can be reversed.")
 
     payout = (
-        MandayLedger.objects.filter(claim=claim, ledger_type="claim_payout")
-        .order_by("seq")
-        .last()
+        MandayLedger.objects.filter(claim=claim, ledger_type="claim_payout").order_by("seq").last()
     )
     if payout is None:
         raise ValidationError("No payout row found for this claim.")

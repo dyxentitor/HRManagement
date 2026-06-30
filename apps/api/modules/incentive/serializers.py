@@ -1,0 +1,101 @@
+from __future__ import annotations
+
+from rest_framework import serializers
+
+from .models import Claim, Customer, EmployeeBond, Project
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    mandays_total = serializers.ReadOnlyField()
+    mandays_remaining = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Customer
+        fields = (
+            "id",
+            "name",
+            "is_active",
+            "notes",
+            "mandays_total",
+            "mandays_remaining",
+            "created_at",
+        )
+        read_only_fields = ("id", "created_at")
+
+
+class ProjectSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(source="customer.name", read_only=True)
+    mandays_approved = serializers.ReadOnlyField()
+    mandays_remaining = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Project
+        fields = (
+            "id",
+            "customer",
+            "customer_name",
+            "name",
+            "description",
+            "budget_mandays",
+            "manager_id",
+            "include_soc",
+            "status",
+            "mandays_approved",
+            "mandays_remaining",
+            "created_at",
+        )
+        read_only_fields = ("id", "created_at", "manager_id")
+
+
+class ClaimSerializer(serializers.ModelSerializer):
+    project_name = serializers.CharField(source="project.name", read_only=True)
+
+    class Meta:
+        model = Claim
+        fields = (
+            "id",
+            "project",
+            "project_name",
+            "employee_id",
+            "mandays",
+            "note",
+            "status",
+            "reviewed_by",
+            "reviewed_at",
+            "reject_reason",
+            "billing_quarter",
+            "payout_status",
+            "created_at",
+        )
+        read_only_fields = (
+            "id",
+            "employee_id",
+            "status",
+            "reviewed_by",
+            "reviewed_at",
+            "reject_reason",
+            "billing_quarter",
+            "payout_status",
+            "created_at",
+        )
+
+
+class BondSerializer(serializers.ModelSerializer):
+    is_active = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployeeBond
+        fields = (
+            "id",
+            "employee_id",
+            "accepted_at",
+            "period_start",
+            "period_end",
+            "terms_version",
+            "is_active",
+            "created_at",
+        )
+        read_only_fields = ("id", "accepted_at", "created_at")
+
+    def get_is_active(self, obj) -> bool:
+        return obj.is_active()

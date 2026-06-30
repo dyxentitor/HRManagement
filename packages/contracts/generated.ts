@@ -1334,6 +1334,260 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/incentive/bonds/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Per-employee mandays bonds. Management creates/manages; an employee accepts their own. */
+        get: operations["incentive_bonds_list"];
+        put?: never;
+        /** @description Per-employee mandays bonds. Management creates/manages; an employee accepts their own. */
+        post: operations["incentive_bonds_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/bonds/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Per-employee mandays bonds. Management creates/manages; an employee accepts their own. */
+        get: operations["incentive_bonds_retrieve"];
+        /** @description Per-employee mandays bonds. Management creates/manages; an employee accepts their own. */
+        put: operations["incentive_bonds_update"];
+        post?: never;
+        /** @description Per-employee mandays bonds. Management creates/manages; an employee accepts their own. */
+        delete: operations["incentive_bonds_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Per-employee mandays bonds. Management creates/manages; an employee accepts their own. */
+        patch: operations["incentive_bonds_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/incentive/bonds/{id}/accept/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Per-employee mandays bonds. Management creates/manages; an employee accepts their own. */
+        post: operations["incentive_bonds_accept_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/claims/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        get: operations["incentive_claims_list"];
+        put?: never;
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        post: operations["incentive_claims_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/claims/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        get: operations["incentive_claims_retrieve"];
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        put: operations["incentive_claims_update"];
+        post?: never;
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        delete: operations["incentive_claims_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        patch: operations["incentive_claims_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/incentive/claims/{id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        post: operations["incentive_claims_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/claims/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        post: operations["incentive_claims_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/claims/{id}/reverse/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        post: operations["incentive_claims_reverse_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/claims/{id}/set_payout/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Walk an approved claim's payout Pending -> Approved -> Paid (admin; no money effect). */
+        post: operations["incentive_claims_set_payout_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/customers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Customers + their manday pools. Management-only. */
+        get: operations["incentive_customers_list"];
+        put?: never;
+        /** @description Customers + their manday pools. Management-only. */
+        post: operations["incentive_customers_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/customers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Customers + their manday pools. Management-only. */
+        get: operations["incentive_customers_retrieve"];
+        /** @description Customers + their manday pools. Management-only. */
+        put: operations["incentive_customers_update"];
+        post?: never;
+        /** @description Customers + their manday pools. Management-only. */
+        delete: operations["incentive_customers_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Customers + their manday pools. Management-only. */
+        patch: operations["incentive_customers_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/incentive/customers/{id}/top_up/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Customers + their manday pools. Management-only. */
+        post: operations["incentive_customers_top_up_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/projects/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Projects under a customer. Managers open/manage; SOC visibility enforced server-side. */
+        get: operations["incentive_projects_list"];
+        put?: never;
+        /** @description Projects under a customer. Managers open/manage; SOC visibility enforced server-side. */
+        post: operations["incentive_projects_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/projects/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Projects under a customer. Managers open/manage; SOC visibility enforced server-side. */
+        get: operations["incentive_projects_retrieve"];
+        /** @description Projects under a customer. Managers open/manage; SOC visibility enforced server-side. */
+        put: operations["incentive_projects_update"];
+        post?: never;
+        /** @description Projects under a customer. Managers open/manage; SOC visibility enforced server-side. */
+        delete: operations["incentive_projects_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Projects under a customer. Managers open/manage; SOC visibility enforced server-side. */
+        patch: operations["incentive_projects_partial_update"];
+        trace?: never;
+    };
     "/api/v1/invitations/": {
         parameters: {
             query?: never;
@@ -3546,6 +3800,31 @@ export interface components {
         AttendanceRecordStatusEnum: "present" | "late" | "absent" | "holiday" | "on_leave" | "partial";
         /** @enum {unknown} */
         BlankEnum: "";
+        Bond: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            employee_id: string;
+            /** Format: date-time */
+            readonly accepted_at: string | null;
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            terms_version?: string;
+            readonly is_active: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        BondRequest: {
+            /** Format: uuid */
+            employee_id: string;
+            /** Format: date */
+            period_start: string;
+            /** Format: date */
+            period_end: string;
+            terms_version?: string;
+        };
         /**
          * @description * `policy` - Policy
          *     * `event` - Event
@@ -3619,6 +3898,28 @@ export interface components {
          * @enum {string}
          */
         ChannelEnum: "in_app" | "email";
+        Claim: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            project: string;
+            readonly project_name: string;
+            /** Format: uuid */
+            readonly employee_id: string;
+            /** Format: decimal */
+            mandays: string;
+            note?: string;
+            readonly status: components["schemas"]["ClaimStatusEnum"];
+            /** Format: uuid */
+            readonly reviewed_by: string | null;
+            /** Format: date-time */
+            readonly reviewed_at: string | null;
+            readonly reject_reason: string;
+            readonly billing_quarter: string;
+            readonly payout_status: components["schemas"]["PayoutStatusEnum"];
+            /** Format: date-time */
+            readonly created_at: string;
+        };
         ClaimApproval: {
             readonly id: number;
             level: number;
@@ -3750,16 +4051,34 @@ export interface components {
             merchant?: string;
         };
         /**
-         * @description * `draft` - Draft
-         *     * `submitted` - Submitted
-         *     * `manager_approved` - Manager approved
-         *     * `finance_approved` - Finance approved
-         *     * `reimbursed` - Reimbursed
+         * @description * `pending` - Pending
+         *     * `approved` - Approved
          *     * `rejected` - Rejected
          *     * `cancelled` - Cancelled
          * @enum {string}
          */
-        ClaimStatusEnum: "draft" | "submitted" | "manager_approved" | "finance_approved" | "reimbursed" | "rejected" | "cancelled";
+        ClaimStatusEnum: "pending" | "approved" | "rejected" | "cancelled";
+        Customer: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            is_active?: boolean;
+            notes?: string;
+            /** Format: double */
+            readonly mandays_total: number;
+            /**
+             * Format: double
+             * @description Top-ups minus approved payouts (net of reclaims) across all this customer's projects.
+             */
+            readonly mandays_remaining: number;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        CustomerRequest: {
+            name: string;
+            is_active?: boolean;
+            notes?: string;
+        };
         /**
          * @description * `pending` - Pending
          *     * `sent` - Sent
@@ -4474,6 +4793,15 @@ export interface components {
             /** Format: date */
             recurrence_until?: string | null;
         };
+        PatchedBondRequest: {
+            /** Format: uuid */
+            employee_id?: string;
+            /** Format: date */
+            period_start?: string;
+            /** Format: date */
+            period_end?: string;
+            terms_version?: string;
+        };
         PatchedCertificationWriteRequest: {
             name?: string;
             issuer?: string;
@@ -4504,6 +4832,13 @@ export interface components {
             monthly_limit?: string;
             approval_chain_code?: string;
         };
+        PatchedClaimRequest: {
+            /** Format: uuid */
+            project?: string;
+            /** Format: decimal */
+            mandays?: string;
+            note?: string;
+        };
         PatchedClaimRequestRequest: {
             /** Format: uuid */
             category?: string;
@@ -4514,6 +4849,11 @@ export interface components {
             expense_date?: string;
             description?: string;
             merchant?: string;
+        };
+        PatchedCustomerRequest: {
+            name?: string;
+            is_active?: boolean;
+            notes?: string;
         };
         PatchedDepartmentRequest: {
             name?: string;
@@ -4695,6 +5035,16 @@ export interface components {
             pay_date?: string;
             status?: components["schemas"]["PayrollPeriodStatusEnum"];
         };
+        PatchedProjectRequest: {
+            /** Format: uuid */
+            customer?: string;
+            name?: string;
+            description?: string;
+            /** Format: decimal */
+            budget_mandays?: string;
+            include_soc?: boolean;
+            status?: components["schemas"]["ProjectStatusEnum"];
+        };
         PatchedShiftAssignmentRequest: {
             /** Format: uuid */
             employee?: string;
@@ -4760,6 +5110,13 @@ export interface components {
             /** Format: date */
             effective_to?: string | null;
         };
+        /**
+         * @description * `pending` - Pending
+         *     * `approved` - Approved
+         *     * `paid` - Paid
+         * @enum {string}
+         */
+        PayoutStatusEnum: "pending" | "approved" | "paid";
         PayrollPeriod: {
             /** Format: uuid */
             readonly id: string;
@@ -4880,6 +5237,50 @@ export interface components {
          * @enum {string}
          */
         PriorityEnum: "low" | "normal" | "high" | "urgent";
+        Project: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            customer: string;
+            readonly customer_name: string;
+            name: string;
+            description?: string;
+            /** Format: decimal */
+            budget_mandays: string;
+            /** Format: uuid */
+            readonly manager_id: string;
+            include_soc?: boolean;
+            status?: components["schemas"]["ProjectStatusEnum"];
+            /**
+             * Format: double
+             * @description Net mandays consumed by approved claims on this project (always <= budget).
+             *
+             *     ``delta`` is pool-perspective: a ``claim_payout`` is negative (drains the pool) and a
+             *     ``reclaimed`` is positive. So the *consumed* amount is the negated signed sum of this
+             *     project's ledger rows.
+             */
+            readonly mandays_approved: number;
+            /** Format: double */
+            readonly mandays_remaining: number;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        ProjectRequest: {
+            /** Format: uuid */
+            customer: string;
+            name: string;
+            description?: string;
+            /** Format: decimal */
+            budget_mandays: string;
+            include_soc?: boolean;
+            status?: components["schemas"]["ProjectStatusEnum"];
+        };
+        /**
+         * @description * `open` - Open
+         *     * `closed` - Closed
+         * @enum {string}
+         */
+        ProjectStatusEnum: "open" | "closed";
         /**
          * @description * `none` - None
          *     * `daily` - Daily
@@ -7686,6 +8087,706 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Employee"];
+                };
+            };
+        };
+    };
+    incentive_bonds_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bond"][];
+                };
+            };
+        };
+    };
+    incentive_bonds_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BondRequest"];
+                "multipart/form-data": components["schemas"]["BondRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bond"];
+                };
+            };
+        };
+    };
+    incentive_bonds_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bond"];
+                };
+            };
+        };
+    };
+    incentive_bonds_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BondRequest"];
+                "multipart/form-data": components["schemas"]["BondRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bond"];
+                };
+            };
+        };
+    };
+    incentive_bonds_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    incentive_bonds_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBondRequest"];
+                "multipart/form-data": components["schemas"]["PatchedBondRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bond"];
+                };
+            };
+        };
+    };
+    incentive_bonds_accept_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BondRequest"];
+                "multipart/form-data": components["schemas"]["BondRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bond"];
+                };
+            };
+        };
+    };
+    incentive_claims_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"][];
+                };
+            };
+        };
+    };
+    incentive_claims_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    incentive_claims_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    incentive_claims_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    incentive_claims_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    incentive_claims_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedClaimRequest"];
+                "multipart/form-data": components["schemas"]["PatchedClaimRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    incentive_claims_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    incentive_claims_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    incentive_claims_reverse_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    incentive_claims_set_payout_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
+    incentive_customers_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"][];
+                };
+            };
+        };
+    };
+    incentive_customers_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerRequest"];
+                "multipart/form-data": components["schemas"]["CustomerRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+        };
+    };
+    incentive_customers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+        };
+    };
+    incentive_customers_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerRequest"];
+                "multipart/form-data": components["schemas"]["CustomerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+        };
+    };
+    incentive_customers_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    incentive_customers_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCustomerRequest"];
+                "multipart/form-data": components["schemas"]["PatchedCustomerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+        };
+    };
+    incentive_customers_top_up_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerRequest"];
+                "multipart/form-data": components["schemas"]["CustomerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+        };
+    };
+    incentive_projects_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"][];
+                };
+            };
+        };
+    };
+    incentive_projects_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectRequest"];
+                "multipart/form-data": components["schemas"]["ProjectRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    incentive_projects_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    incentive_projects_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectRequest"];
+                "multipart/form-data": components["schemas"]["ProjectRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+        };
+    };
+    incentive_projects_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    incentive_projects_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedProjectRequest"];
+                "multipart/form-data": components["schemas"]["PatchedProjectRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
                 };
             };
         };

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.42.0
+  version: 1.43.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -2411,6 +2411,745 @@ paths:
               schema:
                 $ref: '#/components/schemas/Employee'
           description: ''
+  /api/v1/incentive/bonds/:
+    get:
+      operationId: incentive_bonds_list
+      description: Per-employee mandays bonds. Management creates/manages; an employee
+        accepts their own.
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bond'
+          description: ''
+    post:
+      operationId: incentive_bonds_create
+      description: Per-employee mandays bonds. Management creates/manages; an employee
+        accepts their own.
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BondRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BondRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bond'
+          description: ''
+  /api/v1/incentive/bonds/{id}/:
+    get:
+      operationId: incentive_bonds_retrieve
+      description: Per-employee mandays bonds. Management creates/manages; an employee
+        accepts their own.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bond'
+          description: ''
+    put:
+      operationId: incentive_bonds_update
+      description: Per-employee mandays bonds. Management creates/manages; an employee
+        accepts their own.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BondRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BondRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bond'
+          description: ''
+    patch:
+      operationId: incentive_bonds_partial_update
+      description: Per-employee mandays bonds. Management creates/manages; an employee
+        accepts their own.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBondRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBondRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bond'
+          description: ''
+    delete:
+      operationId: incentive_bonds_destroy
+      description: Per-employee mandays bonds. Management creates/manages; an employee
+        accepts their own.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/incentive/bonds/{id}/accept/:
+    post:
+      operationId: incentive_bonds_accept_create
+      description: Per-employee mandays bonds. Management creates/manages; an employee
+        accepts their own.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BondRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BondRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bond'
+          description: ''
+  /api/v1/incentive/claims/:
+    get:
+      operationId: incentive_claims_list
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Claim'
+          description: ''
+    post:
+      operationId: incentive_claims_create
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/incentive/claims/{id}/:
+    get:
+      operationId: incentive_claims_retrieve
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+    put:
+      operationId: incentive_claims_update
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+    patch:
+      operationId: incentive_claims_partial_update
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClaimRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClaimRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+    delete:
+      operationId: incentive_claims_destroy
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/incentive/claims/{id}/approve/:
+    post:
+      operationId: incentive_claims_approve_create
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/incentive/claims/{id}/reject/:
+    post:
+      operationId: incentive_claims_reject_create
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/incentive/claims/{id}/reverse/:
+    post:
+      operationId: incentive_claims_reverse_create
+      description: Manday claims. Employees submit; managers approve/reject; management
+        reverses/amends.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/incentive/claims/{id}/set_payout/:
+    post:
+      operationId: incentive_claims_set_payout_create
+      description: Walk an approved claim's payout Pending -> Approved -> Paid (admin;
+        no money effect).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/incentive/customers/:
+    get:
+      operationId: incentive_customers_list
+      description: Customers + their manday pools. Management-only.
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+          description: ''
+    post:
+      operationId: incentive_customers_create
+      description: Customers + their manday pools. Management-only.
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/incentive/customers/{id}/:
+    get:
+      operationId: incentive_customers_retrieve
+      description: Customers + their manday pools. Management-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    put:
+      operationId: incentive_customers_update
+      description: Customers + their manday pools. Management-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    patch:
+      operationId: incentive_customers_partial_update
+      description: Customers + their manday pools. Management-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+    delete:
+      operationId: incentive_customers_destroy
+      description: Customers + their manday pools. Management-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/incentive/customers/{id}/top_up/:
+    post:
+      operationId: incentive_customers_top_up_create
+      description: Customers + their manday pools. Management-only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/incentive/projects/:
+    get:
+      operationId: incentive_projects_list
+      description: Projects under a customer. Managers open/manage; SOC visibility
+        enforced server-side.
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+          description: ''
+    post:
+      operationId: incentive_projects_create
+      description: Projects under a customer. Managers open/manage; SOC visibility
+        enforced server-side.
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /api/v1/incentive/projects/{id}/:
+    get:
+      operationId: incentive_projects_retrieve
+      description: Projects under a customer. Managers open/manage; SOC visibility
+        enforced server-side.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    put:
+      operationId: incentive_projects_update
+      description: Projects under a customer. Managers open/manage; SOC visibility
+        enforced server-side.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    patch:
+      operationId: incentive_projects_partial_update
+      description: Projects under a customer. Managers open/manage; SOC visibility
+        enforced server-side.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    delete:
+      operationId: incentive_projects_destroy
+      description: Projects under a customer. Managers open/manage; SOC visibility
+        enforced server-side.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/invitations/:
     get:
       operationId: invitations_list
@@ -6511,6 +7250,65 @@ components:
     BlankEnum:
       enum:
       - ''
+    Bond:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee_id:
+          type: string
+          format: uuid
+        accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        terms_version:
+          type: string
+          maxLength: 32
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - accepted_at
+      - created_at
+      - employee_id
+      - id
+      - is_active
+      - period_end
+      - period_start
+    BondRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        terms_version:
+          type: string
+          minLength: 1
+          maxLength: 32
+      required:
+      - employee_id
+      - period_end
+      - period_start
     CategoryEnum:
       enum:
       - policy
@@ -6677,6 +7475,70 @@ components:
       description: |-
         * `in_app` - In-app
         * `email` - Email
+    Claim:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        project:
+          type: string
+          format: uuid
+        project_name:
+          type: string
+          readOnly: true
+        employee_id:
+          type: string
+          format: uuid
+          readOnly: true
+        mandays:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        note:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ClaimStatusEnum'
+          readOnly: true
+        reviewed_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reject_reason:
+          type: string
+          readOnly: true
+        billing_quarter:
+          type: string
+          readOnly: true
+        payout_status:
+          allOf:
+          - $ref: '#/components/schemas/PayoutStatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - billing_quarter
+      - created_at
+      - employee_id
+      - id
+      - mandays
+      - payout_status
+      - project
+      - project_name
+      - reject_reason
+      - reviewed_at
+      - reviewed_by
+      - status
     ClaimApproval:
       type: object
       properties:
@@ -7026,22 +7888,63 @@ components:
       - expense_date
     ClaimStatusEnum:
       enum:
-      - draft
-      - submitted
-      - manager_approved
-      - finance_approved
-      - reimbursed
+      - pending
+      - approved
       - rejected
       - cancelled
       type: string
       description: |-
-        * `draft` - Draft
-        * `submitted` - Submitted
-        * `manager_approved` - Manager approved
-        * `finance_approved` - Finance approved
-        * `reimbursed` - Reimbursed
+        * `pending` - Pending
+        * `approved` - Approved
         * `rejected` - Rejected
         * `cancelled` - Cancelled
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        is_active:
+          type: boolean
+        notes:
+          type: string
+        mandays_total:
+          type: number
+          format: double
+          readOnly: true
+        mandays_remaining:
+          type: number
+          format: double
+          description: Top-ups minus approved payouts (net of reclaims) across all
+            this customer's projects.
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - mandays_remaining
+      - mandays_total
+      - name
+    CustomerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        is_active:
+          type: boolean
+        notes:
+          type: string
+      required:
+      - name
     DeliveryStatusEnum:
       enum:
       - pending
@@ -8806,6 +9709,22 @@ components:
           type: string
           format: date
           nullable: true
+    PatchedBondRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        period_start:
+          type: string
+          format: date
+        period_end:
+          type: string
+          format: date
+        terms_version:
+          type: string
+          minLength: 1
+          maxLength: 32
     PatchedCertificationWriteRequest:
       type: object
       properties:
@@ -8873,6 +9792,18 @@ components:
         approval_chain_code:
           type: string
           maxLength: 32
+    PatchedClaimRequest:
+      type: object
+      properties:
+        project:
+          type: string
+          format: uuid
+        mandays:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        note:
+          type: string
     PatchedClaimRequestRequest:
       type: object
       properties:
@@ -8895,6 +9826,17 @@ components:
         merchant:
           type: string
           maxLength: 200
+    PatchedCustomerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        is_active:
+          type: boolean
+        notes:
+          type: string
     PatchedDepartmentRequest:
       type: object
       properties:
@@ -9315,6 +10257,26 @@ components:
           format: date
         status:
           $ref: '#/components/schemas/PayrollPeriodStatusEnum'
+    PatchedProjectRequest:
+      type: object
+      properties:
+        customer:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        budget_mandays:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        include_soc:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/ProjectStatusEnum'
     PatchedShiftAssignmentRequest:
       type: object
       properties:
@@ -9442,6 +10404,16 @@ components:
           type: string
           format: date
           nullable: true
+    PayoutStatusEnum:
+      enum:
+      - pending
+      - approved
+      - paid
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `approved` - Approved
+        * `paid` - Paid
     PayrollPeriod:
       type: object
       properties:
@@ -9707,6 +10679,96 @@ components:
         * `normal` - Normal
         * `high` - High
         * `urgent` - Urgent
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        customer:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        budget_mandays:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        manager_id:
+          type: string
+          format: uuid
+          readOnly: true
+        include_soc:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/ProjectStatusEnum'
+        mandays_approved:
+          type: number
+          format: double
+          description: |-
+            Net mandays consumed by approved claims on this project (always <= budget).
+
+            ``delta`` is pool-perspective: a ``claim_payout`` is negative (drains the pool) and a
+            ``reclaimed`` is positive. So the *consumed* amount is the negated signed sum of this
+            project's ledger rows.
+          readOnly: true
+        mandays_remaining:
+          type: number
+          format: double
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - budget_mandays
+      - created_at
+      - customer
+      - customer_name
+      - id
+      - manager_id
+      - mandays_approved
+      - mandays_remaining
+      - name
+    ProjectRequest:
+      type: object
+      properties:
+        customer:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        budget_mandays:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        include_soc:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/ProjectStatusEnum'
+      required:
+      - budget_mandays
+      - customer
+      - name
+    ProjectStatusEnum:
+      enum:
+      - open
+      - closed
+      type: string
+      description: |-
+        * `open` - Open
+        * `closed` - Closed
     RecurrenceEnum:
       enum:
       - none

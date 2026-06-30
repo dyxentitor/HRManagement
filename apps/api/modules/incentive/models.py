@@ -1,7 +1,7 @@
 """Incentive (mandays) module — customers, projects, claims, and the append-only manday ledger.
 
-Money is tracked in *mandays* (1 manday = a configurable RM rate). Balances are NEVER stored — they are
-derived by summing :class:`MandayLedger`. See docs/superpowers/specs/2026-06-30-incentive-module-design.md.
+Money is tracked in *mandays* (1 manday = a configurable RM rate). Balances are NEVER stored;
+they are derived by summing :class:`MandayLedger`. See the Phase-1 design spec for details.
 """
 
 from __future__ import annotations
@@ -52,6 +52,9 @@ class Customer(models.Model):
         db_table = "incentive_customer"
         indexes: ClassVar = [models.Index(fields=["org_id", "is_active"])]
 
+    def __str__(self) -> str:
+        return self.name
+
     @property
     def mandays_total(self) -> Decimal:
         agg = self.ledger_rows.filter(ledger_type="pool_topup").aggregate(s=Sum("delta"))
@@ -86,6 +89,9 @@ class Project(models.Model):
             models.Index(fields=["org_id", "status"]),
             models.Index(fields=["customer", "status"]),
         ]
+
+    def __str__(self) -> str:
+        return self.name
 
     @property
     def mandays_approved(self) -> Decimal:
@@ -131,6 +137,9 @@ class Claim(models.Model):
             models.Index(fields=["org_id", "billing_quarter", "payout_status"]),
         ]
 
+    def __str__(self) -> str:
+        return f"{self.mandays} md ({self.status})"
+
 
 class MandayLedger(models.Model):
     """Immutable, append-only ledger. Never updated or deleted; corrections are new rows."""
@@ -162,6 +171,9 @@ class MandayLedger(models.Model):
             models.Index(fields=["project", "ledger_type"]),
         ]
 
+    def __str__(self) -> str:
+        return f"{self.ledger_type} {self.delta}"
+
 
 class EmployeeBond(models.Model):
     """The per-employee *mandays bond* — the eligibility gate for claiming/being paid.
@@ -185,6 +197,9 @@ class EmployeeBond(models.Model):
         constraints: ClassVar = [
             models.UniqueConstraint(fields=["org_id", "employee_id"], name="uniq_bond_per_employee")
         ]
+
+    def __str__(self) -> str:
+        return f"bond {self.employee_id}"
 
     def is_active(self, on: dt.date | None = None) -> bool:
         on = on or timezone.localdate()
