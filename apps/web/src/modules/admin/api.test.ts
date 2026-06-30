@@ -79,6 +79,7 @@ describe("roleApi", () => {
 			expect.objectContaining({
 				body: {
 					permission_codes: ["leave:approve:team", "claim:approve:team"],
+					base_updated_at: null,
 				},
 			}),
 		);
