@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -216,27 +216,43 @@ from rest_framework import viewsets  # noqa: E402
 from modules.identity.models import Role  # noqa: E402
 from modules.identity.permissions import HRMSPermission  # noqa: E402
 from modules.identity.serializers import (  # noqa: E402
+    RoleCloneInputSerializer,
+    RoleCreateInputSerializer,
     RoleDetailSerializer,
     RoleListItemSerializer,
     RolePermissionsInputSerializer,
+    RoleRenameInputSerializer,
 )
 from modules.identity.services.permissions import (  # noqa: E402
     LastWritePermissionHolderError,
     OrgAdminProtectionError,
+    RoleConflictError,
+    RoleHasMembersError,
+    RoleProtectedError,
+    SelfLockoutError,
     UnknownPermissionError,
     UnknownRoleError,
+    clone_role,
+    create_role,
+    delete_role,
     get_user_perms,
+    rename_role,
     reset_role_to_defaults,
     set_role_permissions,
 )
 
 
-class RoleViewSet(viewsets.ReadOnlyModelViewSet):
-    """List + retrieve roles in the actor's org."""
+class RoleViewSet(viewsets.ModelViewSet):
+    """List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone)."""
 
     permission_classes: ClassVar = [HRMSPermission]
-    required_perms: ClassVar = ["role:read"]
     lookup_field = "code"
+
+    @property
+    def required_perms(self):
+        if self.action in ("list", "retrieve"):
+            return ["role:read"]
+        return ["role:write"]
 
     def get_queryset(self):
         return Role.objects.filter(org_id=self.request.user.org_id).order_by("code")
@@ -245,6 +261,58 @@ class RoleViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == "list":
             return RoleListItemSerializer
         return RoleDetailSerializer
+
+    def create(self, request, *args, **kwargs):
+        body = RoleCreateInputSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        role = create_role(
+            actor=request.user,
+            name=body.validated_data["name"],
+            description=body.validated_data.get("description", ""),
+        )
+        return Response(RoleDetailSerializer(role).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        body = RoleRenameInputSerializer(data=request.data, partial=True)
+        body.is_valid(raise_exception=True)
+        try:
+            role = rename_role(
+                actor=request.user,
+                role_code=kwargs["code"],
+                name=body.validated_data.get("name"),
+                description=body.validated_data.get("description"),
+            )
+        except Role.DoesNotExist:
+            return Response({"detail": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+        except RoleProtectedError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+        return Response(RoleDetailSerializer(role).data)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            delete_role(actor=request.user, role_code=kwargs["code"])
+        except Role.DoesNotExist:
+            return Response({"detail": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+        except RoleProtectedError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+        except RoleHasMembersError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["post"])
+    def clone(self, request, code: str | None = None):
+        body = RoleCloneInputSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        try:
+            role = clone_role(
+                actor=request.user, source_code=code, name=body.validated_data["name"]
+            )
+        except Role.DoesNotExist:
+            return Response({"detail": "Source role not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(RoleDetailSerializer(role).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(["PATCH"])
@@ -265,6 +333,7 @@ def role_permissions_view(request, code: str) -> Response:
             actor=request.user,
             role_code=code,
             permission_codes=serializer.validated_data["permission_codes"],
+            base_updated_at=serializer.validated_data.get("base_updated_at"),
         )
     except Role.DoesNotExist:
         return Response(
@@ -277,6 +346,10 @@ def role_permissions_view(request, code: str) -> Response:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except LastWritePermissionHolderError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except SelfLockoutError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except RoleConflictError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_412_PRECONDITION_FAILED)
 
     role = Role.objects.get(org_id=request.user.org_id, code=code)
     return Response(RoleDetailSerializer(role).data)

@@ -138,6 +138,7 @@ class RoleDetailSerializer(serializers.ModelSerializer):
             "is_system",
             "permission_codes",
             "user_count",
+            "updated_at",
         ]
 
     def get_permission_codes(self, obj):
@@ -155,6 +156,29 @@ class RolePermissionsInputSerializer(serializers.Serializer):
     """Body for PATCH /roles/{code}/permissions/."""
 
     permission_codes = serializers.ListField(child=serializers.CharField(), allow_empty=True)
+    base_updated_at = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class RoleCreateInputSerializer(serializers.Serializer):
+    """Body for POST /roles/."""
+
+    name = serializers.CharField(max_length=128)
+    description = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default=""
+    )
+
+
+class RoleRenameInputSerializer(serializers.Serializer):
+    """Body for PATCH /roles/{code}/."""
+
+    name = serializers.CharField(max_length=128, required=False)
+    description = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+
+class RoleCloneInputSerializer(serializers.Serializer):
+    """Body for POST /roles/{code}/clone/."""
+
+    name = serializers.CharField(max_length=128)
 
 
 class AssignRolesInputSerializer(serializers.Serializer):
