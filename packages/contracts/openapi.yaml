@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.44.0
+  version: 1.45.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -7072,6 +7072,28 @@ paths:
   /api/v1/users/:
     post:
       operationId: users_create
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/{user_id}/effective-access/:
+    get:
+      operationId: users_effective_access_retrieve
+      description: |-
+        GET /api/v1/users/{user_id}/effective-access/
+
+        The target user's roles + their merged (union) permissions grouped by module, each permission
+        annotated with the source role(s) that grant it. Answers "why does this person have X?".
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
       - users
       security:

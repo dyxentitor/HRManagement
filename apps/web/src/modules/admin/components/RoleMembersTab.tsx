@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { Eye, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -6,19 +6,23 @@ import { Button } from "@/components/ui/button";
 import { type Employee, employeeApi } from "@/modules/employee/api";
 
 import { type RoleMember, roleMembersApi } from "../api";
+import { EffectiveAccessDrawer } from "./EffectiveAccessDrawer";
 
 interface Props {
 	roleCode: string;
 	members: RoleMember[];
 	canWrite: boolean;
+	/** True if this role grants any sensitive permission — adding members then asks for confirmation. */
+	privileged?: boolean;
 	onChange: (members: RoleMember[]) => void;
 }
 
-export function RoleMembersTab({ roleCode, members, canWrite, onChange }: Props) {
+export function RoleMembersTab({ roleCode, members, canWrite, privileged, onChange }: Props) {
 	const [candidates, setCandidates] = useState<Employee[]>([]);
 	const [query, setQuery] = useState("");
 	const [picked, setPicked] = useState<Set<string>>(new Set());
 	const [busy, setBusy] = useState(false);
+	const [viewing, setViewing] = useState<{ userId: string; name: string } | null>(null);
 
 	useEffect(() => {
 		if (!canWrite) return;
@@ -41,6 +45,15 @@ export function RoleMembersTab({ roleCode, members, canWrite, onChange }: Props)
 
 	async function addPicked() {
 		if (picked.size === 0) return;
+		if (
+			privileged &&
+			!window.confirm(
+				`This role grants sensitive access (payroll / PII / admin). Add ${picked.size} ` +
+					`person${picked.size > 1 ? "s" : ""} to it?`,
+			)
+		) {
+			return;
+		}
 		setBusy(true);
 		try {
 			const updated = await roleMembersApi.add(roleCode, [...picked]);
@@ -56,6 +69,12 @@ export function RoleMembersTab({ roleCode, members, canWrite, onChange }: Props)
 	}
 
 	async function remove(m: RoleMember) {
+		if (
+			m.roles.length <= 1 &&
+			!window.confirm(`Remove ${m.name}'s only role? They'll lose all access.`)
+		) {
+			return;
+		}
 		try {
 			const updated = await roleMembersApi.remove(roleCode, m.user_id);
 			onChange(updated);
@@ -123,28 +142,64 @@ export function RoleMembersTab({ roleCode, members, canWrite, onChange }: Props)
 				<p className="text-small text-text-tertiary py-4">No one has this role yet.</p>
 			) : (
 				<div className="space-y-1.5">
-					{members.map((m) => (
-						<div
-							key={m.user_id}
-							className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.03] px-3 py-2"
-						>
-							<div className="min-w-0">
-								<p className="text-small text-text-primary truncate">{m.name}</p>
-								{m.email && <p className="text-[10px] text-text-tertiary truncate">{m.email}</p>}
+					{members.map((m) => {
+						const others = m.roles.filter((r) => r.code !== roleCode);
+						return (
+							<div
+								key={m.user_id}
+								className="flex items-center justify-between gap-3 rounded-lg bg-white/[0.03] px-3 py-2"
+							>
+								<div className="min-w-0">
+									<p className="text-small text-text-primary truncate">{m.name}</p>
+									{others.length > 0 ? (
+										<div className="flex flex-wrap gap-1 mt-0.5">
+											<span className="text-[10px] text-text-tertiary">also:</span>
+											{others.map((r) => (
+												<span
+													key={r.code}
+													className="text-[10px] rounded-full bg-white/5 text-text-tertiary px-1.5 py-px"
+												>
+													{r.name}
+												</span>
+											))}
+										</div>
+									) : (
+										m.email && <p className="text-[10px] text-text-tertiary truncate">{m.email}</p>
+									)}
+								</div>
+								<div className="flex items-center gap-1">
+									<button
+										type="button"
+										aria-label={`View ${m.name}'s access`}
+										title="View effective access"
+										onClick={() => setViewing({ userId: m.user_id, name: m.name })}
+										className="text-text-tertiary hover:text-accent-200 p-1"
+									>
+										<Eye className="size-4" />
+									</button>
+									{canWrite && (
+										<button
+											type="button"
+											aria-label={`Remove ${m.name}`}
+											onClick={() => remove(m)}
+											className="text-text-tertiary hover:text-coral p-1"
+										>
+											<X className="size-4" />
+										</button>
+									)}
+								</div>
 							</div>
-							{canWrite && (
-								<button
-									type="button"
-									aria-label={`Remove ${m.name}`}
-									onClick={() => remove(m)}
-									className="text-text-tertiary hover:text-coral"
-								>
-									<X className="size-4" />
-								</button>
-							)}
-						</div>
-					))}
+						);
+					})}
 				</div>
+			)}
+
+			{viewing && (
+				<EffectiveAccessDrawer
+					userId={viewing.userId}
+					name={viewing.name}
+					onClose={() => setViewing(null)}
+				/>
 			)}
 		</div>
 	);

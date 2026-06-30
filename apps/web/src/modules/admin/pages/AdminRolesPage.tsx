@@ -101,6 +101,12 @@ export default function AdminRolesPage() {
 		return false;
 	}, [detail, draft]);
 
+	// A role is "privileged" if it grants any sensitive permission — adding members then confirms.
+	const privileged = useMemo(
+		() => modules.some((m) => m.permissions.some((p) => p.dangerous && p.granted)),
+		[modules],
+	);
+
 	function select(code: string) {
 		setSelected(code);
 		setTab("permissions");
@@ -331,6 +337,7 @@ export default function AdminRolesPage() {
 									roleCode={detail.code}
 									members={members}
 									canWrite={canWrite}
+									privileged={privileged}
 									onChange={(m) => {
 										setMembers(m);
 										void loadRoles();

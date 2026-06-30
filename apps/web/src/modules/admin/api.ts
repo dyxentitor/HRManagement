@@ -33,11 +33,32 @@ export interface CatalogueModule {
 	total: number;
 }
 
+export interface RoleRef {
+	code: string;
+	name: string;
+}
 export interface RoleMember {
 	user_id: string;
 	employee_id: string | null;
 	name: string;
 	email: string;
+	roles: RoleRef[];
+}
+
+export interface EffectiveAccessPermission {
+	code: string;
+	label: string;
+	scope: "self" | "team" | "org" | null;
+	dangerous: boolean;
+	sources: string[];
+}
+export interface EffectiveAccess {
+	roles: RoleRef[];
+	modules: {
+		key: string;
+		label: string;
+		permissions: EffectiveAccessPermission[];
+	}[];
 }
 
 export interface UserRolesResponse {
@@ -191,6 +212,16 @@ export const roleMembersApi = {
 		});
 		if (error) throw new Error(extractErrMessage(error, "Could not remove member"));
 		return data as unknown as RoleMember[];
+	},
+};
+
+export const userAccessApi = {
+	effective: async (userId: string): Promise<EffectiveAccess> => {
+		const { data, error } = await api.GET("/api/v1/users/{user_id}/effective-access/", {
+			params: { path: { user_id: userId } } as never,
+		});
+		if (error || !data) throw new Error("Could not load this person's access");
+		return data as unknown as EffectiveAccess;
 	},
 };
 
