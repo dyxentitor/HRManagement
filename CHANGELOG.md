@@ -2,6 +2,37 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.47.0] — 2026-06-30
+
+**Roles & Permissions UI polish** — fixes the clipped effective-access view, removes every native browser
+popup from the page, and fills the missing-UI gaps.
+
+### Fixed
+
+- **Effective-access drawer was clipped to the card.** Root cause: `.glass-surface` uses `backdrop-filter`,
+  which makes it the containing block for `position: fixed` descendants, so the hand-rolled overlay rendered
+  inside the card instead of over the screen. Rebuilt on the portaled **`Sheet`** primitive — it now covers
+  the full viewport.
+
+### Changed
+
+- **No more native popups.** All three `window.confirm`s (delete role, privileged-grant, last-role removal)
+  and the (previously unconfirmed) **reset-to-defaults** now use a styled **`ConfirmDialog`**.
+- **Effective-access view** gains a **Module ↔ Role grouping toggle** (Role mode lists each permission under
+  its source role and dims duplicates with "also via …") + a search box — the visual answer to "why does this
+  person have X?" across multiple roles.
+
+### Added
+
+- **Rename** for custom roles — previously had no UI at all; now in a proper **⋯ row menu** (Rename / Clone /
+  Delete) that replaces the old hover-only text, via a `RenameRoleDialog`.
+- **Add-member picker** now shows **avatars + email** and a **"No matching employees"** empty state.
+
+### Tests
+
+- Frontend **+4** (ConfirmDialog confirm/cancel, RenameRoleDialog save, effective-access Role-toggle dimming,
+  members confirm-dialog). Suite **436**. Guard: zero `window.confirm/prompt/alert` calls in `modules/admin`.
+
 ## [1.46.0] — 2026-06-30
 
 **Role-management enhancements** — polishes the v1.45.0 RBAC: a proper New-Role modal, working member
