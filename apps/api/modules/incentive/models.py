@@ -79,6 +79,7 @@ class Project(models.Model):
     manager_id = models.UUIDField()  # Employee id of the opener/owner
     include_soc = models.BooleanField(default=False)
     status = models.CharField(max_length=12, choices=PROJECT_STATUS, default="open")
+    deadline = models.DateField(null=True, blank=True)  # optional target/end date
     created_by = models.UUIDField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

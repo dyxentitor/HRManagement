@@ -40,6 +40,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "manager_id",
             "include_soc",
             "status",
+            "deadline",
             "mandays_approved",
             "mandays_remaining",
             "created_at",

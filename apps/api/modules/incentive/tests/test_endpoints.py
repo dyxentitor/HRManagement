@@ -107,6 +107,17 @@ def test_admin_creates_customer_and_tops_up(stack):
     assert Decimal(r2.json()["mandays_remaining"]) == Decimal("150")
 
 
+def test_project_deadline_persists(stack):
+    cust = _customer_with_pool(stack)
+    rp = stack["c"]["manager"].post(
+        "/api/v1/incentive/projects/",
+        {"customer": str(cust.id), "name": "Dated", "budget_mandays": "10", "deadline": "2026-09-30"},
+        format="json",
+    )
+    assert rp.status_code == 201, rp.content
+    assert rp.json()["deadline"] == "2026-09-30"
+
+
 def test_non_admin_cannot_see_customers(stack):
     assert stack["c"]["employee"].get("/api/v1/incentive/customers/").status_code == 403
 
