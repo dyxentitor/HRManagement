@@ -11,9 +11,9 @@ from typing import Any
 
 from .models import Permission, Role
 
-# Ordered product-area taxonomy. Each entry maps code prefixes to a display group; this is where split
-# domains are merged (payslip+payroll, cert+training, user+employee). Presentation config, versioned in
-# code. A prefix not listed here falls into the synthetic "other" group at the end.
+# Ordered product-area taxonomy mapping code prefixes to display groups; this is where split domains
+# are merged (payslip+payroll, cert+training, user+employee). Presentation config, versioned in code.
+# A prefix not listed here falls into the synthetic "other" group at the end.
 MODULES: list[dict[str, Any]] = [
     {
         "key": "dashboard",
@@ -114,7 +114,7 @@ def _permission_dto(p: Permission, granted_codes: set[str] | None) -> dict[str, 
 
 
 def build_catalogue(role: Role | None = None) -> list[dict[str, Any]]:
-    """Group every permission into ordered modules; with ``role``, each permission gets ``granted``."""
+    """Group permissions into ordered modules; with ``role``, each permission gets ``granted``."""
     granted_codes = (
         set(role.permissions.values_list("code", flat=True)) if role is not None else None
     )
