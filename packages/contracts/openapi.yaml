@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.45.0
+  version: 1.47.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -3010,6 +3010,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Customer'
           description: ''
+  /api/v1/incentive/overview/:
+    get:
+      operationId: incentive_overview_retrieve
+      description: GET /api/v1/incentive/overview/ — the command-center aggregation
+        (managers + admin).
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/incentive/projects/:
     get:
       operationId: incentive_projects_list
@@ -10522,6 +10534,10 @@ components:
           type: boolean
         status:
           $ref: '#/components/schemas/ProjectStatusEnum'
+        deadline:
+          type: string
+          format: date
+          nullable: true
     PatchedRoleDetailRequest:
       type: object
       description: Used for retrieve. Includes full permission_codes[].
@@ -10971,6 +10987,10 @@ components:
           type: boolean
         status:
           $ref: '#/components/schemas/ProjectStatusEnum'
+        deadline:
+          type: string
+          format: date
+          nullable: true
         mandays_approved:
           type: number
           format: double
@@ -11019,6 +11039,10 @@ components:
           type: boolean
         status:
           $ref: '#/components/schemas/ProjectStatusEnum'
+        deadline:
+          type: string
+          format: date
+          nullable: true
       required:
       - budget_mandays
       - customer

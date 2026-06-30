@@ -1550,6 +1550,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/incentive/overview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/incentive/overview/ — the command-center aggregation (managers + admin). */
+        get: operations["incentive_overview_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/incentive/projects/": {
         parameters: {
             query?: never;
@@ -5144,6 +5161,8 @@ export interface components {
             budget_mandays?: string;
             include_soc?: boolean;
             status?: components["schemas"]["ProjectStatusEnum"];
+            /** Format: date */
+            deadline?: string | null;
         };
         /** @description Used for retrieve. Includes full permission_codes[]. */
         PatchedRoleDetailRequest: {
@@ -5358,6 +5377,8 @@ export interface components {
             readonly manager_id: string;
             include_soc?: boolean;
             status?: components["schemas"]["ProjectStatusEnum"];
+            /** Format: date */
+            deadline?: string | null;
             /**
              * Format: double
              * @description Net mandays consumed by approved claims on this project (always <= budget).
@@ -5381,6 +5402,8 @@ export interface components {
             budget_mandays: string;
             include_soc?: boolean;
             status?: components["schemas"]["ProjectStatusEnum"];
+            /** Format: date */
+            deadline?: string | null;
         };
         /**
          * @description * `open` - Open
@@ -8768,6 +8791,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Customer"];
                 };
+            };
+        };
+    };
+    incentive_overview_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

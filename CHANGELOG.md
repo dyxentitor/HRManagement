@@ -2,6 +2,34 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.48.0] — 2026-06-30
+
+**Incentive command-center redesign** — `/admin/incentive` goes from four stacked forms to a premium
+overview that conveys the module's state at a glance, in the Dashboard's language.
+
+### Added
+
+- **Project deadline** — `Project.deadline` (optional date; migration `incentive.0002`), surfaced in the API
+  and the New-project form; powers due-soon/overdue indicators.
+- **Overview endpoint** — `GET /api/v1/incentive/overview/` (managers/admin) returns, in one call, KPIs,
+  per-customer pool rollups, a slim projects list, manday-consumption by quarter, the claim breakdown, top
+  contributors (by earnings), recent ledger activity, and upcoming deadlines — all derived from the existing
+  models/ledger (no new stored state).
+- **Command-center page** — aurora hero (live state summary + headline quarter payout in RM + quick actions),
+  a 6-card executive KPI row (active projects · mandays remaining · allocated budget vs consumed · pending
+  claims · approved · SOC-enabled), and a two-pane workspace: **customer-pool gauges**, a
+  **searchable/filterable projects table**, a **manday-consumption trend**, the **approval queue** (act in
+  place), an **SVG claims donut**, **top contributors**, **upcoming deadlines**, and a **live activity feed**.
+  All visuals are **CSS/SVG** (no chart library) to stay cohesive with the Dashboard.
+- Proper **modals** (New project with deadline · New customer · Top up pool) replace the old inline forms and
+  the `window.prompt` top-up. Thoughtful empty states throughout; loading skeletons.
+
+### Tests
+
+- Backend **+4** (deadline persists; overview perm-gating, KPI math, top-contributor order, overdue flag).
+  Frontend **+5** (page renders KPIs from a mocked overview; projects-table filter; approval-queue approve +
+  empty state). Suites: incentive backend **23**, frontend **441**.
+
 ## [1.47.0] — 2026-06-30
 
 **Roles & Permissions UI polish** — fixes the clipped effective-access view, removes every native browser
