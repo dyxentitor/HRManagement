@@ -2,6 +2,46 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.45.0] — 2026-06-30
+
+**Roles & Permissions redesign** — `/admin/settings/roles` rebuilt as an enterprise-grade RBAC manager
+(two-pane master/detail). Fixes a P0 bug and makes permissions comprehensible.
+
+### Fixed
+
+- **P0 — admins can finally grant a permission a role doesn't already have.** The old matrix only rendered
+  a role's *existing* codes (no catalogue fetch), so extending a role was impossible through the UI.
+
+### Added
+
+- **Permission catalogue** — `Permission` gains `label` / `is_dangerous` / `requires`;
+  `GET /api/v1/permissions/catalogue/?role=` serves every permission grouped into product-area **modules**
+  (derived from the code prefix; payslip+payroll, cert+training, user+employee merged) with human
+  **descriptions**, **scope** pills, and **sensitive** flags (PII/money/admin auto-flagged). No new tables.
+- **Custom-role lifecycle** — create (empty/least-privilege), **clone** (permission snapshot; no inheritance),
+  rename, delete (custom only; **403** system, **409** with members). System roles stay permission-editable +
+  "Reset to defaults" but are never deletable.
+- **Role membership API** — `GET/POST/DELETE /roles/{code}/members/` (search/bulk add → one audit row per
+  user; remove keeps other roles, blocks removing a user's only role).
+- **Two-pane UI** — role rail (System/Custom, search, counts, lock badges, clone/delete) + detail with a
+  **module accordion** (description-first rows, search, granted-only filter, tri-state module toggles,
+  pre-emptive protection tooltips) and a **Members** tab (searchable multi/bulk add + remove). Optimistic-
+  locked save. The employee profile's roles are now **read-only chips** linking to the role's Members tab.
+- **Guardrails** — extended self-lockout (can't strip your own `role:write`), **optimistic locking** (412 on
+  concurrent edits), and a **`bootstrap_admin`** break-glass recovery command.
+
+### Tests
+
+- Backend **+23** (catalogue/grouping/scope/dangerous, role lifecycle + guards, membership). Frontend
+  net change: new two-pane + accordion (P0 regression) + read-only roles card; retired the old checkbox-wall
+  page + hardcoded client catalogue.
+
+### Deferred (fast-follow)
+
+- Premium create/clone/delete **modals** (currently functional prompts) + privileged-grant confirm dialog;
+  dependency **auto-add** UX (the `requires` metadata + warnings ship; one-click auto-add is next);
+  authoring `label`/`requires` across all fixtures (catalogue serves sensible defaults today).
+
 ## [1.44.0] — 2026-06-30
 
 **Incentive (Mandays) module** — a new engagement-reward subsystem (Phase 1). A customer holds a pool of
