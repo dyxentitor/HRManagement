@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const effective = vi.hoisted(() => vi.fn());
@@ -39,5 +40,14 @@ describe("EffectiveAccessDrawer", () => {
 		// the shared permission shows both source roles — the multi-role "why"
 		expect(screen.getByText("via hr, manager")).toBeInTheDocument();
 		expect(screen.getByText("HR Manager")).toBeInTheDocument();
+	});
+
+	it("regroups by role when the Role toggle is clicked, dimming duplicates", async () => {
+		const user = userEvent.setup();
+		render(<EffectiveAccessDrawer userId="u1" name="Tan Wei" onClose={() => {}} />);
+		await waitFor(() => expect(screen.getByText("View employees")).toBeInTheDocument());
+		await user.click(screen.getByRole("button", { name: /^role$/i }));
+		// the permission is granted by both roles, so the second listing is marked as a duplicate
+		expect(await screen.findByText(/also via HR Manager/i)).toBeInTheDocument();
 	});
 });

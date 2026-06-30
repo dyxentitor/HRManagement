@@ -42,15 +42,14 @@ describe("RoleMembersTab", () => {
 		expect(screen.queryByText("Viewer")).not.toBeInTheDocument(); // current role excluded
 	});
 
-	it("warns before removing a member's only role", async () => {
+	it("opens a styled confirm dialog (not window.confirm) before removing a member's only role", async () => {
 		const solo: RoleMember[] = [{ ...members[0], roles: [{ code: "viewer", name: "Viewer" }] }];
-		const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
 		const user = userEvent.setup();
 		render(<RoleMembersTab roleCode="viewer" members={solo} canWrite onChange={() => {}} />);
 		await waitFor(() => expect(screen.getByText("Nur Hidayah")).toBeInTheDocument());
 		await user.click(screen.getByRole("button", { name: /remove nur/i }));
-		expect(confirmSpy).toHaveBeenCalled();
-		expect(remove).not.toHaveBeenCalled(); // declined → no removal
-		confirmSpy.mockRestore();
+		// a ConfirmDialog appears; nothing is removed until the user confirms
+		expect(await screen.findByText(/only role/i)).toBeInTheDocument();
+		expect(remove).not.toHaveBeenCalled();
 	});
 });
