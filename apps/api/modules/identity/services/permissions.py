@@ -170,7 +170,7 @@ class LastWritePermissionHolderError(Exception):
 
 
 class RoleConflictError(Exception):
-    """Raised when a role permission edit is based on a stale snapshot (optimistic-lock conflict)."""
+    """Raised when a role edit is based on a stale snapshot (optimistic-lock conflict)."""
 
 
 class RoleProtectedError(Exception):
@@ -391,7 +391,7 @@ def create_role(*, actor, name: str, description: str = ""):
 
 
 def clone_role(*, actor, source_code: str, name: str):
-    """Clone a role's permissions into a new independent custom role (snapshot — no live inheritance)."""
+    """Clone a role's permissions into a new independent custom role (snapshot, no inheritance)."""
     from common.audit import service as audit
     from modules.identity.models import Role, RolePermission
 
