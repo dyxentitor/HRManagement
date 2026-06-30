@@ -73,6 +73,26 @@ MODULES: list[dict[str, Any]] = [
 
 _SCOPE_MAP = {"self": "self", "team": "team", "org": "org", "me": "self"}
 
+# Curated sensitivity defaults — a fixture's `dangerous: true` still wins, but these guarantee the
+# obviously-privileged permissions are flagged (PII, money, admin) so the UI warns on grant.
+_DANGEROUS_SUBSTRINGS = (
+    "salary",
+    "bank",
+    "payroll",
+    "payslip",
+    "role:write",
+    "permission:",
+    "org:feature_flag:write",
+    "user:delete",
+    "user:disable",
+    "audit",
+    "identity:",
+)
+
+
+def is_dangerous_code(code: str) -> bool:
+    return any(s in code for s in _DANGEROUS_SUBSTRINGS)
+
 
 def _module_for(code: str) -> dict[str, Any] | None:
     prefix = code.split(":", 1)[0]
@@ -106,7 +126,7 @@ def _permission_dto(p: Permission, granted_codes: set[str] | None) -> dict[str, 
         "description": p.description,
         "scope": scope_of(p.code),
         "requires": p.requires or [],
-        "dangerous": p.is_dangerous,
+        "dangerous": p.is_dangerous or is_dangerous_code(p.code),
     }
     if granted_codes is not None:
         dto["granted"] = p.code in granted_codes

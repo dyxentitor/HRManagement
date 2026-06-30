@@ -18,6 +18,13 @@ def test_scope_of():
     assert catalogue.scope_of("user:invite") is None
 
 
+def test_is_dangerous_code():
+    assert catalogue.is_dangerous_code("employee:salary:write") is True
+    assert catalogue.is_dangerous_code("payslip:read:org") is True
+    assert catalogue.is_dangerous_code("role:write") is True
+    assert catalogue.is_dangerous_code("leave:request:read:self") is False
+
+
 def test_humanize():
     assert catalogue.humanize("employee:read:org") == "Employee Read"  # scope 'org' dropped
     assert catalogue.humanize("incentive:project:write") == "Incentive Project Write"
