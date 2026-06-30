@@ -130,10 +130,10 @@ export const roleApi = {
 		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 
-	clone: async (sourceCode: string, name: string): Promise<RoleDetail> => {
+	clone: async (sourceCode: string, name: string, description = ""): Promise<RoleDetail> => {
 		const { data, error } = await api.POST("/api/v1/roles/{code}/clone/", {
 			params: { path: { code: sourceCode } },
-			body: { name } as never,
+			body: { name, description } as never,
 		});
 		if (error) throw new Error(extractErrMessage(error, "Could not clone role"));
 		return toRoleDetail(data as unknown as BackendRoleDetail);

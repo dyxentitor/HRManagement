@@ -18,6 +18,7 @@ import {
 	roleMembersApi,
 } from "../api";
 import { PermissionAccordion } from "../components/PermissionAccordion";
+import { RoleFormModal } from "../components/RoleFormModal";
 import { RoleMembersTab } from "../components/RoleMembersTab";
 
 // org_admin must keep these; render them locked.
@@ -53,6 +54,11 @@ export default function AdminRolesPage() {
 	const [roleSearch, setRoleSearch] = useState("");
 	const [saving, setSaving] = useState(false);
 	const [loadingDetail, setLoadingDetail] = useState(false);
+	const [modal, setModal] = useState<{
+		open: boolean;
+		mode: "empty" | "clone";
+		source?: string;
+	}>({ open: false, mode: "empty" });
 
 	const loadRoles = useCallback(async () => {
 		const list = await roleApi.list().catch(() => []);
@@ -145,30 +151,16 @@ export default function AdminRolesPage() {
 		}
 	}
 
-	async function createRole() {
-		const name = window.prompt("Name the new role:");
-		if (!name?.trim()) return;
-		try {
-			const r = await roleApi.create(name.trim());
-			await loadRoles();
-			select(r.code);
-			toast.success(`Created "${r.name}".`);
-		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Could not create role.");
-		}
+	function openCreate() {
+		setModal({ open: true, mode: "empty", source: undefined });
 	}
-
-	async function cloneRole(src: RoleSummary) {
-		const name = window.prompt(`Clone "${src.name}" as:`, `${src.name} (copy)`);
-		if (!name?.trim()) return;
-		try {
-			const r = await roleApi.clone(src.code, name.trim());
-			await loadRoles();
-			select(r.code);
-			toast.success(`Cloned "${r.name}".`);
-		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Could not clone role.");
-		}
+	function cloneRole(src: RoleSummary) {
+		setModal({ open: true, mode: "clone", source: src.code });
+	}
+	async function onRoleCreated(r: RoleDetail) {
+		await loadRoles();
+		select(r.code);
+		toast.success(`Created "${r.name}".`);
 	}
 
 	async function deleteRole(role: RoleSummary) {
@@ -195,7 +187,7 @@ export default function AdminRolesPage() {
 				subtitle={`${systemRoles.length} system · ${customRoles.length} custom`}
 				actions={
 					canWrite ? (
-						<Button type="button" onClick={createRole} className="bg-accent-500 text-white">
+						<Button type="button" onClick={openCreate} className="bg-accent-500 text-white">
 							<Plus className="size-4 mr-1" /> New role
 						</Button>
 					) : null
@@ -350,6 +342,15 @@ export default function AdminRolesPage() {
 					)}
 				</section>
 			</div>
+
+			<RoleFormModal
+				open={modal.open}
+				onOpenChange={(o) => setModal((m) => ({ ...m, open: o }))}
+				roles={roles}
+				initialMode={modal.mode}
+				initialSource={modal.source}
+				onCreated={onRoleCreated}
+			/>
 		</div>
 	);
 }
