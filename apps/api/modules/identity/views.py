@@ -476,6 +476,38 @@ def permission_catalogue_view(request) -> Response:
     return Response({"modules": build_catalogue(role)})
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def effective_access_view(request, user_id):
+    """GET /api/v1/users/{user_id}/effective-access/
+
+    The target user's roles + their merged (union) permissions grouped by module, each permission
+    annotated with the source role(s) that grant it. Answers "why does this person have X?".
+    """
+    from modules.identity.catalogue import build_effective
+    from modules.identity.models import RolePermission, User, UserRole
+
+    if "role:read" not in get_user_perms(request.user):
+        return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+    target = User.objects.filter(id=user_id, org_id=request.user.org_id).first()
+    if target is None:
+        return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    roles = [
+        {"code": c, "name": n}
+        for c, n in UserRole.objects.filter(user=target)
+        .values_list("role__code", "role__name")
+        .distinct()
+    ]
+    sources: dict[str, list[str]] = {}
+    for code, rcode in RolePermission.objects.filter(
+        role__user_links__user=target, role__org_id=request.user.org_id
+    ).values_list("permission__code", "role__code"):
+        sources.setdefault(code, []).append(rcode)
+
+    return Response({"roles": roles, "modules": build_effective(sources)})
+
+
 from modules.identity.models import User as UserModel  # noqa: E402
 from modules.identity.models import UserRole  # noqa: E402
 from modules.identity.serializers import AssignRolesInputSerializer  # noqa: E402

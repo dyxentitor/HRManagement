@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     RoleViewSet,
     assign_user_roles_view,
+    effective_access_view,
     login_mfa_view,
     login_view,
     logout_view,
@@ -52,6 +53,11 @@ urlpatterns = [
     path("roles/<str:code>/reset-to-defaults/", role_reset_view, name="role-reset"),
     path("users/", UserCreateView.as_view(), name="user-create"),
     path("users/<uuid:user_id>/roles/", assign_user_roles_view, name="user-roles-assign"),
+    path(
+        "users/<uuid:user_id>/effective-access/",
+        effective_access_view,
+        name="user-effective-access",
+    ),
     # public activation endpoints — registered BEFORE the router so /verify and
     # /activate aren't swallowed by /invitations/<pk>/
     path("invitations/verify/", invitation_verify_view, name="invitation-verify"),

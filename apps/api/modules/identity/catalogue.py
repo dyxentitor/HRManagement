@@ -158,3 +158,35 @@ def build_catalogue(role: Role | None = None) -> list[dict[str, Any]]:
         b["granted_count"] = sum(1 for x in b["permissions"] if x.get("granted")) if role else 0
         b["total"] = len(b["permissions"])
     return modules
+
+
+def build_effective(sources: dict[str, list[str]]) -> list[dict[str, Any]]:
+    """Group a user's *granted* permissions into modules, each annotated with its source role(s).
+
+    ``sources`` maps a permission code to the list of the user's role codes that grant it.
+    """
+    order = {m["key"]: i for i, m in enumerate(MODULES)}
+    buckets: dict[str, dict[str, Any]] = {}
+    for p in Permission.objects.filter(code__in=list(sources)).order_by("code"):
+        m = _module_for(p.code)
+        key = m["key"] if m else "other"
+        if key not in buckets:
+            buckets[key] = {
+                "key": key,
+                "label": m["label"] if m else "Other",
+                "icon": m["icon"] if m else "Shapes",
+                "permissions": [],
+            }
+        buckets[key]["permissions"].append(
+            {
+                "code": p.code,
+                "label": p.label or humanize(p.code),
+                "scope": scope_of(p.code),
+                "dangerous": p.is_dangerous or is_dangerous_code(p.code),
+                "sources": sorted(set(sources.get(p.code, []))),
+            }
+        )
+    modules = sorted(buckets.values(), key=lambda b: order.get(b["key"], len(order)))
+    for b in modules:
+        b["total"] = len(b["permissions"])
+    return modules
