@@ -303,6 +303,30 @@ def role_reset_view(request, code: str) -> Response:
     return Response(RoleDetailSerializer(role).data)
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def permission_catalogue_view(request) -> Response:
+    """GET /api/v1/permissions/catalogue/?role=<code>
+
+    Returns every permission grouped into product-area modules, with human label/description/scope/
+    requires/dangerous. When ?role= is supplied, each permission is annotated with ``granted``.
+    """
+    from modules.identity.catalogue import build_catalogue
+
+    if "role:read" not in get_user_perms(request.user):
+        return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+    role = None
+    role_code = request.query_params.get("role")
+    if role_code:
+        role = Role.objects.filter(org_id=request.user.org_id, code=role_code).first()
+        if role is None:
+            return Response(
+                {"detail": f"Role '{role_code}' not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+    return Response({"modules": build_catalogue(role)})
+
+
 from modules.identity.models import User as UserModel  # noqa: E402
 from modules.identity.models import UserRole  # noqa: E402
 from modules.identity.serializers import AssignRolesInputSerializer  # noqa: E402

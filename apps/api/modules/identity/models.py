@@ -135,11 +135,21 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Permission(models.Model):
-    """Global permission catalogue. Codes follow `<module>:<resource>:<action>[:<scope>]`."""
+    """Global permission catalogue. Codes follow `<module>:<resource>:<action>[:<scope>]`.
+
+    Human/UX metadata (label, is_dangerous, requires) is loaded from the permissions_*.yaml fixtures
+    and served by the catalogue endpoint so admins manage access by description, not raw codes.
+    """
 
     id = models.BigAutoField(primary_key=True)
     code = models.CharField(max_length=128, unique=True)
     description = models.CharField(max_length=255, blank=True)
+    # Short human title; falls back to a humanized code when blank.
+    label = models.CharField(max_length=128, blank=True)
+    # Sensitive grants (org_admin set, payroll, salary/bank PII) need extra confirmation in the UI.
+    is_dangerous = models.BooleanField(default=False)
+    # Prerequisite permission codes (e.g. a *:write requires the matching *:read). Advisory.
+    requires = models.JSONField(default=list, blank=True)
 
     class Meta:
         db_table = "identity_permission"
