@@ -24,9 +24,78 @@ export interface Project {
 	manager_id: string;
 	include_soc: boolean;
 	status: ProjectStatus;
+	deadline: string | null;
 	mandays_approved: string;
 	mandays_remaining: string;
 	created_at: string;
+}
+
+// --- command-center overview ---
+export interface OverviewKpis {
+	total_projects: number;
+	active_projects: number;
+	closed_projects: number;
+	pool_total: string;
+	pool_remaining: string;
+	allocated_budget: string;
+	consumed: string;
+	pending_claims: number;
+	approved_claims: number;
+	rejected_claims: number;
+	payout_rm_quarter: string;
+	soc_projects: number;
+	rate: string;
+}
+export interface OverviewPool {
+	id: string;
+	name: string;
+	project_count: number;
+	remaining: string;
+	total: string;
+	pct_used: number;
+}
+export interface OverviewProject {
+	id: string;
+	name: string;
+	customer_name: string;
+	manager_id: string;
+	budget: string;
+	consumed: string;
+	remaining: string;
+	status: ProjectStatus;
+	include_soc: boolean;
+	deadline: string | null;
+}
+export interface OverviewContributor {
+	employee_id: string;
+	name: string;
+	department: string;
+	mandays: string;
+	rm: string;
+}
+export interface OverviewActivity {
+	type: string;
+	label_type: string;
+	mandays: string;
+	target: string;
+	created_at: string;
+}
+export interface OverviewDeadline {
+	id: string;
+	name: string;
+	customer_name: string;
+	deadline: string;
+	overdue: boolean;
+}
+export interface Overview {
+	kpis: OverviewKpis;
+	pools: OverviewPool[];
+	projects: OverviewProject[];
+	consumption: { quarter: string; mandays: string }[];
+	claim_breakdown: { approved: number; pending: number; rejected: number };
+	top_contributors: OverviewContributor[];
+	recent_activity: OverviewActivity[];
+	deadlines: OverviewDeadline[];
 }
 
 export interface Claim {
@@ -92,6 +161,7 @@ export const incentiveApi = {
 		topUp: (id: string, mandays: string, note = "") =>
 			_post<Customer>(`${BASE}/customers/${id}/top_up/`, { mandays, note }),
 	},
+	overview: () => _get<Overview>(`${BASE}/overview/`),
 	projects: {
 		list: () => _get<{ results?: Project[] } | Project[]>(`${BASE}/projects/`).then(unwrap),
 		create: (body: {
@@ -100,6 +170,7 @@ export const incentiveApi = {
 			budget_mandays: string;
 			description?: string;
 			include_soc?: boolean;
+			deadline?: string | null;
 		}) => _post<Project>(`${BASE}/projects/`, body),
 		update: (id: string, body: Partial<Pick<Project, "include_soc" | "name" | "description">>) =>
 			_patch<Project>(`${BASE}/projects/${id}/`, body),
