@@ -1,7 +1,7 @@
 """Incentive command-center overview — one aggregation for the admin dashboard.
 
-Everything here is DERIVED from the models + ledger (no new stored state). Returns a plain dict ready
-to serialize; the frontend renders it as KPIs, pool gauges, a projects table, charts, the approval
+Everything here is DERIVED from the models + ledger (no new stored state). Returns a plain dict; the
+frontend renders it as KPIs, pool gauges, a projects table, charts, the approval
 queue, top contributors, an activity feed, and upcoming deadlines.
 """
 
