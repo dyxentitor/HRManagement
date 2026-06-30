@@ -250,7 +250,8 @@ class RoleViewSet(viewsets.ModelViewSet):
 
     @property
     def required_perms(self):
-        if self.action in ("list", "retrieve"):
+        # `members` allows GET (role:read) + POST (inline role:write check below).
+        if self.action in ("list", "retrieve", "members"):
             return ["role:read"]
         return ["role:write"]
 
@@ -313,6 +314,81 @@ class RoleViewSet(viewsets.ModelViewSet):
         except Role.DoesNotExist:
             return Response({"detail": "Source role not found"}, status=status.HTTP_404_NOT_FOUND)
         return Response(RoleDetailSerializer(role).data, status=status.HTTP_201_CREATED)
+
+    # -- membership -----------------------------------------------------------
+    def _members_payload(self, role):
+        from modules.employee.models import Employee
+        from modules.identity.models import User as U
+        from modules.identity.models import UserRole as UR
+
+        user_ids = list(UR.objects.filter(role=role).values_list("user_id", flat=True))
+        emps = {
+            e.user_id: e
+            for e in Employee.all_objects.filter(
+                org_id=role.org_id, user_id__in=user_ids, deleted_at__isnull=True
+            )
+        }
+        users = {u.id: u for u in U.objects.filter(id__in=user_ids)}
+        out = []
+        for uid in user_ids:
+            e = emps.get(uid)
+            u = users.get(uid)
+            name = f"{e.first_name} {e.last_name}".strip() if e else (u.email if u else str(uid))
+            out.append(
+                {
+                    "user_id": str(uid),
+                    "employee_id": str(e.id) if e else None,
+                    "name": name,
+                    "email": (u.email if u else (e.email if e else "")),
+                }
+            )
+        return out
+
+    @action(detail=True, methods=["get", "post"], url_path="members")
+    def members(self, request, code: str | None = None):
+        from modules.identity.models import User as U
+        from modules.identity.models import UserRole as UR
+
+        role = self.get_object()
+        if request.method == "POST":
+            if "role:write" not in get_user_perms(request.user):
+                return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+            user_ids = request.data.get("user_ids") or []
+            for uid in user_ids:
+                target = U.objects.filter(id=uid, org_id=request.user.org_id).first()
+                if target is None:
+                    continue
+                current = set(UR.objects.filter(user=target).values_list("role__code", flat=True))
+                assign_roles_to_user(
+                    actor=request.user, target=target, role_codes=list(current | {role.code})
+                )
+            role.refresh_from_db()
+        return Response(self._members_payload(role))
+
+    @action(detail=True, methods=["delete"], url_path="members/(?P<user_id>[^/.]+)")
+    def remove_member(self, request, code: str | None = None, user_id: str | None = None):
+        from modules.identity.models import User as U
+        from modules.identity.models import UserRole as UR
+
+        if "role:write" not in get_user_perms(request.user):
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+        role = self.get_object()
+        target = U.objects.filter(id=user_id, org_id=request.user.org_id).first()
+        if target is None:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        current = set(UR.objects.filter(user=target).values_list("role__code", flat=True))
+        if current == {role.code}:
+            return Response(
+                {"detail": "This is the member's only role. Assign another role first."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        try:
+            assign_roles_to_user(
+                actor=request.user, target=target, role_codes=list(current - {role.code})
+            )
+        except (SelfDemoteError, LastAdminError) as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self._members_payload(role))
 
 
 @api_view(["PATCH"])
