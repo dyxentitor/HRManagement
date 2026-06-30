@@ -1,8 +1,8 @@
 """Permission catalogue — turns the flat code list into a grouped, described, scannable structure.
 
-Grouping is DERIVED from the ``<module>:`` code prefix via the ``MODULES`` taxonomy below (no group/module
-DB tables). Per-permission human metadata (label/description/requires/dangerous) lives on the Permission rows,
-loaded from the YAML fixtures. Scope is parsed from the code, never stored.
+Grouping is DERIVED from the ``<module>:`` code prefix via the ``MODULES`` taxonomy below (no
+group/module DB tables). Per-permission human metadata (label/description/requires/dangerous) lives
+on the Permission rows, loaded from the YAML fixtures. Scope is parsed from the code, never stored.
 """
 
 from __future__ import annotations
@@ -11,8 +11,8 @@ from typing import Any
 
 from .models import Permission, Role
 
-# Ordered product-area taxonomy. Each entry maps one or more code prefixes to a display group; this is where
-# split domains are merged (payslip+payroll, cert+training, user+employee). Presentation config, versioned in
+# Ordered product-area taxonomy. Each entry maps code prefixes to a display group; this is where split
+# domains are merged (payslip+payroll, cert+training, user+employee). Presentation config, versioned in
 # code. A prefix not listed here falls into the synthetic "other" group at the end.
 MODULES: list[dict[str, Any]] = [
     {
@@ -114,7 +114,7 @@ def _permission_dto(p: Permission, granted_codes: set[str] | None) -> dict[str, 
 
 
 def build_catalogue(role: Role | None = None) -> list[dict[str, Any]]:
-    """Group every permission into ordered modules. When ``role`` is given, each permission gets ``granted``."""
+    """Group every permission into ordered modules; with ``role``, each permission gets ``granted``."""
     granted_codes = (
         set(role.permissions.values_list("code", flat=True)) if role is not None else None
     )
