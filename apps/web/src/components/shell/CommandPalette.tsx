@@ -49,7 +49,8 @@ const PAGES = [
 		label: "Schedule",
 		to: "/schedule/me",
 		icon: Clock,
-		perm: "attendance:clock:self",
+		// View gate, not clock gate — see sidebar-nav.ts.
+		perm: "attendance:read:self",
 		module: "schedule",
 	},
 	{
@@ -182,6 +183,7 @@ export function CommandPalette() {
 	const pagePerms = PAGES.map((p) => (p.perm === "" ? true : useCan(p.perm)));
 	// biome-ignore lint/correctness/useHookAtTopLevel: PAGES is module-constant; hook count is fixed.
 	const pageFeatures = PAGES.map((p) => (p.module ? useFeature(p.module) : true));
+	const canClock = useCan("attendance:clock:self");
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
@@ -252,9 +254,11 @@ export function CommandPalette() {
 
 				<CommandSeparator />
 				<CommandGroup heading="Actions">
-					<CommandItem onSelect={() => go("/schedule/me")} value="Clock in / out">
-						<Clock className="size-4 mr-2" aria-hidden /> Clock in / out
-					</CommandItem>
+					{canClock && (
+						<CommandItem onSelect={() => go("/schedule/me")} value="Clock in / out">
+							<Clock className="size-4 mr-2" aria-hidden /> Clock in / out
+						</CommandItem>
+					)}
 					<CommandItem onSelect={() => go("/leave/apply")} value="Apply for leave">
 						<Calendar className="size-4 mr-2" aria-hidden /> Apply for leave
 					</CommandItem>

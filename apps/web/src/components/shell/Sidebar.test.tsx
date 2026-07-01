@@ -3,12 +3,12 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { Sidebar } from "./Sidebar";
 
-// Matches only <div> elements whose full text content equals `label`.
-// Group labels are rendered as <div>s; the UserMenu renders the username in a <span>,
-// so this prevents false positives when the username matches a group label (e.g. "admin").
+// Matches only <span> group-label elements whose text equals `label`.
+// Domain labels render inside a <span class="text-label">; the UserMenu also renders
+// text in spans, so we match on exact textContent to avoid false positives.
 function getGroupLabel(label: string): HTMLElement | null {
 	return screen.queryByText((_, element) => {
-		return element?.tagName === "DIV" && element.textContent === label;
+		return element?.tagName === "SPAN" && element.textContent === label;
 	});
 }
 
@@ -28,11 +28,12 @@ vi.mock("@/lib/auth", () => ({
 		perms: mocks.perms,
 	}),
 }));
-vi.mock("@/lib/perm", () => ({
-	useCan: (perm: string) => mocks.perms.has(perm),
-}));
 vi.mock("@/lib/feature-flags", () => ({
 	useFeature: (key: string) => mocks.flags[key] !== false,
+}));
+// Keep the sidebar network-free in tests; badge counts are exercised elsewhere.
+vi.mock("@/lib/nav-badges", () => ({
+	useNavBadges: () => ({}),
 }));
 
 describe("Sidebar", () => {
@@ -58,17 +59,20 @@ describe("Sidebar", () => {
 		expect(screen.queryByRole("link", { name: /approvals/i })).not.toBeInTheDocument();
 	});
 
-	it("hides the Team group when no team items are visible", () => {
+	it("hides a domain group when none of its items are visible", () => {
 		mocks.perms = new Set();
+		mocks.flags = {};
 		render(
 			<MemoryRouter>
 				<Sidebar />
 			</MemoryRouter>,
 		);
-		expect(getGroupLabel("Team")).not.toBeInTheDocument();
+		// With no perms, Money (all items gated) is hidden; People still shows via My Profile.
+		expect(getGroupLabel("Money")).not.toBeInTheDocument();
+		expect(getGroupLabel("People")).toBeInTheDocument();
 	});
 
-	it("shows the Admin group when an admin perm is granted", () => {
+	it("shows the Employee directory under People with employee:read:org", () => {
 		mocks.perms = new Set(["employee:read:org"]);
 		mocks.flags = {};
 		render(
@@ -76,9 +80,22 @@ describe("Sidebar", () => {
 				<Sidebar />
 			</MemoryRouter>,
 		);
+		expect(getGroupLabel("People")).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /directory/i })).toBeInTheDocument();
+		// Admin group only appears with role:read, not a directory read perm.
+		expect(getGroupLabel("Admin")).not.toBeInTheDocument();
+	});
+
+	it("shows the Admin group with role:read (Settings)", () => {
+		mocks.perms = new Set(["role:read"]);
+		mocks.flags = {};
+		render(
+			<MemoryRouter>
+				<Sidebar />
+			</MemoryRouter>,
+		);
 		expect(getGroupLabel("Admin")).toBeInTheDocument();
-		// the Employees directory now lives under the People hub
-		expect(screen.getByRole("link", { name: /people/i })).toBeInTheDocument();
+		expect(screen.getByRole("link", { name: /^settings$/i })).toBeInTheDocument();
 	});
 
 	it("shows Assignments once for read:org and once for create:team (anyPerm, no duplicate)", () => {
@@ -96,9 +113,8 @@ describe("Sidebar", () => {
 	});
 
 	it("hides Payroll when the payslip feature flag is disabled, even if perm is granted", () => {
-		// Payroll endpoints are gated by @requires_feature("payslip") on the
-		// backend (PayrollPeriodViewSet, PayrollRunViewSet). The sidebar item
-		// must use the same key so it hides in lockstep.
+		// Payroll endpoints are gated by @requires_feature("payslip") on the backend;
+		// the sidebar item uses the same key so it hides in lockstep.
 		mocks.perms = new Set(["payroll:run:create"]);
 		mocks.flags = { payslip: false };
 		render(
@@ -118,17 +134,6 @@ describe("Sidebar", () => {
 			</MemoryRouter>,
 		);
 		expect(screen.getByRole("link", { name: /payroll/i })).toBeInTheDocument();
-	});
-
-	it("shows Settings link with role:read perm (v1.9.0: admin pages collapsed)", () => {
-		mocks.perms = new Set(["role:read"]);
-		mocks.flags = {};
-		render(
-			<MemoryRouter>
-				<Sidebar />
-			</MemoryRouter>,
-		);
-		expect(screen.getByRole("link", { name: /^settings$/i })).toBeInTheDocument();
 	});
 
 	it("hides Settings link without role:read perm", () => {
