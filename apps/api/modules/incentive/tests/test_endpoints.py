@@ -324,6 +324,26 @@ def test_edit_blocked_when_not_pending(stack):
     assert claim.mandays == Decimal("5")
 
 
+def test_notifications_on_review(stack):
+    from modules.notification.models import Notification
+
+    c1 = _pending_claim(stack)
+    ra = stack["c"]["manager"].post(f"/api/v1/incentive/claims/{c1.id}/approve/")
+    assert ra.status_code == 200, ra.content
+    c2 = _pending_claim(stack)
+    rr = stack["c"]["manager"].post(
+        f"/api/v1/incentive/claims/{c2.id}/reject/", {"reason": "too coarse"}, format="json"
+    )
+    assert rr.status_code == 200, rr.content
+    claimant = stack["e"]["employee"].user
+    assert Notification.objects.filter(
+        user=claimant, type="incentive.claim_approved", channel="in_app"
+    ).exists()
+    assert Notification.objects.filter(
+        user=claimant, type="incentive.claim_rejected", channel="in_app"
+    ).exists()
+
+
 def test_me_summary_earnings(stack):
     cust = _customer_with_pool(stack)
     proj = Project.objects.create(

@@ -7,6 +7,7 @@ only on their own projects; an employee sees only own claims + visible projects)
 
 from __future__ import annotations
 
+import logging
 from typing import ClassVar
 
 from rest_framework import status as drf_status
@@ -27,6 +28,8 @@ from .services import ledger
 from .services.overview import build_overview
 
 OVERVIEW_PERMS = {"incentive:admin", "incentive:project:write"}
+
+_log = logging.getLogger(__name__)
 
 
 @api_view(["GET"])
@@ -216,6 +219,29 @@ class ClaimViewSet(viewsets.ModelViewSet):
             return bool(emp and claim.project.manager_id == emp.id)
         return False
 
+    def _notify_claimant(self, claim, notif_type: str, reason: str = "") -> None:
+        """Best-effort in-app notification to the claimant — never breaks the review."""
+        try:
+            from modules.notification.services.notify import notify
+
+            emp = Employee.all_objects.filter(id=claim.employee_id, org_id=claim.org_id).first()
+            user = getattr(emp, "user", None) if emp else None
+            if user is None:
+                return
+            notify(
+                user=user,
+                type=notif_type,
+                payload={
+                    "claim_id": str(claim.id),
+                    "project": claim.project.name,
+                    "mandays": str(claim.mandays),
+                    "reason": reason,
+                },
+                deep_link="/incentive",
+            )
+        except Exception:
+            _log.exception("incentive notify %s failed for claim %s", notif_type, claim.id)
+
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
         claim = self.get_object()
@@ -223,6 +249,7 @@ class ClaimViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You can't review this claim.")
         ledger.approve_claim(claim, actor_id=request.user.id)
         claim.refresh_from_db()
+        self._notify_claimant(claim, "incentive.claim_approved")
         return Response(ClaimSerializer(claim).data)
 
     @action(detail=True, methods=["post"])
@@ -230,8 +257,10 @@ class ClaimViewSet(viewsets.ModelViewSet):
         claim = self.get_object()
         if not self._can_review(claim):
             raise PermissionDenied("You can't review this claim.")
-        ledger.reject_claim(claim, actor_id=request.user.id, reason=request.data.get("reason", ""))
+        reason = request.data.get("reason", "")
+        ledger.reject_claim(claim, actor_id=request.user.id, reason=reason)
         claim.refresh_from_db()
+        self._notify_claimant(claim, "incentive.claim_rejected", reason=reason)
         return Response(ClaimSerializer(claim).data)
 
     @action(detail=True, methods=["post"])
