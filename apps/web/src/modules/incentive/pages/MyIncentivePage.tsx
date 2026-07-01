@@ -1,48 +1,41 @@
+import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { StatusPill } from "@/components/hrms";
-import { PageHeader } from "@/components/shell/PageHeader";
-import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { type Bond, type Claim, type Project, incentiveApi } from "../api";
+import { type Claim, type MeSummary, incentiveApi } from "../api";
+import { ClaimComposer, type ComposerInitial, type ComposerMode } from "../components/ClaimComposer";
+import { IncentiveHero } from "../components/IncentiveHero";
+import { MandayKpis } from "../components/MandayKpis";
+import { MyClaimsList } from "../components/MyClaimsList";
+import { EligibilityCard } from "../components/rail/EligibilityCard";
+import { EarningTrend } from "../components/rail/EarningTrend";
+import { MyProjectsCard } from "../components/rail/MyProjectsCard";
+import { PayoutCard } from "../components/rail/PayoutCard";
 
-const CLAIM_TONE = {
-	pending: "yellow",
-	approved: "mint",
-	rejected: "coral",
-	cancelled: "lavender",
-} as const;
+interface ComposerState {
+	mode: ComposerMode;
+	initial: ComposerInitial;
+	claimId?: string;
+}
 
 export default function MyIncentivePage() {
-	const [bond, setBond] = useState<Bond | null>(null);
-	const [projects, setProjects] = useState<Project[]>([]);
-	const [claims, setClaims] = useState<Claim[]>([]);
-	const [projectId, setProjectId] = useState("");
-	const [mandays, setMandays] = useState("");
-	const [note, setNote] = useState("");
-	const [loading, setLoading] = useState(true);
+	const [summary, setSummary] = useState<MeSummary | null>(null);
+	const [composer, setComposer] = useState<ComposerState | null>(null);
 
 	const load = useCallback(async () => {
-		const [bonds, pj, cl] = await Promise.all([
-			incentiveApi.bonds.list().catch(() => []),
-			incentiveApi.projects.list().catch(() => []),
-			incentiveApi.claims.list().catch(() => []),
-		]);
-		setBond(bonds[0] ?? null);
-		setProjects(pj.filter((p) => p.status === "open"));
-		setClaims(cl);
-		setLoading(false);
+		setSummary(await incentiveApi.me().catch(() => null));
 	}, []);
-
 	useEffect(() => {
 		void load();
 	}, [load]);
 
 	async function acceptBond() {
-		if (!bond) return;
+		const id = summary?.eligibility.bond_id;
+		if (!id) return;
 		try {
-			await incentiveApi.bonds.accept(bond.id);
+			await incentiveApi.bonds.accept(id);
 			toast.success("Bond accepted — you can now claim mandays.");
 			void load();
 		} catch (e) {
@@ -50,134 +43,146 @@ export default function MyIncentivePage() {
 		}
 	}
 
-	async function submitClaim() {
-		if (!projectId || !mandays) {
-			toast.error("Pick a project and enter mandays.");
-			return;
-		}
+	function openCreate(projectId = "") {
+		setComposer({
+			mode: "create",
+			initial: { project: projectId, projectName: "", mandays: "", note: "" },
+		});
+	}
+	function openEdit(c: Claim) {
+		setComposer({
+			mode: "edit",
+			claimId: c.id,
+			initial: { project: c.project, projectName: c.project_name, mandays: c.mandays, note: c.note },
+		});
+	}
+	function openResubmit(c: Claim) {
+		setComposer({
+			mode: "resubmit",
+			initial: { project: c.project, projectName: c.project_name, mandays: c.mandays, note: c.note },
+		});
+	}
+
+	async function submitComposer(body: { project: string; mandays: string; note: string }) {
 		try {
-			await incentiveApi.claims.create({ project: projectId, mandays, note });
-			toast.success("Claim submitted.");
-			setProjectId("");
-			setMandays("");
-			setNote("");
+			if (composer?.mode === "edit" && composer.claimId) {
+				await incentiveApi.claims.update(composer.claimId, body);
+				toast.success("Claim updated.");
+			} else {
+				await incentiveApi.claims.create(body);
+				toast.success("Claim submitted.");
+			}
+			setComposer(null);
 			void load();
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Could not submit claim.");
+			toast.error(e instanceof Error ? e.message : "Could not save claim.");
 		}
 	}
 
-	const eligible = bond?.is_active ?? false;
+	async function cancelClaim(id: string) {
+		try {
+			await incentiveApi.claims.cancel(id);
+			toast.success("Claim cancelled.");
+			void load();
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Could not cancel claim.");
+		}
+	}
+
+	if (!summary) {
+		return (
+			<div className="space-y-4">
+				<Skeleton className="h-40 rounded-2xl" />
+				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+					{["a", "b", "c", "d"].map((k) => (
+						<Skeleton key={k} className="h-24 rounded-2xl" />
+					))}
+				</div>
+				<div className="grid lg:grid-cols-[1.7fr_1fr] gap-4">
+					<Skeleton className="h-72 rounded-2xl" />
+					<Skeleton className="h-72 rounded-2xl" />
+				</div>
+			</div>
+		);
+	}
+
+	const eligible = summary.eligibility.is_active;
 
 	return (
-		<div className="space-y-6">
-			<PageHeader title="My Mandays" subtitle="Claim mandays for the projects you contribute to." />
+		<div className="space-y-4">
+			<IncentiveHero
+				earnings={summary.earnings}
+				eligibility={summary.eligibility}
+				rate={summary.rate}
+				projectCount={summary.my_projects.length}
+				onLogClaim={() => openCreate()}
+				onAccept={acceptBond}
+			/>
 
-			{/* Bond / eligibility */}
-			<section className="glass-surface rounded-2xl p-4 flex items-center justify-between gap-4">
-				<div>
-					<p className="text-label text-text-tertiary">Mandays bond</p>
-					{bond ? (
-						<p className="text-small text-text-secondary mt-0.5">
-							{bond.period_start} → {bond.period_end}
-						</p>
+			{!summary.has_employee && (
+				<div className="glass-surface rounded-2xl p-4 text-small text-text-secondary">
+					Your account isn't linked to an employee record yet, so there's nothing to claim. Ask HR
+					to finish setting up your profile.
+				</div>
+			)}
+
+			<MandayKpis earnings={summary.earnings} counts={summary.claim_counts} />
+
+			<div className="grid lg:grid-cols-[1.7fr_1fr] gap-4 items-start">
+				<div className="space-y-4">
+					{composer ? (
+						<ClaimComposer
+							key={`${composer.mode}-${composer.claimId ?? "new"}-${composer.initial.project}`}
+							mode={composer.mode}
+							claimable={summary.claimable_projects}
+							initial={composer.initial}
+							onClose={() => setComposer(null)}
+							onSubmit={submitComposer}
+						/>
 					) : (
-						<p className="text-small text-text-tertiary mt-0.5">
-							No bond on file — ask HR to set one up.
-						</p>
+						<button
+							type="button"
+							onClick={() => openCreate()}
+							disabled={!eligible}
+							className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border border-dashed border-border-subtle bg-white/[0.02] text-left hover:border-accent-500/40 disabled:opacity-50"
+						>
+							<span className="flex items-center gap-3">
+								<span className="grid size-8 place-items-center rounded-lg bg-accent-500/15 border border-accent-500/30 text-accent-200">
+									<Plus className="size-4" />
+								</span>
+								<span>
+									<span className="block text-small font-medium text-text-primary">Log a claim</span>
+									<span className="block text-[11px] text-text-tertiary">
+										{eligible
+											? "Pick a project, enter mandays, add a note"
+											: "Accept your bond first to start claiming"}
+									</span>
+								</span>
+							</span>
+							<span className="text-[11px] text-text-tertiary">expand</span>
+						</button>
 					)}
-				</div>
-				{bond && !bond.accepted_at ? (
-					<Button type="button" onClick={acceptBond} className="bg-accent-500 text-white">
-						Accept bond
-					</Button>
-				) : (
-					<StatusPill
-						tone={eligible ? "mint" : "lavender"}
-						label={eligible ? "Eligible" : "Not eligible"}
-					/>
-				)}
-			</section>
 
-			{/* Submit a claim */}
-			<section className="glass-surface rounded-2xl p-4 space-y-3">
-				<p className="text-label text-text-tertiary">Submit a claim</p>
-				<div className="grid gap-3 sm:grid-cols-[1fr_140px_auto]">
-					<select
-						value={projectId}
-						onChange={(e) => setProjectId(e.target.value)}
-						aria-label="Project"
-						disabled={!eligible}
-						className="bg-canvas border border-border-subtle rounded-md px-3 py-2 text-body text-text-secondary"
-					>
-						<option value="">Select a project…</option>
-						{projects.map((p) => (
-							<option key={p.id} value={p.id}>
-								{p.name} · {p.mandays_remaining} md left
-							</option>
-						))}
-					</select>
-					<input
-						type="number"
-						min="0"
-						step="0.25"
-						value={mandays}
-						onChange={(e) => setMandays(e.target.value)}
-						placeholder="Mandays"
-						aria-label="Mandays"
-						disabled={!eligible}
-						className="bg-canvas border border-border-subtle rounded-md px-3 py-2 text-body"
+					<MyClaimsList
+						claims={summary.claims}
+						rate={summary.rate}
+						onEdit={openEdit}
+						onResubmit={openResubmit}
+						onCancel={cancelClaim}
 					/>
-					<Button
-						type="button"
-						onClick={submitClaim}
-						disabled={!eligible}
-						className="bg-accent-500 text-white"
-					>
-						Claim
-					</Button>
 				</div>
-				<input
-					value={note}
-					onChange={(e) => setNote(e.target.value)}
-					placeholder="What did you do? (optional)"
-					aria-label="Note"
-					disabled={!eligible}
-					className="w-full bg-canvas border border-border-subtle rounded-md px-3 py-2 text-body"
-				/>
-				{!eligible && (
-					<p className="text-small text-text-tertiary">
-						You need an accepted, active bond before you can claim.
-					</p>
-				)}
-			</section>
 
-			{/* My claims */}
-			<section className="space-y-2">
-				<p className="text-label text-text-tertiary">My claims</p>
-				{loading ? (
-					<p className="text-small text-text-tertiary">Loading…</p>
-				) : claims.length === 0 ? (
-					<p className="text-small text-text-tertiary">No claims yet.</p>
-				) : (
-					<div className="space-y-2">
-						{claims.map((c) => (
-							<div
-								key={c.id}
-								className="glass-surface rounded-xl p-3 flex items-center justify-between gap-4"
-							>
-								<div>
-									<p className="text-body text-text-primary">{c.project_name}</p>
-									<p className="text-small text-text-tertiary">
-										{c.mandays} mandays{c.billing_quarter ? ` · ${c.billing_quarter}` : ""}
-									</p>
-								</div>
-								<StatusPill tone={CLAIM_TONE[c.status]} label={c.status} />
-							</div>
-						))}
-					</div>
-				)}
-			</section>
+				<div className="space-y-4">
+					<EligibilityCard eligibility={summary.eligibility} onAccept={acceptBond} />
+					<EarningTrend trend={summary.trend} />
+					<MyProjectsCard
+						mine={summary.my_projects}
+						claimable={summary.claimable_projects}
+						onClaim={(pid) => openCreate(pid)}
+					/>
+					<PayoutCard payout={summary.payout} />
+				</div>
+			</div>
 		</div>
 	);
 }
