@@ -6,10 +6,59 @@ export interface RoleSummary {
 	description?: string;
 	is_system: boolean;
 	member_count: number;
+	permission_count?: number;
 }
 
 export interface RoleDetail extends RoleSummary {
 	permissions: string[];
+	updated_at?: string;
+}
+
+// --- permission catalogue (the grouped, described permission tree) ---
+export interface CataloguePermission {
+	code: string;
+	label: string;
+	description: string;
+	scope: "self" | "team" | "org" | null;
+	requires: string[];
+	dangerous: boolean;
+	granted?: boolean;
+}
+export interface CatalogueModule {
+	key: string;
+	label: string;
+	icon: string;
+	permissions: CataloguePermission[];
+	granted_count: number;
+	total: number;
+}
+
+export interface RoleRef {
+	code: string;
+	name: string;
+}
+export interface RoleMember {
+	user_id: string;
+	employee_id: string | null;
+	name: string;
+	email: string;
+	roles: RoleRef[];
+}
+
+export interface EffectiveAccessPermission {
+	code: string;
+	label: string;
+	scope: "self" | "team" | "org" | null;
+	dangerous: boolean;
+	sources: string[];
+}
+export interface EffectiveAccess {
+	roles: RoleRef[];
+	modules: {
+		key: string;
+		label: string;
+		permissions: EffectiveAccessPermission[];
+	}[];
 }
 
 export interface UserRolesResponse {
@@ -70,15 +119,19 @@ export const roleApi = {
 		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 
-	setPermissions: async (code: string, permissions: string[]): Promise<RoleDetail> => {
-		// drf-spectacular emits `requestBody?: never` for this APIView —
-		// body is cast at the call site. Response shape is also unknown
-		// to spectacular, so we re-decode via toRoleDetail.
+	setPermissions: async (
+		code: string,
+		permissions: string[],
+		baseUpdatedAt?: string,
+	): Promise<RoleDetail> => {
 		const { data, error } = await api.PATCH("/api/v1/roles/{code}/permissions/", {
 			params: { path: { code } },
-			body: { permission_codes: permissions } as never,
+			body: {
+				permission_codes: permissions,
+				base_updated_at: baseUpdatedAt ?? null,
+			} as never,
 		});
-		if (error || !data) throw new Error("Could not save permissions");
+		if (error) throw new Error(extractErrMessage(error, "Could not save permissions"));
 		return toRoleDetail(data as unknown as BackendRoleDetail);
 	},
 
@@ -88,6 +141,87 @@ export const roleApi = {
 		});
 		if (error || !data) throw new Error("Could not reset role");
 		return toRoleDetail(data as unknown as BackendRoleDetail);
+	},
+
+	create: async (name: string, description = ""): Promise<RoleDetail> => {
+		const { data, error } = await api.POST("/api/v1/roles/", {
+			body: { name, description } as never,
+		});
+		if (error) throw new Error(extractErrMessage(error, "Could not create role"));
+		return toRoleDetail(data as unknown as BackendRoleDetail);
+	},
+
+	clone: async (sourceCode: string, name: string, description = ""): Promise<RoleDetail> => {
+		const { data, error } = await api.POST("/api/v1/roles/{code}/clone/", {
+			params: { path: { code: sourceCode } },
+			body: { name, description } as never,
+		});
+		if (error) throw new Error(extractErrMessage(error, "Could not clone role"));
+		return toRoleDetail(data as unknown as BackendRoleDetail);
+	},
+
+	rename: async (
+		code: string,
+		body: { name?: string; description?: string },
+	): Promise<RoleDetail> => {
+		const { data, error } = await api.PATCH("/api/v1/roles/{code}/", {
+			params: { path: { code } },
+			body: body as never,
+		});
+		if (error) throw new Error(extractErrMessage(error, "Could not update role"));
+		return toRoleDetail(data as unknown as BackendRoleDetail);
+	},
+
+	remove: async (code: string): Promise<void> => {
+		const { error } = await api.DELETE("/api/v1/roles/{code}/", {
+			params: { path: { code } },
+		});
+		if (error) throw new Error(extractErrMessage(error, "Could not delete role"));
+	},
+};
+
+export const permissionApi = {
+	catalogue: async (roleCode?: string): Promise<CatalogueModule[]> => {
+		const { data, error } = await api.GET("/api/v1/permissions/catalogue/", {
+			params: { query: roleCode ? { role: roleCode } : {} } as never,
+		});
+		if (error || !data) throw new Error("Could not load the permission catalogue");
+		return (data as unknown as { modules: CatalogueModule[] }).modules;
+	},
+};
+
+export const roleMembersApi = {
+	list: async (code: string): Promise<RoleMember[]> => {
+		const { data, error } = await api.GET("/api/v1/roles/{code}/members/", {
+			params: { path: { code } },
+		});
+		if (error || !data) throw new Error("Could not load members");
+		return data as unknown as RoleMember[];
+	},
+	add: async (code: string, userIds: string[]): Promise<RoleMember[]> => {
+		const { data, error } = await api.POST("/api/v1/roles/{code}/members/", {
+			params: { path: { code } },
+			body: { user_ids: userIds } as never,
+		});
+		if (error) throw new Error(extractErrMessage(error, "Could not add members"));
+		return data as unknown as RoleMember[];
+	},
+	remove: async (code: string, userId: string): Promise<RoleMember[]> => {
+		const { data, error } = await api.DELETE("/api/v1/roles/{code}/members/{user_id}/", {
+			params: { path: { code, user_id: userId } } as never,
+		});
+		if (error) throw new Error(extractErrMessage(error, "Could not remove member"));
+		return data as unknown as RoleMember[];
+	},
+};
+
+export const userAccessApi = {
+	effective: async (userId: string): Promise<EffectiveAccess> => {
+		const { data, error } = await api.GET("/api/v1/users/{user_id}/effective-access/", {
+			params: { path: { user_id: userId } } as never,
+		});
+		if (error || !data) throw new Error("Could not load this person's access");
+		return data as unknown as EffectiveAccess;
 	},
 };
 

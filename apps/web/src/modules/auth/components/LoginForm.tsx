@@ -1,12 +1,12 @@
-import { Eye, EyeOff, KeyRound, Lock, Mail } from "lucide-react";
+import { ArrowRight, Check, Eye, EyeOff, Headset, KeyRound, Lock, Mail } from "lucide-react";
 import { useId, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const inputClass =
-	"w-full rounded-md border border-border-subtle bg-canvas py-2.5 pl-10 pr-3 text-body text-text-primary placeholder:text-text-tertiary transition-colors duration-fast focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30";
+	"w-full rounded-lg border border-border-subtle bg-canvas py-2.5 pl-10 pr-3 text-body text-text-primary placeholder:text-text-tertiary transition-colors duration-fast focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/30";
 
 function FieldIcon({ children }: { children: React.ReactNode }) {
 	return (
@@ -28,6 +28,7 @@ export function LoginForm() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
+	const [remember, setRemember] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [mfaState, setMfaState] = useState<{ token: string } | null>(null);
 	const [mfaCode, setMfaCode] = useState("");
@@ -59,8 +60,8 @@ export function LoginForm() {
 	return (
 		<form onSubmit={onSubmit} noValidate>
 			<header className="mb-6">
-				<h1 className="text-h1 text-text-primary">
-					{mfaState ? "Two-step verification" : "Welcome back"}
+				<h1 className="text-[30px] font-bold leading-tight tracking-tight text-text-primary">
+					{mfaState ? "Two-step verification" : "Welcome back 👋"}
 				</h1>
 				<p className="mt-1 text-body text-text-secondary">
 					{mfaState
@@ -72,11 +73,8 @@ export function LoginForm() {
 			{!mfaState ? (
 				<div className="space-y-4">
 					<div>
-						<label
-							htmlFor={emailId}
-							className="mb-1 block text-small text-text-tertiary"
-						>
-							Email
+						<label htmlFor={emailId} className="mb-1.5 block text-small text-text-secondary">
+							Email address
 						</label>
 						<div className="relative">
 							<FieldIcon>
@@ -97,19 +95,16 @@ export function LoginForm() {
 					</div>
 
 					<div>
-						<div className="mb-1 flex items-baseline justify-between">
-							<label
-								htmlFor={pwId}
-								className="block text-small text-text-tertiary"
-							>
+						<div className="mb-1.5 flex items-baseline justify-between">
+							<label htmlFor={pwId} className="block text-small text-text-secondary">
 								Password
 							</label>
-							<a
-								href="/forgot-password"
-								className="text-small text-accent-200 hover:text-accent-50"
+							<Link
+								to="/forgot-password"
+								className="text-small text-accent-200 transition-colors hover:text-accent-50"
 							>
-								Forgot?
-							</a>
+								Forgot password?
+							</Link>
 						</div>
 						<div className="relative">
 							<FieldIcon>
@@ -129,24 +124,45 @@ export function LoginForm() {
 							<button
 								type="button"
 								onClick={() => setShowPassword((v) => !v)}
-								className="absolute right-2 top-1/2 grid -translate-y-1/2 size-7 place-items-center rounded text-text-tertiary hover:text-text-secondary"
+								className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded text-text-tertiary hover:text-text-secondary"
 								aria-label={showPassword ? "Hide password" : "Show password"}
 							>
-								{showPassword ? (
-									<EyeOff className="size-4" />
-								) : (
-									<Eye className="size-4" />
-								)}
+								{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
 							</button>
 						</div>
+					</div>
+
+					{/* Remember me + SSO */}
+					<div className="flex items-center justify-between pt-0.5">
+						<label className="flex cursor-pointer select-none items-center gap-2">
+							<span className="relative grid place-items-center">
+								<input
+									type="checkbox"
+									checked={remember}
+									onChange={(e) => setRemember(e.target.checked)}
+									className="peer sr-only"
+								/>
+								<span className="size-[18px] rounded-[6px] border border-border-strong bg-canvas transition-colors peer-checked:border-cta peer-checked:bg-cta peer-focus-visible:ring-2 peer-focus-visible:ring-accent-500/40" />
+								<Check
+									className="pointer-events-none absolute size-3 text-cta-foreground opacity-0 peer-checked:opacity-100"
+									strokeWidth={3}
+								/>
+							</span>
+							<span className="text-small text-text-secondary">Remember me</span>
+						</label>
+						<button
+							type="button"
+							title="Single sign-on"
+							onClick={() => navigate("/forgot-password")}
+							className="inline-flex items-center gap-1 text-small text-accent-200 transition-colors hover:text-accent-50"
+						>
+							SSO Login <ArrowRight className="size-3.5" aria-hidden />
+						</button>
 					</div>
 				</div>
 			) : (
 				<div>
-					<label
-						htmlFor={mfaId}
-						className="mb-1 block text-small text-text-tertiary"
-					>
+					<label htmlFor={mfaId} className="mb-1.5 block text-small text-text-secondary">
 						Authenticator code
 					</label>
 					<div className="relative">
@@ -165,7 +181,7 @@ export function LoginForm() {
 							aria-label="MFA code"
 							// biome-ignore lint/a11y/noAutofocus: MFA step auto-focuses the code field intentionally
 							autoFocus
-							className={cn(inputClass, "tracking-[0.3em] font-mono")}
+							className={cn(inputClass, "font-mono tracking-[0.3em]")}
 						/>
 					</div>
 				</div>
@@ -174,7 +190,7 @@ export function LoginForm() {
 			{error && (
 				<p
 					role="alert"
-					className="mt-4 rounded-md border border-coral/30 bg-coral/10 px-3 py-2 text-small text-coral"
+					className="mt-4 rounded-lg border border-coral/30 bg-coral/10 px-3 py-2 text-small text-coral"
 				>
 					{error}
 				</p>
@@ -183,14 +199,48 @@ export function LoginForm() {
 			<button
 				type="submit"
 				disabled={submitting}
-				className="mt-6 w-full rounded-md bg-cta py-3 text-h3 font-bold text-cta-foreground transition-colors duration-fast hover:bg-cta/90 disabled:opacity-60"
+				className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-cta py-3 text-h3 font-bold text-cta-foreground shadow-[0_10px_30px_-10px_rgb(213_248_74_/_0.55)] transition-colors duration-fast hover:bg-cta/90 disabled:opacity-60"
 			>
-				{submitting ? "…" : mfaState ? "Verify code" : "Sign in"}
+				{submitting ? (
+					mfaState ? (
+						"Verifying…"
+					) : (
+						"Signing in…"
+					)
+				) : (
+					<>
+						{mfaState ? "Verify code" : "Sign in"}
+						<ArrowRight className="size-4" aria-hidden />
+					</>
+				)}
 			</button>
 
-			<p className="mt-6 text-center text-small text-text-tertiary">
-				Need an account? Ask your HR admin.
-			</p>
+			<div className="mt-5 text-center">
+				<a
+					href="mailto:support@provintell.local"
+					className="text-small text-text-tertiary transition-colors hover:text-text-secondary"
+				>
+					Need help?
+				</a>
+			</div>
+
+			{/* Contact card */}
+			<div className="mt-6 flex items-center gap-3 rounded-xl border border-border-subtle bg-canvas/50 px-4 py-3">
+				<span
+					className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-500/15 text-accent-200"
+					aria-hidden
+				>
+					<Headset className="size-4" />
+				</span>
+				<div className="min-w-0">
+					<p className="text-small font-semibold text-text-secondary">
+						Contact your HR administrator
+					</p>
+					<p className="truncate text-small text-text-tertiary">
+						support@provintell.local · +60 3-1234 5678
+					</p>
+				</div>
+			</div>
 		</form>
 	);
 }

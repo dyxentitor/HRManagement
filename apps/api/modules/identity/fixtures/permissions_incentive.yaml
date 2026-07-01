@@ -1,0 +1,4 @@
+# Incentive (mandays) module permissions.
+- { code: "incentive:admin",          description: "Manage customers/pools, any project, approvals, payouts, bonds, and amendments" }
+- { code: "incentive:project:write",  description: "Open and manage own projects; approve/reject claims on them" }
+- { code: "incentive:claim",          description: "Submit and view own manday claims" }

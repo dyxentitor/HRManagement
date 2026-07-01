@@ -2,6 +2,225 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.49.0] — 2026-07-01
+
+**My Mandays employee redesign** — `/incentive` goes from form-first (bond banner + submit form + flat
+list) to a **status-first command center** — "how am I doing, and what needs my attention?" — in the
+dark command-center language, mirroring the admin overview from the contributor's side.
+
+### Added
+
+- **Employee summary endpoint** — `GET /api/v1/incentive/me/` returns, in one derived call (no new stored
+  state): eligibility + bond expiry, the earnings split (earned / pending / this-quarter / paid — mandays
+  with RM equivalents), claim counts, the employee's own claims, a 4-quarter personal trend, projects
+  contributed-to + open-to-claim, and the quarter's payout flow. A user with **no linked Employee** gets a
+  well-formed empty payload (`has_employee: false`) instead of a 500.
+- **Claim lifecycle** — employees can **cancel** a pending claim (`POST /claims/{id}/cancel/`, no ledger
+  effect) and **edit** a pending claim (owner `PATCH` — mandays/note/project, with a project-visibility
+  re-check). **Resubmit** of a rejected claim prefills the composer client-side.
+- **Review notifications** — approving/rejecting a claim sends the claimant an **in-app** notification
+  (`incentive.claim_approved` / `incentive.claim_rejected`, deep-linking to `/incentive`; best-effort).
+- **Redesigned page** — aurora hero (**mandays-first** headline, RM subtle, Log-a-claim), a 4-card KPI row
+  (earned · pending · this quarter · paid out), and a two-pane workspace: a **collapsible composer**
+  (create / edit / resubmit), a **lifecycle claims list** (edit/cancel pending via `ConfirmDialog`,
+  reject-reason inline + resubmit), and a rail of **eligibility**, a **private earning trend**,
+  **my/claimable projects**, and the **payout flow**. All visuals are **CSS/SVG** (no chart library).
+
+### Changed
+
+- Contracts regenerated (`/incentive/me/`, `/incentive/claims/{id}/cancel/`).
+
+### Design decisions (non-goals)
+
+- Mandays-first with RM subtle · **no leaderboard / peer comparison** · no personal manday caps (project
+  budget only) · reject-reason-only feedback (approvals silent) · in-app notifications only (no email).
+  Bond clawback remains deferred at the module level.
+
+### Tests
+
+- Backend **+8** (me-summary shape · earnings math · no-employee path; cancel success/owner/pending guards;
+  edit success + not-pending guard; approve/reject notifications). Frontend **+3** (status-first hero +
+  eligibility; pending Edit/Cancel opens the edit composer; reject-reason inline + Resubmit).
+- Suites: backend **909 passed** (1 pre-existing date-sensitive failure carried forward:
+  `attendance::test_clock_out_completes_record`). Frontend **442 passed** (1 pre-existing date-sensitive
+  failure carried forward: `MySchedulePage` this-month holidays). Both are unrelated to this change.
+
+## [1.48.1] — 2026-07-01
+
+### Fixed
+
+- **500 on opening an incentive project** as an admin. `Project.manager_id` was `NOT NULL`, but an actor with
+  no linked `Employee` (e.g. `admin@provintell.demo`) produced `manager_id=None` → `IntegrityError`.
+  `manager_id` is now nullable (migration `incentive.0003`); an admin-opened project has no owner-approver and
+  its claims are reviewed by admins. +1 regression test.
+
+## [1.48.0] — 2026-06-30
+
+**Incentive command-center redesign** — `/admin/incentive` goes from four stacked forms to a premium
+overview that conveys the module's state at a glance, in the Dashboard's language.
+
+### Added
+
+- **Project deadline** — `Project.deadline` (optional date; migration `incentive.0002`), surfaced in the API
+  and the New-project form; powers due-soon/overdue indicators.
+- **Overview endpoint** — `GET /api/v1/incentive/overview/` (managers/admin) returns, in one call, KPIs,
+  per-customer pool rollups, a slim projects list, manday-consumption by quarter, the claim breakdown, top
+  contributors (by earnings), recent ledger activity, and upcoming deadlines — all derived from the existing
+  models/ledger (no new stored state).
+- **Command-center page** — aurora hero (live state summary + headline quarter payout in RM + quick actions),
+  a 6-card executive KPI row (active projects · mandays remaining · allocated budget vs consumed · pending
+  claims · approved · SOC-enabled), and a two-pane workspace: **customer-pool gauges**, a
+  **searchable/filterable projects table**, a **manday-consumption trend**, the **approval queue** (act in
+  place), an **SVG claims donut**, **top contributors**, **upcoming deadlines**, and a **live activity feed**.
+  All visuals are **CSS/SVG** (no chart library) to stay cohesive with the Dashboard.
+- Proper **modals** (New project with deadline · New customer · Top up pool) replace the old inline forms and
+  the `window.prompt` top-up. Thoughtful empty states throughout; loading skeletons.
+
+### Tests
+
+- Backend **+4** (deadline persists; overview perm-gating, KPI math, top-contributor order, overdue flag).
+  Frontend **+5** (page renders KPIs from a mocked overview; projects-table filter; approval-queue approve +
+  empty state). Suites: incentive backend **23**, frontend **441**.
+
+## [1.47.0] — 2026-06-30
+
+**Roles & Permissions UI polish** — fixes the clipped effective-access view, removes every native browser
+popup from the page, and fills the missing-UI gaps.
+
+### Fixed
+
+- **Effective-access drawer was clipped to the card.** Root cause: `.glass-surface` uses `backdrop-filter`,
+  which makes it the containing block for `position: fixed` descendants, so the hand-rolled overlay rendered
+  inside the card instead of over the screen. Rebuilt on the portaled **`Sheet`** primitive — it now covers
+  the full viewport.
+
+### Changed
+
+- **No more native popups.** All three `window.confirm`s (delete role, privileged-grant, last-role removal)
+  and the (previously unconfirmed) **reset-to-defaults** now use a styled **`ConfirmDialog`**.
+- **Effective-access view** gains a **Module ↔ Role grouping toggle** (Role mode lists each permission under
+  its source role and dims duplicates with "also via …") + a search box — the visual answer to "why does this
+  person have X?" across multiple roles.
+
+### Added
+
+- **Rename** for custom roles — previously had no UI at all; now in a proper **⋯ row menu** (Rename / Clone /
+  Delete) that replaces the old hover-only text, via a `RenameRoleDialog`.
+- **Add-member picker** now shows **avatars + email** and a **"No matching employees"** empty state.
+
+### Tests
+
+- Frontend **+4** (ConfirmDialog confirm/cancel, RenameRoleDialog save, effective-access Role-toggle dimming,
+  members confirm-dialog). Suite **436**. Guard: zero `window.confirm/prompt/alert` calls in `modules/admin`.
+
+## [1.46.0] — 2026-06-30
+
+**Role-management enhancements** — polishes the v1.45.0 RBAC: a proper New-Role modal, working member
+assignment, and a per-person effective-access view that answers "why does this person have X?".
+
+### Fixed
+
+- **Member assignment was silently broken** — `employeeApi.list()` returned the linked login as `user`, not
+  `user_id`, so the member-picker filtered everyone out. The list now surfaces `user_id`; the picker offers
+  only employees with a login.
+
+### Added
+
+- **New-Role modal** (`RoleFormModal`) replacing the `window.prompt` flows — name, description, and a
+  **Start from: Empty | Clone an existing role** choice; reused for the rail's Clone action. `clone_role` +
+  endpoint accept an optional description.
+- **Effective-access view** — `GET /api/v1/users/{id}/effective-access/` returns a person's roles + their
+  **merged (union) permissions grouped by module, each tagged with the source role(s)**. Surfaced as an
+  `EffectiveAccessDrawer` (Eye icon on each member). This is the real mitigation for multi-role confusion:
+  permissions are a conflict-free union, so the value is *visibility into who granted what*.
+- **Assignment guardrails** — the Members tab shows each member's **other roles** as chips, **confirms** before
+  adding people to a role that grants any *sensitive* permission, and **warns** before removing someone's
+  **only** role (the v1.45.0 hard `409` block is relaxed to an allow-with-warning, per the owner's choice).
+
+### Tests
+
+- Backend **+5** (members `roles[]`, last-role removal now allowed, clone-with-description, effective-access
+  union + sources). Frontend **+6** (modal create/clone/validation, members other-roles + zero-role warn,
+  effective-access sources). Frontend suite **432**.
+
+## [1.45.0] — 2026-06-30
+
+**Roles & Permissions redesign** — `/admin/settings/roles` rebuilt as an enterprise-grade RBAC manager
+(two-pane master/detail). Fixes a P0 bug and makes permissions comprehensible.
+
+### Fixed
+
+- **P0 — admins can finally grant a permission a role doesn't already have.** The old matrix only rendered
+  a role's *existing* codes (no catalogue fetch), so extending a role was impossible through the UI.
+
+### Added
+
+- **Permission catalogue** — `Permission` gains `label` / `is_dangerous` / `requires`;
+  `GET /api/v1/permissions/catalogue/?role=` serves every permission grouped into product-area **modules**
+  (derived from the code prefix; payslip+payroll, cert+training, user+employee merged) with human
+  **descriptions**, **scope** pills, and **sensitive** flags (PII/money/admin auto-flagged). No new tables.
+- **Custom-role lifecycle** — create (empty/least-privilege), **clone** (permission snapshot; no inheritance),
+  rename, delete (custom only; **403** system, **409** with members). System roles stay permission-editable +
+  "Reset to defaults" but are never deletable.
+- **Role membership API** — `GET/POST/DELETE /roles/{code}/members/` (search/bulk add → one audit row per
+  user; remove keeps other roles, blocks removing a user's only role).
+- **Two-pane UI** — role rail (System/Custom, search, counts, lock badges, clone/delete) + detail with a
+  **module accordion** (description-first rows, search, granted-only filter, tri-state module toggles,
+  pre-emptive protection tooltips) and a **Members** tab (searchable multi/bulk add + remove). Optimistic-
+  locked save. The employee profile's roles are now **read-only chips** linking to the role's Members tab.
+- **Guardrails** — extended self-lockout (can't strip your own `role:write`), **optimistic locking** (412 on
+  concurrent edits), and a **`bootstrap_admin`** break-glass recovery command.
+
+### Tests
+
+- Backend **+23** (catalogue/grouping/scope/dangerous, role lifecycle + guards, membership). Frontend
+  net change: new two-pane + accordion (P0 regression) + read-only roles card; retired the old checkbox-wall
+  page + hardcoded client catalogue.
+
+### Deferred (fast-follow)
+
+- Premium create/clone/delete **modals** (currently functional prompts) + privileged-grant confirm dialog;
+  dependency **auto-add** UX (the `requires` metadata + warnings ship; one-click auto-add is next);
+  authoring `label`/`requires` across all fixtures (catalogue serves sensible defaults today).
+
+## [1.44.0] — 2026-06-30
+
+**Incentive (Mandays) module** — a new engagement-reward subsystem (Phase 1). A customer holds a pool of
+prepaid **mandays** (1 manday = RM 50, one global setting); a manager opens a **project** with a manday
+**budget** (a hard cap); eligible employees **claim** mandays for work they did; a manager approves or
+rejects; approved mandays accrue in an **immutable, append-only ledger** and are walked through a quarterly
+**Pending → Approved → Paid** payout. Reported **separately** — never flows into payroll.
+
+### Added
+
+- **Backend `modules/incentive`** — `Customer`, `Project`, `Claim`, `MandayLedger`, `EmployeeBond` models;
+  a money-critical ledger engine (`services/ledger.py`). The customer pool is **never pre-sliced** — it
+  drains only on approved claims; "mandays remaining" per customer and per project is **derived** from the
+  ledger (no stored balances). Ledger types: `pool_topup`, `claim_payout`, `reclaimed` (pool-perspective
+  signed `delta`).
+- **Atomic, idempotent approval** — locks Customer→Project (fixed order), re-checks eligibility and **both**
+  ceilings (project budget + customer pool), mints exactly one `claim_payout`, stamps the billing quarter.
+  Reject mints nothing; cancel/reverse appends a balancing `reclaimed` row (append-only undo).
+- **SOC visibility** — projects are hidden from the SOC group by default (`is_soc()` resolved from
+  settings-defined role codes; fail-open if unconfigured), with a manager **include-SOC** opt-in, enforced
+  server-side (queryset filter + submit re-check).
+- **Eligibility = mandays bond** — a per-employee bond (accept + active period) gates claiming and payout.
+  The repayment/clawback obligation and certificate/CME auto-linking are deferred to a later phase.
+- **Management amendment clause** — `incentive:admin` may amend anything (budgets, approved claims, bonds);
+  money amendments go through the append-only ledger, and every amendment is audited (reuses `common.audit`).
+- **REST API + RBAC** — customers/projects/claims/bonds endpoints; 3 perms
+  (`incentive:admin`, `incentive:project:write`, `incentive:claim`) granted across the 7 default roles;
+  registered as a per-org togglable module (`incentive`). Contracts regenerated.
+- **Frontend** — **My Mandays** page (bond accept · claim submit · my claims) and an **Incentive** admin
+  page (customer pools + top-up · open project + SOC toggle · approve/reject claims); sidebar entries gated
+  by the feature flag.
+
+### Tests
+
+- Backend **+19** (11 ledger engine, money-critical: single-mint approval, idempotent double-approve, both
+  ceilings, reject/reverse, eligibility, Decimal precision; 8 endpoint/RBAC/SOC). Frontend **+1**.
+- Permission codes **+3**.
+
 ## [1.43.0] — 2026-06-28
 
 **Premium employee directory card** — redesign of the `/admin/people` Directory cards.

@@ -7,6 +7,8 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - incentive:admin
+    - incentive:claim
     - user:invite
     - user:edit
     - user:create
@@ -132,6 +134,8 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - incentive:admin
+    - incentive:claim
     - user:invite
     - user:edit
     - user:create
@@ -250,6 +254,7 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - incentive:claim
     - user:read:self
     - user:read:team
     - role:read
@@ -297,6 +302,8 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - incentive:project:write
+    - incentive:claim
     - assignment:create:team
     - user:read:self
     - user:read:team
@@ -362,6 +369,8 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - incentive:project:write
+    - incentive:claim
     - assignment:create:team
     - user:read:self
     - user:read:team
@@ -426,6 +435,7 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - incentive:claim
     - user:read:self
     - employee:read:self
     - employee:write:self
@@ -465,6 +475,7 @@
   is_system: true
   permissions:
     - auth:mfa:manage:self
+    - incentive:claim
     - user:read:self
     - user:read:team
     - user:read:org

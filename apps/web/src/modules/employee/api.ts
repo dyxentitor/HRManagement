@@ -132,7 +132,13 @@ export const employeeApi = {
 	list: async (): Promise<Employee[]> => {
 		const { data, error } = await api.GET("/api/v1/employees/");
 		if (error) throw new Error("Could not load employees");
-		return (data ?? []) as unknown as Employee[];
+		// The list serializer exposes the linked login as `user`; surface it as `user_id`
+		// (mirrors retrieve()) so consumers like the role member-picker can use it.
+		const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+		return rows.map((r) => ({
+			...r,
+			user_id: r.user as string | undefined,
+		})) as unknown as Employee[];
 	},
 	retrieve: async (id: string): Promise<Employee | null> => {
 		const result = (await api.GET("/api/v1/employees/{id}/", {

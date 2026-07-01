@@ -22,11 +22,11 @@ function deriveTitle(
 		for (const item of group.items) {
 			// Exact match
 			if (item.to === pathname) {
-				return { breadcrumb: group.label, title: item.label };
+				return { breadcrumb: group.label || "Home", title: item.label };
 			}
 			// Prefix match for nested routes (e.g. /reports/some.code matches /reports)
 			if (item.to !== "/" && pathname.startsWith(`${item.to}/`)) {
-				return { breadcrumb: group.label, title: item.label };
+				return { breadcrumb: group.label || "Home", title: item.label };
 			}
 		}
 	}

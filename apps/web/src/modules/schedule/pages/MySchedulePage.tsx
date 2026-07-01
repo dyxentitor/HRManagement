@@ -4,6 +4,7 @@ import { KpiTile } from "@/components/hrms";
 import type { ClockState } from "@/components/hrms/ClockInOutWidget";
 import { NotLinkedEmptyState } from "@/components/hrms/NotLinkedEmptyState";
 import { PageHeader } from "@/components/shell/PageHeader";
+import { useAuth } from "@/lib/auth";
 
 import {
 	ApiError,
@@ -62,6 +63,8 @@ function attendanceLabel(status: string | null | undefined): string {
 }
 
 export default function MySchedulePage() {
+	const { perms } = useAuth();
+	const canClock = perms.has("attendance:clock:self");
 	const [weekStart, setWeekStart] = useState<string>(() =>
 		startOfWeekIsoLocal(new Date()),
 	);
@@ -243,6 +246,7 @@ export default function MySchedulePage() {
 				busy={busy}
 				onClockIn={clockIn}
 				onClockOut={clockOut}
+				canClock={canClock}
 			/>
 
 			<div className="grid grid-cols-3 gap-3">

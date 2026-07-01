@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -216,27 +216,44 @@ from rest_framework import viewsets  # noqa: E402
 from modules.identity.models import Role  # noqa: E402
 from modules.identity.permissions import HRMSPermission  # noqa: E402
 from modules.identity.serializers import (  # noqa: E402
+    RoleCloneInputSerializer,
+    RoleCreateInputSerializer,
     RoleDetailSerializer,
     RoleListItemSerializer,
     RolePermissionsInputSerializer,
+    RoleRenameInputSerializer,
 )
 from modules.identity.services.permissions import (  # noqa: E402
     LastWritePermissionHolderError,
     OrgAdminProtectionError,
+    RoleConflictError,
+    RoleHasMembersError,
+    RoleProtectedError,
+    SelfLockoutError,
     UnknownPermissionError,
     UnknownRoleError,
+    clone_role,
+    create_role,
+    delete_role,
     get_user_perms,
+    rename_role,
     reset_role_to_defaults,
     set_role_permissions,
 )
 
 
-class RoleViewSet(viewsets.ReadOnlyModelViewSet):
-    """List + retrieve roles in the actor's org."""
+class RoleViewSet(viewsets.ModelViewSet):
+    """List/retrieve roles, plus the custom-role lifecycle (create / rename / delete / clone)."""
 
     permission_classes: ClassVar = [HRMSPermission]
-    required_perms: ClassVar = ["role:read"]
     lookup_field = "code"
+
+    @property
+    def required_perms(self):
+        # `members` allows GET (role:read) + POST (inline role:write check below).
+        if self.action in ("list", "retrieve", "members"):
+            return ["role:read"]
+        return ["role:write"]
 
     def get_queryset(self):
         return Role.objects.filter(org_id=self.request.user.org_id).order_by("code")
@@ -245,6 +262,133 @@ class RoleViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == "list":
             return RoleListItemSerializer
         return RoleDetailSerializer
+
+    def create(self, request, *args, **kwargs):
+        body = RoleCreateInputSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        role = create_role(
+            actor=request.user,
+            name=body.validated_data["name"],
+            description=body.validated_data.get("description", ""),
+        )
+        return Response(RoleDetailSerializer(role).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        body = RoleRenameInputSerializer(data=request.data, partial=True)
+        body.is_valid(raise_exception=True)
+        try:
+            role = rename_role(
+                actor=request.user,
+                role_code=kwargs["code"],
+                name=body.validated_data.get("name"),
+                description=body.validated_data.get("description"),
+            )
+        except Role.DoesNotExist:
+            return Response({"detail": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+        except RoleProtectedError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+        return Response(RoleDetailSerializer(role).data)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            delete_role(actor=request.user, role_code=kwargs["code"])
+        except Role.DoesNotExist:
+            return Response({"detail": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+        except RoleProtectedError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+        except RoleHasMembersError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=["post"])
+    def clone(self, request, code: str | None = None):
+        body = RoleCloneInputSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        try:
+            role = clone_role(
+                actor=request.user,
+                source_code=code,
+                name=body.validated_data["name"],
+                description=body.validated_data.get("description"),
+            )
+        except Role.DoesNotExist:
+            return Response({"detail": "Source role not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(RoleDetailSerializer(role).data, status=status.HTTP_201_CREATED)
+
+    # -- membership -----------------------------------------------------------
+    def _members_payload(self, role):
+        from modules.employee.models import Employee
+
+        user_ids = list(UserRole.objects.filter(role=role).values_list("user_id", flat=True))
+        emps = {
+            e.user_id: e
+            for e in Employee.all_objects.filter(
+                org_id=role.org_id, user_id__in=user_ids, deleted_at__isnull=True
+            )
+        }
+        users = {u.id: u for u in UserModel.objects.filter(id__in=user_ids)}
+        # each member's full role set (so the UI can show their other roles)
+        roles_by_user: dict = {}
+        for uid, rcode, rname in UserRole.objects.filter(user_id__in=user_ids).values_list(
+            "user_id", "role__code", "role__name"
+        ):
+            roles_by_user.setdefault(uid, []).append({"code": rcode, "name": rname})
+        out = []
+        for uid in user_ids:
+            e = emps.get(uid)
+            u = users.get(uid)
+            name = f"{e.first_name} {e.last_name}".strip() if e else (u.email if u else str(uid))
+            out.append(
+                {
+                    "user_id": str(uid),
+                    "employee_id": str(e.id) if e else None,
+                    "name": name,
+                    "email": (u.email if u else (e.email if e else "")),
+                    "roles": roles_by_user.get(uid, []),
+                }
+            )
+        return out
+
+    @action(detail=True, methods=["get", "post"], url_path="members")
+    def members(self, request, code: str | None = None):
+        role = self.get_object()
+        if request.method == "POST":
+            if "role:write" not in get_user_perms(request.user):
+                return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+            user_ids = request.data.get("user_ids") or []
+            for uid in user_ids:
+                target = UserModel.objects.filter(id=uid, org_id=request.user.org_id).first()
+                if target is None:
+                    continue
+                current = set(
+                    UserRole.objects.filter(user=target).values_list("role__code", flat=True)
+                )
+                assign_roles_to_user(
+                    actor=request.user, target=target, role_codes=list(current | {role.code})
+                )
+            role.refresh_from_db()
+        return Response(self._members_payload(role))
+
+    @action(detail=True, methods=["delete"], url_path="members/(?P<user_id>[^/.]+)")
+    def remove_member(self, request, code: str | None = None, user_id: str | None = None):
+        if "role:write" not in get_user_perms(request.user):
+            return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+        role = self.get_object()
+        target = UserModel.objects.filter(id=user_id, org_id=request.user.org_id).first()
+        if target is None:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        # Removing a person's last role is allowed (they'll have no access); the UI warns first.
+        current = set(UserRole.objects.filter(user=target).values_list("role__code", flat=True))
+        try:
+            assign_roles_to_user(
+                actor=request.user, target=target, role_codes=list(current - {role.code})
+            )
+        except (SelfDemoteError, LastAdminError) as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self._members_payload(role))
 
 
 @api_view(["PATCH"])
@@ -265,6 +409,7 @@ def role_permissions_view(request, code: str) -> Response:
             actor=request.user,
             role_code=code,
             permission_codes=serializer.validated_data["permission_codes"],
+            base_updated_at=serializer.validated_data.get("base_updated_at"),
         )
     except Role.DoesNotExist:
         return Response(
@@ -277,6 +422,10 @@ def role_permissions_view(request, code: str) -> Response:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     except LastWritePermissionHolderError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except SelfLockoutError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except RoleConflictError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_412_PRECONDITION_FAILED)
 
     role = Role.objects.get(org_id=request.user.org_id, code=code)
     return Response(RoleDetailSerializer(role).data)
@@ -301,6 +450,62 @@ def role_reset_view(request, code: str) -> Response:
 
     role = Role.objects.get(org_id=request.user.org_id, code=code)
     return Response(RoleDetailSerializer(role).data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def permission_catalogue_view(request) -> Response:
+    """GET /api/v1/permissions/catalogue/?role=<code>
+
+    Returns every permission grouped into product-area modules, with human label/description/scope/
+    requires/dangerous. When ?role= is supplied, each permission is annotated with ``granted``.
+    """
+    from modules.identity.catalogue import build_catalogue
+
+    if "role:read" not in get_user_perms(request.user):
+        return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+    role = None
+    role_code = request.query_params.get("role")
+    if role_code:
+        role = Role.objects.filter(org_id=request.user.org_id, code=role_code).first()
+        if role is None:
+            return Response(
+                {"detail": f"Role '{role_code}' not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+    return Response({"modules": build_catalogue(role)})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def effective_access_view(request, user_id):
+    """GET /api/v1/users/{user_id}/effective-access/
+
+    The target user's roles + their merged (union) permissions grouped by module, each permission
+    annotated with the source role(s) that grant it. Answers "why does this person have X?".
+    """
+    from modules.identity.catalogue import build_effective
+    from modules.identity.models import RolePermission, User, UserRole
+
+    if "role:read" not in get_user_perms(request.user):
+        return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+    target = User.objects.filter(id=user_id, org_id=request.user.org_id).first()
+    if target is None:
+        return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    roles = [
+        {"code": c, "name": n}
+        for c, n in UserRole.objects.filter(user=target)
+        .values_list("role__code", "role__name")
+        .distinct()
+    ]
+    sources: dict[str, list[str]] = {}
+    for code, rcode in RolePermission.objects.filter(
+        role__user_links__user=target, role__org_id=request.user.org_id
+    ).values_list("permission__code", "role__code"):
+        sources.setdefault(code, []).append(rcode)
+
+    return Response({"roles": roles, "modules": build_effective(sources)})
 
 
 from modules.identity.models import User as UserModel  # noqa: E402

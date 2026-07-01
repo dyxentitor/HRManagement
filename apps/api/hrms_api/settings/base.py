@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "modules.announcements",
     "modules.onboarding",
     "modules.assignments",
+    "modules.incentive",
 ]
 
 AUTH_USER_MODEL = "identity.User"
@@ -169,7 +170,7 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "HRMS API",
     "DESCRIPTION": "HR Management System — Phase 1",
-    "VERSION": "1.43.0",
+    "VERSION": "1.49.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SCHEMA_PATH_PREFIX": r"/api/v1",

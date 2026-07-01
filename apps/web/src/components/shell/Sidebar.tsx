@@ -1,20 +1,19 @@
-import { Search } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { OrgLogo } from "@/components/hrms/OrgLogo";
 import { useAuth } from "@/lib/auth";
-import { useCommandPalette } from "@/lib/cmdk";
 import { useFeature } from "@/lib/feature-flags";
+import { type NavBadges, useNavBadges } from "@/lib/nav-badges";
 import { cn } from "@/lib/utils";
 
 import { UserMenu } from "./UserMenu";
 import { NAV, type NavItem } from "./sidebar-nav";
 
-// Flatten all NAV items in a stable, module-level order so the hook call count
-// is fixed at build time — React requires the same number of hook calls every render.
+// Flatten all NAV items in a stable, module-level order so the feature-flag hook
+// count is fixed at build time — React requires the same number of hook calls each render.
 const ALL_ITEMS = NAV.flatMap((g) => g.items);
 
-function NavItemLink({ item }: { item: NavItem }) {
+function NavItemLink({ item, count }: { item: NavItem; count?: number }) {
 	const Icon = item.icon;
 	return (
 		<NavLink
@@ -22,25 +21,46 @@ function NavItemLink({ item }: { item: NavItem }) {
 			end={item.to === "/"}
 			className={({ isActive }) =>
 				cn(
-					"flex items-center gap-2 rounded-md px-2.5 py-1.5 text-h3 text-text-secondary transition-colors duration-fast",
-					"hover:bg-surface-hover hover:text-text-primary",
-					isActive
-						? "bg-gradient-to-r from-accent-500/30 to-accent-500/[0.05] text-accent-200 shadow-[inset_0_0_0_1px_rgb(var(--accent-500)/0.4)]"
-						: "",
+					"group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-body text-text-secondary transition-colors duration-fast",
+					"hover:bg-white/[0.04] hover:text-text-primary",
+					isActive &&
+						"bg-accent-500/10 font-medium text-text-primary before:absolute before:-left-0.5 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-accent-500",
 				)
 			}
 		>
-			<Icon className="size-4 shrink-0" aria-hidden />
-			<span className="flex-1">{item.label}</span>
+			{({ isActive }) => (
+				<>
+					<Icon
+						className={cn(
+							"size-4 shrink-0 transition-colors",
+							isActive
+								? "text-accent-200"
+								: "text-text-tertiary group-hover:text-text-secondary",
+						)}
+						aria-hidden
+					/>
+					<span className="flex-1 truncate">{item.label}</span>
+					{count ? (
+						<span
+							className={cn(
+								"ml-auto grid h-[17px] min-w-[17px] place-items-center rounded-full px-1.5 text-[10px] font-bold tabular-nums",
+								item.badge === "approvals"
+									? "bg-coral/15 text-coral"
+									: "bg-accent-500/20 text-accent-200",
+							)}
+						>
+							{count > 99 ? "99+" : count}
+						</span>
+					) : null}
+				</>
+			)}
 		</NavLink>
 	);
 }
 
 export function Sidebar() {
-	const { setOpen: setCommandPaletteOpen } = useCommandPalette();
-
 	// Read the permission set once, then evaluate each item with plain predicates —
-	// this supports `anyPerm` (OR) and avoids calling a permission hook per item.
+	// this supports `anyPerm` (OR) and avoids a permission hook per item.
 	const { perms } = useAuth();
 	const has = (p: string) => Boolean(perms?.has(p));
 	const canItem = (item: NavItem): boolean => {
@@ -48,81 +68,47 @@ export function Sidebar() {
 		return item.perm === "" ? true : has(item.perm);
 	};
 
-	// Feature flags still read per-item from the flags context (stable hook count —
+	// Feature flags read per-item from the flags context (stable hook count —
 	// ALL_ITEMS is a module-level constant).
 	// biome-ignore lint/correctness/useHookAtTopLevel: ALL_ITEMS is module-constant; hook count fixed.
 	const featureFlags = ALL_ITEMS.map((item) => (item.module ? useFeature(item.module) : true));
+	const flagByPath = new Map(ALL_ITEMS.map((item, i) => [item.to, featureFlags[i] ?? true]));
 
-	// Build a visibility map keyed by route path (paths are unique across NAV).
-	const visibleByPath = new Map<string, boolean>(
-		ALL_ITEMS.map((item, i) => [item.to, canItem(item) && (featureFlags[i] ?? true)]),
+	const badges = useNavBadges();
+	const badgeFor = (item: NavItem): number | undefined =>
+		item.badge ? badges[item.badge as keyof NavBadges] : undefined;
+
+	const isVisible = (item: NavItem) => canItem(item) && (flagByPath.get(item.to) ?? true);
+
+	// Resolve each group to its visible items; drop empty groups.
+	const groups = NAV.map((g) => ({ ...g, items: g.items.filter(isVisible) })).filter(
+		(g) => g.items.length > 0,
 	);
 
-	const isVisible = (item: NavItem) => visibleByPath.get(item.to) ?? false;
-
-	const personalGroup = NAV[0];
-	const teamGroup = NAV[1];
-	const adminGroup = NAV[2];
-
-	const visiblePersonal = personalGroup?.items.filter(isVisible) ?? [];
-	// Dashboard is always first in Personal and always visible (perm: "").
-	// We show it standalone (without a group label) per the design; the remaining
-	// Personal items get the "Personal" group label.
-	const [dashboardItem, ...personalRest] = visiblePersonal;
-
-	const visibleTeam = teamGroup?.items.filter(isVisible) ?? [];
-	const visibleAdmin = adminGroup?.items.filter(isVisible) ?? [];
-
 	return (
-		<aside className="flex flex-col bg-surface rounded-lg p-3 w-[220px] shrink-0">
-			<div className="flex items-center gap-2 px-2.5 pt-1 pb-3">
+		<aside className="flex w-[224px] shrink-0 flex-col rounded-lg bg-surface p-3">
+			<div className="flex items-center gap-2 px-2.5 pb-9 pt-1.5">
 				<OrgLogo />
 			</div>
 
-			<button
-				type="button"
-				onClick={() => setCommandPaletteOpen(true)}
-				className="mx-1 mb-3 flex items-center gap-2 rounded-md bg-canvas border border-border-subtle px-2.5 py-2 text-small text-text-tertiary hover:text-text-secondary"
-				aria-label="Open command palette"
-			>
-				<Search className="size-3.5" aria-hidden />
-				<span>⌘K · Search…</span>
-			</button>
+			<nav className="flex flex-col gap-0.5">
+				{groups.map((group) => (
+					<div key={group.id} className="flex flex-col gap-0.5">
+						{group.label && (
+							<div className="px-2.5 pb-1 pt-4">
+								<span className="text-label uppercase tracking-wider text-text-disabled">
+									{group.label}
+								</span>
+							</div>
+						)}
+						{group.items.map((item) => (
+							<NavItemLink key={item.to} item={item} count={badgeFor(item)} />
+						))}
+					</div>
+				))}
+			</nav>
 
-			{/* Dashboard — always visible, no group label */}
-			{dashboardItem && <NavItemLink item={dashboardItem} />}
-
-			{/* Personal group — label + remaining personal items */}
-			{personalRest.length > 0 && (
-				<>
-					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">Personal</div>
-					{personalRest.map((item) => (
-						<NavItemLink key={item.to} item={item} />
-					))}
-				</>
-			)}
-
-			{/* Team group — only rendered when at least one item is visible */}
-			{visibleTeam.length > 0 && (
-				<>
-					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">Team</div>
-					{visibleTeam.map((item) => (
-						<NavItemLink key={item.to} item={item} />
-					))}
-				</>
-			)}
-
-			{/* Admin group — only rendered when at least one item is visible */}
-			{visibleAdmin.length > 0 && (
-				<>
-					<div className="text-label text-text-disabled px-2.5 pt-3 pb-1">Admin</div>
-					{visibleAdmin.map((item) => (
-						<NavItemLink key={item.to} item={item} />
-					))}
-				</>
-			)}
-
-			<div className="mt-auto pt-3 border-t border-border-subtle">
+			<div className="mt-auto border-t border-border-subtle pt-3">
 				<UserMenu variant="full" />
 			</div>
 		</aside>

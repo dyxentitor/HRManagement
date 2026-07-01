@@ -169,12 +169,34 @@ class LastWritePermissionHolderError(Exception):
     pass
 
 
+class RoleConflictError(Exception):
+    """Raised when a role edit is based on a stale snapshot (optimistic-lock conflict)."""
+
+
+class RoleProtectedError(Exception):
+    """Raised when an edit/delete targets a system role that doesn't allow it."""
+
+
+class RoleHasMembersError(Exception):
+    """Raised when deleting a custom role that still has members."""
+
+
+class SelfLockoutError(Exception):
+    """Raised when a change would strip the actor's own administration ability."""
+
+
+# Perms the actor must not strip from themselves via their only holder role.
+SELF_ADMIN_PERMS = frozenset({"role:write", "org:feature_flag:write"})
+
+
 def _is_protected_admin_perm(code: str) -> bool:
     """org_admin must keep these. Includes any identity:* perm."""
     return code in ORG_ADMIN_REQUIRED_PERMS or code.startswith("identity:")
 
 
-def set_role_permissions(*, actor, role_code: str, permission_codes: list[str]):
+def set_role_permissions(
+    *, actor, role_code: str, permission_codes: list[str], base_updated_at=None
+):
     """Replace the role's permission set within the actor's org.
 
     - Validates every code exists in the catalogue.
@@ -187,7 +209,7 @@ def set_role_permissions(*, actor, role_code: str, permission_codes: list[str]):
     LastWritePermissionHolderError.
     """
     from common.audit import service as audit
-    from modules.identity.models import Permission, Role, RolePermission
+    from modules.identity.models import Permission, Role, RolePermission, UserRole
 
     permission_codes = list(dict.fromkeys(permission_codes))
 
@@ -200,6 +222,13 @@ def set_role_permissions(*, actor, role_code: str, permission_codes: list[str]):
         raise UnknownPermissionError(f"Unknown permission code(s): {', '.join(missing)}")
 
     role = Role.objects.get(org_id=actor.org_id, code=role_code)
+
+    # Optimistic lock: refuse if the caller's snapshot is older than the role's current state.
+    if base_updated_at is not None and role.updated_at and role.updated_at > base_updated_at:
+        raise RoleConflictError(
+            "This role was changed by someone else. Reload and re-apply your changes.",
+        )
+
     requested = set(permission_codes)
     current = set(
         RolePermission.objects.filter(role=role).values_list("permission__code", flat=True),
@@ -213,6 +242,21 @@ def set_role_permissions(*, actor, role_code: str, permission_codes: list[str]):
         if stripping_protected:
             raise OrgAdminProtectionError(
                 f"org_admin must retain identity admin perms: {sorted(stripping_protected)}",
+            )
+
+    # Guard 1b: extended self-lockout — the actor can't strip their OWN administration perms if this
+    # role is the only place they get them.
+    self_admin_removing = to_remove & SELF_ADMIN_PERMS
+    if self_admin_removing and UserRole.objects.filter(user=actor, role=role).exists():
+        from_other_roles = set(
+            RolePermission.objects.filter(role__org_id=actor.org_id, role__user_links__user=actor)
+            .exclude(role_id=role.id)
+            .values_list("permission__code", flat=True)
+        )
+        losing = sorted(self_admin_removing - from_other_roles)
+        if losing:
+            raise SelfLockoutError(
+                f"This change removes your own {losing}. Ask another admin to do it.",
             )
 
     # Guard 2: at least one role must hold each mutating (non-read) perm
@@ -308,3 +352,116 @@ def reset_role_to_defaults(*, actor, role_code: str):
         after={"role_code": role_code, "permissions": wanted_codes},
         actor_id=actor.id,
     )
+
+
+# --- Admin: custom role lifecycle ---------------------------------------
+
+
+def _slug_code(org_id, name: str) -> str:
+    from django.utils.text import slugify
+
+    from modules.identity.models import Role
+
+    base = (slugify(name).replace("-", "_") or "role")[:60]
+    code, i = base, 2
+    while Role.objects.filter(org_id=org_id, code=code).exists():
+        code = f"{base}_{i}"[:64]
+        i += 1
+    return code
+
+
+def create_role(*, actor, name: str, description: str = ""):
+    """Create an empty (least-privilege) custom role; code is slugified from the name."""
+    from common.audit import service as audit
+    from modules.identity.models import Role
+
+    code = _slug_code(actor.org_id, name)
+    role = Role.objects.create(
+        org_id=actor.org_id, code=code, name=name, description=description, is_system=False
+    )
+    audit.append(
+        org_id=actor.org_id,
+        action="role.created",
+        entity="role",
+        entity_id=role.id,
+        after={"code": code, "name": name},
+        actor_id=actor.id,
+    )
+    return role
+
+
+def clone_role(*, actor, source_code: str, name: str, description: str | None = None):
+    """Clone a role's permissions into a new independent custom role (snapshot, no inheritance)."""
+    from common.audit import service as audit
+    from modules.identity.models import Role, RolePermission
+
+    src = Role.objects.get(org_id=actor.org_id, code=source_code)
+    desc = description if description else f"Cloned from {src.name}"
+    role = create_role(actor=actor, name=name, description=desc)
+    src_perm_ids = list(
+        RolePermission.objects.filter(role=src).values_list("permission_id", flat=True)
+    )
+    RolePermission.objects.bulk_create(
+        [RolePermission(role=role, permission_id=pid) for pid in src_perm_ids],
+        ignore_conflicts=True,
+    )
+    audit.append(
+        org_id=actor.org_id,
+        action="role.cloned",
+        entity="role",
+        entity_id=role.id,
+        after={"code": role.code, "source": source_code},
+        actor_id=actor.id,
+    )
+    return role
+
+
+def rename_role(*, actor, role_code: str, name=None, description=None):
+    """Rename / re-describe a CUSTOM role. System roles are protected."""
+    from common.audit import service as audit
+    from modules.identity.models import Role
+
+    role = Role.objects.get(org_id=actor.org_id, code=role_code)
+    if role.is_system:
+        raise RoleProtectedError("System roles can't be renamed.")
+    before = {"name": role.name, "description": role.description}
+    if name is not None:
+        role.name = name
+    if description is not None:
+        role.description = description
+    role.save(update_fields=["name", "description", "updated_at"])
+    audit.append(
+        org_id=actor.org_id,
+        action="role.renamed",
+        entity="role",
+        entity_id=role.id,
+        before=before,
+        after={"name": role.name, "description": role.description},
+        actor_id=actor.id,
+    )
+    return role
+
+
+def delete_role(*, actor, role_code: str):
+    """Delete a CUSTOM role. Blocked for system roles and while the role has members."""
+    from common.audit import service as audit
+    from modules.identity.models import Role, UserRole
+
+    role = Role.objects.get(org_id=actor.org_id, code=role_code)
+    if role.is_system:
+        raise RoleProtectedError("System roles can't be deleted.")
+    member_count = UserRole.objects.filter(role=role).count()
+    if member_count > 0:
+        raise RoleHasMembersError(
+            f"This role has {member_count} member(s). Reassign them before deleting.",
+        )
+    invalidate_role_users(role.id)
+    audit.append(
+        org_id=actor.org_id,
+        action="role.deleted",
+        entity="role",
+        entity_id=role.id,
+        before={"code": role_code, "name": role.name},
+        actor_id=actor.id,
+    )
+    role.delete()

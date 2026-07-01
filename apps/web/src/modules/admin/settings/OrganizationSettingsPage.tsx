@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { LogoUploader } from "@/components/hrms/LogoUploader";
+import { type LogoMode, readLogoMode } from "@/components/hrms/OrgLogo";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCan } from "@/lib/perm";
+import { cn } from "@/lib/utils";
 
 import { type CodeCfg, DEFAULT_CFG, EmployeeCodeSettings } from "./EmployeeCodeSettings";
 import { type OrgSettings, settingsApi } from "./settings-api";
@@ -29,6 +31,7 @@ export default function OrganizationSettingsPage() {
 		default_locale: "",
 	});
 	const [codeCfg, setCodeCfg] = useState<CodeCfg>(DEFAULT_CFG);
+	const [logoMode, setLogoMode] = useState<LogoMode>("landscape");
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	// GET /org/settings requires org:settings:read. Gate the fetch on it so
@@ -48,6 +51,7 @@ export default function OrganizationSettingsPage() {
 				default_locale: fresh.default_locale,
 			});
 			setCodeCfg(readCfg(fresh.settings));
+			setLogoMode(readLogoMode(fresh.settings));
 		} catch (e: unknown) {
 			setError(e instanceof Error ? e.message : "Failed to load");
 		}
@@ -64,7 +68,7 @@ export default function OrganizationSettingsPage() {
 			// PATCH replaces the whole `settings` JSON, so send the merged object.
 			const fresh = await settingsApi.patchOrg({
 				...form,
-				settings: { ...(org?.settings ?? {}), employee_code: codeCfg },
+				settings: { ...(org?.settings ?? {}), employee_code: codeCfg, logo_mode: logoMode },
 			});
 			setOrg(fresh);
 			setCodeCfg(readCfg(fresh.settings));
@@ -86,6 +90,7 @@ export default function OrganizationSettingsPage() {
 			default_locale: org.default_locale,
 		});
 		setCodeCfg(readCfg(org.settings));
+		setLogoMode(readLogoMode(org.settings));
 		setError(null);
 	}
 
@@ -118,6 +123,14 @@ export default function OrganizationSettingsPage() {
 						aria-label="Display name"
 						value={form.name}
 						onChange={(e) => setForm({ ...form, name: e.target.value })}
+					/>
+				</FieldRow>
+				<FieldRow label="Logo display">
+					<LogoModeSelect
+						value={logoMode}
+						onChange={setLogoMode}
+						logoUrl={org.logo_url}
+						orgName={form.name}
 					/>
 				</FieldRow>
 			</Section>
@@ -163,6 +176,62 @@ export default function OrganizationSettingsPage() {
 					{saving ? "Saving…" : "Save changes"}
 				</Button>
 			</div>
+		</div>
+	);
+}
+
+function LogoModeSelect({
+	value,
+	onChange,
+	logoUrl,
+	orgName,
+}: {
+	value: LogoMode;
+	onChange: (v: LogoMode) => void;
+	logoUrl: string | null;
+	orgName: string;
+}) {
+	const card = (mode: LogoMode, caption: string, preview: React.ReactNode) => (
+		<button
+			type="button"
+			onClick={() => onChange(mode)}
+			aria-pressed={value === mode}
+			className={cn(
+				"flex-1 rounded-lg border p-3 text-left transition-colors",
+				value === mode
+					? "border-accent-500 bg-accent-500/10"
+					: "border-border-subtle hover:border-border-strong",
+			)}
+		>
+			<div className="flex h-8 items-center">{preview}</div>
+			<p className="mt-2 text-small text-text-secondary">{caption}</p>
+		</button>
+	);
+
+	return (
+		<div className="flex max-w-md gap-3">
+			{card(
+				"landscape",
+				"Landscape logo",
+				<img
+					src={logoUrl ?? "/logo.png"}
+					alt=""
+					className="h-6 w-auto max-w-[160px] object-contain"
+				/>,
+			)}
+			{card(
+				"legacy",
+				"Logo + name",
+				<span className="flex items-center gap-2">
+					<span
+						className="size-5 rounded bg-gradient-to-br from-accent-500 to-lavender"
+						aria-hidden
+					/>
+					<span className="text-h3 font-bold tracking-wider text-text-primary">
+						{(orgName || "PROVINTELL").toUpperCase()}
+					</span>
+				</span>,
+			)}
 		</div>
 	);
 }

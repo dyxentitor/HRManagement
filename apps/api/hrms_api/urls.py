@@ -25,6 +25,7 @@ api_v1_patterns = [
     path("", include("modules.announcements.urls")),
     path("", include("modules.onboarding.urls")),
     path("", include("modules.assignments.urls")),
+    path("", include("modules.incentive.urls")),
     path("", include("common.audit.urls")),
     path("", include("common.reporting.urls")),
     path("org/", include("common.feature_flags.urls")),

@@ -36,7 +36,12 @@ class Command(BaseCommand):
             for e in entries:
                 _, created = Permission.objects.update_or_create(
                     code=e["code"],
-                    defaults={"description": e.get("description", "")},
+                    defaults={
+                        "description": e.get("description", ""),
+                        "label": e.get("label", ""),
+                        "is_dangerous": e.get("dangerous", False),
+                        "requires": e.get("requires", []),
+                    },
                 )
                 total_seen += 1
                 if created:

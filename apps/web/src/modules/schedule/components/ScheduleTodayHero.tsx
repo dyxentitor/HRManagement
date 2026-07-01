@@ -21,6 +21,8 @@ export interface ScheduleTodayHeroProps {
 	busy: boolean;
 	onClockIn: () => void;
 	onClockOut: () => void;
+	/** Gated on the `attendance:clock:self` permission — hides the clock in/out control when false. */
+	canClock?: boolean;
 }
 
 export function ScheduleTodayHero(props: ScheduleTodayHeroProps) {
@@ -35,11 +37,12 @@ export function ScheduleTodayHero(props: ScheduleTodayHeroProps) {
 		busy,
 		onClockIn,
 		onClockOut,
+		canClock = true,
 	} = props;
 
 	return (
 		<section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-			<div className="grid gap-4 md:grid-cols-[1fr_18rem] md:items-center">
+			<div className={cn("grid gap-4", canClock && "md:grid-cols-[1fr_18rem] md:items-center")}>
 				<div className="space-y-2">
 					<div className="flex items-center gap-2 flex-wrap">
 						<span className="text-label uppercase text-text-tertiary">
@@ -71,12 +74,14 @@ export function ScheduleTodayHero(props: ScheduleTodayHeroProps) {
 						</p>
 					)}
 				</div>
-				<ClockInOutWidget
-					state={clockState}
-					onClockIn={onClockIn}
-					onClockOut={onClockOut}
-					busy={busy}
-				/>
+				{canClock && (
+					<ClockInOutWidget
+						state={clockState}
+						onClockIn={onClockIn}
+						onClockOut={onClockOut}
+						busy={busy}
+					/>
+				)}
 			</div>
 		</section>
 	);

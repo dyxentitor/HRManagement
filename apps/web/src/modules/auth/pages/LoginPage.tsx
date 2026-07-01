@@ -1,135 +1,104 @@
-import { CheckCircle2, Lock, ShieldCheck, Users } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
+import { useState } from "react";
 
 import { LoginForm } from "../components/LoginForm";
+
+function Brand({ className = "" }: { className?: string }) {
+	return (
+		<div className={`flex items-center gap-2.5 ${className}`}>
+			<img src="/logo.png" alt="Provintell" className="h-7 w-auto" />
+			<span className="rounded-md border border-border-strong bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.14em] text-text-tertiary">
+				HRMS
+			</span>
+		</div>
+	);
+}
+
+function ThemeToggle() {
+	// Visual affordance to match the design; a full light-theme palette is a future enhancement.
+	const [dark, setDark] = useState(true);
+	return (
+		<button
+			type="button"
+			onClick={() => setDark((v) => !v)}
+			aria-label="Toggle theme"
+			className="grid size-10 place-items-center rounded-full border border-border-subtle bg-surface/60 text-text-secondary backdrop-blur-sm transition-colors hover:text-text-primary"
+		>
+			{dark ? <Moon className="size-4" /> : <Sun className="size-4" />}
+		</button>
+	);
+}
 
 export default function LoginPage() {
 	return (
 		<main className="relative min-h-screen overflow-hidden bg-canvas text-text-primary">
-			{/* Atmospheric grid + corner glow */}
-			<div
-				className="pointer-events-none absolute inset-0"
+			{/* Full-screen dimmed wallpaper */}
+			<img
+				src="/login-bg.jpg"
+				alt=""
 				aria-hidden
-				style={{
-					backgroundImage: `
-						linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
-						linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px)
-					`,
-					backgroundSize: "80px 80px",
-					backgroundPosition: "center -100px",
-					maskImage:
-						"linear-gradient(to bottom, black 0%, black 30%, transparent 70%)",
-					WebkitMaskImage:
-						"linear-gradient(to bottom, black 0%, black 30%, transparent 70%)",
-				}}
+				className="absolute inset-0 size-full object-cover"
 			/>
+			<div className="absolute inset-0 bg-canvas/75" aria-hidden />
 			<div
-				className="pointer-events-none absolute -top-40 right-[-200px] size-[600px] rounded-full"
+				className="absolute inset-0 bg-gradient-to-r from-canvas/60 via-canvas/30 to-canvas/10"
 				aria-hidden
-				style={{
-					background:
-						"radial-gradient(closest-side, rgb(213 248 74 / 0.10), transparent 70%)",
-				}}
-			/>
-			<div
-				className="pointer-events-none absolute bottom-[-200px] left-[-200px] size-[500px] rounded-full"
-				aria-hidden
-				style={{
-					background:
-						"radial-gradient(closest-side, rgb(124 92 255 / 0.10), transparent 70%)",
-				}}
 			/>
 
-			<div className="relative grid min-h-screen lg:grid-cols-2">
-				{/* LEFT — brand + value props */}
-				<aside className="flex flex-col justify-between px-6 py-10 sm:px-12 lg:px-16">
-					<div>
-						{/* Brand mark */}
-						<div className="mb-12 flex items-center gap-2">
-							<span
-								className="size-7 rounded-md bg-gradient-to-br from-accent-500 to-lavender"
-								aria-hidden
-							/>
-							<span className="text-h2 font-bold tracking-wider text-text-primary">
-								PROVINTELL
-							</span>
+			<div className="absolute right-5 top-5 z-20">
+				<ThemeToggle />
+			</div>
+
+			<div className="relative z-10 grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
+				{/* LEFT — brand + value props (over the wallpaper) */}
+				<aside className="relative hidden overflow-hidden lg:flex lg:flex-col">
+					<div className="relative z-10 flex h-full flex-col justify-between px-14 py-12">
+						<Brand />
+
+						<div className="max-w-xl">
+							<h1 className="text-[44px] font-bold leading-[1.08] tracking-tight">
+								Your HR system,
+								<br />
+								<span className="bg-gradient-to-r from-[#5eead4] via-[#2dd4bf] to-[#34d399] bg-clip-text text-transparent">
+									built for your office.
+								</span>
+							</h1>
+							<p className="mt-4 max-w-md text-body text-text-secondary">
+								Secure. Intelligent. Effortless. Manage your people, processes and payroll in one
+								powerful platform.
+							</p>
 						</div>
 
-						{/* Headline */}
-						<h1 className="text-display max-w-xl leading-tight text-text-primary">
-							Your HR system, built for your office.
-						</h1>
-						<p className="mt-3 flex items-center gap-2 text-body text-text-secondary">
-							<CheckCircle2 className="size-4 text-cta" aria-hidden />
-							<span>
-								Set up in under five minutes — no procurement required.
-							</span>
+						<p className="text-small text-text-tertiary">
+							© {new Date().getFullYear()} Provintell Sdn. Bhd. All rights reserved.
 						</p>
-
-						{/* Features */}
-						<ul className="mt-12 max-w-md space-y-9">
-							<li>
-								<div
-									className="mb-3 grid size-9 place-items-center rounded-lg bg-cta/15 text-cta"
-									aria-hidden
-								>
-									<Users className="size-5" />
-								</div>
-								<h2 className="text-h2 text-text-primary">
-									Trust-based attendance
-								</h2>
-								<p className="mt-1 text-body text-text-secondary">
-									Clock in and out from anywhere with a single tap. No biometric
-									kiosks, no fingerprint readers — just your laptop or phone.
-								</p>
-							</li>
-
-							<li>
-								<div
-									className="mb-3 grid size-9 place-items-center rounded-lg bg-cta/15 text-cta"
-									aria-hidden
-								>
-									<ShieldCheck className="size-5" />
-								</div>
-								<h2 className="text-h2 text-text-primary">
-									Privacy by default
-								</h2>
-								<p className="mt-1 text-body text-text-secondary">
-									IC numbers, bank accounts, EPF and SOCSO never leave the
-									database in plaintext. Field-level encryption is on for every
-									record.
-								</p>
-							</li>
-
-							<li>
-								<div
-									className="mb-3 grid size-9 place-items-center rounded-lg bg-cta/15 text-cta"
-									aria-hidden
-								>
-									<Lock className="size-5" />
-								</div>
-								<h2 className="text-h2 text-text-primary">
-									Audit-grade payroll
-								</h2>
-								<p className="mt-1 text-body text-text-secondary">
-									Every payroll change is logged in a tamper-evident chain you
-									can verify in one command. No more spreadsheet
-									finger-pointing.
-								</p>
-							</li>
-						</ul>
 					</div>
-
-					{/* Footer */}
-					<footer className="mt-12 flex flex-wrap items-center gap-x-4 gap-y-2 text-small text-text-tertiary">
-						<span>© Provintell {new Date().getFullYear()}</span>
-					</footer>
 				</aside>
 
-				{/* RIGHT — glass form card */}
-				<section className="flex items-center justify-center px-6 py-10 sm:px-12 lg:px-16">
-					<div className="w-full max-w-md rounded-xl border border-border-subtle bg-surface/60 p-8 shadow-modal backdrop-blur-sm">
-						<LoginForm />
+				{/* RIGHT — sign-in card */}
+				<section className="relative flex flex-col px-6 py-10 sm:px-10">
+					<Brand className="mb-10 lg:hidden" />
+
+					<div className="grid flex-1 place-items-center">
+						<div className="w-full max-w-md rounded-2xl border border-border-subtle bg-surface/70 p-7 shadow-modal backdrop-blur-xl sm:p-8">
+							<LoginForm />
+						</div>
 					</div>
+
+					<footer className="mt-10 flex flex-col items-center gap-2 text-small text-text-tertiary sm:flex-row sm:justify-end">
+						<span className="lg:hidden">© {new Date().getFullYear()} Provintell Sdn. Bhd.</span>
+						<nav className="flex items-center gap-4">
+							<a href="/legal/privacy" className="transition-colors hover:text-text-secondary">
+								Privacy Policy
+							</a>
+							<a href="/legal/terms" className="transition-colors hover:text-text-secondary">
+								Terms of Service
+							</a>
+							<a href="/legal/security" className="transition-colors hover:text-text-secondary">
+								Security
+							</a>
+						</nav>
+					</footer>
 				</section>
 			</div>
 		</main>

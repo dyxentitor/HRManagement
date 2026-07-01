@@ -27,6 +27,9 @@ DEFAULT_PREFERENCES: list[tuple[str, bool, bool, bool]] = [
     ("claim.approved", True, True, False),
     ("claim.rejected", True, True, False),
     ("claim.reimbursed", True, True, False),
+    # incentive (mandays) — in-app only for v1
+    ("incentive.claim_approved", True, False, False),
+    ("incentive.claim_rejected", True, False, False),
     # kpi
     ("kpi.cycle_opens_self_review", True, True, False),
     ("kpi.cycle_opens_manager_review", True, True, False),

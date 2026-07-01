@@ -30,6 +30,9 @@ vi.mock("../api", () => ({
 		listHolidays: mocks.listHolidays,
 	},
 }));
+vi.mock("@/lib/auth", () => ({
+	useAuth: () => ({ perms: new Set(["attendance:clock:self"]) }),
+}));
 
 import MySchedulePage from "./MySchedulePage";
 
