@@ -1,15 +1,10 @@
 """Root URL config. Module URLs mounted under /api/v1/."""
 
+from django.conf import settings
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 api_v1_patterns = [
-    path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    path(
-        "docs/",
-        SpectacularSwaggerView.as_view(url_name="v1:schema"),
-        name="swagger-ui",
-    ),
     path("", include("modules.identity.urls")),
     path("", include("modules.organization.urls")),
     path("", include("modules.employee.urls")),
@@ -30,6 +25,16 @@ api_v1_patterns = [
     path("", include("common.reporting.urls")),
     path("org/", include("common.feature_flags.urls")),
 ]
+
+# The OpenAPI schema + Swagger UI map the entire API surface — expose them only in
+# DEBUG so prod never serves them publicly. (Contract generation uses the
+# `spectacular` management command, not these routes, so `make contracts` is unaffected.)
+if settings.DEBUG:
+    api_v1_patterns = [
+        path("schema/", SpectacularAPIView.as_view(), name="schema"),
+        path("docs/", SpectacularSwaggerView.as_view(url_name="v1:schema"), name="swagger-ui"),
+        *api_v1_patterns,
+    ]
 
 
 urlpatterns = [

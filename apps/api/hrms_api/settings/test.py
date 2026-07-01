@@ -18,6 +18,8 @@ PASSWORD_HASHERS = [
 ]
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+# Throttling is disabled per-test in conftest.py (via the settings fixture so DRF reloads).
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from rest_framework import status
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from common.throttling import LoginRateThrottle
 
 from .serializers import (
     LoginSerializer,
@@ -42,6 +44,7 @@ def _ua(request) -> str:
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def login_view(request) -> Response:
     s = LoginSerializer(data=request.data)
     s.is_valid(raise_exception=True)
@@ -106,6 +109,7 @@ def me_preferences_view(request) -> Response:
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def password_forgot_view(request) -> Response:
     s = PasswordForgotSerializer(data=request.data)
     s.is_valid(raise_exception=True)
@@ -115,6 +119,7 @@ def password_forgot_view(request) -> Response:
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def password_reset_view(request) -> Response:
     s = PasswordResetSerializer(data=request.data)
     s.is_valid(raise_exception=True)
@@ -177,6 +182,7 @@ def revoke_all_sessions_view(request) -> Response:
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def login_mfa_view(request) -> Response:
     s = LoginMFASerializer(data=request.data)
     s.is_valid(raise_exception=True)
