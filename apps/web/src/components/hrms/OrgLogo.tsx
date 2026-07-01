@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 
-import {
-	type OrgSettings,
-	settingsApi,
-} from "@/modules/admin/settings/settings-api";
+import { type OrgSettings, settingsApi } from "@/modules/admin/settings/settings-api";
 
-/** Sidebar header logo. Renders the uploaded company logo when present,
- * falls back to the original gradient square + uppercase org-name text. */
+export type LogoMode = "landscape" | "legacy";
+
+/** Landscape = a single wide wordmark image (uploaded logo, or the bundled default).
+ *  Legacy = the mark + uppercase org-name lockup. */
+export function readLogoMode(settings: Record<string, unknown> | undefined | null): LogoMode {
+	return (settings?.logo_mode as LogoMode) === "legacy" ? "legacy" : "landscape";
+}
+
+/** Sidebar header logo. Honours the org's `settings.logo_mode`:
+ *  - "landscape" → the wide wordmark (uploaded `logo_url`, else the bundled `/logo.png`)
+ *  - "legacy"    → the gradient mark + uppercase org name */
 export function OrgLogo() {
 	const [org, setOrg] = useState<OrgSettings | null>(null);
 
@@ -17,12 +23,14 @@ export function OrgLogo() {
 			.catch(() => undefined);
 	}, []);
 
-	if (org?.logo_url) {
+	const mode = readLogoMode(org?.settings);
+
+	if (mode === "landscape") {
 		return (
 			<img
-				src={org.logo_url}
-				alt={org.name}
-				className="h-7 w-auto max-w-[180px] rounded-md object-contain"
+				src={org?.logo_url ?? "/logo.png"}
+				alt={org?.name ?? "Provintell"}
+				className="h-6 w-auto max-w-[170px] object-contain"
 			/>
 		);
 	}
