@@ -165,6 +165,10 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
       - uses: astral-sh/setup-uv@v3
+      - name: detect-secrets (no new secrets vs baseline)
+        run: |
+          uv run --with detect-secrets bash -c \
+            'git ls-files -z | xargs -0 detect-secrets-hook --baseline .secrets.baseline'
       - name: Bandit (Python)
         working-directory: apps/api
         run: |

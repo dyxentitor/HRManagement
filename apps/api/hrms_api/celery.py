@@ -55,4 +55,10 @@ app.conf.beat_schedule = {
         "task": "modules.assignments.tasks.spawn_recurring_assignments",
         "schedule": crontab(hour=3, minute=0),
     },
+    "verify-payroll-ledger": {
+        # Daily 03:15 KL: verify the payroll hash-chain; logs an error (→ Sentry)
+        # if the chain is broken, so tampering is caught within a day.
+        "task": "common.audit.tasks.verify_payroll_ledger",
+        "schedule": crontab(hour=3, minute=15),
+    },
 }

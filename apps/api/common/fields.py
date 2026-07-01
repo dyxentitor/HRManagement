@@ -5,24 +5,33 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 
 
-def _get_fernet() -> Fernet:
+def _fernet_from(raw: str, name: str) -> Fernet:
+    try:
+        return Fernet(raw)
+    except (ValueError, TypeError) as exc:
+        raise ImproperlyConfigured(f"{name} must be a 32-byte url-safe base64 Fernet key") from exc
+
+
+def _get_fernet() -> MultiFernet:
+    """Build a MultiFernet: encrypts with the primary key, decrypts with primary
+    OR the optional previous key. During a key rotation, set
+    ``HRMS_FIELD_ENCRYPTION_PREV_KEY`` to the old key so existing ciphertext still
+    reads while new writes use the new primary; run ``reencrypt_sensitive_fields``
+    to migrate all rows, then drop the prev key. With no prev key this behaves
+    identically to a single-key Fernet."""
     raw = os.environ.get("HRMS_FIELD_ENCRYPTION_KEY")
     if not raw:
         raise ImproperlyConfigured("HRMS_FIELD_ENCRYPTION_KEY is required")
-    # Accept the key as url-safe base64 (Fernet's native format).
-    try:
-        # Validate it parses
-        Fernet(raw)
-    except (ValueError, TypeError) as exc:
-        raise ImproperlyConfigured(
-            "HRMS_FIELD_ENCRYPTION_KEY must be a 32-byte url-safe base64 Fernet key"
-        ) from exc
-    return Fernet(raw)
+    keys = [_fernet_from(raw, "HRMS_FIELD_ENCRYPTION_KEY")]
+    prev = os.environ.get("HRMS_FIELD_ENCRYPTION_PREV_KEY")
+    if prev:
+        keys.append(_fernet_from(prev, "HRMS_FIELD_ENCRYPTION_PREV_KEY"))
+    return MultiFernet(keys)
 
 
 class EncryptedCharField(models.BinaryField):
