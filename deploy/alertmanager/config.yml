@@ -1,0 +1,32 @@
+# Alertmanager routing. Alerts route by the `severity` label set in prometheus/rules.yml
+# (page | warn). The receivers below are scaffolds — WIRE A REAL DELIVERY CHANNEL
+# (Slack / email / PagerDuty / Opsgenie) before relying on paging, otherwise alerts
+# fire into a black hole.
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: warning
+  group_by: ["alertname"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers:
+        - severity = "page"
+      receiver: critical
+      repeat_interval: 1h
+
+receivers:
+  - name: warning
+    # TODO: e.g. Slack to a non-paging channel.
+    # slack_configs:
+    #   - api_url: <SLACK_WEBHOOK_URL>
+    #     channel: "#hrms-alerts"
+    #     send_resolved: true
+
+  - name: critical
+    # TODO: page a human (PagerDuty/Opsgenie), and/or Slack + email.
+    # pagerduty_configs:
+    #   - routing_key: <PD_ROUTING_KEY>
+    #     send_resolved: true

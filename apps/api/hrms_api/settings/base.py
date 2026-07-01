@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third-party
+    "django_prometheus",
     "rest_framework",
     "drf_spectacular",
     "corsheaders",
@@ -67,6 +68,8 @@ AUTH_USER_MODEL = "identity.User"
 SILENCED_SYSTEM_CHECKS = ["auth.E003"]
 
 MIDDLEWARE = [
+    # Prometheus request metrics must wrap the whole stack (before first / after last).
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -78,6 +81,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "modules.identity.middleware.TenantContextMiddleware",
     "common.audit.middleware.AuditContextMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "hrms_api.urls"

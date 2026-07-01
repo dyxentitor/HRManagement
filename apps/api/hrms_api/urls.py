@@ -40,4 +40,6 @@ if settings.DEBUG:
 urlpatterns = [
     path("api/v1/", include((api_v1_patterns, "v1"))),
     path("", include("modules.health.urls")),
+    # /metrics for Prometheus (scraped internally; not proxied by nginx).
+    path("", include("django_prometheus.urls")),
 ]

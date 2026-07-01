@@ -31,11 +31,11 @@ scrape_configs:
       - targets:
           - redis-exporter:9121
 
-  - job_name: celery
-    static_configs:
-      - targets:
-          - flower:5555
-    metrics_path: /metrics
+  # Celery queue metrics require a `flower` service (celery -A hrms_api flower).
+  # Deferred — add the flower service + this scrape job when celery metrics are needed:
+  #   - job_name: celery
+  #     static_configs: [{ targets: ["flower:5555"] }]
+  #     metrics_path: /metrics
 
   - job_name: node
     static_configs:
