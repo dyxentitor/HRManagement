@@ -2,6 +2,49 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.49.0] — 2026-07-01
+
+**My Mandays employee redesign** — `/incentive` goes from form-first (bond banner + submit form + flat
+list) to a **status-first command center** — "how am I doing, and what needs my attention?" — in the
+dark command-center language, mirroring the admin overview from the contributor's side.
+
+### Added
+
+- **Employee summary endpoint** — `GET /api/v1/incentive/me/` returns, in one derived call (no new stored
+  state): eligibility + bond expiry, the earnings split (earned / pending / this-quarter / paid — mandays
+  with RM equivalents), claim counts, the employee's own claims, a 4-quarter personal trend, projects
+  contributed-to + open-to-claim, and the quarter's payout flow. A user with **no linked Employee** gets a
+  well-formed empty payload (`has_employee: false`) instead of a 500.
+- **Claim lifecycle** — employees can **cancel** a pending claim (`POST /claims/{id}/cancel/`, no ledger
+  effect) and **edit** a pending claim (owner `PATCH` — mandays/note/project, with a project-visibility
+  re-check). **Resubmit** of a rejected claim prefills the composer client-side.
+- **Review notifications** — approving/rejecting a claim sends the claimant an **in-app** notification
+  (`incentive.claim_approved` / `incentive.claim_rejected`, deep-linking to `/incentive`; best-effort).
+- **Redesigned page** — aurora hero (**mandays-first** headline, RM subtle, Log-a-claim), a 4-card KPI row
+  (earned · pending · this quarter · paid out), and a two-pane workspace: a **collapsible composer**
+  (create / edit / resubmit), a **lifecycle claims list** (edit/cancel pending via `ConfirmDialog`,
+  reject-reason inline + resubmit), and a rail of **eligibility**, a **private earning trend**,
+  **my/claimable projects**, and the **payout flow**. All visuals are **CSS/SVG** (no chart library).
+
+### Changed
+
+- Contracts regenerated (`/incentive/me/`, `/incentive/claims/{id}/cancel/`).
+
+### Design decisions (non-goals)
+
+- Mandays-first with RM subtle · **no leaderboard / peer comparison** · no personal manday caps (project
+  budget only) · reject-reason-only feedback (approvals silent) · in-app notifications only (no email).
+  Bond clawback remains deferred at the module level.
+
+### Tests
+
+- Backend **+8** (me-summary shape · earnings math · no-employee path; cancel success/owner/pending guards;
+  edit success + not-pending guard; approve/reject notifications). Frontend **+3** (status-first hero +
+  eligibility; pending Edit/Cancel opens the edit composer; reject-reason inline + Resubmit).
+- Suites: backend **909 passed** (1 pre-existing date-sensitive failure carried forward:
+  `attendance::test_clock_out_completes_record`). Frontend **442 passed** (1 pre-existing date-sensitive
+  failure carried forward: `MySchedulePage` this-month holidays). Both are unrelated to this change.
+
 ## [1.48.1] — 2026-07-01
 
 ### Fixed

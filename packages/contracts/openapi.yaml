@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.48.0
+  version: 1.49.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -2648,8 +2648,8 @@ paths:
           description: ''
     put:
       operationId: incentive_claims_update
-      description: Manday claims. Employees submit; managers approve/reject; management
-        reverses/amends.
+      description: Owner edits their own claim while it is still pending (mandays
+        / note / project).
       parameters:
       - in: path
         name: id
@@ -2727,6 +2727,37 @@ paths:
       operationId: incentive_claims_approve_create
       description: Manday claims. Employees submit; managers approve/reject; management
         reverses/amends.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - incentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /api/v1/incentive/claims/{id}/cancel/:
+    post:
+      operationId: incentive_claims_cancel_create
+      description: Employee withdraws their own pending claim. Mints no ledger row
+        (nothing was booked).
       parameters:
       - in: path
         name: id
@@ -3010,6 +3041,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Customer'
           description: ''
+  /api/v1/incentive/me/:
+    get:
+      operationId: incentive_me_retrieve
+      description: GET /api/v1/incentive/me/ — the employee 'My Mandays' summary (any
+        incentive user).
+      tags:
+      - incentive
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/incentive/overview/:
     get:
       operationId: incentive_overview_retrieve

@@ -1416,7 +1416,7 @@ export interface paths {
         };
         /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
         get: operations["incentive_claims_retrieve"];
-        /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
+        /** @description Owner edits their own claim while it is still pending (mandays / note / project). */
         put: operations["incentive_claims_update"];
         post?: never;
         /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
@@ -1438,6 +1438,23 @@ export interface paths {
         put?: never;
         /** @description Manday claims. Employees submit; managers approve/reject; management reverses/amends. */
         post: operations["incentive_claims_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/claims/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Employee withdraws their own pending claim. Mints no ledger row (nothing was booked). */
+        post: operations["incentive_claims_cancel_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1544,6 +1561,23 @@ export interface paths {
         put?: never;
         /** @description Customers + their manday pools. Management-only. */
         post: operations["incentive_customers_top_up_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incentive/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/v1/incentive/me/ — the employee 'My Mandays' summary (any incentive user). */
+        get: operations["incentive_me_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -8554,6 +8588,32 @@ export interface operations {
             };
         };
     };
+    incentive_claims_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRequest"];
+                "multipart/form-data": components["schemas"]["ClaimRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Claim"];
+                };
+            };
+        };
+    };
     incentive_claims_reject_create: {
         parameters: {
             query?: never;
@@ -8791,6 +8851,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Customer"];
                 };
+            };
+        };
+    };
+    incentive_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
