@@ -48,6 +48,17 @@ def _employee(request):
     ).first()
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    """GET /api/v1/incentive/me/ — the employee 'My Mandays' summary (any incentive user)."""
+    if CLAIM not in set(get_user_perms(request.user)):
+        return Response({"detail": "Permission denied"}, status=drf_status.HTTP_403_FORBIDDEN)
+    from .services.me import build_me_summary
+
+    return Response(build_me_summary(_employee(request), request.user.org_id))
+
+
 @requires_feature("incentive")
 class CustomerViewSet(viewsets.ModelViewSet):
     """Customers + their manday pools. Management-only."""

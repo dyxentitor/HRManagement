@@ -258,6 +258,49 @@ def test_admin_reverses_approved_claim(stack):
     assert ledger.customer_remaining(cust.id) == Decimal("200")
 
 
+def test_me_summary_earnings(stack):
+    cust = _customer_with_pool(stack)
+    proj = Project.objects.create(
+        org_id=stack["org"].id,
+        customer=cust,
+        name="P",
+        budget_mandays=Decimal("40"),
+        manager_id=stack["e"]["manager"].id,
+    )
+    from modules.incentive.services import ledger
+
+    claim = Claim.objects.create(
+        org_id=stack["org"].id,
+        project=proj,
+        employee_id=stack["e"]["employee"].id,
+        mandays=Decimal("5"),
+    )
+    ledger.approve_claim(claim, actor_id=stack["e"]["manager"].id)
+    r = stack["c"]["employee"].get("/api/v1/incentive/me/")
+    assert r.status_code == 200, r.content
+    body = r.json()
+    assert body["has_employee"] is True
+    assert body["eligibility"]["is_active"] is True
+    assert Decimal(body["earnings"]["earned_mandays"]) == Decimal("5")
+    assert Decimal(body["earnings"]["earned_rm"]) == Decimal("250")
+    assert Decimal(body["payout"]["mandays"]) == Decimal("5")
+    assert len(body["claims"]) == 1
+
+
+def test_me_summary_no_employee(stack):
+    org = stack["org"]
+    role = Role.objects.create(org_id=org.id, code="claimonly", name="Claim Only")
+    _grant(role, "incentive:claim")
+    u = User.objects.create_user(email="noemp@x.com", password="x", org_id=org.id)  # NO employee
+    UserRole.objects.create(user=u, role=role)
+    r = _client(u).get("/api/v1/incentive/me/")
+    assert r.status_code == 200, r.content
+    body = r.json()
+    assert body["has_employee"] is False
+    assert body["eligibility"]["is_active"] is False
+    assert body["claims"] == []
+
+
 def test_bond_accept(stack):
     bond = EmployeeBond.objects.create(
         org_id=stack["org"].id,
