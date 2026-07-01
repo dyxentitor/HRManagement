@@ -123,6 +123,28 @@ def test_project_deadline_persists(stack):
     assert rp.json()["deadline"] == "2026-09-30"
 
 
+def test_admin_without_employee_record_can_open_project(stack):
+    # Regression: admins have no linked Employee, so manager_id is null on their projects.
+    org = stack["org"]
+    role = Role.objects.create(org_id=org.id, code="bareadmin", name="Bare Admin")
+    p, _ = Permission.objects.get_or_create(
+        code="incentive:project:write", defaults={"description": "x"}
+    )
+    RolePermission.objects.create(role=role, permission=p)
+    u = User.objects.create_user(email="bare@x.com", password="x", org_id=org.id)  # NO employee
+    UserRole.objects.create(user=u, role=role)
+    c = APIClient()
+    c.force_authenticate(u)
+    cust = _customer_with_pool(stack)
+    r = c.post(
+        "/api/v1/incentive/projects/",
+        {"customer": str(cust.id), "name": "Admin project", "budget_mandays": "10"},
+        format="json",
+    )
+    assert r.status_code == 201, r.content
+    assert r.json()["manager_id"] is None
+
+
 def test_non_admin_cannot_see_customers(stack):
     assert stack["c"]["employee"].get("/api/v1/incentive/customers/").status_code == 403
 

@@ -21,7 +21,7 @@ export interface Project {
 	name: string;
 	description: string;
 	budget_mandays: string;
-	manager_id: string;
+	manager_id: string | null;
 	include_soc: boolean;
 	status: ProjectStatus;
 	deadline: string | null;
@@ -58,7 +58,7 @@ export interface OverviewProject {
 	id: string;
 	name: string;
 	customer_name: string;
-	manager_id: string;
+	manager_id: string | null;
 	budget: string;
 	consumed: string;
 	remaining: string;

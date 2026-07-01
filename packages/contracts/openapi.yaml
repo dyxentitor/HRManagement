@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.47.0
+  version: 1.48.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -10983,6 +10983,7 @@ components:
           type: string
           format: uuid
           readOnly: true
+          nullable: true
         include_soc:
           type: boolean
         status:

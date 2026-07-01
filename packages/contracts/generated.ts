@@ -5374,7 +5374,7 @@ export interface components {
             /** Format: decimal */
             budget_mandays: string;
             /** Format: uuid */
-            readonly manager_id: string;
+            readonly manager_id: string | null;
             include_soc?: boolean;
             status?: components["schemas"]["ProjectStatusEnum"];
             /** Format: date */

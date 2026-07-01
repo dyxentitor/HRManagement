@@ -124,7 +124,7 @@ def build_overview(org_id) -> dict:
                 "id": str(p.id),
                 "name": p.name,
                 "customer_name": p.customer.name,
-                "manager_id": str(p.manager_id),
+                "manager_id": str(p.manager_id) if p.manager_id else None,
                 "budget": str(p.budget_mandays),
                 "consumed": str(used),
                 "remaining": str(p.budget_mandays - used),

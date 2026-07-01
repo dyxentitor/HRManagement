@@ -76,7 +76,9 @@ class Project(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     budget_mandays = models.DecimalField(max_digits=10, decimal_places=2)
-    manager_id = models.UUIDField()  # Employee id of the opener/owner
+    # Employee id of the owning manager. Null when opened by an admin with no Employee record
+    # (such projects have no owner-approver; only admins review their claims).
+    manager_id = models.UUIDField(null=True, blank=True)
     include_soc = models.BooleanField(default=False)
     status = models.CharField(max_length=12, choices=PROJECT_STATUS, default="open")
     deadline = models.DateField(null=True, blank=True)  # optional target/end date
