@@ -2,6 +2,15 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.48.1] — 2026-07-01
+
+### Fixed
+
+- **500 on opening an incentive project** as an admin. `Project.manager_id` was `NOT NULL`, but an actor with
+  no linked `Employee` (e.g. `admin@provintell.demo`) produced `manager_id=None` → `IntegrityError`.
+  `manager_id` is now nullable (migration `incentive.0003`); an admin-opened project has no owner-approver and
+  its claims are reviewed by admins. +1 regression test.
+
 ## [1.48.0] — 2026-06-30
 
 **Incentive command-center redesign** — `/admin/incentive` goes from four stacked forms to a premium
