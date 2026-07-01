@@ -125,6 +125,76 @@ export interface Bond {
 	created_at: string;
 }
 
+// --- employee "My Mandays" summary ---
+export interface MeEligibility {
+	has_bond: boolean;
+	bond_id: string | null;
+	accepted: boolean;
+	accepted_at: string | null;
+	period_start: string | null;
+	period_end: string | null;
+	is_active: boolean;
+	days_remaining: number;
+	terms_version: string;
+}
+export interface MeEarnings {
+	earned_mandays: string;
+	earned_rm: string;
+	pending_mandays: string;
+	pending_rm: string;
+	this_quarter_mandays: string;
+	this_quarter_rm: string;
+	paid_mandays: string;
+	paid_rm: string;
+}
+export interface MeClaimCounts {
+	pending: number;
+	approved: number;
+	rejected: number;
+	cancelled: number;
+	paid: number;
+}
+export interface MeProject {
+	id: string;
+	name: string;
+	customer_name: string;
+	my_mandays: string;
+	budget: string;
+	consumed: string;
+}
+export interface MeClaimable {
+	id: string;
+	name: string;
+	customer_name: string;
+	remaining: string;
+	deadline: string | null;
+}
+export interface MePayout {
+	quarter: string;
+	mandays: string;
+	rm: string;
+	pending_ct: number;
+	in_payroll_ct: number;
+	paid_ct: number;
+}
+export interface MeTrend {
+	quarter: string;
+	mandays: string;
+	rm: string;
+}
+export interface MeSummary {
+	has_employee: boolean;
+	rate: string;
+	eligibility: MeEligibility;
+	earnings: MeEarnings;
+	claim_counts: MeClaimCounts;
+	claims: Claim[];
+	trend: MeTrend[];
+	my_projects: MeProject[];
+	claimable_projects: MeClaimable[];
+	payout: MePayout;
+}
+
 function _msg(error: unknown, fallback: string): string {
 	if (error && typeof error === "object") {
 		const e = error as { errors?: { message?: string }[]; detail?: string };
@@ -162,6 +232,7 @@ export const incentiveApi = {
 			_post<Customer>(`${BASE}/customers/${id}/top_up/`, { mandays, note }),
 	},
 	overview: () => _get<Overview>(`${BASE}/overview/`),
+	me: () => _get<MeSummary>(`${BASE}/me/`),
 	projects: {
 		list: () => _get<{ results?: Project[] } | Project[]>(`${BASE}/projects/`).then(unwrap),
 		create: (body: {
@@ -179,6 +250,9 @@ export const incentiveApi = {
 		list: () => _get<{ results?: Claim[] } | Claim[]>(`${BASE}/claims/`).then(unwrap),
 		create: (body: { project: string; mandays: string; note?: string }) =>
 			_post<Claim>(`${BASE}/claims/`, body),
+		update: (id: string, body: { mandays?: string; note?: string; project?: string }) =>
+			_patch<Claim>(`${BASE}/claims/${id}/`, body),
+		cancel: (id: string) => _post<Claim>(`${BASE}/claims/${id}/cancel/`),
 		approve: (id: string) => _post<Claim>(`${BASE}/claims/${id}/approve/`),
 		reject: (id: string, reason = "") => _post<Claim>(`${BASE}/claims/${id}/reject/`, { reason }),
 		reverse: (id: string, reason = "") => _post<Claim>(`${BASE}/claims/${id}/reverse/`, { reason }),
