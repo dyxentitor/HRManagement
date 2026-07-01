@@ -177,6 +177,36 @@ class ClaimViewSet(viewsets.ModelViewSet):
             org_id=self.request.user.org_id, employee_id=emp.id, created_by=self.request.user.id
         )
 
+    def update(self, request, *args, **kwargs):
+        """Owner edits their own claim while it is still pending (mandays / note / project)."""
+        claim = self.get_object()
+        emp = _employee(request)
+        if not (emp and claim.employee_id == emp.id):
+            raise PermissionDenied("You can only edit your own claim.")
+        if claim.status != "pending":
+            raise ValidationError("Only a pending claim can be edited.")
+        new_project = request.data.get("project")
+        if new_project and str(new_project) != str(claim.project_id):
+            proj = Project.objects.filter(
+                org_id=request.user.org_id, id=new_project
+            ).first()
+            if proj is None or not ledger.can_see_project(emp, proj):
+                raise PermissionDenied("This project is not visible to you.")
+        return super().update(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        """Employee withdraws their own pending claim. Mints no ledger row (nothing was booked)."""
+        claim = self.get_object()
+        emp = _employee(request)
+        if not (emp and claim.employee_id == emp.id):
+            raise PermissionDenied("You can only cancel your own claim.")
+        if claim.status != "pending":
+            raise ValidationError("Only a pending claim can be cancelled.")
+        claim.status = "cancelled"
+        claim.save(update_fields=["status", "updated_at"])
+        return Response(ClaimSerializer(claim).data)
+
     def _can_review(self, claim) -> bool:
         perms = get_user_perms(self.request.user)
         if ADMIN in perms:

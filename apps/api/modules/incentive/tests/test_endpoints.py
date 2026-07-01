@@ -258,6 +258,72 @@ def test_admin_reverses_approved_claim(stack):
     assert ledger.customer_remaining(cust.id) == Decimal("200")
 
 
+def _pending_claim(stack, mandays="5"):
+    cust = _customer_with_pool(stack)
+    proj = Project.objects.create(
+        org_id=stack["org"].id,
+        customer=cust,
+        name="P",
+        budget_mandays=Decimal("40"),
+        manager_id=stack["e"]["manager"].id,
+    )
+    return Claim.objects.create(
+        org_id=stack["org"].id,
+        project=proj,
+        employee_id=stack["e"]["employee"].id,
+        mandays=Decimal(mandays),
+    )
+
+
+def test_cancel_pending_claim(stack):
+    claim = _pending_claim(stack)
+    r = stack["c"]["employee"].post(f"/api/v1/incentive/claims/{claim.id}/cancel/")
+    assert r.status_code == 200, r.content
+    claim.refresh_from_db()
+    assert claim.status == "cancelled"
+
+
+def test_cancel_requires_owner(stack):
+    claim = _pending_claim(stack)
+    r = stack["c"]["soc"].post(f"/api/v1/incentive/claims/{claim.id}/cancel/")
+    assert r.status_code in (403, 404)
+    claim.refresh_from_db()
+    assert claim.status == "pending"
+
+
+def test_cancel_only_pending(stack):
+    claim = _pending_claim(stack)
+    from modules.incentive.services import ledger
+
+    ledger.approve_claim(claim, actor_id=stack["e"]["manager"].id)
+    r = stack["c"]["employee"].post(f"/api/v1/incentive/claims/{claim.id}/cancel/")
+    assert r.status_code == 400
+
+
+def test_edit_pending_claim(stack):
+    claim = _pending_claim(stack)
+    r = stack["c"]["employee"].patch(
+        f"/api/v1/incentive/claims/{claim.id}/", {"mandays": "8", "note": "revised"}, format="json"
+    )
+    assert r.status_code == 200, r.content
+    claim.refresh_from_db()
+    assert claim.mandays == Decimal("8")
+    assert claim.note == "revised"
+
+
+def test_edit_blocked_when_not_pending(stack):
+    claim = _pending_claim(stack)
+    from modules.incentive.services import ledger
+
+    ledger.approve_claim(claim, actor_id=stack["e"]["manager"].id)
+    r = stack["c"]["employee"].patch(
+        f"/api/v1/incentive/claims/{claim.id}/", {"mandays": "8"}, format="json"
+    )
+    assert r.status_code == 400
+    claim.refresh_from_db()
+    assert claim.mandays == Decimal("5")
+
+
 def test_me_summary_earnings(stack):
     cust = _customer_with_pool(stack)
     proj = Project.objects.create(
