@@ -11,6 +11,9 @@ const AdminAuditLogPage = lazy(() => import("./pages/AdminAuditLogPage"));
 const SettingsShell = lazy(() => import("./settings/SettingsShell"));
 const SettingsOverviewPage = lazy(() => import("./settings/SettingsOverviewPage"));
 const OrganizationSettingsPage = lazy(() => import("./settings/OrganizationSettingsPage"));
+const EmailNotificationSettingsPage = lazy(
+	() => import("./settings/EmailNotificationSettingsPage"),
+);
 const DepartmentsAdminPage = lazy(() => import("./settings/DepartmentsAdminPage"));
 const UsersLinkingPage = lazy(() => import("./settings/UsersLinkingPage"));
 const UserCreatePage = lazy(() =>
@@ -55,6 +58,7 @@ export const adminRoutes: RouteObject[] = [
 		children: [
 			{ index: true, element: <SettingsOverviewPage /> },
 			{ path: "organization", element: <OrganizationSettingsPage /> },
+			{ path: "email-notifications", element: <EmailNotificationSettingsPage /> },
 			{ path: "modules", element: <AdminModulesPage /> },
 			{ path: "departments", element: <DepartmentsAdminPage /> },
 			{ path: "teams", element: <AdminTeamsPage /> },

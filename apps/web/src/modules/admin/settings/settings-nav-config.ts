@@ -4,6 +4,7 @@ import {
 	KeyRound,
 	Landmark,
 	LayoutGrid,
+	Mail,
 	Megaphone,
 	ScrollText,
 	Palmtree,
@@ -35,6 +36,13 @@ export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
 		label: "Organization",
 		icon: Building2,
 		perm: "org:settings:write",
+		isNewInV190: true,
+	},
+	{
+		to: "/admin/settings/email-notifications",
+		label: "Email Notifications",
+		icon: Mail,
+		perm: "org:email_config:read",
 		isNewInV190: true,
 	},
 	{
