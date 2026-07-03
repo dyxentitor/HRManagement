@@ -24,6 +24,7 @@ api_v1_patterns = [
     path("", include("common.audit.urls")),
     path("", include("common.reporting.urls")),
     path("org/", include("common.feature_flags.urls")),
+    path("org/", include("common.mail.urls")),
 ]
 
 # The OpenAPI schema + Swagger UI map the entire API surface — expose them only in

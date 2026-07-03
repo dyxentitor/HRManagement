@@ -80,6 +80,8 @@ class EmailConfigWriteSerializer(serializers.ModelSerializer):
                 return attrs[field]
             return getattr(self.instance, field, None)
 
+        # Cross-field requirements only bite when the config is being enabled;
+        # while disabled it may be edited progressively as an incomplete draft.
         if cur("enabled"):
             if not (cur("smtp_host") or "").strip():
                 raise serializers.ValidationError(
@@ -89,16 +91,16 @@ class EmailConfigWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"sender_email": "Required when email is enabled."}
                 )
-        if cur("use_auth"):
-            if not (cur("smtp_username") or "").strip():
-                raise serializers.ValidationError(
-                    {"smtp_username": "Required when authentication is on."}
-                )
-            has_stored = bool(getattr(self.instance, "smtp_password", None))
-            if not attrs.get("smtp_password") and not has_stored:
-                raise serializers.ValidationError(
-                    {"smtp_password": "Required when authentication is on."}
-                )
+            if cur("use_auth"):
+                if not (cur("smtp_username") or "").strip():
+                    raise serializers.ValidationError(
+                        {"smtp_username": "Required when authentication is on."}
+                    )
+                has_stored = bool(getattr(self.instance, "smtp_password", None))
+                if not attrs.get("smtp_password") and not has_stored:
+                    raise serializers.ValidationError(
+                        {"smtp_password": "Required when authentication is on."}
+                    )
         return attrs
 
     def update(self, instance, validated_data):
