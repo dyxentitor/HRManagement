@@ -1,4 +1,3 @@
-import uuid
 from unittest.mock import patch
 
 import pytest
@@ -24,7 +23,9 @@ def org():
 
 def _client(org, perms):
     user = User.objects.create_user(
-        email="a@e.com", password="x", org_id=org.id  # pragma: allowlist secret
+        email="a@e.com",
+        password="x",
+        org_id=org.id,  # pragma: allowlist secret
     )
     role = Role.objects.create(org_id=org.id, code="org_admin", name="A", is_system=True)
     for code in perms:
@@ -50,7 +51,9 @@ def test_get_denied_without_perm(org):
 @pytest.mark.django_db
 def test_get_returns_config_without_password(org):
     EmailConfiguration.objects.create(
-        org_id=org.id, smtp_host="h", smtp_password="pw"  # pragma: allowlist secret
+        org_id=org.id,
+        smtp_host="h",
+        smtp_password="pw",  # pragma: allowlist secret
     )
     resp = _client(org, ["org:email_config:read"]).get("/api/v1/org/email-config/")
     assert resp.status_code == 200

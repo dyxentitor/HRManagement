@@ -142,7 +142,7 @@ def run_connection_test(org_id, overrides: dict) -> dict:
     try:
         conn.open()
         conn.close()
-    except Exception as exc:  # noqa: BLE001 — surface any SMTP/socket error to the admin
+    except Exception as exc:
         _record_health(stored, ok=False, message=str(exc))
         return {"success": False, "message": "Connection failed", "detail": str(exc)}
     _record_health(stored, ok=True)
@@ -169,7 +169,7 @@ def send_test_email(org_id, recipient: str, overrides: dict) -> dict:
     )
     try:
         msg.send(fail_silently=False)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         _record_health(stored, ok=False, message=str(exc))
         return {"success": False, "message": "Send failed", "detail": str(exc)}
     _record_health(stored, ok=True)

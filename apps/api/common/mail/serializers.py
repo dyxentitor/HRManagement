@@ -84,9 +84,7 @@ class EmailConfigWriteSerializer(serializers.ModelSerializer):
         # while disabled it may be edited progressively as an incomplete draft.
         if cur("enabled"):
             if not (cur("smtp_host") or "").strip():
-                raise serializers.ValidationError(
-                    {"smtp_host": "Required when email is enabled."}
-                )
+                raise serializers.ValidationError({"smtp_host": "Required when email is enabled."})
             if not cur("sender_email"):
                 raise serializers.ValidationError(
                     {"sender_email": "Required when email is enabled."}
