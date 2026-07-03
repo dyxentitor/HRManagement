@@ -83,6 +83,7 @@ _DANGEROUS_SUBSTRINGS = (
     "role:write",
     "permission:",
     "org:feature_flag:write",
+    "email_config",
     "user:delete",
     "user:disable",
     "audit",

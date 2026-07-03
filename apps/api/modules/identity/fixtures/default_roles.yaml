@@ -28,6 +28,8 @@
     - team:write
     - org:settings:read
     - org:settings:write
+    - org:email_config:read
+    - org:email_config:write
     - audit:read:org
     - audit:payroll-ledger:read:org
     - audit:payroll-ledger:verify:org
