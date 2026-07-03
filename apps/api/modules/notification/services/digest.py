@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from django.conf import settings
-from django.core.mail import send_mail
 from django.utils import timezone
 
+from common.mail import send as mail_send
 from modules.notification.models import EmailDigestRun, Notification
 
 
@@ -44,13 +43,18 @@ def send_digests() -> dict[str, int]:
         body = "\n".join(body_lines)
 
         try:
-            send_mail(
+            sent = mail_send(
+                org_id=user.org_id,
                 subject=f"[HRMS] {len(notifs)} new notification(s)",
-                message=body,
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "hrms@provintell.local"),
-                recipient_list=[user.email],
+                body=body,
+                to=[user.email],
+                category="notification",
+                append_signature=True,
                 fail_silently=False,
             )
+            if not sent:
+                # Notifications globally disabled — leave rows pending for a later run.
+                continue
             run = EmailDigestRun.objects.create(
                 org_id=user.org_id,
                 user=user,

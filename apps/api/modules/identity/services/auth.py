@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import secrets
 
-from django.conf import settings
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -100,15 +98,18 @@ def initiate_password_reset(email: str) -> None:
         return
     token = secrets.token_urlsafe(32)
     cache.set(f"pwreset:{token}", str(user.id), timeout=3600)  # 1 hour
-    send_mail(
+    from common.mail import send as mail_send
+
+    mail_send(
+        org_id=user.org_id,
         subject="HRMS — Password reset",
-        message=(
+        body=(
             f"Use this token to reset your password.\n\n"
             f"token: {token}\n\n"
             "If you did not request this, ignore this email."
         ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
+        to=[user.email],
+        category="transactional",
         fail_silently=False,
     )
 

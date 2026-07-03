@@ -12,7 +12,6 @@ import secrets
 from datetime import timedelta
 
 from django.conf import settings
-from django.core.mail import send_mail
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -84,12 +83,16 @@ def send_invitation_email(
   <p style="color:#6b6b80;font-size:13px">This invitation expires in {hours} hours.
      If you did not expect this, you can ignore this email.</p>
 </div>"""
-    send_mail(
+    from common.mail import send as mail_send
+
+    mail_send(
+        org_id=user.org_id,
         subject=f"Welcome to {org} — activate your account",
-        message=text,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[to_email or user.email],
-        html_message=html,
+        body=text,
+        to=[to_email or user.email],
+        html_body=html,
+        category="transactional",
+        append_signature=True,
         fail_silently=False,
     )
 

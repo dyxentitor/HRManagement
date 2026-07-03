@@ -14,10 +14,11 @@ def test_user_create_permission_seeded():
 
 
 @pytest.mark.django_db
-def test_permission_catalogue_total_is_123():
+def test_permission_catalogue_total_is_125():
     call_command("seed_permission_catalogue")
     # 111 (v1.11.0) + 6 dashboard perms (v1.12.0) + 3 assignment perms (v1.33.0)
-    assert Permission.objects.count() == 123
+    # + 2 email-config perms (org:email_config:read/write)
+    assert Permission.objects.count() == 125
 
 
 @pytest.mark.django_db
