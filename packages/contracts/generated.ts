@@ -2566,6 +2566,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/org/email-config/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["org_email_config_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["org_email_config_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/org/email-config/send-test-email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["org_email_config_send_test_email_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/org/email-config/test-connection/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["org_email_config_test_connection_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/feature-flags/": {
         parameters: {
             query?: never;
@@ -4258,6 +4306,35 @@ export interface components {
             /** Format: uuid */
             head_employee_id?: string | null;
         };
+        EmailConfiguration: {
+            enabled?: boolean;
+            smtp_host?: string;
+            smtp_port?: number;
+            encryption?: components["schemas"]["EncryptionEnum"];
+            use_auth?: boolean;
+            smtp_username?: string;
+            readonly has_password: boolean;
+            sender_name?: string;
+            /** Format: email */
+            sender_email?: string;
+            /** Format: email */
+            reply_to?: string;
+            connection_timeout?: number;
+            rate_limit_per_minute?: number;
+            max_retry_attempts?: number;
+            retry_interval_seconds?: number;
+            signature?: string;
+            provider_preset?: string;
+            /** Format: date-time */
+            last_test_at?: string | null;
+            /** Format: date-time */
+            last_success_at?: string | null;
+            /** Format: date-time */
+            last_failure_at?: string | null;
+            last_failure_message?: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
         /** @description Full HR view — all fields readable; encrypted fields write-through. */
         Employee: {
             /** Format: uuid */
@@ -4438,6 +4515,13 @@ export interface components {
          * @enum {string}
          */
         EmploymentTypeEnum: "fulltime" | "parttime" | "contract" | "intern";
+        /**
+         * @description * `none` - None
+         *     * `ssl` - SSL/TLS
+         *     * `starttls` - STARTTLS
+         * @enum {string}
+         */
+        EncryptionEnum: "none" | "ssl" | "starttls";
         /**
          * @description * `male` - Male
          *     * `female` - Female
@@ -5013,6 +5097,26 @@ export interface components {
             /** Format: uuid */
             head_employee_id?: string | null;
         };
+        PatchedEmailConfigWriteRequest: {
+            enabled?: boolean;
+            smtp_host?: string;
+            smtp_port?: number;
+            encryption?: components["schemas"]["EncryptionEnum"];
+            use_auth?: boolean;
+            smtp_username?: string;
+            smtp_password?: string;
+            sender_name?: string;
+            /** Format: email */
+            sender_email?: string;
+            /** Format: email */
+            reply_to?: string;
+            connection_timeout?: number;
+            rate_limit_per_minute?: number;
+            max_retry_attempts?: number;
+            retry_interval_seconds?: number;
+            signature?: string;
+            provider_preset?: string;
+        };
         PatchedEmployeeLeaveOverrideRequest: {
             /** Format: uuid */
             leave_type?: string;
@@ -5491,6 +5595,28 @@ export interface components {
          * @enum {string}
          */
         ScheduleTypeEnum: "fixed" | "shift";
+        SendTestEmailRequest: {
+            /** Format: email */
+            recipient: string;
+            enabled?: boolean;
+            smtp_host?: string;
+            smtp_port?: number;
+            encryption?: components["schemas"]["EncryptionEnum"];
+            use_auth?: boolean;
+            smtp_username?: string;
+            smtp_password?: string;
+            sender_name?: string;
+            /** Format: email */
+            sender_email?: string;
+            /** Format: email */
+            reply_to?: string;
+            connection_timeout?: number;
+            rate_limit_per_minute?: number;
+            max_retry_attempts?: number;
+            retry_interval_seconds?: number;
+            signature?: string;
+            provider_preset?: string;
+        };
         Shift: {
             /** Format: uuid */
             readonly id: string;
@@ -5591,6 +5717,26 @@ export interface components {
             parent_team?: string | null;
             sort_order?: number;
             min_headcount?: number | null;
+        };
+        TestConnectionRequest: {
+            enabled?: boolean;
+            smtp_host?: string;
+            smtp_port?: number;
+            encryption?: components["schemas"]["EncryptionEnum"];
+            use_auth?: boolean;
+            smtp_username?: string;
+            smtp_password?: string;
+            sender_name?: string;
+            /** Format: email */
+            sender_email?: string;
+            /** Format: email */
+            reply_to?: string;
+            connection_timeout?: number;
+            rate_limit_per_minute?: number;
+            max_retry_attempts?: number;
+            retry_interval_seconds?: number;
+            signature?: string;
+            provider_preset?: string;
         };
         TrainingAssignment: {
             /** Format: uuid */
@@ -10777,6 +10923,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OnboardingChecklist"];
+                };
+            };
+        };
+    };
+    org_email_config_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailConfiguration"];
+                };
+            };
+        };
+    };
+    org_email_config_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEmailConfigWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedEmailConfigWriteRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailConfiguration"];
+                };
+            };
+        };
+    };
+    org_email_config_send_test_email_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendTestEmailRequest"];
+                "multipart/form-data": components["schemas"]["SendTestEmailRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    org_email_config_test_connection_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TestConnectionRequest"];
+                "multipart/form-data": components["schemas"]["TestConnectionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

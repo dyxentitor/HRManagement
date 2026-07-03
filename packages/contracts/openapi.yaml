@@ -4928,6 +4928,88 @@ paths:
               schema:
                 $ref: '#/components/schemas/OnboardingChecklist'
           description: ''
+  /api/v1/org/email-config/:
+    get:
+      operationId: org_email_config_retrieve
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailConfiguration'
+          description: ''
+    patch:
+      operationId: org_email_config_partial_update
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmailConfigWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmailConfigWriteRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailConfiguration'
+          description: ''
+  /api/v1/org/email-config/send-test-email/:
+    post:
+      operationId: org_email_config_send_test_email_create
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTestEmailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SendTestEmailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/org/email-config/test-connection/:
+    post:
+      operationId: org_email_config_test_connection_create
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestConnectionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TestConnectionRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/org/feature-flags/:
     get:
       operationId: org_feature_flags_retrieve
@@ -8305,6 +8387,82 @@ components:
           nullable: true
       required:
       - name
+    EmailConfiguration:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        smtp_host:
+          type: string
+          maxLength: 255
+        smtp_port:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        encryption:
+          $ref: '#/components/schemas/EncryptionEnum'
+        use_auth:
+          type: boolean
+        smtp_username:
+          type: string
+          maxLength: 255
+        has_password:
+          type: boolean
+          readOnly: true
+        sender_name:
+          type: string
+          maxLength: 255
+        sender_email:
+          type: string
+          format: email
+          maxLength: 254
+        reply_to:
+          type: string
+          format: email
+          maxLength: 254
+        connection_timeout:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        rate_limit_per_minute:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        max_retry_attempts:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        retry_interval_seconds:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        signature:
+          type: string
+        provider_preset:
+          type: string
+          maxLength: 32
+        last_test_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_success_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_failure_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_failure_message:
+          type: string
+          maxLength: 500
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - has_password
+      - updated_at
     Employee:
       type: object
       description: Full HR view — all fields readable; encrypted fields write-through.
@@ -8784,6 +8942,16 @@ components:
         * `parttime` - Part-time
         * `contract` - Contract
         * `intern` - Intern
+    EncryptionEnum:
+      enum:
+      - none
+      - ssl
+      - starttls
+      type: string
+      description: |-
+        * `none` - None
+        * `ssl` - SSL/TLS
+        * `starttls` - STARTTLS
     GenderEnum:
       enum:
       - male
@@ -10152,6 +10320,62 @@ components:
           type: string
           format: uuid
           nullable: true
+    PatchedEmailConfigWriteRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        smtp_host:
+          type: string
+          maxLength: 255
+        smtp_port:
+          type: integer
+          maximum: 65535
+          minimum: 1
+        encryption:
+          $ref: '#/components/schemas/EncryptionEnum'
+        use_auth:
+          type: boolean
+        smtp_username:
+          type: string
+          maxLength: 255
+        smtp_password:
+          type: string
+          writeOnly: true
+          maxLength: 255
+        sender_name:
+          type: string
+          maxLength: 255
+        sender_email:
+          type: string
+          format: email
+          maxLength: 254
+        reply_to:
+          type: string
+          format: email
+          maxLength: 254
+        connection_timeout:
+          type: integer
+          maximum: 300
+          minimum: 1
+        rate_limit_per_minute:
+          type: integer
+          maximum: 1000
+          minimum: 1
+        max_retry_attempts:
+          type: integer
+          maximum: 10
+          minimum: 0
+        retry_interval_seconds:
+          type: integer
+          maximum: 3600
+          minimum: 1
+        signature:
+          type: string
+          maxLength: 2000
+        provider_preset:
+          type: string
+          maxLength: 32
     PatchedEmployeeLeaveOverrideRequest:
       type: object
       properties:
@@ -11208,6 +11432,68 @@ components:
       description: |-
         * `fixed` - Fixed
         * `shift` - Shift
+    SendTestEmailRequest:
+      type: object
+      properties:
+        recipient:
+          type: string
+          format: email
+          minLength: 1
+        enabled:
+          type: boolean
+        smtp_host:
+          type: string
+          maxLength: 255
+        smtp_port:
+          type: integer
+          maximum: 65535
+          minimum: 1
+        encryption:
+          $ref: '#/components/schemas/EncryptionEnum'
+        use_auth:
+          type: boolean
+        smtp_username:
+          type: string
+          maxLength: 255
+        smtp_password:
+          type: string
+          writeOnly: true
+          maxLength: 255
+        sender_name:
+          type: string
+          maxLength: 255
+        sender_email:
+          type: string
+          format: email
+          maxLength: 254
+        reply_to:
+          type: string
+          format: email
+          maxLength: 254
+        connection_timeout:
+          type: integer
+          maximum: 300
+          minimum: 1
+        rate_limit_per_minute:
+          type: integer
+          maximum: 1000
+          minimum: 1
+        max_retry_attempts:
+          type: integer
+          maximum: 10
+          minimum: 0
+        retry_interval_seconds:
+          type: integer
+          maximum: 3600
+          minimum: 1
+        signature:
+          type: string
+          maxLength: 2000
+        provider_preset:
+          type: string
+          maxLength: 32
+      required:
+      - recipient
     Shift:
       type: object
       properties:
@@ -11441,6 +11727,62 @@ components:
           nullable: true
       required:
       - name
+    TestConnectionRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        smtp_host:
+          type: string
+          maxLength: 255
+        smtp_port:
+          type: integer
+          maximum: 65535
+          minimum: 1
+        encryption:
+          $ref: '#/components/schemas/EncryptionEnum'
+        use_auth:
+          type: boolean
+        smtp_username:
+          type: string
+          maxLength: 255
+        smtp_password:
+          type: string
+          writeOnly: true
+          maxLength: 255
+        sender_name:
+          type: string
+          maxLength: 255
+        sender_email:
+          type: string
+          format: email
+          maxLength: 254
+        reply_to:
+          type: string
+          format: email
+          maxLength: 254
+        connection_timeout:
+          type: integer
+          maximum: 300
+          minimum: 1
+        rate_limit_per_minute:
+          type: integer
+          maximum: 1000
+          minimum: 1
+        max_retry_attempts:
+          type: integer
+          maximum: 10
+          minimum: 0
+        retry_interval_seconds:
+          type: integer
+          maximum: 3600
+          minimum: 1
+        signature:
+          type: string
+          maxLength: 2000
+        provider_preset:
+          type: string
+          maxLength: 32
     TrainingAssignment:
       type: object
       properties:
