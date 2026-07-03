@@ -2,6 +2,46 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.50.0] — 2026-07-03
+
+**Email Notification Configuration** — SMTP is now a per-org, database-backed setting that admins
+manage from **System Settings → Email Notifications**, replacing the env-only `SMTP_*` config. Changes
+take effect at send-time with no application restart.
+
+### Added
+- `common.mail` package: per-org `EmailConfiguration` model (singleton) with a **Fernet-encrypted**
+  `smtp_password` (write-only in the API, never returned or logged). Health fields track last
+  success/failure timestamps and the last error message.
+- Central `common.mail.send()` service resolves the SMTP connection from the DB row at send-time
+  (`encryption` → `use_tls`/`use_ssl`), with a fallback to the env backend (MailHog/dev) when
+  unconfigured.
+- Endpoints under `/api/v1/org/email-config/`: `GET`/`PATCH` (config), `POST test-connection/`
+  (validate without saving), `POST send-test-email/` (end-to-end delivery check). Gated on new
+  perms `org:email_config:read` / `org:email_config:write` (granted to `org_admin`; write flagged
+  dangerous). Config changes write an `email_config.updated` audit row recording changed field
+  **names only**.
+- Premium settings page at `/admin/settings/email-notifications`: provider presets (Microsoft 365,
+  Google Workspace, SendGrid, Amazon SES, Mailgun, Custom), live configuration summary with soft
+  warnings, connection-health strip, password masking + reveal, and Test Connection / Send Test
+  Email flows.
+
+### Changed
+- All four email send sites (notification digest, password-reset, invitation, HR bank-change alert)
+  now route through `common.mail.send()`. The global toggle pauses **notification** email only;
+  password-reset and invitation (transactional) always attempt to send.
+- Permission catalogue 123 → 125 codes.
+
+### Deferred
+- Enforcement of Rate Limiting (emails/min) and Retry attempts/interval — those fields are stored
+  and surfaced now; the send-path enforcement lands in a follow-up. Connection Timeout is live.
+
+### Tests
+- Backend: 931 passing (adds the `common.mail` suite). The single failing
+  `attendance::test_clock_out_completes_record` is a pre-existing, date-sensitive flake (CLAUDE.md
+  §2.3), unrelated to this change.
+- Frontend: adds 8 email-config tests (all passing). The suite also has 3 pre-existing failures in
+  `AppShell.test`/`OrgLogo.test` (org-name/logo fixture drift), confirmed unrelated to this change.
+
 ## [1.49.0] — 2026-07-01
 
 **My Mandays employee redesign** — `/incentive` goes from form-first (bond banner + submit form + flat

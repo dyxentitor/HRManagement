@@ -186,7 +186,7 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "HRMS API",
     "DESCRIPTION": "HR Management System — Phase 1",
-    "VERSION": "1.49.0",
+    "VERSION": "1.50.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
