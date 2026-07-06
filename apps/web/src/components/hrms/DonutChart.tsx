@@ -61,9 +61,9 @@ export function DonutChart({
 				</div>
 			</div>
 			<div className="text-small space-y-1">
-				{segments.map((seg) => (
+				{segments.map((seg, i) => (
 					<div
-						key={seg.label}
+						key={`${seg.color}-${i}`}
 						className="flex items-center gap-2 text-text-secondary"
 					>
 						<span
