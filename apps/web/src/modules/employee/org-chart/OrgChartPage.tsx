@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shell/PageHeader"
 
 import { DepartmentView } from "./DepartmentView"
 import { type Crumb, OrgChartControls, type OrgView } from "./OrgChartControls"
+import type { CardDensity } from "./OrgNodeCard"
 import { ReportingLineView } from "./ReportingLineView"
 import { TreeView } from "./TreeView"
 import { orgChartApi } from "./api"
@@ -18,15 +19,24 @@ export default function OrgChartPage() {
   const [focusId, setFocusId] = useState<string | null>(null)
   const [expandTo, setExpandTo] = useState<string[]>([])
   const [highlightId, setHighlightId] = useState<string | null>(null)
+  const [highlightPath, setHighlightPath] = useState<string[]>([])
+  const [density, setDensity] = useState<CardDensity>("comfortable")
+  const [showLevels, setShowLevels] = useState(false)
   const [breadcrumbs, setBreadcrumbs] = useState<Crumb[]>([])
   const zoom = useZoomPan()
 
   const departmentsQ = useQuery({ queryKey: ["org-depts"], queryFn: orgChartApi.departments })
+  const departments = departmentsQ.data ?? []
+  const headcount = {
+    people: departments.reduce((sum, d) => sum + d.head_count, 0),
+    departments: departments.length,
+  }
 
   const onSearchSelect = useCallback((hit: OrgSearchHit) => {
     setView("tree")
     setExpandTo(hit.ancestor_ids)
     setHighlightId(hit.id)
+    setHighlightPath([...hit.ancestor_ids, hit.id])
   }, [])
 
   const onFocus = useCallback((id: string, label?: string) => {
@@ -65,9 +75,13 @@ export default function OrgChartPage() {
         onViewChange={setView}
         filters={filters}
         onFiltersChange={setFilters}
-        departments={departmentsQ.data ?? []}
+        departments={departments}
         onSearchSelect={onSearchSelect}
-        zoom={{ pct: zoom.pct, in: zoom.zoomIn, out: zoom.zoomOut, fit: zoom.fit }}
+        headcount={headcount}
+        density={density}
+        onDensityChange={setDensity}
+        showLevels={showLevels}
+        onToggleLevels={() => setShowLevels((v) => !v)}
         breadcrumbs={breadcrumbs}
         onCrumb={onCrumb}
       />
@@ -79,6 +93,9 @@ export default function OrgChartPage() {
           onFocus={(id) => onFocus(id)}
           expandTo={expandTo}
           highlightId={highlightId}
+          highlightPath={highlightPath}
+          density={density}
+          showLevels={showLevels}
         />
       )}
       {view === "department" && <DepartmentView filters={filters} onFocus={(id) => onFocus(id)} />}
