@@ -8,16 +8,20 @@ from django.db import models
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from modules.identity.permissions import HRMSPermission
 
-from .models import Announcement, AnnouncementRead
+from .models import Announcement, AnnouncementAttachment, AnnouncementRead
 from .serializers import AnnouncementSerializer, AnnouncementWriteSerializer
+from .services.attachment import AttachmentService
 from .services.audience import user_in_audience
 from .services.publish import archive, publish
 
-_READ_ACTIONS = frozenset({"retrieve", "feed", "unread_count", "mark_read", "read_all"})
+_READ_ACTIONS = frozenset(
+    {"retrieve", "feed", "unread_count", "mark_read", "read_all", "attachment_download"}
+)
 
 
 class AnnouncementViewSet(viewsets.ModelViewSet):
@@ -149,3 +153,52 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     def archive_action(self, request, pk=None):
         ann = archive(self.get_object())
         return Response(AnnouncementSerializer(ann, context={"request": request}).data)
+
+    # ---- attachments -------------------------------------------------------
+
+    @action(detail=True, methods=["post"], url_path="attachments/presigned-upload")
+    def attachment_presign(self, request, pk=None):
+        ann = self.get_object()
+        filename = request.data.get("filename")
+        content_type = request.data.get("content_type")
+        if not filename or not content_type:
+            raise ValidationError({"detail": "filename and content_type are required."})
+        return Response(
+            AttachmentService.presigned_upload(
+                announcement=ann, filename=filename, content_type=content_type
+            )
+        )
+
+    @action(detail=True, methods=["post"], url_path="attachments")
+    def register_attachment(self, request, pk=None):
+        ann = self.get_object()
+        try:
+            att = AttachmentService.register(
+                announcement=ann,
+                filename=request.data["filename"],
+                content_type=request.data["content_type"],
+                size_bytes=int(request.data["size_bytes"]),
+                s3_key=request.data["s3_key"],
+                uploaded_by=request.user.id,
+            )
+        except (KeyError, ValueError, TypeError) as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
+        return Response(
+            {"id": att.id, "filename": att.filename, "size_bytes": att.size_bytes}
+        )
+
+    @action(detail=True, methods=["get"], url_path=r"attachments/(?P<aid>[^/.]+)/download")
+    def attachment_download(self, request, pk=None, aid=None):
+        ann = self.get_object()
+        att = AnnouncementAttachment.objects.filter(announcement=ann, id=aid).first()
+        if att is None:
+            raise ValidationError({"detail": "Attachment not found."})
+        return Response({"url": AttachmentService.presigned_get(attachment=att)})
+
+    @action(detail=True, methods=["delete"], url_path=r"attachments/(?P<aid>[^/.]+)")
+    def attachment_delete(self, request, pk=None, aid=None):
+        ann = self.get_object()
+        att = AnnouncementAttachment.objects.filter(announcement=ann, id=aid).first()
+        if att is not None:
+            AttachmentService.delete(attachment=att)
+        return Response(status=204)
