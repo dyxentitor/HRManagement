@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.50.0
+  version: 1.52.1
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -97,10 +97,8 @@ paths:
   /api/v1/announcements/:
     get:
       operationId: announcements_list
-      description: |-
-        Company announcements.
-
-        Read gated on announcement:read (every org user); write on announcement:write.
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
       tags:
       - announcements
       security:
@@ -116,20 +114,18 @@ paths:
           description: ''
     post:
       operationId: announcements_create
-      description: |-
-        Company announcements.
-
-        Read gated on announcement:read (every org user); write on announcement:write.
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
       tags:
       - announcements
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
+              $ref: '#/components/schemas/AnnouncementWriteRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
+              $ref: '#/components/schemas/AnnouncementWriteRequest'
         required: true
       security:
       - jwtAuth: []
@@ -138,15 +134,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Announcement'
+                $ref: '#/components/schemas/AnnouncementWrite'
           description: ''
   /api/v1/announcements/{id}/:
     get:
       operationId: announcements_retrieve
-      description: |-
-        Company announcements.
-
-        Read gated on announcement:read (every org user); write on announcement:write.
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
       parameters:
       - in: path
         name: id
@@ -166,10 +160,8 @@ paths:
           description: ''
     put:
       operationId: announcements_update
-      description: |-
-        Company announcements.
-
-        Read gated on announcement:read (every org user); write on announcement:write.
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
       parameters:
       - in: path
         name: id
@@ -182,10 +174,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
+              $ref: '#/components/schemas/AnnouncementWriteRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
+              $ref: '#/components/schemas/AnnouncementWriteRequest'
         required: true
       security:
       - jwtAuth: []
@@ -194,14 +186,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Announcement'
+                $ref: '#/components/schemas/AnnouncementWrite'
           description: ''
     patch:
       operationId: announcements_partial_update
-      description: |-
-        Company announcements.
-
-        Read gated on announcement:read (every org user); write on announcement:write.
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
       parameters:
       - in: path
         name: id
@@ -214,10 +204,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedAnnouncementRequest'
+              $ref: '#/components/schemas/PatchedAnnouncementWriteRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedAnnouncementRequest'
+              $ref: '#/components/schemas/PatchedAnnouncementWriteRequest'
       security:
       - jwtAuth: []
       responses:
@@ -225,14 +215,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Announcement'
+                $ref: '#/components/schemas/AnnouncementWrite'
           description: ''
     delete:
       operationId: announcements_destroy
-      description: |-
-        Company announcements.
-
-        Read gated on announcement:read (every org user); write on announcement:write.
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
       parameters:
       - in: path
         name: id
@@ -246,6 +234,268 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/announcements/{id}/archive/:
+    post:
+      operationId: announcements_archive_create
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/{id}/attachments/:
+    post:
+      operationId: announcements_attachments_create
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/{id}/attachments/{aid}/:
+    delete:
+      operationId: announcements_attachments_destroy
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      parameters:
+      - in: path
+        name: aid
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/announcements/{id}/attachments/{aid}/download/:
+    get:
+      operationId: announcements_attachments_download_retrieve
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      parameters:
+      - in: path
+        name: aid
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/{id}/attachments/presigned-upload/:
+    post:
+      operationId: announcements_attachments_presigned_upload_create
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/{id}/publish/:
+    post:
+      operationId: announcements_publish_create
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/{id}/read/:
+    post:
+      operationId: announcements_read_create
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/feed/:
+    get:
+      operationId: announcements_feed_retrieve
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      tags:
+      - announcements
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/read-all/:
+    post:
+      operationId: announcements_read_all_create
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      tags:
+      - announcements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
+  /api/v1/announcements/unread-count/:
+    get:
+      operationId: announcements_unread_count_retrieve
+      description: 'Company announcements: manage (write) + reader feed/detail/read-tracking
+        (read).'
+      tags:
+      - announcements
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Announcement'
+          description: ''
   /api/v1/approvals/inbox:
     get:
       operationId: approvals_inbox_retrieve
@@ -7342,15 +7592,30 @@ components:
           type: string
         category:
           $ref: '#/components/schemas/CategoryEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityE72Enum'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AnnouncementStatusEnum'
+          readOnly: true
         pinned:
           type: boolean
         published_at:
           type: string
           format: date-time
+          readOnly: true
+          nullable: true
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
         expires_at:
           type: string
           format: date-time
           nullable: true
+        audience_type:
+          $ref: '#/components/schemas/AudienceTypeEnum'
+        audience_spec: {}
         created_by:
           type: string
           format: uuid
@@ -7360,11 +7625,22 @@ components:
           type: string
           format: date-time
           readOnly: true
+        is_read:
+          type: boolean
+          readOnly: true
+        attachments:
+          type: array
+          items: {}
+          readOnly: true
       required:
+      - attachments
       - body
       - created_at
       - created_by
       - id
+      - is_read
+      - published_at
+      - status
       - title
     AnnouncementRequest:
       type: object
@@ -7378,15 +7654,100 @@ components:
           minLength: 1
         category:
           $ref: '#/components/schemas/CategoryEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityE72Enum'
         pinned:
           type: boolean
-        published_at:
+        scheduled_at:
           type: string
           format: date-time
+          nullable: true
         expires_at:
           type: string
           format: date-time
           nullable: true
+        audience_type:
+          $ref: '#/components/schemas/AudienceTypeEnum'
+        audience_spec: {}
+      required:
+      - body
+      - title
+    AnnouncementStatusEnum:
+      enum:
+      - draft
+      - scheduled
+      - published
+      - archived
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `scheduled` - Scheduled
+        * `published` - Published
+        * `archived` - Archived
+    AnnouncementWrite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityE72Enum'
+        pinned:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+        audience_type:
+          $ref: '#/components/schemas/AudienceTypeEnum'
+        audience_spec: {}
+      required:
+      - body
+      - id
+      - title
+    AnnouncementWriteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityE72Enum'
+        pinned:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+        audience_type:
+          $ref: '#/components/schemas/AudienceTypeEnum'
+        audience_spec: {}
+        publish_now:
+          type: boolean
+          writeOnly: true
+          default: false
       required:
       - body
       - title
@@ -7660,6 +8021,20 @@ components:
         * `holiday` - Holiday
         * `on_leave` - On leave
         * `partial` - Partial
+    AudienceTypeEnum:
+      enum:
+      - all
+      - departments
+      - roles
+      - teams
+      - employees
+      type: string
+      description: |-
+        * `all` - Everyone
+        * `departments` - Departments
+        * `roles` - Roles
+        * `teams` - Teams
+        * `employees` - Specific employees
     BlankEnum:
       enum:
       - ''
@@ -9941,7 +10316,7 @@ components:
           readOnly: true
         priority:
           allOf:
-          - $ref: '#/components/schemas/PriorityEnum'
+          - $ref: '#/components/schemas/NotificationPriorityEnum'
           readOnly: true
         delivery_status:
           allOf:
@@ -9966,6 +10341,18 @@ components:
       - priority
       - read_at
       - type
+    NotificationPriorityEnum:
+      enum:
+      - low
+      - normal
+      - high
+      - urgent
+      type: string
+      description: |-
+        * `low` - Low
+        * `normal` - Normal
+        * `high` - High
+        * `urgent` - Urgent
     NullEnum:
       enum:
       - null
@@ -10151,7 +10538,7 @@ components:
       - name
       - slug
       - updated_at
-    PatchedAnnouncementRequest:
+    PatchedAnnouncementWriteRequest:
       type: object
       properties:
         title:
@@ -10163,15 +10550,25 @@ components:
           minLength: 1
         category:
           $ref: '#/components/schemas/CategoryEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityE72Enum'
         pinned:
           type: boolean
-        published_at:
-          type: string
-          format: date-time
         expires_at:
           type: string
           format: date-time
           nullable: true
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+        audience_type:
+          $ref: '#/components/schemas/AudienceTypeEnum'
+        audience_spec: {}
+        publish_now:
+          type: boolean
+          writeOnly: true
+          default: false
     PatchedAssignmentRequest:
       type: object
       properties:
@@ -11243,18 +11640,16 @@ components:
       description: |-
         * `monthly` - Monthly
         * `bi_weekly` - Bi-weekly
-    PriorityEnum:
+    PriorityE72Enum:
       enum:
       - low
       - normal
       - high
-      - urgent
       type: string
       description: |-
         * `low` - Low
         * `normal` - Normal
         * `high` - High
-        * `urgent` - Urgent
     Project:
       type: object
       properties:

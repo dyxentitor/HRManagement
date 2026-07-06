@@ -125,18 +125,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Company announcements.
-         *
-         *     Read gated on announcement:read (every org user); write on announcement:write.
-         */
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
         get: operations["announcements_list"];
         put?: never;
-        /**
-         * @description Company announcements.
-         *
-         *     Read gated on announcement:read (every org user); write on announcement:write.
-         */
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
         post: operations["announcements_create"];
         delete?: never;
         options?: never;
@@ -151,33 +143,187 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Company announcements.
-         *
-         *     Read gated on announcement:read (every org user); write on announcement:write.
-         */
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
         get: operations["announcements_retrieve"];
-        /**
-         * @description Company announcements.
-         *
-         *     Read gated on announcement:read (every org user); write on announcement:write.
-         */
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
         put: operations["announcements_update"];
         post?: never;
-        /**
-         * @description Company announcements.
-         *
-         *     Read gated on announcement:read (every org user); write on announcement:write.
-         */
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
         delete: operations["announcements_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Company announcements.
-         *
-         *     Read gated on announcement:read (every org user); write on announcement:write.
-         */
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
         patch: operations["announcements_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/archive/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        post: operations["announcements_archive_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/attachments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        post: operations["announcements_attachments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/attachments/{aid}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        delete: operations["announcements_attachments_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/attachments/{aid}/download/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        get: operations["announcements_attachments_download_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/attachments/presigned-upload/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        post: operations["announcements_attachments_presigned_upload_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/publish/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        post: operations["announcements_publish_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/read/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        post: operations["announcements_read_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/feed/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        get: operations["announcements_feed_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/read-all/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        post: operations["announcements_read_all_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/unread-count/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Company announcements: manage (write) + reader feed/detail/read-tracking (read). */
+        get: operations["announcements_unread_count_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/approvals/inbox": {
@@ -3874,25 +4020,74 @@ export interface components {
             title: string;
             body: string;
             category?: components["schemas"]["CategoryEnum"];
+            priority?: components["schemas"]["PriorityE72Enum"];
+            readonly status: components["schemas"]["AnnouncementStatusEnum"];
             pinned?: boolean;
             /** Format: date-time */
-            published_at?: string;
+            readonly published_at: string | null;
+            /** Format: date-time */
+            scheduled_at?: string | null;
             /** Format: date-time */
             expires_at?: string | null;
+            audience_type?: components["schemas"]["AudienceTypeEnum"];
+            audience_spec?: unknown;
             /** Format: uuid */
             readonly created_by: string | null;
             /** Format: date-time */
             readonly created_at: string;
+            readonly is_read: boolean;
+            readonly attachments: unknown[];
         };
         AnnouncementRequest: {
             title: string;
             body: string;
             category?: components["schemas"]["CategoryEnum"];
+            priority?: components["schemas"]["PriorityE72Enum"];
             pinned?: boolean;
             /** Format: date-time */
-            published_at?: string;
+            scheduled_at?: string | null;
             /** Format: date-time */
             expires_at?: string | null;
+            audience_type?: components["schemas"]["AudienceTypeEnum"];
+            audience_spec?: unknown;
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `scheduled` - Scheduled
+         *     * `published` - Published
+         *     * `archived` - Archived
+         * @enum {string}
+         */
+        AnnouncementStatusEnum: "draft" | "scheduled" | "published" | "archived";
+        AnnouncementWrite: {
+            /** Format: uuid */
+            readonly id: string;
+            title: string;
+            body: string;
+            category?: components["schemas"]["CategoryEnum"];
+            priority?: components["schemas"]["PriorityE72Enum"];
+            pinned?: boolean;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: date-time */
+            scheduled_at?: string | null;
+            audience_type?: components["schemas"]["AudienceTypeEnum"];
+            audience_spec?: unknown;
+        };
+        AnnouncementWriteRequest: {
+            title: string;
+            body: string;
+            category?: components["schemas"]["CategoryEnum"];
+            priority?: components["schemas"]["PriorityE72Enum"];
+            pinned?: boolean;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: date-time */
+            scheduled_at?: string | null;
+            audience_type?: components["schemas"]["AudienceTypeEnum"];
+            audience_spec?: unknown;
+            /** @default false */
+            publish_now: boolean;
         };
         Assignment: {
             /** Format: uuid */
@@ -4014,6 +4209,15 @@ export interface components {
          * @enum {string}
          */
         AttendanceRecordStatusEnum: "present" | "late" | "absent" | "holiday" | "on_leave" | "partial";
+        /**
+         * @description * `all` - Everyone
+         *     * `departments` - Departments
+         *     * `roles` - Roles
+         *     * `teams` - Teams
+         *     * `employees` - Specific employees
+         * @enum {string}
+         */
+        AudienceTypeEnum: "all" | "departments" | "roles" | "teams" | "employees";
         /** @enum {unknown} */
         BlankEnum: "";
         Bond: {
@@ -4946,13 +5150,21 @@ export interface components {
             readonly channel: components["schemas"]["ChannelEnum"];
             readonly payload: unknown;
             readonly deep_link: string;
-            readonly priority: components["schemas"]["PriorityEnum"];
+            readonly priority: components["schemas"]["NotificationPriorityEnum"];
             readonly delivery_status: components["schemas"]["DeliveryStatusEnum"];
             /** Format: date-time */
             readonly read_at: string | null;
             /** Format: date-time */
             readonly created_at: string;
         };
+        /**
+         * @description * `low` - Low
+         *     * `normal` - Normal
+         *     * `high` - High
+         *     * `urgent` - Urgent
+         * @enum {string}
+         */
+        NotificationPriorityEnum: "low" | "normal" | "high" | "urgent";
         /** @enum {unknown} */
         NullEnum: null;
         OnboardingChecklist: {
@@ -5020,15 +5232,20 @@ export interface components {
             /** Format: date-time */
             readonly updated_at: string;
         };
-        PatchedAnnouncementRequest: {
+        PatchedAnnouncementWriteRequest: {
             title?: string;
             body?: string;
             category?: components["schemas"]["CategoryEnum"];
+            priority?: components["schemas"]["PriorityE72Enum"];
             pinned?: boolean;
             /** Format: date-time */
-            published_at?: string;
-            /** Format: date-time */
             expires_at?: string | null;
+            /** Format: date-time */
+            scheduled_at?: string | null;
+            audience_type?: components["schemas"]["AudienceTypeEnum"];
+            audience_spec?: unknown;
+            /** @default false */
+            publish_now: boolean;
         };
         PatchedAssignmentRequest: {
             title?: string;
@@ -5514,10 +5731,9 @@ export interface components {
          * @description * `low` - Low
          *     * `normal` - Normal
          *     * `high` - High
-         *     * `urgent` - Urgent
          * @enum {string}
          */
-        PriorityEnum: "low" | "normal" | "high" | "urgent";
+        PriorityE72Enum: "low" | "normal" | "high";
         Project: {
             /** Format: uuid */
             readonly id: string;
@@ -6058,8 +6274,8 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnnouncementRequest"];
-                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+                "application/json": components["schemas"]["AnnouncementWriteRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementWriteRequest"];
             };
         };
         responses: {
@@ -6068,7 +6284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Announcement"];
+                    "application/json": components["schemas"]["AnnouncementWrite"];
                 };
             };
         };
@@ -6105,8 +6321,8 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnnouncementRequest"];
-                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+                "application/json": components["schemas"]["AnnouncementWriteRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementWriteRequest"];
             };
         };
         responses: {
@@ -6115,7 +6331,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Announcement"];
+                    "application/json": components["schemas"]["AnnouncementWrite"];
                 };
             };
         };
@@ -6151,10 +6367,245 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedAnnouncementRequest"];
-                "multipart/form-data": components["schemas"]["PatchedAnnouncementRequest"];
+                "application/json": components["schemas"]["PatchedAnnouncementWriteRequest"];
+                "multipart/form-data": components["schemas"]["PatchedAnnouncementWriteRequest"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementWrite"];
+                };
+            };
+        };
+    };
+    announcements_archive_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_attachments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_attachments_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                aid: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    announcements_attachments_download_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                aid: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_attachments_presigned_upload_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_publish_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_read_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_feed_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_read_all_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementRequest"];
+                "multipart/form-data": components["schemas"]["AnnouncementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+        };
+    };
+    announcements_unread_count_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
