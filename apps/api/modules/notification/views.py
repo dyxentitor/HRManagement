@@ -58,6 +58,13 @@ class NotificationViewSet(GenericViewSet):
         ).update(read_at=timezone.now())
         return Response({"updated": updated})
 
+    @action(detail=False, methods=["get"], url_path="unread-count")
+    def unread_count(self, request: Request) -> Response:
+        count = Notification.objects.filter(
+            user=request.user, channel="in_app", read_at__isnull=True
+        ).count()
+        return Response({"count": count})
+
 
 @requires_feature("notifications")
 class NotificationPreferencesView(APIView):

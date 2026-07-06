@@ -81,6 +81,24 @@ def test_mark_all_read(authed_client, user):
 
 
 @pytest.mark.django_db
+def test_unread_count(authed_client, user):
+    _make_in_app(user, read=False)
+    _make_in_app(user, read=False)
+    _make_in_app(user, read=True)
+    resp = authed_client.get("/api/v1/notifications/unread-count")
+    assert resp.status_code == 200
+    assert resp.json() == {"count": 2}
+
+
+@pytest.mark.django_db
+def test_unread_count_updates_after_read(authed_client, user):
+    n = _make_in_app(user, read=False)
+    authed_client.patch(f"/api/v1/notifications/{n.id}/read")
+    resp = authed_client.get("/api/v1/notifications/unread-count")
+    assert resp.json() == {"count": 0}
+
+
+@pytest.mark.django_db
 def test_get_preferences(authed_client, user):
     resp = authed_client.get("/api/v1/notifications/preferences")
     assert resp.status_code == 200
