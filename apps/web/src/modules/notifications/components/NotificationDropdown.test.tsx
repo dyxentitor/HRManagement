@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from "vitest"
 const hook = vi.hoisted(() => ({ value: {} as Record<string, unknown> }))
 vi.mock("../useNotifications", () => ({ useNotifications: () => hook.value }))
 
-import { NotificationDropdown } from "./NotificationDropdown"
+import { NotificationDropdown, groupByTime } from "./NotificationDropdown"
 
 const notif = (id: number, read: string | null = null) => ({
   id,
@@ -32,6 +32,24 @@ beforeEach(() => {
     markAll: vi.fn(),
     onOpen: vi.fn(),
   }
+})
+
+test("groupByTime buckets by Today / Yesterday / Earlier", () => {
+  const now = new Date("2026-07-06T12:00:00Z")
+  const mk = (id: number, iso: string) => ({ ...notif(id), created_at: iso }) as never
+  const groups = groupByTime(
+    [mk(1, "2026-07-06T09:00:00Z"), mk(2, "2026-07-05T09:00:00Z"), mk(3, "2026-07-01T09:00:00Z")],
+    now,
+  )
+  expect(groups.today.map((n) => n.id)).toEqual([1])
+  expect(groups.yesterday.map((n) => n.id)).toEqual([2])
+  expect(groups.earlier.map((n) => n.id)).toEqual([3])
+})
+
+test("renders a time-group header for loaded items", () => {
+  hook.value = { ...hook.value, items: [{ ...notif(9), created_at: new Date().toISOString() }] }
+  render(<NotificationDropdown onNavigate={() => {}} />)
+  expect(screen.getByText("Today")).toBeInTheDocument()
 })
 
 test("renders rows and mark-all", () => {

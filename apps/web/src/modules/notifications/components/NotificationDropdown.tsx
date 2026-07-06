@@ -8,6 +8,32 @@ import type { Notification } from "../api"
 import { useNotifications } from "../useNotifications"
 import { NotificationRow } from "./NotificationRow"
 
+export interface TimeGroups {
+  today: Notification[]
+  yesterday: Notification[]
+  earlier: Notification[]
+}
+
+/** Bucket notifications into Today / Yesterday / Earlier by local calendar day. */
+export function groupByTime(items: Notification[], now: Date = new Date()): TimeGroups {
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startOfYesterday = startOfToday - 86_400_000
+  const groups: TimeGroups = { today: [], yesterday: [], earlier: [] }
+  for (const n of items) {
+    const t = new Date(n.created_at).getTime()
+    if (t >= startOfToday) groups.today.push(n)
+    else if (t >= startOfYesterday) groups.yesterday.push(n)
+    else groups.earlier.push(n)
+  }
+  return groups
+}
+
+const GROUP_LABELS: [keyof TimeGroups, string][] = [
+  ["today", "Today"],
+  ["yesterday", "Yesterday"],
+  ["earlier", "Earlier"],
+]
+
 export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string) => void }) {
   const {
     items,
@@ -34,15 +60,24 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
     }
   }
 
+  const groups = groupByTime(items)
+
   return (
-    <div className="flex w-80 flex-col">
-      <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2.5">
-        <span className="text-body font-semibold text-text-primary">Notifications</span>
+    <div className="flex w-96 flex-col">
+      <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-body font-semibold text-text-primary">Notifications</span>
+          {unreadCount > 0 && (
+            <span className="min-w-[20px] rounded-full bg-accent-500/15 px-1.5 py-0.5 text-center text-[11px] font-bold text-accent-200">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </div>
         <button
           type="button"
           onClick={markAll}
           disabled={unreadCount === 0}
-          className="text-small text-accent-300 hover:text-accent-200 disabled:text-text-disabled"
+          className="text-small text-accent-300 transition-colors hover:text-accent-200 disabled:text-text-disabled"
         >
           Mark all read
         </button>
@@ -50,9 +85,9 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
 
       {loading ? (
         <div className="flex flex-col gap-2 p-3">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
         </div>
       ) : error ? (
         <div className="flex flex-col items-center gap-2 p-6 text-center">
@@ -70,23 +105,32 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
           />
         </div>
       ) : (
-        <div onScroll={onScroll} className="max-h-96 overflow-y-auto">
-          <div className="flex flex-col divide-y divide-border-subtle">
-            {items.map((n) => (
-              <NotificationRow key={n.id} notification={n} onClick={handleRow} />
-            ))}
-          </div>
+        <div onScroll={onScroll} className="max-h-[26rem] overflow-y-auto">
+          {GROUP_LABELS.map(([key, label]) =>
+            groups[key].length === 0 ? null : (
+              <div key={key}>
+                <div className="sticky top-0 z-10 bg-surface/95 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-text-tertiary backdrop-blur">
+                  {label}
+                </div>
+                <div className="flex flex-col divide-y divide-border-subtle">
+                  {groups[key].map((n) => (
+                    <NotificationRow key={n.id} notification={n} onClick={handleRow} />
+                  ))}
+                </div>
+              </div>
+            ),
+          )}
           {loadingMore && (
             <p className="py-2 text-center text-small text-text-tertiary">Loading…</p>
           )}
         </div>
       )}
 
-      <div className="border-t border-border-subtle px-3 py-2">
+      <div className="border-t border-border-subtle px-4 py-2.5">
         <button
           type="button"
           onClick={() => onNavigate("/notifications/preferences")}
-          className="text-small text-text-tertiary hover:text-text-secondary"
+          className="text-small text-text-tertiary transition-colors hover:text-text-secondary"
         >
           Notification settings
         </button>
