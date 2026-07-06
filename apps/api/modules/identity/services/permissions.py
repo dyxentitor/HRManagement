@@ -142,6 +142,22 @@ def assign_roles_to_user(*, actor, target, role_codes: list[str]):
             actor_id=actor.id,
         )
 
+    # Notify the affected user their role set changed (best-effort, single summary).
+    try:
+        from modules.notification.services.notify import notify
+
+        notify(
+            user=target,
+            type="user.role_changed",
+            payload={"added": sorted(to_add), "removed": sorted(to_remove)},
+            deep_link="/me/profile",
+            priority="high",
+        )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Failed to send user.role_changed notification")
+
 
 # --- Admin: role permission editor --------------------------------------
 

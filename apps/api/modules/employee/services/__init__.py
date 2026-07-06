@@ -48,3 +48,26 @@ class EmployeeService:
             category="transactional",
             fail_silently=True,
         )
+
+        # Also notify HR managers in-app (best-effort).
+        try:
+            from modules.notification.services.notify import notify
+            from modules.notification.services.recipients import hr_manager_users
+
+            for hr in hr_manager_users(emp.org_id):
+                notify(
+                    user=hr,
+                    type="employee.bank_changed_self",
+                    payload={
+                        "employee_code": emp.employee_code,
+                        "name": f"{emp.first_name} {emp.last_name}",
+                    },
+                    deep_link=f"/employees/{emp.id}",
+                    priority="high",
+                )
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception(
+                "Failed to send employee.bank_changed_self in-app notification"
+            )

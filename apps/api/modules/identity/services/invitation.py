@@ -162,6 +162,25 @@ def activate(raw_token: str, *, password: str, ip: str = "") -> User:
     inv.activated_ip = (ip or "")[:64]
     inv.save(update_fields=["status", "activated_at", "activated_ip"])
     _audit(inv, "invitation.activated", {"ip": ip})
+
+    # Notify HR managers that a new account was activated (best-effort).
+    try:
+        from modules.notification.services.notify import notify
+        from modules.notification.services.recipients import hr_manager_users
+
+        for hr in hr_manager_users(user.org_id):
+            notify(
+                user=hr,
+                type="onboarding.activated",
+                payload={"email": user.email, "user_id": str(user.id)},
+                deep_link="/admin/settings/users",
+                priority="normal",
+            )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Failed to send onboarding.activated notification")
+
     return user
 
 
