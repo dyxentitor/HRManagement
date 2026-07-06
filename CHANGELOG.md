@@ -2,6 +2,44 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.51.0] — 2026-07-06
+
+**Notification bell + Help Center** — the top-nav notification bell is now fully functional, and a new
+Help & Documentation area is reachable from the `?` icon.
+
+### Added
+- **Live notification bell** — a dropdown from the bell showing an unread-count badge, read/unread
+  rows, mark-one-read and mark-all-read, infinite-scroll lazy loading, and proper loading / empty /
+  error states. Updates via smart polling (35s) plus refetch on window focus and on open. All data
+  flows through a single `useNotifications` hook (an SSE upgrade seam is left in place).
+- **`GET /api/v1/notifications/unread-count`** endpoint (`{count}`), and documented list query
+  params `limit` (default 20, cap 50), `unread_only`, and a `before` id cursor for pagination.
+- **Help Center** at `/help` (Settings-style shell + left nav): searchable knowledge base, and
+  categorized docs — Getting Started, Guides & Walkthroughs, FAQs, Troubleshooting, Release Notes,
+  Contact & Support — backed by an in-repo typed content registry (adding a doc = one file + one
+  entry). The `?` icon in the top bar now opens it.
+
+### Changed
+- The top-bar bell and `?` icon were dead stubs; both are now wired. Notification titles use the
+  friendly `event-labels` map instead of raw event types. The notifications API client now surfaces
+  errors (`NotificationApiError`) instead of silently returning an empty list.
+
+### Removed
+- Dead/duplicate notification components: the orphaned `NotificationBell` and `NotificationPanel`,
+  and the incompatible `NotificationCard` composite — consolidated into one `NotificationRow`.
+
+### Notes
+- No notification model/migration changes (additive read endpoints only). No new runtime
+  dependencies (help articles are TSX components). Real-time is polling-based by design; SSE deferred.
+
+### Tests
+- Backend: 935 passing (adds notification unread-count + cursor tests). The single failing
+  `attendance::test_clock_out_completes_record` is the pre-existing date-sensitive flake (CLAUDE.md
+  §2.3), unrelated.
+- Frontend: ~18 new tests, all passing. Pre-existing failures in `AppShell`/`OrgLogo` (org-name/logo
+  fixture drift) and date-sensitive schedule tests remain — verified identical on the parent branch,
+  unrelated to this change.
+
 ## [1.50.0] — 2026-07-03
 
 **Email Notification Configuration** — SMTP is now a per-org, database-backed setting that admins
