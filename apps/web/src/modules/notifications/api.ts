@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export type NotificationChannel = "in_app" | "email";
 
@@ -23,6 +23,15 @@ export type NotificationPreference = {
 	enabled: boolean;
 };
 
+export class NotificationApiError extends Error {
+	status: number;
+	constructor(status: number) {
+		super(`Notification request failed (${status})`);
+		this.name = "NotificationApiError";
+		this.status = status;
+	}
+}
+
 async function authFetch(
 	url: string,
 	options: RequestInit = {},
@@ -35,16 +44,23 @@ async function authFetch(
 }
 
 export async function listNotifications(
-	unreadOnly = false,
-	limit = 20,
+	opts: { unreadOnly?: boolean; limit?: number; before?: number } = {},
 ): Promise<Notification[]> {
-	const params = new URLSearchParams({ limit: String(limit) });
-	if (unreadOnly) params.set("unread_only", "true");
+	const params = new URLSearchParams({ limit: String(opts.limit ?? 20) });
+	if (opts.unreadOnly) params.set("unread_only", "true");
+	if (opts.before != null) params.set("before", String(opts.before));
 	const resp = await authFetch(
 		`${BASE_URL}/api/v1/notifications?${params.toString()}`,
 	);
-	if (!resp.ok) return [];
+	if (!resp.ok) throw new NotificationApiError(resp.status);
 	return resp.json();
+}
+
+export async function getUnreadCount(): Promise<number> {
+	const resp = await authFetch(`${BASE_URL}/api/v1/notifications/unread-count`);
+	if (!resp.ok) throw new NotificationApiError(resp.status);
+	const body = (await resp.json()) as { count: number };
+	return body.count;
 }
 
 export async function markRead(id: number): Promise<Notification | null> {
