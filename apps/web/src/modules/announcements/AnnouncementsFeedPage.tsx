@@ -1,9 +1,10 @@
-import { Megaphone, Pin, Search } from "lucide-react"
+import { Megaphone, Pin, Search, Settings2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { EmptyState, StatusPill } from "@/components/hrms"
 import { PageHeader } from "@/components/shell/PageHeader"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCan } from "@/lib/perm"
 import { cn } from "@/lib/utils"
@@ -16,6 +17,7 @@ const PRIORITIES = ["high", "normal", "low"] as const
 
 export default function AnnouncementsFeedPage() {
   const canRead = useCan("announcement:read")
+  const canManage = useCan("announcement:write")
   const navigate = useNavigate()
   const [items, setItems] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,7 +52,21 @@ export default function AnnouncementsFeedPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Announcements" subtitle="Company news and updates." />
+      <PageHeader
+        title="Announcements"
+        subtitle="Company news and updates."
+        actions={
+          canManage ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/announcements/manage")}
+            >
+              <Settings2 className="size-4" /> Manage announcements
+            </Button>
+          ) : undefined
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 rounded-full border border-border-subtle bg-canvas px-3 py-1.5">

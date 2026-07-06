@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { beforeEach, expect, test, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
@@ -8,8 +8,9 @@ const mocks = vi.hoisted(() => ({
   archive: vi.fn(),
   remove: vi.fn(),
 }))
+const perm = vi.hoisted(() => ({ canWrite: true }))
 vi.mock("./api", () => ({ announcementsApi: mocks }))
-vi.mock("@/lib/perm", () => ({ useCan: () => true }))
+vi.mock("@/lib/perm", () => ({ useCan: () => perm.canWrite }))
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 import AnnouncementsManagePage from "./AnnouncementsManagePage"
@@ -38,6 +39,21 @@ beforeEach(() => {
   for (const f of Object.values(mocks)) f.mockReset()
   mocks.manageList.mockResolvedValue([row()])
   mocks.publish.mockResolvedValue(row({ status: "published" }))
+  perm.canWrite = true
+})
+
+test("redirects non-writers to the reader feed", async () => {
+  perm.canWrite = false
+  render(
+    <MemoryRouter initialEntries={["/announcements/manage"]}>
+      <Routes>
+        <Route path="/announcements/manage" element={<AnnouncementsManagePage />} />
+        <Route path="/announcements" element={<div>reader-feed</div>} />
+      </Routes>
+    </MemoryRouter>,
+  )
+  expect(await screen.findByText("reader-feed")).toBeInTheDocument()
+  expect(mocks.manageList).not.toHaveBeenCalled()
 })
 
 test("renders rows and publishes", async () => {

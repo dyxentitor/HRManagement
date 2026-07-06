@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Navigate, useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/shell/PageHeader"
@@ -128,12 +128,7 @@ export default function AnnouncementForm() {
   }
 
   if (!canWrite) {
-    return (
-      <div className="flex flex-col gap-4">
-        <PageHeader title="Announcement" />
-        <p className="text-text-tertiary">You don't have permission to author announcements.</p>
-      </div>
-    )
+    return <Navigate to="/announcements" replace />
   }
 
   return (

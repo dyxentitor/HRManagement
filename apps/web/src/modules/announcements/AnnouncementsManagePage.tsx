@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Navigate, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { StatusPill } from "@/components/hrms"
@@ -47,12 +47,7 @@ export default function AnnouncementsManagePage() {
   }
 
   if (!canWrite) {
-    return (
-      <div className="flex flex-col gap-4">
-        <PageHeader title="Manage Announcements" />
-        <p className="text-text-tertiary">You don't have permission to manage announcements.</p>
-      </div>
-    )
+    return <Navigate to="/announcements" replace />
   }
 
   return (

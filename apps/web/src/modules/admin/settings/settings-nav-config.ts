@@ -5,7 +5,6 @@ import {
 	Landmark,
 	LayoutGrid,
 	Mail,
-	Megaphone,
 	ScrollText,
 	Palmtree,
 	Settings2,
@@ -82,12 +81,6 @@ export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
 		label: "Leave Types",
 		icon: Palmtree,
 		perm: "leave:type:write",
-	},
-	{
-		to: "/admin/settings/announcements",
-		label: "Announcements",
-		icon: Megaphone,
-		perm: "announcement:write",
 	},
 	{
 		to: "/admin/settings/audit",
