@@ -21,6 +21,11 @@ export const EVENT_LABELS: Record<string, string> = {
 	"employee.contract_ending_soon": "Contract ending within 30 days",
 	"employee.probation_ending_soon": "Probation ending within 30 days",
 	"schedule.roster_published": "New roster published",
+	"announcement.published": "New announcement",
+	"payslip.published": "Payslip published",
+	"user.role_changed": "Your role was updated",
+	"onboarding.activated": "New account activated",
+	"incentive.claim_submitted": "Mandays claim submitted",
 };
 
 /** Return the domain prefix of an event type, e.g. "auth" for "auth.login" */
@@ -37,6 +42,11 @@ export const DOMAIN_LABELS: Record<string, string> = {
 	cert: "Certifications",
 	employee: "Employee",
 	schedule: "Schedule",
+	announcement: "Announcements",
+	payslip: "Payroll",
+	user: "Account & security",
+	onboarding: "Onboarding",
+	incentive: "Incentive",
 };
 
 export function getEventLabel(type: string): string {

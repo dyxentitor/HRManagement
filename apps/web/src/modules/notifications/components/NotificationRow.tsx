@@ -1,17 +1,8 @@
 import { cn } from "@/lib/utils"
 
 import type { Notification } from "../api"
-import { eventDomain, getEventLabel } from "../event-labels"
-
-const DOMAIN_TONE: Record<string, string> = {
-  leave: "bg-mint",
-  claim: "bg-coral",
-  cert: "bg-yellow",
-  kpi: "bg-sky",
-  auth: "bg-lavender",
-  employee: "bg-peach",
-  schedule: "bg-sky",
-}
+import { getEventLabel } from "../event-labels"
+import { domainIcon, notificationDescription, priorityTone } from "../notification-meta"
 
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime()
@@ -33,21 +24,51 @@ export function NotificationRow({
   onClick: (n: Notification) => void
 }) {
   const unread = !notification.read_at
-  const tone = DOMAIN_TONE[eventDomain(notification.type)] ?? "bg-lavender"
+  const Icon = domainIcon(notification.type)
+  const tone = priorityTone(notification.priority)
+  const description = notificationDescription(notification)
   return (
     <button
       type="button"
       onClick={() => onClick(notification)}
       className={cn(
-        "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-hover",
-        unread && "bg-accent-500/[0.04]",
+        "group relative flex w-full items-start gap-3 py-2.5 pl-4 pr-3 text-left transition-colors",
+        "hover:bg-surface-hover motion-safe:transition-colors",
+        unread && "bg-accent-500/[0.05]",
       )}
     >
-      <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", tone)} aria-hidden />
+      {/* priority rail */}
+      <span
+        className={cn(
+          "absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full",
+          tone,
+          !unread && "opacity-40",
+        )}
+        aria-hidden
+      />
+      {/* category icon */}
+      <span
+        className={cn(
+          "mt-0.5 grid size-8 shrink-0 place-items-center rounded-full",
+          "bg-surface-hover text-text-secondary group-hover:text-text-primary",
+        )}
+        aria-hidden
+      >
+        <Icon className="size-4" />
+      </span>
+      {/* body */}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-body text-text-primary">
+        <span
+          className={cn(
+            "block truncate text-body",
+            unread ? "font-semibold text-text-primary" : "text-text-primary",
+          )}
+        >
           {getEventLabel(notification.type)}
         </span>
+        {description && (
+          <span className="block truncate text-small text-text-secondary">{description}</span>
+        )}
         <span className="text-small text-text-tertiary">{timeAgo(notification.created_at)}</span>
       </span>
       {unread && (
