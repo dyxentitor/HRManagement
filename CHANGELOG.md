@@ -2,6 +2,45 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.54.0] — 2026-07-06
+
+**Organization Chart** — a new interactive tab in the People module (`/admin/people/org-chart`) for
+exploring the reporting hierarchy, with three view modes over a hand-rolled pan/zoom canvas. Scales
+to hundreds/thousands of employees via lazy branch loading (only expanded branches are mounted). No
+new dependency, no new permission code, no new feature flag, no migration.
+
+### Added
+- **Backend `OrgChartViewSet`** (`/api/v1/org-chart/`), all actions gated `employee:read:org`:
+  `roots/`, `children/?manager=`, `search/?q=` (returns each hit's root→parent `ancestor_ids` for
+  auto-expand), `departments/`, and `departments/{id}/members/`. Built on the existing
+  `Employee.manager` self-FK — no model change. New `services/org_chart.py` + compact
+  `OrgNodeSerializer` / `OrgSearchHitSerializer` (adds the previously-missing `manager_name`,
+  annotated `direct_reports_count`/`has_reports`, and `email`).
+- **Tree View** — top-down org chart with lazy expand/collapse, CSS elbow connectors, and an
+  automatic stacked-outline fallback for branches wider than 12 reports.
+- **Department View** — collapsible, colour-coded department sections with lazy-loaded member grids.
+- **Reporting Line View** — a re-rootable vertical spine (managers above, direct reports below);
+  any card's "Focus subtree" recentres it.
+- **Premium node cards** — avatar (photo or deterministic gradient), colour-coded department chip,
+  status pill, direct-reports count, and a quick-actions menu: View Profile, Assign Task (gated on
+  `assignment:create:org`/`:team`), Email (mailto), Focus subtree.
+- **Controls** — view switch, debounced search with auto-expand-to-hit, filters
+  (department · employment type · status), zoom in/out/fit, and breadcrumbs.
+- Shared `components/hrms/avatar-gradient.ts` helper (gradient + status tone) for the node cards.
+
+### Changed
+- Regenerated `packages/contracts` (OpenAPI + TS types) with the new org-chart endpoints.
+
+### Notes
+- **Org-wide visibility only** for v1: the chart is gated on `employee:read:org` (same as the
+  employee list / reporting-chain endpoints). The dormant `employee:read:team` perm is intentionally
+  not wired here — manager-scoped subtrees are deferred.
+- Requested **location filter** and **Send Message** were dropped: the Employee model has no office
+  field (only a personal home city) and there is no in-app messaging. Filters and the Email action
+  use only backed data.
+- Tests: **+17 backend** (`test_org_chart_service` 7, `test_org_node_serializer` 3,
+  `test_org_chart_api` 7), **+30 frontend** across the org-chart module + nav config.
+
 ## [1.53.1] — 2026-07-06
 
 **Announcement management is now a standalone business function** (removed from System Settings).

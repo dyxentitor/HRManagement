@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.52.1
+  version: 1.54.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -5209,6 +5209,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/OnboardingChecklist'
           description: ''
+  /api/v1/org-chart/children/:
+    get:
+      operationId: org_chart_children_retrieve
+      description: Lazy org-hierarchy reads for the Organization Chart.
+      tags:
+      - org-chart
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/org-chart/departments/:
+    get:
+      operationId: org_chart_departments_retrieve
+      description: Lazy org-hierarchy reads for the Organization Chart.
+      tags:
+      - org-chart
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/org-chart/departments/{dept_id}/members/:
+    get:
+      operationId: org_chart_departments_members_retrieve
+      description: Lazy org-hierarchy reads for the Organization Chart.
+      parameters:
+      - in: path
+        name: dept_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - org-chart
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/org-chart/roots/:
+    get:
+      operationId: org_chart_roots_retrieve
+      description: Lazy org-hierarchy reads for the Organization Chart.
+      tags:
+      - org-chart
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/org-chart/search/:
+    get:
+      operationId: org_chart_search_retrieve
+      description: Lazy org-hierarchy reads for the Organization Chart.
+      tags:
+      - org-chart
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/org/email-config/:
     get:
       operationId: org_email_config_retrieve
