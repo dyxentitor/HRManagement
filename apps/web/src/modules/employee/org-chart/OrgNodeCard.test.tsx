@@ -23,6 +23,7 @@ const node: OrgNode = {
   photo_url: null,
   manager: null,
   manager_name: null,
+  hire_date: null,
 }
 
 const wrap = (ui: ReactNode) => render(<MemoryRouter>{ui}</MemoryRouter>)
@@ -58,5 +59,16 @@ describe("OrgNodeCard", () => {
     wrap(<OrgNodeCard node={node} onToggle={onToggle} />)
     fireEvent.click(screen.getByLabelText(/expand jane doe/i))
     expect(onToggle).toHaveBeenCalledWith("1")
+  })
+
+  it("renders tenure in the Executive footer", () => {
+    wrap(<OrgNodeCard node={{ ...node, hire_date: "2020-01-01" }} />)
+    expect(screen.getByText(/\d+y \d+m/)).toBeInTheDocument()
+  })
+
+  it("compact density still renders identity + reports count", () => {
+    wrap(<OrgNodeCard node={node} density="compact" />)
+    expect(screen.getByText("Jane Doe")).toBeInTheDocument()
+    expect(screen.getByText("3")).toBeInTheDocument()
   })
 })
