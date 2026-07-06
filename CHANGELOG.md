@@ -2,6 +2,29 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.53.1] — 2026-07-06
+
+**Announcement management is now a standalone business function** (removed from System Settings).
+
+### Changed
+- Removed the **"Announcements" tab from System Settings**. All management now lives in the dedicated
+  Announcement module. The old `/admin/settings/announcements` route still redirects to
+  `/announcements/manage` for existing links.
+- Management is reached via a **"Manage announcements"** button on the `/announcements` feed, shown
+  only to users with the manage permission. Non-writers who open a manage URL directly are redirected
+  to the reader feed.
+- The `announcement:write` permission now carries the label **"Manage announcements"** (and
+  `announcement:read` → "View announcements") so its intent is clear in Roles & Permissions — where
+  it remains grantable to any role. Today it's held by Organization Admin + HR Manager; everyone
+  retains `announcement:read` to view the feed and notifications.
+
+### Removed
+- The orphaned Settings-based announcement CRUD page + its API client (superseded by the module).
+
+### Notes
+- No new permission codes, no behavior change to backend gating (writes were already gated on
+  `announcement:write`). No migration, no contract change.
+
 ## [1.53.0] — 2026-07-06
 
 **Dedicated Announcement module** — announcements move out of Settings into a full module with a
