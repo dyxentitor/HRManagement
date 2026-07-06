@@ -73,16 +73,25 @@ def test_hr_creates_announcement(stack):
 
 @pytest.mark.django_db
 def test_employee_can_read_but_not_write(stack):
+    from django.utils import timezone
+
     org = stack["org"]
-    Announcement.all_objects.create(org_id=org.id, title="Hi", body="b", category="general")
+    # Reader feed shows published announcements (manage list is write-gated now).
+    Announcement.all_objects.create(
+        org_id=org.id,
+        title="Hi",
+        body="b",
+        category="general",
+        status="published",
+        published_at=timezone.now(),
+        audience_type="all",
+    )
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'emp@x.com')}")
-    # read OK
-    resp = client.get("/api/v1/announcements/")
+    # read OK via the feed
+    resp = client.get("/api/v1/announcements/feed/")
     assert resp.status_code == 200
-    rows = resp.json()
-    rows = rows.get("results") if isinstance(rows, dict) else rows
-    assert len(rows) == 1
+    assert len(resp.json()) == 1
     # write forbidden
     resp = client.post(
         "/api/v1/announcements/",

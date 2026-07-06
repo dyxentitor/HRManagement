@@ -11,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from common.feature_flags.decorators import requires_feature
 from modules.identity.permissions import HRMSPermission
 
 from .models import Announcement, AnnouncementAttachment, AnnouncementRead
@@ -24,6 +25,7 @@ _READ_ACTIONS = frozenset(
 )
 
 
+@requires_feature("announcements")
 class AnnouncementViewSet(viewsets.ModelViewSet):
     """Company announcements: manage (write) + reader feed/detail/read-tracking (read)."""
 
