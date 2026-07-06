@@ -81,6 +81,25 @@ def test_mark_all_read(authed_client, user):
 
 
 @pytest.mark.django_db
+def test_list_before_cursor(authed_client, user):
+    a = _make_in_app(user)
+    b = _make_in_app(user)
+    c = _make_in_app(user)
+    resp = authed_client.get(f"/api/v1/notifications?before={c.id}")
+    ids = [row["id"] for row in resp.json()]
+    assert c.id not in ids
+    assert a.id in ids and b.id in ids
+
+
+@pytest.mark.django_db
+def test_list_limit_capped(authed_client, user):
+    for _ in range(5):
+        _make_in_app(user)
+    resp = authed_client.get("/api/v1/notifications?limit=2")
+    assert len(resp.json()) == 2
+
+
+@pytest.mark.django_db
 def test_unread_count(authed_client, user):
     _make_in_app(user, read=False)
     _make_in_app(user, read=False)

@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import ClassVar
 
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -36,11 +38,34 @@ class NotificationViewSet(GenericViewSet):
             "-created_at"
         )
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "limit", OpenApiTypes.INT, description="Max rows (default 20, cap 50)"
+            ),
+            OpenApiParameter(
+                "unread_only", OpenApiTypes.BOOL, description="Only unread when 'true'"
+            ),
+            OpenApiParameter(
+                "before", OpenApiTypes.INT, description="Return rows with id < before (cursor)"
+            ),
+        ]
+    )
     def list(self, request: Request) -> Response:
         qs = self.get_queryset()
         if request.query_params.get("unread_only") == "true":
             qs = qs.filter(read_at__isnull=True)
-        limit = int(request.query_params.get("limit", 50))
+        before = request.query_params.get("before")
+        if before:
+            try:
+                qs = qs.filter(id__lt=int(before))
+            except ValueError:
+                pass
+        try:
+            limit = int(request.query_params.get("limit", 20))
+        except ValueError:
+            limit = 20
+        limit = max(1, min(limit, 50))
         qs = qs[:limit]
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
