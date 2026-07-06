@@ -10,6 +10,7 @@ import {
 	Inbox,
 	LayoutDashboard,
 	ListChecks,
+	Megaphone,
 	Receipt,
 	Settings,
 	Target,
@@ -31,7 +32,7 @@ export interface NavItem {
 	/** module key — if set, item is hidden when the feature flag is off */
 	module?: string;
 	/** key used by useNavBadges to render a live count pill */
-	badge?: "approvals" | "actionCenter";
+	badge?: "approvals" | "actionCenter" | "announcements";
 }
 
 export interface NavGroup {
@@ -57,6 +58,14 @@ export const NAV: NavGroup[] = [
 				icon: ListChecks,
 				perm: "",
 				badge: "actionCenter",
+			},
+			{
+				label: "Announcements",
+				to: "/announcements",
+				icon: Megaphone,
+				perm: "announcement:read",
+				module: "announcements",
+				badge: "announcements",
 			},
 			{
 				label: "Approvals",

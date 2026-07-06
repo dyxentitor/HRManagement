@@ -6,6 +6,7 @@ import { Toaster } from "./components/ui/sonner";
 import { AuthProvider } from "./lib/auth";
 import { FeaturesProvider, withFeature } from "./lib/feature-flags";
 import { adminRoutes } from "./modules/admin/routes";
+import { announcementsRoutes } from "./modules/announcements/routes";
 import { approvalsRoutes } from "./modules/approvals/routes";
 import { authRoutes } from "./modules/auth/routes";
 import { assignmentsRoutes } from "./modules/assignments/routes";
@@ -109,6 +110,11 @@ const router = createBrowserRouter([
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
 			...helpRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...withFeature("announcements", announcementsRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,

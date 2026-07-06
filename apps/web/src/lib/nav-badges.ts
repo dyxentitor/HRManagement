@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/lib/auth";
+import { announcementsApi } from "@/modules/announcements/api";
 import { getInbox } from "@/modules/approvals/api";
 import { assignmentsApi } from "@/modules/assignments/api";
 
 export interface NavBadges {
 	approvals?: number;
 	actionCenter?: number;
+	announcements?: number;
 }
 
 /**
@@ -40,6 +42,13 @@ export function useNavBadges(): NavBadges {
 				})
 				.catch(() => {});
 		}
+
+		announcementsApi
+			.unreadCount()
+			.then((count) => {
+				if (alive) setBadges((b) => ({ ...b, announcements: count }));
+			})
+			.catch(() => {});
 
 		return () => {
 			alive = false;

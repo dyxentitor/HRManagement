@@ -7,6 +7,7 @@ import {
 	Inbox,
 	LayoutDashboard,
 	ListChecks,
+	Megaphone,
 	Receipt,
 	Settings,
 	Shield,
@@ -36,6 +37,13 @@ import { type Employee, employeeApi } from "@/modules/employee/api";
 const PAGES = [
 	{ label: "Dashboard", to: "/", icon: LayoutDashboard, perm: "" },
 	{ label: "Action Center", to: "/action-center", icon: ListChecks, perm: "" },
+	{
+		label: "Announcements",
+		to: "/announcements",
+		icon: Megaphone,
+		perm: "announcement:read",
+		module: "announcements",
+	},
 	{ label: "Assignments", to: "/admin/assignments", icon: ListChecks, perm: "assignment:read:org" },
 	{ label: "My Profile", to: "/me/profile", icon: UserCircle, perm: "" },
 	{
