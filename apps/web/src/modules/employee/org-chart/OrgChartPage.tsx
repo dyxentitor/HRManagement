@@ -100,7 +100,7 @@ export default function OrgChartPage() {
       )}
       {view === "department" && <DepartmentView filters={filters} onFocus={(id) => onFocus(id)} />}
       {view === "reporting" && (
-        <ReportingLineView focusId={focusId} zoom={zoom} onFocus={(id) => onFocus(id)} />
+        <ReportingLineView focusId={focusId} onFocus={(id) => onFocus(id)} />
       )}
     </div>
   )

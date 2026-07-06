@@ -52,11 +52,9 @@ vi.mock("./api", () => ({
 }))
 
 import { ReportingLineView } from "./ReportingLineView"
-import { useZoomPan } from "./useZoomPan"
 
 function Harness({ focusId }: { focusId: string | null }) {
-  const zoom = useZoomPan()
-  return <ReportingLineView focusId={focusId} zoom={zoom} onFocus={() => {}} />
+  return <ReportingLineView focusId={focusId} onFocus={() => {}} />
 }
 
 const wrap = (ui: ReactNode) =>

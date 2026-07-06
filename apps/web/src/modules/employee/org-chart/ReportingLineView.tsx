@@ -6,18 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { employeeApi } from "@/modules/employee/api"
 
+import { CanvasControls } from "./CanvasControls"
 import { OrgNodeCard } from "./OrgNodeCard"
-import type { ZoomPanApi } from "./TreeView"
 import { orgChartApi } from "./api"
 import type { OrgNode } from "./types"
+import { useZoomPan } from "./useZoomPan"
 
 export interface ReportingLineViewProps {
   focusId: string | null
-  zoom: ZoomPanApi
   onFocus: (id: string) => void
 }
 
-export function ReportingLineView({ focusId, zoom, onFocus }: ReportingLineViewProps) {
+export function ReportingLineView({ focusId, onFocus }: ReportingLineViewProps) {
+  // Own viewport — independent from the Tree view so a pan/zoom there never
+  // pushes this spine off-screen.
+  const zoom = useZoomPan()
   const chainQ = useQuery({
     queryKey: ["report-chain", focusId],
     queryFn: () => employeeApi.getReportingChain(focusId as string),
@@ -123,6 +126,8 @@ export function ReportingLineView({ focusId, zoom, onFocus }: ReportingLineViewP
           </>
         )}
       </div>
+
+      <CanvasControls pct={zoom.pct} onIn={zoom.zoomIn} onOut={zoom.zoomOut} onFit={zoom.fit} />
     </div>
   )
 }
