@@ -3,8 +3,7 @@
 import datetime
 import os
 import uuid
-from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from cryptography.fernet import Fernet
@@ -38,20 +37,19 @@ def test_announcement_publish_fans_out_to_active_users():
         org_id=org,
         is_active=False,  # pragma: allowlist secret
     )
-    from modules.announcements.views import AnnouncementViewSet
+    from modules.announcements.models import Announcement
+    from modules.announcements.services.publish import publish
 
-    view = AnnouncementViewSet()
-    view.request = SimpleNamespace(user=SimpleNamespace(org_id=org, id=u1.id))
-    serializer = MagicMock()
-    serializer.save.return_value = SimpleNamespace(
-        id=uuid.uuid4(), title="Holiday", category="general"
+    ann = Announcement.objects.create(
+        org_id=org, title="Holiday", body="B", audience_type="all"
     )
-    view.perform_create(serializer)
+    publish(ann)
 
     rows = Notification.objects.filter(type="announcement.published")
     recipient_ids = set(rows.values_list("user_id", flat=True))
     assert recipient_ids == {u1.id, u2.id}  # inactive user excluded
-    assert all(r.priority == "low" for r in rows)
+    # default priority for the announcement maps to the notification
+    assert all(r.priority == "normal" for r in rows)
 
 
 def _make_employee(org_id, dept, user):

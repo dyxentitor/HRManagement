@@ -34,28 +34,5 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
         ).order_by("-pinned", "-published_at")
 
     def perform_create(self, serializer):
-        ann = serializer.save(org_id=self.request.user.org_id, created_by=self.request.user.id)
-        self._notify_published(ann)
-
-    def _notify_published(self, ann) -> None:
-        """Fan out a low-priority in-app notification to all active org users. Best-effort."""
-        try:
-            from modules.notification.services.notify import notify
-            from modules.notification.services.recipients import active_employee_users
-
-            for user in active_employee_users(self.request.user.org_id):
-                notify(
-                    user=user,
-                    type="announcement.published",
-                    payload={
-                        "announcement_id": str(ann.id),
-                        "title": ann.title,
-                        "category": ann.category,
-                    },
-                    deep_link="/announcements",
-                    priority="low",
-                )
-        except Exception:
-            import logging
-
-            logging.getLogger(__name__).exception("Failed to fan out announcement.published")
+        # Saved as a draft; the fan-out happens on publish (see services.publish).
+        serializer.save(org_id=self.request.user.org_id, created_by=self.request.user.id)
