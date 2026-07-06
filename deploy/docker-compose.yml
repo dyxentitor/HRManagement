@@ -20,6 +20,10 @@ x-api-env: &api-env
   SMTP_HOST: mailhog
   SMTP_PORT: "1025"
   EMAIL_DIGEST_INTERVAL_SECONDS: ${EMAIL_DIGEST_INTERVAL_SECONDS:-60}
+  # Base URL embedded in account-activation / invite emails
+  # (https://<host>/activate?token=...). Prod supplies FRONTEND_BASE_URL via .env;
+  # dev falls back to the SPA's localhost dev server.
+  FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
   # No fallback — this MUST come from the environment / .env. Compose will fail
   # to start if HRMS_FIELD_ENCRYPTION_KEY is unset, which is the right behaviour:
   # silently encrypting under the wrong key = unrecoverable data. See
