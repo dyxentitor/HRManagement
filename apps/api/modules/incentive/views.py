@@ -176,9 +176,40 @@ class ClaimViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("This project is not visible to you.")
         if not ledger.eligible(emp.id, self.request.user.org_id):
             raise ValidationError("You are not eligible to claim (no active mandays bond).")
-        serializer.save(
+        claim = serializer.save(
             org_id=self.request.user.org_id, employee_id=emp.id, created_by=self.request.user.id
         )
+        # Notify the project manager (approver) of the new claim (best-effort).
+        try:
+            from modules.employee.models import Employee
+            from modules.notification.services.notify import notify
+
+            mgr = (
+                Employee.all_objects.filter(
+                    id=project.manager_id, org_id=self.request.user.org_id
+                ).first()
+                if project.manager_id
+                else None
+            )
+            approver = getattr(mgr, "user", None) if mgr else None
+            if approver is not None:
+                notify(
+                    user=approver,
+                    type="incentive.claim_submitted",
+                    payload={
+                        "claim_id": str(claim.id),
+                        "project": project.name,
+                        "mandays": str(claim.mandays),
+                    },
+                    deep_link="/incentive",
+                    priority="high",
+                )
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception(
+                "Failed to send incentive.claim_submitted notification"
+            )
 
     def update(self, request, *args, **kwargs):
         """Owner edits their own claim while it is still pending (mandays / note / project)."""

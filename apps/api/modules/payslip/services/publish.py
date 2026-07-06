@@ -110,6 +110,30 @@ def publish_run(*, run: PayrollRun, actor_id: uuid.UUID) -> int:
             )
             n_published += 1
 
+            # Notify the employee their payslip is out (best-effort — must never
+            # roll back the atomic publish + ledger chain).
+            try:
+                from modules.notification.services.notify import notify
+
+                recipient = getattr(emp, "user", None)
+                if recipient is not None:
+                    notify(
+                        user=recipient,
+                        type="payslip.published",
+                        payload={
+                            "payslip_id": str(ps.id),
+                            "period_start": str(ps.period.period_start),
+                        },
+                        deep_link="/payslips/me",
+                        priority="normal",
+                    )
+            except Exception:
+                import logging
+
+                logging.getLogger(__name__).exception(
+                    "Failed to send payslip.published notification for payslip %s", ps.id
+                )
+
         run.status = "published"
         run.published_at = timezone.now()
         run.save(update_fields=["status", "published_at", "updated_at"])
