@@ -1,7 +1,14 @@
 import { Bell, HelpCircle, Search } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
+import { NotificationDropdown } from "@/modules/notifications/components/NotificationDropdown";
+import { useNotifications } from "@/modules/notifications/useNotifications";
 import { Button } from "@/components/ui/button";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { useAuth } from "@/lib/auth";
 import { useCommandPalette } from "@/lib/cmdk";
 import { NAV } from "./sidebar-nav";
@@ -50,6 +57,8 @@ export function TopBar() {
 	const firstName = user?.email?.split("@")[0];
 	const { breadcrumb, title } = deriveTitle(pathname, firstName);
 	const { setOpen } = useCommandPalette();
+	const navigate = useNavigate();
+	const { unreadCount } = useNotifications();
 
 	return (
 		<header className="bg-surface rounded-lg px-4 py-3 flex items-center gap-4">
@@ -73,18 +82,34 @@ export function TopBar() {
 				size="icon"
 				className="rounded-md bg-canvas border border-border-subtle hover:bg-surface-hover"
 				aria-label="Help"
+				onClick={() => navigate("/help")}
 			>
 				<HelpCircle className="size-4" />
 			</Button>
-			<Button
-				variant="ghost"
-				size="icon"
-				className="rounded-md bg-canvas border border-border-subtle hover:bg-surface-hover relative"
-				aria-label="Notifications"
-			>
-				<Bell className="size-4" />
-				{/* unread pulse — wired in Sub-plan 2 (NotificationCard) */}
-			</Button>
+			<Popover>
+				<PopoverTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="rounded-md bg-canvas border border-border-subtle hover:bg-surface-hover relative"
+						aria-label={
+							unreadCount > 0
+								? `Notifications, ${unreadCount} unread`
+								: "Notifications"
+						}
+					>
+						<Bell className="size-4" />
+						{unreadCount > 0 && (
+							<span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-coral text-white text-[10px] font-bold flex items-center justify-center motion-safe:animate-pulse">
+								{unreadCount > 9 ? "9+" : unreadCount}
+							</span>
+						)}
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent align="end" className="p-0 w-80">
+					<NotificationDropdown onNavigate={(p) => navigate(p)} />
+				</PopoverContent>
+			</Popover>
 			<UserMenu variant="full" />
 		</header>
 	);

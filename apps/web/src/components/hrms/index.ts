@@ -23,11 +23,6 @@ export { FileUploader } from "./FileUploader";
 export type { FileUploaderProps, PresignedUpload } from "./FileUploader";
 export { KpiTile } from "./KpiTile";
 export type { KpiTileProps } from "./KpiTile";
-export { NotificationCard } from "./NotificationCard";
-export type {
-	NotificationCardProps,
-	NotificationDTO,
-} from "./NotificationCard";
 export { ProgressBar } from "./ProgressBar";
 export type { ProgressBarProps } from "./ProgressBar";
 export { StatusPill } from "./StatusPill";
