@@ -20,9 +20,9 @@ import { type InvitationActivity, type InvitationRow, invitationsApi } from "../
 import { STATUS_LABEL, STATUS_TONE, funnel, initials, timingLabel } from "../lib/invitation-ui";
 
 const AVATAR_BG = ["bg-lavender", "bg-sky", "bg-mint", "bg-peach", "bg-yellow", "bg-coral"];
-function avatarBg(id: string): string {
+function avatarBg(id: string | null | undefined): string {
 	let h = 0;
-	for (const ch of id) h = (h + ch.charCodeAt(0)) % AVATAR_BG.length;
+	for (const ch of id ?? "") h = (h + ch.charCodeAt(0)) % AVATAR_BG.length;
 	return AVATAR_BG[h];
 }
 

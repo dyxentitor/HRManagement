@@ -69,4 +69,11 @@ describe("invitation-ui", () => {
 		expect(initials("John Smith")).toBe("JS");
 		expect(initials("Aisyah")).toBe("A");
 	});
+
+	it("is null-safe (defense-in-depth for deleted/unnamed users)", () => {
+		expect(initials(null)).toBe("?");
+		expect(initials(undefined)).toBe("?");
+		expect(initials("")).toBe("?");
+		expect(initials("   ")).toBe("?");
+	});
 });
