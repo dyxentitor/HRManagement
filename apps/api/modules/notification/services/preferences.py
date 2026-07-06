@@ -43,6 +43,15 @@ DEFAULT_PREFERENCES: list[tuple[str, bool, bool, bool]] = [
     ("assignment.assigned", True, True, False),
     ("assignment.reminder", True, True, False),
     ("assignment.overdue", True, True, False),
+    # announcements
+    ("announcement.published", True, False, False),
+    # payroll
+    ("payslip.published", True, True, False),
+    # identity / onboarding
+    ("user.role_changed", True, True, True),  # security-relevant
+    ("onboarding.activated", True, False, False),  # to HR
+    # incentive submission (to approver)
+    ("incentive.claim_submitted", True, False, False),
 ]
 
 SECURITY_TYPES: frozenset[str] = frozenset(t for t, _i, _e, sec in DEFAULT_PREFERENCES if sec)
