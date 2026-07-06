@@ -23,6 +23,7 @@ const UserCreatePage = lazy(() =>
 const ArchivedEmployeesPage = lazy(() => import("./settings/ArchivedEmployeesPage"));
 const PeopleShell = lazy(() => import("./people/PeopleShell"));
 const EmployeesPage = lazy(() => import("@/modules/employee/pages/EmployeesPage"));
+const OrgChartPage = lazy(() => import("@/modules/employee/org-chart/OrgChartPage"));
 const OnboardingHubPage = lazy(() => import("./people/OnboardingHubPage"));
 
 function RedirectRoleDetail() {
@@ -80,6 +81,7 @@ export const adminRoutes: RouteObject[] = [
 		element: <PeopleShell />,
 		children: [
 			{ index: true, element: <EmployeesPage /> },
+			{ path: "org-chart", element: <OrgChartPage /> },
 			{ path: "onboarding", element: <OnboardingHubPage /> },
 			// Invitations merged into the Onboarding hub — keep the old link working.
 			{ path: "invitations", element: <Navigate to="/admin/people/onboarding" replace /> },

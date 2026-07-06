@@ -1,4 +1,4 @@
-import { ClipboardCheck, Link2, UsersRound } from "lucide-react";
+import { ClipboardCheck, Link2, Network, UsersRound } from "lucide-react";
 import type { ComponentType } from "react";
 
 export type PeopleNavBadge = "unlinked_users";
@@ -19,6 +19,12 @@ export const PEOPLE_NAV_ITEMS: PeopleNavItem[] = [
 		icon: UsersRound,
 		perm: "employee:read:org",
 		end: true,
+	},
+	{
+		to: "/admin/people/org-chart",
+		label: "Organization Chart",
+		icon: Network,
+		perm: "employee:read:org",
 	},
 	{
 		to: "/admin/people/onboarding",
