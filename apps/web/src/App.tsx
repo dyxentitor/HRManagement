@@ -14,6 +14,7 @@ import { certificationRoutes } from "./modules/certification/routes";
 import { claimsRoutes } from "./modules/claims/routes";
 import { dashboardRoutes } from "./modules/dashboard/routes";
 import { employeeRoutes } from "./modules/employee/routes";
+import { helpRoutes } from "./modules/help/routes";
 import { kpiRoutes } from "./modules/kpi/routes";
 import { leaveRoutes } from "./modules/leave/routes";
 import { notificationsRoutes } from "./modules/notifications/routes";
@@ -103,6 +104,11 @@ const router = createBrowserRouter([
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
 			...adminRoutes.map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...helpRoutes.map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
