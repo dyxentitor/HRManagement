@@ -53,6 +53,10 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
     if (n.deep_link) onNavigate(n.deep_link)
   }
 
+  function handleMarkRead(n: Notification) {
+    void markOneRead(n.id)
+  }
+
   function onScroll(e: React.UIEvent<HTMLDivElement>) {
     const el = e.currentTarget
     if (hasMore && !loadingMore && el.scrollTop + el.clientHeight >= el.scrollHeight - 24) {
@@ -63,12 +67,17 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
   const groups = groupByTime(items)
 
   return (
-    <div className="flex w-96 flex-col">
-      <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-body font-semibold text-text-primary">Notifications</span>
+    <div className="flex w-[min(24rem,calc(100vw-2rem))] flex-col">
+      <div className="flex items-center justify-between gap-2 border-b border-border-subtle px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-body font-semibold text-text-primary">Notifications</span>
           {unreadCount > 0 && (
-            <span className="min-w-[20px] rounded-full bg-accent-500/15 px-1.5 py-0.5 text-center text-[11px] font-bold text-accent-200">
+            <span
+              role="status"
+              aria-live="polite"
+              aria-label={`${unreadCount} unread`}
+              className="shrink-0 rounded-full bg-accent-500/15 px-1.5 py-0.5 text-center text-[11px] font-bold text-accent-200"
+            >
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -77,7 +86,7 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
           type="button"
           onClick={markAll}
           disabled={unreadCount === 0}
-          className="text-small text-accent-300 transition-colors hover:text-accent-200 disabled:text-text-disabled"
+          className="shrink-0 rounded-md text-small text-accent-300 transition-colors hover:text-accent-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 disabled:text-text-disabled"
         >
           Mark all read
         </button>
@@ -114,7 +123,13 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
                 </div>
                 <div className="flex flex-col divide-y divide-border-subtle">
                   {groups[key].map((n) => (
-                    <NotificationRow key={n.id} notification={n} onClick={handleRow} />
+                    <NotificationRow
+                      key={n.id}
+                      notification={n}
+                      onClick={handleRow}
+                      onMarkRead={handleMarkRead}
+                      onView={handleRow}
+                    />
                   ))}
                 </div>
               </div>
