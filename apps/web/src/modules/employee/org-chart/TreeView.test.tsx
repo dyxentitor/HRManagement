@@ -54,10 +54,19 @@ import { TreeView } from "./TreeView"
 import { EMPTY_FILTERS } from "./org-chart-filters"
 import { useZoomPan } from "./useZoomPan"
 
-function Harness({ highlightId }: { highlightId?: string | null }) {
+function Harness({
+  highlightId,
+  density,
+}: { highlightId?: string | null; density?: "comfortable" | "compact" }) {
   const zoom = useZoomPan()
   return (
-    <TreeView filters={EMPTY_FILTERS} zoom={zoom} onFocus={() => {}} highlightId={highlightId} />
+    <TreeView
+      filters={EMPTY_FILTERS}
+      zoom={zoom}
+      onFocus={() => {}}
+      highlightId={highlightId}
+      density={density}
+    />
   )
 }
 
@@ -75,5 +84,10 @@ describe("TreeView", () => {
     await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument())
     await user.click(screen.getByLabelText(/expand jane doe/i))
     await waitFor(() => expect(screen.getByText("Sam Lee")).toBeInTheDocument())
+  })
+
+  it("renders in compact density", async () => {
+    wrap(<Harness density="compact" />)
+    await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument())
   })
 })
