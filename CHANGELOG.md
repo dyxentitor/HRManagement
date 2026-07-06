@@ -2,6 +2,45 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.52.0] — 2026-07-06
+
+**Notification coverage + premium dropdown** — most HR workflows now generate in-app notifications,
+notifications carry meaningful priorities, and the bell dropdown is redesigned to enterprise-grade.
+
+### Added
+- **Coverage for previously-silent workflows** — new/wired emitters for: `announcement.published`
+  (fan-out to all active employees), `payslip.published` (to the employee), `leave.cancelled`
+  (to pending approvers), `claim.reimbursed` (to the claimant), `schedule.roster_published`
+  (to affected employees), `user.role_changed` (to the affected user), `onboarding.activated`
+  (to HR managers), `incentive.claim_submitted` (to the project manager), and an in-app copy of the
+  bank-change alert to HR managers.
+- **Recipient resolver** (`common`-style `recipients.py`: `role_users` / `hr_manager_users` /
+  `active_employee_users`) so emitters resolve audiences consistently and org-scoped.
+- **Premium dropdown** — priority color rails (urgent/high/normal/low), per-domain category icons,
+  a one-line description from payload, Today / Yesterday / Earlier time grouping, an unread-count
+  pill, and refined hover/spacing. Empty/loading/error states retained.
+
+### Changed
+- **Priority policy** applied across all emitters: action-required events (submissions to approvers,
+  assignments, cert-expiry, KPI reviews, role changes, bank changes) are `high`; overdue assignments
+  are `urgent`; outcomes are `normal`; broadcasts (announcements, rosters) are `low`. Previously
+  every notification was `normal`.
+- Registered 5 new notification preference types; `user.role_changed` is security-relevant.
+
+### Notes
+- No migrations, no API/contract changes, no new dependencies. All emitters are best-effort
+  (failures are logged, never block the workflow). Deferred by design: claim revision/return
+  (no such workflow state), attendance/document notifications (high-noise), probation/contract-ending
+  reminders (would need new scans). No filters/search/quick-actions/full-page (out of scope).
+
+### Tests
+- Backend: 948 passing (+13 emitter/recipient/priority tests). The single failing
+  `attendance::test_clock_out_completes_record` is the pre-existing date-sensitive flake (CLAUDE.md
+  §2.3), unrelated.
+- Frontend: +5 tests (meta + dropdown grouping), all passing. The 4 pre-existing failures in
+  `AppShell`/`OrgLogo`/`MySchedulePage` (fixture/date drift) are unchanged and unrelated —
+  verified identical file set before and after.
+
 ## [1.51.0] — 2026-07-06
 
 **Notification bell + Help Center** — the top-nav notification bell is now fully functional, and a new
