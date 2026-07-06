@@ -2,6 +2,49 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.53.0] — 2026-07-06
+
+**Dedicated Announcement module** — announcements move out of Settings into a full module with a
+reader feed, detail view, and in-module authoring.
+
+### Added
+- **Reader feed** (`/announcements`) — published announcements targeted to you, with category +
+  priority pills, unread indicators, search, and category/priority/unread filters.
+- **Detail page** (`/announcements/:id`) — full body, attachment downloads, marks the announcement
+  read on open. This is the notification deep-link target.
+- **Authoring** (`/announcements/manage`, write-perm) — table across all statuses with
+  Publish / Archive / Delete / Edit, plus an author form: category, priority, pin, expiry,
+  **publish-now / schedule / draft**, **audience targeting** (all / departments / roles / teams /
+  specific employees), and **attachments** (presigned S3 upload).
+- **Model**: `status` (draft/scheduled/published/archived), `priority`, `scheduled_at`,
+  `audience_type` + `audience_spec`; new `AnnouncementRead` (per-user read receipts) and
+  `AnnouncementAttachment` tables (one additive migration; existing announcements → published).
+- **Scheduling**: a Celery beat job (`publish_scheduled_announcements`, every 10 min) publishes
+  announcements whose `scheduled_at` has arrived and fans out notifications at that moment.
+- Endpoints: `/feed/`, `/unread-count/`, `/{id}/read/`, `/read-all/`, `/{id}/publish/`,
+  `/{id}/archive/`, and attachment presign/register/download/delete.
+- Feature flag `announcements` + a top-nav entry (with an unread badge). The old
+  `/admin/settings/announcements` route now redirects to `/announcements/manage`.
+
+### Fixed
+- The `announcement.published` notification deep-link now points at the **detail page**
+  (`/announcements/{id}`) instead of a non-existent list route. Fan-out fires at **publish** time
+  (not create), targeting only the resolved audience.
+- Dashboard "Company announcements" card now shows published announcements only and tolerates a
+  null `published_at`.
+
+### Notes
+- No new permission codes (reuses `announcement:read`/`:write`). Togglable-module count 16 → 17.
+- Audience targeting for non-"all" types accepts a comma-separated id/code list in the author form;
+  a richer per-type picker is a future enhancement.
+
+### Tests
+- Backend: 958 passing (adds the announcements suite). The single failing
+  `attendance::test_clock_out_completes_record` is the pre-existing date-sensitive flake.
+- Frontend: +~10 tests, all passing. Pre-existing failures in `AppShell`/`OrgLogo` and the
+  date-sensitive `MySchedulePage`/`RosterPage` remain — verified identical on the parent branch,
+  unrelated to this change.
+
 ## [1.52.1] — 2026-07-06
 
 **Notification dropdown — quick actions + polish** (frontend-only; no backend/contract/migration).
