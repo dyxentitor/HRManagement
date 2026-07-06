@@ -43,12 +43,12 @@ def _login(client, email):
 
 
 @pytest.mark.django_db
-def test_list_returns_16_entries(admin):
+def test_list_returns_17_entries(admin):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'admin@x.com')}")
     resp = client.get("/api/v1/org/feature-flags/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 16
+    assert len(resp.json()) == 17
 
 
 @pytest.mark.django_db
@@ -94,4 +94,4 @@ def test_list_visible_to_any_authenticated_user(org):
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {_login(client, 'reader@x.com')}")
     resp = client.get("/api/v1/org/feature-flags/")
     assert resp.status_code == 200
-    assert len(resp.json()) == 16
+    assert len(resp.json()) == 17

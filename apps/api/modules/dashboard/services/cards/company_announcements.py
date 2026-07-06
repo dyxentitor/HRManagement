@@ -22,7 +22,9 @@ class CompanyAnnouncements(Card):
 
         now = timezone.now()
         rows = list(
-            Announcement.all_objects.filter(org_id=user.org_id, deleted_at__isnull=True)
+            Announcement.all_objects.filter(
+                org_id=user.org_id, deleted_at__isnull=True, status="published"
+            )
             .filter(Q(expires_at__isnull=True) | Q(expires_at__gte=now))
             .order_by("-pinned", "-published_at")[:6]
         )
@@ -42,7 +44,7 @@ class CompanyAnnouncements(Card):
                         "category": a.category,
                         "pinned": a.pinned,
                         "featured": a.id == featured_id,
-                        "published_at": a.published_at.isoformat(),
+                        "published_at": a.published_at.isoformat() if a.published_at else None,
                     }
                     for a in rows
                 ],

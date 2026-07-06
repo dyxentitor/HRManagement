@@ -159,13 +159,15 @@ def test_department_overview_counts(org, admin_user):
 def test_company_announcements_pinned_first_and_expiry(org, admin_user):
     from django.utils import timezone
 
-    Announcement.all_objects.create(org_id=org.id, title="plain", body="b", pinned=False)
-    Announcement.all_objects.create(org_id=org.id, title="pinned", body="b", pinned=True)
+    pub = {"status": "published", "published_at": timezone.now()}
+    Announcement.all_objects.create(org_id=org.id, title="plain", body="b", pinned=False, **pub)
+    Announcement.all_objects.create(org_id=org.id, title="pinned", body="b", pinned=True, **pub)
     Announcement.all_objects.create(
         org_id=org.id,
         title="expired",
         body="b",
         expires_at=timezone.now() - datetime.timedelta(days=1),
+        **pub,
     )
     out = CompanyAnnouncements.fetch(admin_user)["data"]
     titles = [i["title"] for i in out["items"]]
@@ -260,8 +262,13 @@ def test_company_announcements_featured(org, admin_user):
     from modules.announcements.models import Announcement
     from modules.dashboard.services.cards.company_announcements import CompanyAnnouncements
 
-    Announcement.all_objects.create(org_id=org.id, title="plain", body="b", pinned=False)
-    Announcement.all_objects.create(org_id=org.id, title="pinned", body="hello world", pinned=True)
+    from django.utils import timezone
+
+    pub = {"status": "published", "published_at": timezone.now()}
+    Announcement.all_objects.create(org_id=org.id, title="plain", body="b", pinned=False, **pub)
+    Announcement.all_objects.create(
+        org_id=org.id, title="pinned", body="hello world", pinned=True, **pub
+    )
     items = CompanyAnnouncements.fetch(admin_user)["data"]["items"]
     featured = [i for i in items if i["featured"]]
     assert len(featured) == 1

@@ -78,11 +78,11 @@ def test_set_enabled_writes_audit(org, actor):
 
 
 @pytest.mark.django_db
-def test_list_for_org_returns_16_entries(org, actor):
+def test_list_for_org_returns_17_entries(org, actor):
     """10 togglable + 3 critical + 2 derived."""
     set_enabled(org.id, "claims", False, actor=actor)
     entries = list_for_org(org.id)
-    assert len(entries) == 16
+    assert len(entries) == 17
     by_key = {e["key"]: e for e in entries}
     assert by_key["claims"]["enabled"] is False
     assert by_key["identity"]["critical"] is True
