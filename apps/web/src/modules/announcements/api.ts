@@ -150,6 +150,30 @@ export const announcementsApi = {
     if (error) fail(error, "Failed to delete announcement")
   },
 
+  presignAttachment: async (
+    id: string,
+    filename: string,
+    content_type: string,
+  ): Promise<{ presigned_url: string; s3_key: string }> => {
+    const { data, error } = await api.POST(
+      "/api/v1/announcements/{id}/attachments/presigned-upload/",
+      { params: { path: { id } }, body: { filename, content_type } as never },
+    )
+    if (error) fail(error, "Failed to presign upload")
+    return data as unknown as { presigned_url: string; s3_key: string }
+  },
+
+  registerAttachment: async (
+    id: string,
+    meta: { filename: string; content_type: string; size_bytes: number; s3_key: string },
+  ): Promise<void> => {
+    const { error } = await api.POST("/api/v1/announcements/{id}/attachments/", {
+      params: { path: { id } },
+      body: meta as never,
+    })
+    if (error) fail(error, "Failed to register attachment")
+  },
+
   attachmentUrl: async (id: string, aid: number): Promise<string> => {
     const { data, error } = await api.GET(
       "/api/v1/announcements/{id}/attachments/{aid}/download/",
