@@ -89,11 +89,38 @@ class ScheduleService:
         date_to: datetime.date,
     ) -> int:
         """Stamp `published_at` on all unpublished scheduled assignments in the period."""
-        return ShiftAssignment.all_objects.filter(
+        qs = ShiftAssignment.all_objects.filter(
             org_id=org_id,
             work_date__gte=date_from,
             work_date__lte=date_to,
             published_at__isnull=True,
             status="scheduled",
             deleted_at__isnull=True,
-        ).update(published_at=timezone.now())
+        )
+        # Capture affected employees BEFORE the update flips published_at.
+        emp_ids = list(qs.values_list("employee_id", flat=True).distinct())
+        n_published = qs.update(published_at=timezone.now())
+
+        # Notify affected employees that their roster is out (best-effort).
+        try:
+            from modules.identity.models import User
+            from modules.notification.services.notify import notify
+
+            for user in User.objects.filter(
+                employee_profile__id__in=emp_ids, is_active=True
+            ):
+                notify(
+                    user=user,
+                    type="schedule.roster_published",
+                    payload={"date_from": str(date_from), "date_to": str(date_to)},
+                    deep_link="/schedule/me",
+                    priority="low",
+                )
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception(
+                "Failed to fan out schedule.roster_published"
+            )
+
+        return n_published
