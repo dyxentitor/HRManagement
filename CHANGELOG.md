@@ -2,6 +2,37 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.55.0] — 2026-07-06
+
+**Organization Chart UI redesign** — a premium visual pass over the v1.54.0 module across all four
+areas (cards, canvas, toolbar, states), designed collaboratively via the visual companion. No new
+dependency, no new permission, no migration; the only backend change is `hire_date` on the org node.
+
+### Added
+- **Executive + Compact node cards** — the Executive card (department accent bar, ringed avatar,
+  meta-chip row, tenure/manager footer, hover-revealed quick actions, selected ring) is the signature;
+  a Compact card auto-replaces it when a branch exceeds 12 children, and a manual **density toggle**
+  forces Compact everywhere. Tenure comes from the new `hire_date` field.
+- **Dot-grid canvas** with smooth **bezier connectors** (drawn from transform-independent layout
+  measurements so pan/zoom never distorts them), a floating on-canvas zoom cluster, a corner
+  **minimap** with a live viewport rectangle + click-to-pan, and an optional level-labels toggle.
+- **Unified toolbar** — icon segmented control, a grouped avatar'd search dropdown (People +
+  Departments), a **Filters popover** with tone-tinted chip toggles and an active-count badge
+  (replacing the raw `<select>`s), and a live **headcount summary**. Zoom moved onto the canvas.
+- **States & wayfinding** — a shimmer skeleton tree while loading, a guided empty/first-run state
+  with a Directory link, and a "you are here" **path highlight** that dims off-path branches on search.
+
+### Changed
+- New org-chart pieces: `useCanvasLayout`, `minimap-math`/`Minimap`, `Connectors` (bezier),
+  `CanvasControls`, `TreeSkeleton`; `OrgNodeCard`, `TreeView`, `OrgChartControls`, `OrgChartPage`
+  reworked. `OrgNodeSerializer` gains `hire_date`. Contracts regenerated (version only — the org-chart
+  `@action` endpoints aren't schema-typed).
+
+### Notes
+- Tests: **+1 backend** (`hire_date` assertion) and **+several frontend** (`useCanvasLayout`,
+  `minimap-math`, card variants, filter popover, headcount, density); the measured connectors keep a
+  documented CSS-elbow fallback. Pre-existing unrelated failures unchanged (`OrgLogo` org-name drift).
+
 ## [1.54.0] — 2026-07-06
 
 **Organization Chart** — a new interactive tab in the People module (`/admin/people/org-chart`) for

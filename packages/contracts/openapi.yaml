@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.54.0
+  version: 1.55.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
