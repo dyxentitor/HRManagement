@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Suspense, lazy } from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
@@ -123,13 +124,17 @@ const router = createBrowserRouter([
 	},
 ]);
 
+const queryClient = new QueryClient();
+
 export function App() {
 	return (
-		<AuthProvider>
-			<FeaturesProvider>
-				<RouterProvider router={router} />
-				<Toaster />
-			</FeaturesProvider>
-		</AuthProvider>
+		<QueryClientProvider client={queryClient}>
+			<AuthProvider>
+				<FeaturesProvider>
+					<RouterProvider router={router} />
+					<Toaster />
+				</FeaturesProvider>
+			</AuthProvider>
+		</QueryClientProvider>
 	);
 }
