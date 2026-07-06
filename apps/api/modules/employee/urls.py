@@ -3,10 +3,12 @@ from rest_framework.routers import DefaultRouter
 
 from .views import EmployeeViewSet, TeamViewSet
 from .views_link_manager import UnlinkedEmployeesView, UnlinkedUsersView
+from .views_org_chart import OrgChartViewSet
 
 router = DefaultRouter()
 router.register(r"employees", EmployeeViewSet, basename="employee")
 router.register(r"teams", TeamViewSet, basename="team")
+router.register(r"org-chart", OrgChartViewSet, basename="org-chart")
 urlpatterns = [
     *router.urls,
     path(
