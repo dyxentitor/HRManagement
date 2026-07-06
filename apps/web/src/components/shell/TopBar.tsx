@@ -106,7 +106,10 @@ export function TopBar() {
 						)}
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent align="end" className="p-0 w-80">
+				<PopoverContent
+					align="end"
+					className="p-0 w-auto max-w-[calc(100vw-1rem)] overflow-hidden"
+				>
 					<NotificationDropdown onNavigate={(p) => navigate(p)} />
 				</PopoverContent>
 			</Popover>
