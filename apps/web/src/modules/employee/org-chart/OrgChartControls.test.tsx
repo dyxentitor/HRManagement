@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 vi.mock("./api", () => ({ orgChartApi: { search: vi.fn().mockResolvedValue([]) } }))
@@ -11,32 +12,44 @@ const baseProps = {
   onViewChange: vi.fn(),
   filters: EMPTY_FILTERS,
   onFiltersChange: vi.fn(),
-  departments: [{ id: "d1", name: "Eng", head_count: 3 }],
+  departments: [{ id: "d1", name: "Engineering", head_count: 3 }],
   onSearchSelect: vi.fn(),
-  zoom: { pct: 100, in: vi.fn(), out: vi.fn(), fit: vi.fn() },
+  headcount: { people: 148, departments: 12 },
+  density: "comfortable" as const,
+  onDensityChange: vi.fn(),
+  showLevels: false,
+  onToggleLevels: vi.fn(),
   breadcrumbs: [],
   onCrumb: vi.fn(),
 }
 
 describe("OrgChartControls", () => {
-  it("switches views", () => {
+  it("switches views via the icon segmented control", () => {
     const onViewChange = vi.fn()
     render(<OrgChartControls {...baseProps} onViewChange={onViewChange} />)
     fireEvent.click(screen.getByRole("button", { name: /^department$/i }))
     expect(onViewChange).toHaveBeenCalledWith("department")
   })
 
-  it("hides zoom controls in department view", () => {
-    const { rerender } = render(<OrgChartControls {...baseProps} view="tree" />)
-    expect(screen.getByLabelText(/zoom in/i)).toBeInTheDocument()
-    rerender(<OrgChartControls {...baseProps} view="department" />)
-    expect(screen.queryByLabelText(/zoom in/i)).not.toBeInTheDocument()
-  })
-
-  it("emits department filter changes", () => {
+  it("opens the filter popover and toggles a department chip", async () => {
+    const user = userEvent.setup()
     const onFiltersChange = vi.fn()
     render(<OrgChartControls {...baseProps} onFiltersChange={onFiltersChange} />)
-    fireEvent.change(screen.getByLabelText(/filter by department/i), { target: { value: "d1" } })
-    expect(onFiltersChange).toHaveBeenCalledWith({ ...EMPTY_FILTERS, department: "d1" })
+    await user.click(screen.getByRole("button", { name: /^filters$/i }))
+    await user.click(screen.getByRole("button", { name: /^engineering$/i }))
+    expect(onFiltersChange).toHaveBeenCalledWith(expect.objectContaining({ department: "d1" }))
+  })
+
+  it("shows the headcount summary", () => {
+    render(<OrgChartControls {...baseProps} />)
+    expect(screen.getByText(/148 people/i)).toBeInTheDocument()
+    expect(screen.getByText(/12 departments/i)).toBeInTheDocument()
+  })
+
+  it("emits density changes", () => {
+    const onDensityChange = vi.fn()
+    render(<OrgChartControls {...baseProps} onDensityChange={onDensityChange} />)
+    fireEvent.click(screen.getByRole("button", { name: /^compact$/i }))
+    expect(onDensityChange).toHaveBeenCalledWith("compact")
   })
 })
