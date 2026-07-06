@@ -2459,6 +2459,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description List, mark-read, mark-all-read for own notifications. */
+        get: operations["notifications_unread_count_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/onboarding/": {
         parameters: {
             query?: never;
@@ -10652,7 +10669,14 @@ export interface operations {
     };
     notifications_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Return rows with id < before (cursor) */
+                before?: number;
+                /** @description Max rows (default 20, cap 50) */
+                limit?: number;
+                /** @description Only unread when 'true' */
+                unread_only?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -10727,6 +10751,25 @@ export interface operations {
         };
     };
     notifications_read_all_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+        };
+    };
+    notifications_unread_count_retrieve: {
         parameters: {
             query?: never;
             header?: never;

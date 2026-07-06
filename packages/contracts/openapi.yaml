@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.49.0
+  version: 1.50.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -4647,6 +4647,22 @@ paths:
     get:
       operationId: notifications_list
       description: List, mark-read, mark-all-read for own notifications.
+      parameters:
+      - in: query
+        name: before
+        schema:
+          type: integer
+        description: Return rows with id < before (cursor)
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Max rows (default 20, cap 50)
+      - in: query
+        name: unread_only
+        schema:
+          type: boolean
+        description: Only unread when 'true'
       tags:
       - notifications
       security:
@@ -4705,6 +4721,21 @@ paths:
   /api/v1/notifications/read-all:
     post:
       operationId: notifications_read_all_create
+      description: List, mark-read, mark-all-read for own notifications.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/notifications/unread-count:
+    get:
+      operationId: notifications_unread_count_retrieve
       description: List, mark-read, mark-all-read for own notifications.
       tags:
       - notifications
