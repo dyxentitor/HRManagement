@@ -28,6 +28,7 @@ class OrgNodeSerializer(serializers.ModelSerializer):
             "department_id",
             "department_name",
             "employment_type",
+            "hire_date",
             "status",
             "photo_url",
             "manager",

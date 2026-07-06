@@ -74,6 +74,7 @@ def test_node_shape(org):
     assert node["has_reports"] is True
     assert node["manager_name"] is None
     assert node["photo_url"] is None
+    assert node["hire_date"] == "2024-01-01"
 
 
 @pytest.mark.django_db

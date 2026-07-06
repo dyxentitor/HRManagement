@@ -6,6 +6,7 @@ export interface OrgNode {
   department_id?: string | null
   department_name?: string | null
   employment_type?: string | null
+  hire_date?: string | null
   status?: string | null
   photo_url?: string | null
   manager?: string | null
