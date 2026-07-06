@@ -86,6 +86,7 @@ def publish(assignment: Assignment, *, target_employee_ids: list, actor_id) -> i
                     "due": str(assignment.default_due_date or ""),
                 },
                 deep_link="/action-center",
+                priority="high",
             )
     return len(rows)
 

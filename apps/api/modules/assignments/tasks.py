@@ -28,12 +28,14 @@ def assignment_reminders() -> int:
         u = User.objects.filter(id=emp.user_id).first() if emp and emp.user_id else None
         if not u:
             continue
-        kind = "assignment.reminder" if r.due_date == tomorrow else "assignment.overdue"
+        is_reminder = r.due_date == tomorrow
+        kind = "assignment.reminder" if is_reminder else "assignment.overdue"
         notify(
             user=u,
             type=kind,
             payload={"title": r.assignment.title, "due": str(r.due_date)},
             deep_link="/action-center",
+            priority="high" if is_reminder else "urgent",
         )
         sent += 1
     return sent

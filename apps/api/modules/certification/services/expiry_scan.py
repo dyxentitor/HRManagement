@@ -81,6 +81,7 @@ def _notify(cert, days_remaining: int) -> None:
                 "days_remaining": days_remaining,
             },
             deep_link="/certifications/me",
+            priority="high",
         )
     except Exception:
         logger.exception("Failed to send expiry reminder for cert %s", cert.id)

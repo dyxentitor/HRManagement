@@ -20,7 +20,9 @@ from .models import ClaimApproval, ClaimRequest
 _log = logging.getLogger(__name__)
 
 
-def _notify_for_claim(user, notif_type: str, subject: ClaimRequest) -> None:
+def _notify_for_claim(
+    user, notif_type: str, subject: ClaimRequest, priority: str = "normal"
+) -> None:
     """Best-effort notify() call -- errors must not break the workflow."""
     try:
         from modules.notification.services.notify import notify
@@ -30,6 +32,7 @@ def _notify_for_claim(user, notif_type: str, subject: ClaimRequest) -> None:
             type=notif_type,
             payload={"claim_request_id": str(subject.id)},
             deep_link="/claims/me",
+            priority=priority,
         )
     except Exception:
         _log.exception("Failed to send %s notification for claim %s", notif_type, subject.id)
@@ -51,8 +54,8 @@ def _on_submitted(sender, subject, chain, **kwargs):
         approver_id=approver.id,
         status="pending",
     )
-    # Notify the approver about the submission
-    _notify_for_claim(approver, "claim.submitted", subject)
+    # Notify the approver about the submission (action required)
+    _notify_for_claim(approver, "claim.submitted", subject, priority="high")
 
 
 @receiver(workflow_step_approved)

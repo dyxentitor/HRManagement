@@ -20,7 +20,9 @@ from .models import LeaveApproval, LeaveRequest
 _log = logging.getLogger(__name__)
 
 
-def _notify_for_leave(user, notif_type: str, subject: LeaveRequest) -> None:
+def _notify_for_leave(
+    user, notif_type: str, subject: LeaveRequest, priority: str = "normal"
+) -> None:
     """Best-effort notify() call -- errors must not break the workflow."""
     try:
         from modules.notification.services.notify import notify
@@ -30,6 +32,7 @@ def _notify_for_leave(user, notif_type: str, subject: LeaveRequest) -> None:
             type=notif_type,
             payload={"leave_request_id": str(subject.id)},
             deep_link="/leave/me",
+            priority=priority,
         )
     except Exception:
         _log.exception("Failed to send %s notification for leave %s", notif_type, subject.id)
@@ -50,8 +53,8 @@ def _on_submitted(sender, subject, chain, **kwargs):
     LeaveApproval.objects.create(
         leave_request=subject, level=1, approver_id=approver.id, status="pending"
     )
-    # Notify the approver about the new submission
-    _notify_for_leave(approver, "leave.submitted", subject)
+    # Notify the approver about the new submission (action required)
+    _notify_for_leave(approver, "leave.submitted", subject, priority="high")
 
 
 @receiver(workflow_step_approved)

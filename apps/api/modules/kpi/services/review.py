@@ -33,6 +33,7 @@ def _notify_manager_for_review(assignment: KpiAssignment, notif_type: str) -> No
             type=notif_type,
             payload={"assignment_id": str(assignment.id)},
             deep_link="/kpi/admin",
+            priority="high",
         )
     except Exception:
         logger.exception(
