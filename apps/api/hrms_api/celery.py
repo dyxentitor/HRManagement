@@ -23,6 +23,11 @@ app.conf.beat_schedule = {
         "task": "modules.notification.tasks.send_pending_email_digests",
         "schedule": _EMAIL_DIGEST_INTERVAL,
     },
+    "publish-scheduled-announcements": {
+        # Every 10 min: publish announcements whose scheduled_at has arrived.
+        "task": "modules.announcements.tasks.publish_scheduled_announcements",
+        "schedule": crontab(minute="*/10"),
+    },
     "detect-certification-expiry": {
         # Nightly at 02:00 — flags certs expiring in 30/60/90 days,
         # auto-expires past-due rows, and sends reminder notifications.
