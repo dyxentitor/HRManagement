@@ -2,6 +2,29 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.52.1] — 2026-07-06
+
+**Notification dropdown — quick actions + polish** (frontend-only; no backend/contract/migration).
+
+### Added
+- **Per-row quick actions** revealed on hover/keyboard-focus: **Mark as read** (marks without
+  navigating; unread rows only) and **View details** (navigates). Rendered as siblings of the row
+  button (valid a11y, keyboard-reachable, `focus-visible` rings). The unread dot morphs into the
+  action cluster on hover.
+
+### Changed / Fixed
+- **Header containment** — the title, unread-count pill, and "Mark all read" now stay within the
+  dropdown with no overflow at any count (`min-w-0` + truncate + `shrink-0`).
+- **Responsive width** — `w-[min(24rem,calc(100vw-2rem))]` so the panel never overflows on small
+  screens.
+- Accessibility — `aria-live` on the unread-count pill; focus-visible rings on rows and actions.
+
+### Validation
+- Live cross-workflow check on the running stack confirmed both perspectives with correct
+  priorities: employee submits leave → approver's bell (`leave.submitted`, high); approver approves
+  → requester's bell (`leave.approved`, normal). Complements the earlier live pipeline +
+  announcement fan-out proofs and the per-emitter unit tests.
+
 ## [1.52.0] — 2026-07-06
 
 **Notification coverage + premium dropdown** — most HR workflows now generate in-app notifications,
