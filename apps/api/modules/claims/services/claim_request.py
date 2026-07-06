@@ -86,4 +86,25 @@ class ClaimRequestService:
                 "updated_at",
             ]
         )
+
+        # Notify the claimant that reimbursement is done (best-effort).
+        try:
+            from modules.notification.services.notify import notify
+
+            recipient = getattr(claim.employee, "user", None)
+            if recipient is not None:
+                notify(
+                    user=recipient,
+                    type="claim.reimbursed",
+                    payload={"claim_request_id": str(claim.id)},
+                    deep_link="/claims/me",
+                    priority="normal",
+                )
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception(
+                "Failed to send claim.reimbursed notification for claim %s", claim.id
+            )
+
         return claim

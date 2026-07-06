@@ -192,6 +192,33 @@ class LeaveRequestService:
             year=year,
             days=request.total_days,
         )
+
+        # Notify pending approver(s) that the request was cancelled (best-effort).
+        try:
+            from modules.identity.models import User as _User
+            from modules.leave.models import LeaveApproval
+            from modules.notification.services.notify import notify
+
+            approver_ids = list(
+                LeaveApproval.objects.filter(
+                    leave_request=request, status="pending"
+                ).values_list("approver_id", flat=True)
+            )
+            for appr in _User.objects.filter(id__in=approver_ids, is_active=True):
+                notify(
+                    user=appr,
+                    type="leave.cancelled",
+                    payload={"leave_request_id": str(request.id)},
+                    deep_link="/leave/approvals",
+                    priority="normal",
+                )
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception(
+                "Failed to send leave.cancelled notification for leave %s", request.id
+            )
+
         return request
 
     @staticmethod
