@@ -91,6 +91,17 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(org_id=self.request.user.org_id)
 
+    def perform_destroy(self, instance):
+        """Soft-delete the employee, then retire their linked login (v1.56.1)."""
+        from modules.identity.services.account_lifecycle import retire_login_for_employee
+
+        instance.delete()  # TenantBaseModel.delete() → soft-delete (sets deleted_at)
+        retire_login_for_employee(
+            employee=instance,
+            actor_id=self.request.user.id,
+            org_id=self.request.user.org_id,
+        )
+
     def create(self, request, *args, **kwargs):
         """Create an employee, optionally provisioning + linking a login.
 
@@ -318,6 +329,11 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 entity_id=emp.id,
                 after={"employee_id": str(emp.id)},
             )
+            from modules.identity.services.account_lifecycle import (
+                reinstate_login_for_employee,
+            )
+
+            reinstate_login_for_employee(employee=emp, org_id=request.user.org_id)
         return Response(self.get_serializer(emp).data)
 
     @action(detail=True, methods=["post"], url_path="invite")
