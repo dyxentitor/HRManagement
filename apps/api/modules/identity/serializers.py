@@ -186,3 +186,36 @@ class AssignRolesInputSerializer(serializers.Serializer):
     """Body for PATCH /users/{id}/roles/."""
 
     role_codes = serializers.ListField(child=serializers.CharField(), allow_empty=True)
+
+
+class UserAccountSerializer(serializers.ModelSerializer):
+    """Read-only account row for the Accounts management table."""
+
+    role_codes = serializers.SerializerMethodField()
+    employee = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "email",
+            "status",
+            "is_active",
+            "mfa_enabled",
+            "last_login_at",
+            "role_codes",
+            "employee",
+        )
+
+    def get_role_codes(self, obj: User) -> list[str]:
+        return [r.code for r in obj.roles]
+
+    def get_employee(self, obj: User) -> dict | None:
+        emp = getattr(obj, "employee_profile", None)
+        if emp is None:
+            return None
+        return {
+            "id": str(emp.id),
+            "full_name": emp.full_name,
+            "employee_code": emp.employee_code,
+        }

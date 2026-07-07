@@ -15,14 +15,35 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.audit.service import append as audit_append
+from modules.identity.models import User
 from modules.identity.permissions import HRMSPermission
-from modules.identity.serializers import UserCreateSerializer
+from modules.identity.serializers import UserAccountSerializer, UserCreateSerializer
 from modules.identity.services.provisioning import provision_user
 
 
 class UserCreateView(APIView):
+    """Collection view for /users/ — POST create (user:create), GET list (user:read:org)."""
+
     permission_classes: ClassVar = [HRMSPermission]
-    required_perms: ClassVar = ["user:create"]
+
+    @property
+    def required_perms(self):
+        return ["user:create"] if self.request.method == "POST" else ["user:read:org"]
+
+    def get(self, request):
+        status_filter = (request.query_params.get("status") or "active").lower()
+        qs = User.objects.filter(org_id=request.user.org_id)
+        if status_filter == "archived":
+            qs = qs.filter(deleted_at__isnull=False)
+        elif status_filter == "all":
+            qs = qs.filter(deleted_at__isnull=True)
+        elif status_filter == "disabled":
+            qs = qs.filter(deleted_at__isnull=True, status="disabled")
+        elif status_filter == "needs_linking":
+            qs = qs.filter(deleted_at__isnull=True, employee_profile__isnull=True)
+        else:  # active (default)
+            qs = qs.filter(deleted_at__isnull=True, status="active")
+        return Response(UserAccountSerializer(qs.order_by("email"), many=True).data)
 
     def post(self, request):
         s = UserCreateSerializer(data=request.data)
