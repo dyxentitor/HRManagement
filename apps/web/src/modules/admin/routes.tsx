@@ -14,7 +14,11 @@ const EmailNotificationSettingsPage = lazy(
 	() => import("./settings/EmailNotificationSettingsPage"),
 );
 const DepartmentsAdminPage = lazy(() => import("./settings/DepartmentsAdminPage"));
-const UsersLinkingPage = lazy(() => import("./settings/UsersLinkingPage"));
+const AccountsPage = lazy(() =>
+	import("./people/AccountsPage").then((m) => ({
+		default: m.AccountsPage,
+	})),
+);
 const UserCreatePage = lazy(() =>
 	import("./settings/UserCreatePage").then((m) => ({
 		default: m.UserCreatePage,
@@ -85,7 +89,7 @@ export const adminRoutes: RouteObject[] = [
 			{ path: "onboarding", element: <OnboardingHubPage /> },
 			// Invitations merged into the Onboarding hub — keep the old link working.
 			{ path: "invitations", element: <Navigate to="/admin/people/onboarding" replace /> },
-			{ path: "accounts", element: <UsersLinkingPage /> },
+			{ path: "accounts", element: <AccountsPage /> },
 			{ path: "accounts/new", element: <UserCreatePage /> },
 		],
 	},

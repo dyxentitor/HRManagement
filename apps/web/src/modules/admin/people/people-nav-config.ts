@@ -36,7 +36,7 @@ export const PEOPLE_NAV_ITEMS: PeopleNavItem[] = [
 		to: "/admin/people/accounts",
 		label: "Accounts",
 		icon: Link2,
-		perm: "employee:write:org",
+		perm: "user:read:org",
 		badge: "unlinked_users",
 	},
 ];
