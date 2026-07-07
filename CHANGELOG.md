@@ -2,6 +2,37 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.56.0] — 2026-07-07
+
+**Account management (Accounts CRUD)** — the People › Accounts page becomes a full account table with
+read, disable/enable, and soft-delete/restore, wiring the `user:read:org` / `user:disable` /
+`user:delete` permissions that already existed in the catalogue but had no endpoints. No new
+permission code, no migration.
+
+### Added
+- **Backend account endpoints** (`modules/identity`): `GET /users/` (list; `?status=`
+  active/disabled/needs_linking/archived/all; `user:read:org`), `GET /users/{id}/` (detail),
+  `DELETE /users/{id}/` (soft-delete; `user:delete`), `POST /users/{id}/disable|enable/`
+  (`user:disable`), `POST /users/{id}/restore/` (`user:delete`). New `UserAccountSerializer`
+  (email, status, is_active, mfa_enabled, last_login_at, role_codes, linked-employee summary).
+  A **self-action guard** blocks disabling/deleting your own account; every mutation is audit-logged.
+- **Accounts management table** (`AccountsPage`) replacing the linking-only page: status-filter
+  segmented control + email search; columns for account, linked employee, roles, status, MFA, last
+  login; per-row actions (View access drawer · Disable/Enable · Link/Unlink employee · Delete/Restore),
+  each permission-gated with the own-account row guarded. "New user" and employee-linking are folded
+  in; delete is soft with an Archived filter + Restore.
+
+### Changed
+- Accounts nav item now gated on `user:read:org` (was `employee:write:org`); link actions still gate
+  on `employee:write:org`. Contracts regenerated with the new endpoints.
+
+### Removed
+- The old `UsersLinkingPage` (two-column linking view) — superseded by the accounts table.
+
+### Notes
+- Tests: **+8 backend** (`test_user_accounts` 3, `test_user_lifecycle` 5), **+1 frontend**
+  (`AccountsPage`). Pre-existing unrelated failures unchanged.
+
 ## [1.55.0] — 2026-07-06
 
 **Organization Chart UI redesign** — a premium visual pass over the v1.54.0 module across all four

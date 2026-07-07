@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.55.0
+  version: 1.56.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -7549,8 +7549,71 @@ paths:
                 $ref: '#/components/schemas/TrainingProgressWrite'
           description: ''
   /api/v1/users/:
+    get:
+      operationId: users_retrieve
+      description: Collection view for /users/ — POST create (user:create), GET list
+        (user:read:org).
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
     post:
       operationId: users_create
+      description: Collection view for /users/ — POST create (user:create), GET list
+        (user:read:org).
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/{user_id}/:
+    get:
+      operationId: users_retrieve_2
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: users_destroy
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/users/{user_id}/disable/:
+    post:
+      operationId: users_disable_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
       - users
       security:
@@ -7566,6 +7629,40 @@ paths:
 
         The target user's roles + their merged (union) permissions grouped by module, each permission
         annotated with the source role(s) that grant it. Answers "why does this person have X?".
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/{user_id}/enable/:
+    post:
+      operationId: users_enable_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/users/{user_id}/restore/:
+    post:
+      operationId: users_restore_create
       parameters:
       - in: path
         name: user_id
