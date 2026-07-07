@@ -2,6 +2,16 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.56.1] — 2026-07-07
+
+**Archive → retire-login cascade.** Archiving an employee now automatically **disables** their linked
+login account (`status="disabled"`, `is_active=False`); restoring the employee **re-enables** it. A
+self-lockout guard skips disabling when the employee is linked to the actor's own account. Idempotent
+(unlinked employee → no-op; soft-deleted accounts left untouched on restore) and audit-logged
+(`user.disabled`/`user.enabled` with an `employee_archived`/`employee_restored` reason). New
+`identity/services/account_lifecycle.py`; `EmployeeViewSet.perform_destroy` + `restore` call it.
+No new endpoint, permission, or migration. Tests: +4 backend.
+
 ## [1.56.0] — 2026-07-07
 
 **Account management (Accounts CRUD)** — the People › Accounts page becomes a full account table with
