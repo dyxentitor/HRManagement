@@ -28,6 +28,12 @@ from .views_invitation import (
     invitation_activate_view,
     invitation_verify_view,
 )
+from .views_user_accounts import (
+    UserDetailView,
+    UserDisableView,
+    UserEnableView,
+    UserRestoreView,
+)
 from .views_user_admin import UserCreateView
 
 router = DefaultRouter()
@@ -58,6 +64,10 @@ urlpatterns = [
         effective_access_view,
         name="user-effective-access",
     ),
+    path("users/<uuid:user_id>/disable/", UserDisableView.as_view(), name="user-disable"),
+    path("users/<uuid:user_id>/enable/", UserEnableView.as_view(), name="user-enable"),
+    path("users/<uuid:user_id>/restore/", UserRestoreView.as_view(), name="user-restore"),
+    path("users/<uuid:user_id>/", UserDetailView.as_view(), name="user-detail"),
     # public activation endpoints — registered BEFORE the router so /verify and
     # /activate aren't swallowed by /invitations/<pk>/
     path("invitations/verify/", invitation_verify_view, name="invitation-verify"),
