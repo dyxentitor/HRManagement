@@ -1,12 +1,13 @@
 import { Check, FileText, X } from "lucide-react"
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import { type ReactNode, useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { DetailPanel, StatusPill } from "@/components/hrms"
 import { gradientFromName } from "@/components/hrms/avatar-gradient"
+import { ClampText, TruncTip } from "@/components/hrms/overflow"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { useCan } from "@/lib/perm"
 import { cn } from "@/lib/utils"
 import { listAuditLogs } from "@/modules/admin/audit-api"
@@ -53,58 +54,6 @@ function fmtMoney(amount: string, currency: string): string {
 
 function claimRef(id: string): string {
   return `CLM-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`
-}
-
-// --- overflow-safe primitives -------------------------------------------------
-
-/** Multi-line text that wraps + breaks unbroken strings, with Show more / less. */
-function ClampText({ text, lines = 4 }: { text: string; lines?: 3 | 4 | 6 }) {
-  const ref = useRef<HTMLParagraphElement>(null)
-  const [expanded, setExpanded] = useState(false)
-  const [canExpand, setCanExpand] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (el) setCanExpand(el.scrollHeight > el.clientHeight + 1)
-  }, [])
-
-  const clampClass = lines === 3 ? "line-clamp-3" : lines === 6 ? "line-clamp-6" : "line-clamp-4"
-  return (
-    <div>
-      <p
-        ref={ref}
-        className={cn(
-          "text-small text-text-primary whitespace-pre-wrap break-words [overflow-wrap:anywhere]",
-          !expanded && clampClass,
-        )}
-      >
-        {text}
-      </p>
-      {canExpand && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="text-[11px] font-medium text-accent-200 hover:underline mt-1"
-        >
-          {expanded ? "Show less" : "Show more"}
-        </button>
-      )}
-    </div>
-  )
-}
-
-/** Single-line value: ellipsis + tooltip with the full text on hover. */
-function TruncTip({ text, className }: { text: string; className?: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className={cn("block min-w-0 truncate", className)}>{text}</span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-[240px] break-words [overflow-wrap:anywhere]">
-        {text}
-      </TooltipContent>
-    </Tooltip>
-  )
 }
 
 // --- drawer -------------------------------------------------------------------
