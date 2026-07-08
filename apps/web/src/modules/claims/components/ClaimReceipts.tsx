@@ -41,10 +41,11 @@ export function ClaimReceipts({
 						<button
 							type="button"
 							onClick={() => open(a.id)}
-							className="inline-flex items-center gap-2 text-left text-accent-200 hover:underline"
+							title={a.filename}
+							className="flex w-full min-w-0 items-center gap-2 text-left text-accent-200 hover:underline"
 						>
 							<FileText className="size-3.5 shrink-0" aria-hidden />
-							<span className="truncate">{a.filename}</span>
+							<span className="min-w-0 flex-1 truncate">{a.filename}</span>
 							<span className="text-[10px] text-text-tertiary tabular-nums shrink-0">
 								{(a.size_bytes / 1024).toFixed(0)} KB
 							</span>

@@ -1,11 +1,12 @@
 import { Check, FileText, X } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { DetailPanel, StatusPill } from "@/components/hrms"
 import { gradientFromName } from "@/components/hrms/avatar-gradient"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useCan } from "@/lib/perm"
 import { cn } from "@/lib/utils"
 import { listAuditLogs } from "@/modules/admin/audit-api"
@@ -41,6 +42,72 @@ function fmtDate(iso: string | null | undefined): string {
     year: "numeric",
   })
 }
+
+function fmtMoney(amount: string, currency: string): string {
+  const n = Number(amount)
+  const formatted = Number.isFinite(n)
+    ? n.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : amount
+  return `${currency} ${formatted}`
+}
+
+function claimRef(id: string): string {
+  return `CLM-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`
+}
+
+// --- overflow-safe primitives -------------------------------------------------
+
+/** Multi-line text that wraps + breaks unbroken strings, with Show more / less. */
+function ClampText({ text, lines = 4 }: { text: string; lines?: 3 | 4 | 6 }) {
+  const ref = useRef<HTMLParagraphElement>(null)
+  const [expanded, setExpanded] = useState(false)
+  const [canExpand, setCanExpand] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (el) setCanExpand(el.scrollHeight > el.clientHeight + 1)
+  }, [])
+
+  const clampClass = lines === 3 ? "line-clamp-3" : lines === 6 ? "line-clamp-6" : "line-clamp-4"
+  return (
+    <div>
+      <p
+        ref={ref}
+        className={cn(
+          "text-small text-text-primary whitespace-pre-wrap break-words [overflow-wrap:anywhere]",
+          !expanded && clampClass,
+        )}
+      >
+        {text}
+      </p>
+      {canExpand && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="text-[11px] font-medium text-accent-200 hover:underline mt-1"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** Single-line value: ellipsis + tooltip with the full text on hover. */
+function TruncTip({ text, className }: { text: string; className?: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={cn("block min-w-0 truncate", className)}>{text}</span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[240px] break-words [overflow-wrap:anywhere]">
+        {text}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+// --- drawer -------------------------------------------------------------------
 
 export interface ClaimReviewDrawerProps {
   claimId: string | null
@@ -95,67 +162,73 @@ export function ClaimReviewDrawer({ claimId, onClose, onActed }: ClaimReviewDraw
     }
   }
 
-  return (
-    <DetailPanel open={claimId !== null} onClose={onClose} title="Claim review">
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-32 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
-        </div>
-      ) : error || !claim ? (
-        <div className="text-center py-10">
-          <p className="text-text-secondary">Couldn't load the claim.</p>
-          {claimId && (
-            <Button type="button" className="mt-3" onClick={() => load(claimId)}>
-              Retry
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4 pb-24">
-          <Header claim={claim} />
-          <Summary claim={claim} />
-          <Section
-            title={`Receipts${claim.attachments.length ? ` (${claim.attachments.length})` : ""}`}
-          >
-            <ClaimReceipts claimId={claim.id} attachments={claim.attachments} />
-          </Section>
-          <Section title="Approval timeline">
-            <Timeline claim={claim} />
-          </Section>
-          <Metadata claim={claim} />
-          {canAudit && <AuditTrail claimId={claim.id} />}
+  const footer = claim ? (
+    <div className="flex flex-col gap-2">
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Add a comment (required to reject)…"
+        aria-label="Approval comment"
+        rows={2}
+        className="w-full resize-none rounded-lg bg-surface-elevated/60 border border-border-subtle px-3 py-2 text-small text-text-primary break-words"
+      />
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={busy}
+          onClick={() => act("reject")}
+          className="flex-1 text-coral border-coral/40"
+        >
+          <X className="size-4 mr-1" /> Reject
+        </Button>
+        <Button
+          type="button"
+          disabled={busy}
+          onClick={() => act("approve")}
+          className="flex-1 soft-glow"
+        >
+          <Check className="size-4 mr-1" /> Approve
+        </Button>
+      </div>
+    </div>
+  ) : undefined
 
-          <div className="fixed bottom-0 right-0 w-full max-w-[var(--panel-w,32rem)] border-t border-border-subtle bg-surface/95 backdrop-blur px-5 py-3 flex items-end gap-2">
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Add a comment (required to reject)…"
-              aria-label="Approval comment"
-              className="flex-1 min-h-9 max-h-24 rounded-lg bg-surface-elevated/60 border border-border-subtle px-3 py-2 text-small text-text-primary"
-              rows={1}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() => act("reject")}
-              className="text-coral border-coral/40"
-            >
-              <X className="size-4 mr-1" /> Reject
-            </Button>
-            <Button
-              type="button"
-              disabled={busy}
-              onClick={() => act("approve")}
-              className="soft-glow"
-            >
-              <Check className="size-4 mr-1" /> Approve
-            </Button>
+  return (
+    <DetailPanel open={claimId !== null} onClose={onClose} title="Claim review" footer={footer}>
+      <TooltipProvider delayDuration={200}>
+        {loading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-32 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
           </div>
-        </div>
-      )}
+        ) : error || !claim ? (
+          <div className="text-center py-10">
+            <p className="text-text-secondary">Couldn't load the claim.</p>
+            {claimId && (
+              <Button type="button" className="mt-3" onClick={() => load(claimId)}>
+                Retry
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <Header claim={claim} />
+            <Summary claim={claim} />
+            <Section
+              title={`Receipts${claim.attachments.length ? ` (${claim.attachments.length})` : ""}`}
+            >
+              <ClaimReceipts claimId={claim.id} attachments={claim.attachments} />
+            </Section>
+            <Section title="Approval timeline">
+              <Timeline claim={claim} />
+            </Section>
+            <Metadata claim={claim} />
+            {canAudit && <AuditTrail claimId={claim.id} />}
+          </div>
+        )}
+      </TooltipProvider>
     </DetailPanel>
   )
 }
@@ -163,45 +236,67 @@ export function ClaimReviewDrawer({ claimId, onClose, onActed }: ClaimReviewDraw
 function Header({ claim }: { claim: ClaimRequest }) {
   const [from, to] = gradientFromName(claim.employee_name || claim.employee_code || "?")
   const status = (claim.status ?? "submitted") as ClaimStatus
+  const deptRole = [claim.employee_department_name, claim.employee_role_title]
+    .filter(Boolean)
+    .join(" · ")
   return (
-    <div className="glass-surface rounded-2xl p-4 flex items-start gap-3">
-      <div
-        aria-hidden
-        className={cn(
-          "size-12 rounded-full bg-gradient-to-br shrink-0",
-          `from-${from}`,
-          `to-${to}`,
-        )}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="text-h3 text-text-primary truncate">{claim.employee_name || "—"}</p>
-        <p className="text-small text-text-secondary truncate">
-          {[claim.employee_department_name, claim.employee_role_title]
-            .filter(Boolean)
-            .join(" · ") || "—"}
-        </p>
-        <p className="text-[11px] text-text-tertiary truncate">
-          {claim.employee_manager_name ? `Manager: ${claim.employee_manager_name}` : "No manager"}
-          {claim.employee_code ? ` · ${claim.employee_code}` : ""}
-        </p>
-      </div>
-      <div className="text-right shrink-0">
-        <div className="text-h3 text-text-primary tabular-nums">
-          {claim.currency_code} {claim.amount}
+    <div className="glass-surface rounded-2xl p-4">
+      {/* Amount is the hero decision datum. */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11px] text-text-tertiary">Claim amount</p>
+          <p className="text-[26px] leading-tight font-light tabular-nums text-text-primary break-words">
+            {fmtMoney(claim.amount, claim.currency_code)}
+          </p>
         </div>
-        <div className="mt-1 flex justify-end">
+        <div className="shrink-0 pt-1">
           <StatusPill tone={STATUS_TONE[status]} label={STATUS_LABEL[status]} />
+        </div>
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-border-subtle flex items-start gap-3">
+        <div
+          aria-hidden
+          className={cn(
+            "size-11 rounded-full bg-gradient-to-br shrink-0",
+            `from-${from}`,
+            `to-${to}`,
+          )}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-body font-semibold text-text-primary break-words [overflow-wrap:anywhere]">
+            {claim.employee_name || "—"}
+          </p>
+          {deptRole && (
+            <p className="text-small text-text-secondary break-words [overflow-wrap:anywhere]">
+              {deptRole}
+            </p>
+          )}
+          <p className="text-[11px] text-text-tertiary mt-0.5">
+            {claimRef(claim.id)} · Submitted {fmtDate(claim.submitted_at)}
+          </p>
         </div>
       </div>
     </div>
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function KV({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 py-1.5 border-b border-border-subtle last:border-b-0">
+    <div className="flex items-baseline justify-between gap-3 py-1.5 border-b border-border-subtle/60 last:border-b-0">
       <span className="text-small text-text-tertiary shrink-0">{label}</span>
-      <span className="text-small text-text-primary text-right">{value || "—"}</span>
+      <span className="min-w-0 text-right text-small text-text-primary">
+        <TruncTip text={value || "—"} />
+      </span>
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="pt-2.5">
+      <p className="text-[11px] text-text-tertiary mb-0.5">{label}</p>
+      {children}
     </div>
   )
 }
@@ -209,22 +304,30 @@ function Row({ label, value }: { label: string; value: string }) {
 function Summary({ claim }: { claim: ClaimRequest }) {
   return (
     <Section title="Claim summary">
-      <Row label="Category" value={claim.category_name || claim.category_code} />
-      <Row label="Expense date" value={fmtDate(claim.expense_date)} />
-      <Row label="Merchant" value={claim.merchant} />
-      <Row label="Submitted" value={fmtDate(claim.submitted_at)} />
-      <div className="pt-2">
-        <p className="text-small text-text-tertiary">Description</p>
-        <p className="text-small text-text-primary mt-0.5 whitespace-pre-wrap">
-          {claim.description || "—"}
+      <KV label="Category" value={claim.category_name || claim.category_code} />
+      <KV label="Expense date" value={fmtDate(claim.expense_date)} />
+      {claim.employee_manager_name ? (
+        <KV label="Reporting manager" value={claim.employee_manager_name} />
+      ) : null}
+      <Field label="Merchant">
+        <p className="text-small text-text-primary break-words [overflow-wrap:anywhere]">
+          {claim.merchant || "—"}
         </p>
-      </div>
-      <div className="pt-2">
-        <p className="text-small text-text-tertiary">Business justification</p>
-        <p className="text-small text-text-primary mt-0.5 whitespace-pre-wrap">
-          {claim.business_justification || "—"}
-        </p>
-      </div>
+      </Field>
+      <Field label="Description">
+        {claim.description ? (
+          <ClampText text={claim.description} />
+        ) : (
+          <p className="text-small text-text-tertiary">—</p>
+        )}
+      </Field>
+      <Field label="Business justification">
+        {claim.business_justification ? (
+          <ClampText text={claim.business_justification} />
+        ) : (
+          <p className="text-small text-text-tertiary">—</p>
+        )}
+      </Field>
     </Section>
   )
 }
@@ -243,7 +346,7 @@ function Timeline({ claim }: { claim: ClaimRequest }) {
             <div className="flex flex-col items-center">
               <span
                 className={cn(
-                  "size-6 rounded-full grid place-items-center text-[10px] mt-0.5",
+                  "size-6 rounded-full grid place-items-center text-[10px] mt-0.5 shrink-0",
                   done && "bg-mint/20 text-mint",
                   rejected && "bg-coral/20 text-coral",
                   !done && !rejected && "bg-sky/20 text-sky",
@@ -259,15 +362,21 @@ function Timeline({ claim }: { claim: ClaimRequest }) {
               </span>
               {i < rows.length - 1 && <span className="w-px flex-1 bg-border-subtle my-1" />}
             </div>
-            <div className="pb-4 min-w-0">
-              <p className="text-small text-text-primary">
-                {a.approver_name || "Pending approver"}{" "}
-                <span className="text-text-tertiary">· {a.status}</span>
-              </p>
-              {a.comment && <p className="text-[11px] text-text-secondary">“{a.comment}”</p>}
-              <p className="text-[10px] text-text-tertiary">
-                {a.acted_at ? fmtDate(a.acted_at) : "awaiting"}
-              </p>
+            <div className="pb-4 min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="min-w-0 text-small text-text-primary">
+                  <TruncTip text={a.approver_name || "Pending approver"} />
+                </span>
+                <span className="shrink-0 text-[10px] text-text-tertiary">
+                  {a.acted_at ? fmtDate(a.acted_at) : "awaiting"}
+                </span>
+              </div>
+              <p className="text-[10px] text-text-tertiary capitalize">{a.status}</p>
+              {a.comment && (
+                <p className="text-[11px] text-text-secondary mt-0.5 break-words [overflow-wrap:anywhere]">
+                  “{a.comment}”
+                </p>
+              )}
             </div>
           </li>
         )
@@ -290,11 +399,13 @@ function Metadata({ claim }: { claim: ClaimRequest }) {
       </button>
       {open && (
         <div className="mt-2">
-          <Row label="Claim ID" value={claim.id} />
-          <Row label="Created" value={fmtDate(claim.created_at)} />
-          <Row label="Updated" value={fmtDate(claim.updated_at)} />
+          <Field label="Claim ID">
+            <p className="text-[11px] text-text-secondary break-all font-mono">{claim.id}</p>
+          </Field>
+          <KV label="Created" value={fmtDate(claim.created_at)} />
+          <KV label="Updated" value={fmtDate(claim.updated_at)} />
           {claim.reimbursement_reference ? (
-            <Row label="Reimbursement ref" value={claim.reimbursement_reference} />
+            <KV label="Reimbursement ref" value={claim.reimbursement_reference} />
           ) : null}
         </div>
       )}
@@ -318,13 +429,14 @@ function AuditTrail({ claimId }: { claimId: string }) {
       ) : rows.length === 0 ? (
         <p className="text-small text-text-tertiary">No audit entries.</p>
       ) : (
-        <ul className="space-y-1.5">
+        <ul className="space-y-2">
           {rows.map((r) => (
-            <li key={r.id} className="flex items-center gap-2 text-[11px]">
-              <FileText className="size-3.5 text-text-tertiary shrink-0" />
-              <span className="text-text-primary">{r.action}</span>
-              <span className="text-text-tertiary">· {r.actor}</span>
-              <span className="ml-auto text-text-tertiary">{fmtDate(r.ts)}</span>
+            <li key={r.id} className="flex items-baseline gap-2 text-[11px]">
+              <FileText className="size-3.5 text-text-tertiary shrink-0 self-center" aria-hidden />
+              <span className="min-w-0 flex-1">
+                <TruncTip text={`${r.action} · ${r.actor}`} className="text-text-primary" />
+              </span>
+              <span className="shrink-0 text-text-tertiary">{fmtDate(r.ts)}</span>
             </li>
           ))}
         </ul>
@@ -333,7 +445,7 @@ function AuditTrail({ claimId }: { claimId: string }) {
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="glass-surface rounded-2xl px-4 py-3">
       <p className="layer-eyebrow mb-2">／ {title}</p>

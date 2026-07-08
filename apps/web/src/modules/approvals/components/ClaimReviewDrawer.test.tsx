@@ -64,11 +64,11 @@ describe("ClaimReviewDrawer", () => {
     render(<ClaimReviewDrawer claimId="c1" onClose={() => {}} onActed={() => {}} />)
     await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument())
     expect(screen.getByText(/Engineering/)).toBeInTheDocument()
-    expect(screen.getByText(/Manager: Sam Lee/)).toBeInTheDocument()
     expect(screen.getByText("Closed the Q3 renewal")).toBeInTheDocument()
-    expect(screen.getByText(/MYR/)).toBeInTheDocument()
-    // timeline shows the approver name
-    expect(screen.getAllByText("Sam Lee").length).toBeGreaterThanOrEqual(1)
+    // amount is formatted with thousands separators
+    expect(screen.getByText(/MYR 1,250\.00/)).toBeInTheDocument()
+    // manager (summary KV) + approver (timeline) both render the name
+    expect(screen.getAllByText("Sam Lee").length).toBeGreaterThanOrEqual(2)
   })
 
   it("approves via the API", async () => {
