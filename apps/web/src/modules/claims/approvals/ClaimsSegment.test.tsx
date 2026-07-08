@@ -54,14 +54,14 @@ vi.mock("../api", async (orig) => {
   }
 })
 
-import ClaimApprovalsPage from "./ClaimApprovalsPage"
+import { ClaimsSegment } from "./ClaimsSegment"
 
 const wrap = (ui: ReactNode) => render(<MemoryRouter>{ui}</MemoryRouter>)
 
-describe("ClaimApprovalsPage", () => {
+describe("ClaimsSegment", () => {
   it("loads summary + queue and opens the preview on row click", async () => {
     const user = userEvent.setup()
-    wrap(<ClaimApprovalsPage />)
+    wrap(<ClaimsSegment />)
     await waitFor(() => expect(screen.getByText("Nurul Izzah")).toBeInTheDocument())
     // KPI band metric present
     expect(screen.getByText(/12d · 1/)).toBeInTheDocument()

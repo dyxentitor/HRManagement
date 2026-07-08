@@ -139,14 +139,6 @@ export const NAV: NavGroup[] = [
 				module: "claims",
 			},
 			{
-				label: "Claims Approvals",
-				to: "/claims/approvals",
-				icon: Receipt,
-				perm: "claim:approve:team",
-				anyPerm: ["claim:approve:team", "claim:approve:finance"],
-				module: "claims",
-			},
-			{
 				label: "My Mandays",
 				to: "/incentive",
 				icon: Coins,
