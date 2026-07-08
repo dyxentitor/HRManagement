@@ -1,4 +1,4 @@
-import { ListFilter, Search, X } from "lucide-react"
+import { Flag, Flame, ListFilter, Search, X } from "lucide-react"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
@@ -33,6 +33,8 @@ export interface ApprovalToolbarProps {
   onFilters: (f: ApprovalFilters) => void
   categories: string[]
   awaitingCount: number
+  overdueCount: number
+  highValueCount: number
 }
 
 export function ApprovalToolbar({
@@ -46,6 +48,8 @@ export function ApprovalToolbar({
   onFilters,
   categories,
   awaitingCount,
+  overdueCount,
+  highValueCount,
 }: ApprovalToolbarProps) {
   const activeCount =
     (filters.category ? 1 : 0) +
@@ -85,6 +89,23 @@ export function ApprovalToolbar({
             className="w-full h-8 rounded-lg bg-surface-elevated/60 border border-border-subtle pl-8 pr-2 text-small text-text-primary"
           />
         </div>
+
+        <LensToggle
+          label="Overdue"
+          icon={<Flame className="size-3.5" />}
+          count={overdueCount}
+          active={filters.overdueOnly}
+          tone="coral"
+          onClick={() => onFilters({ ...filters, overdueOnly: !filters.overdueOnly })}
+        />
+        <LensToggle
+          label="High value"
+          icon={<Flag className="size-3.5" />}
+          count={highValueCount}
+          active={filters.highValueOnly}
+          tone="yellow"
+          onClick={() => onFilters({ ...filters, highValueOnly: !filters.highValueOnly })}
+        />
 
         <Popover>
           <PopoverTrigger asChild>
@@ -209,6 +230,43 @@ export function ApprovalToolbar({
         </div>
       )}
     </div>
+  )
+}
+
+function LensToggle({
+  label,
+  icon,
+  count,
+  active,
+  tone,
+  onClick,
+}: {
+  label: string
+  icon: React.ReactNode
+  count: number
+  active: boolean
+  tone: "coral" | "yellow"
+  onClick: () => void
+}) {
+  const toneText = tone === "coral" ? "text-coral" : "text-yellow"
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={label}
+      className={cn(
+        "inline-flex items-center gap-1.5 h-8 rounded-full border px-3 text-small transition-colors",
+        active
+          ? tone === "coral"
+            ? "border-coral/60 bg-coral/10 text-coral"
+            : "border-yellow/60 bg-yellow/10 text-yellow"
+          : "border-border-subtle text-text-secondary hover:text-text-primary",
+      )}
+    >
+      {icon} {label}
+      {count > 0 && <b className={cn("tabular-nums", toneText)}>{count}</b>}
+    </button>
   )
 }
 

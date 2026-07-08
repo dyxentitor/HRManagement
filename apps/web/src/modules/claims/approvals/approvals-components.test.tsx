@@ -12,9 +12,10 @@ vi.mock("../api", async (orig) => {
 })
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
-import { ApprovalKpiBand } from "./ApprovalKpiBand"
+import { ApprovalToolbar } from "./ApprovalToolbar"
 import { BulkApproveBar } from "./BulkApproveBar"
 import { ClaimApprovalRow } from "./ClaimApprovalRow"
+import { EMPTY_APPROVAL_FILTERS } from "./approvals-filter"
 
 const wrap = (ui: ReactNode) => render(<TooltipProvider>{ui}</TooltipProvider>)
 
@@ -48,21 +49,29 @@ const row = (o: Partial<Row> = {}): Row => ({
 })
 
 describe("approvals components", () => {
-  it("KPI band renders metrics and overdue tile toggles", () => {
-    const onToggleOverdue = vi.fn()
+  it("toolbar Overdue lens toggles the overdue filter", () => {
+    const onFilters = vi.fn()
     wrap(
-      <ApprovalKpiBand
-        summary={summary}
-        overdueActive={false}
-        highValueActive={false}
-        onToggleOverdue={onToggleOverdue}
-        onToggleHighValue={() => {}}
+      <ApprovalToolbar
+        tab="awaiting"
+        onTab={() => {}}
+        search=""
+        onSearch={() => {}}
+        sort="urgency"
+        onSort={() => {}}
+        filters={EMPTY_APPROVAL_FILTERS}
+        onFilters={onFilters}
+        categories={[]}
+        awaitingCount={summary.awaiting_count}
+        overdueCount={summary.overdue_count}
+        highValueCount={summary.high_value_count}
       />,
     )
-    expect(screen.getByText("6")).toBeInTheDocument()
-    expect(screen.getByText(/8d · 2/)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: /oldest/i }))
-    expect(onToggleOverdue).toHaveBeenCalled()
+    // the lens chip carries the overdue count
+    const overdue = screen.getByRole("button", { name: "Overdue" })
+    expect(overdue).toHaveTextContent("2")
+    fireEvent.click(overdue)
+    expect(onFilters).toHaveBeenCalledWith(expect.objectContaining({ overdueOnly: true }))
   })
 
   it("row renders identity + amount and fires approve", () => {

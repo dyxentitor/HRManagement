@@ -12,7 +12,6 @@ import {
   type ClaimApprovalRow as Row,
   claimsApi,
 } from "../api"
-import { ApprovalKpiBand } from "./ApprovalKpiBand"
 import { ApprovalToolbar } from "./ApprovalToolbar"
 import { BulkApproveBar } from "./BulkApproveBar"
 import { ClaimApprovalRow } from "./ClaimApprovalRow"
@@ -101,14 +100,6 @@ export function ClaimsSegment({ onChanged }: { onChanged?: () => void }) {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-col gap-4 pb-16">
-        <ApprovalKpiBand
-          summary={summary}
-          overdueActive={filters.overdueOnly}
-          highValueActive={filters.highValueOnly}
-          onToggleOverdue={() => setFilters((f) => ({ ...f, overdueOnly: !f.overdueOnly }))}
-          onToggleHighValue={() => setFilters((f) => ({ ...f, highValueOnly: !f.highValueOnly }))}
-        />
-
         <ApprovalToolbar
           tab={tab}
           onTab={setTab}
@@ -120,6 +111,8 @@ export function ClaimsSegment({ onChanged }: { onChanged?: () => void }) {
           onFilters={setFilters}
           categories={categories}
           awaitingCount={summary?.awaiting_count ?? 0}
+          overdueCount={summary?.overdue_count ?? 0}
+          highValueCount={summary?.high_value_count ?? 0}
         />
 
         {loading ? (
