@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { leaveApi } from "@/modules/leave/api";
 
 import { type InboxItem, approveItem, getInbox, rejectItem } from "../api";
+import { ClaimReviewDrawer } from "../components/ClaimReviewDrawer";
 import { type Clash, UnifiedApprovalCard } from "../components/UnifiedApprovalCard";
 
 type Filter = "all" | InboxItem["kind"];
@@ -18,6 +19,7 @@ export default function UnifiedInboxPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [filter, setFilter] = useState<Filter>("all");
 	const [bulkBusy, setBulkBusy] = useState(false);
+	const [reviewClaimId, setReviewClaimId] = useState<string | null>(null);
 
 	const refresh = useCallback(async () => {
 		setLoading(true);
@@ -260,10 +262,20 @@ export default function UnifiedInboxPage() {
 							onToggleSelect={() => toggle(item.id)}
 							onApprove={(c) => approve(item, c)}
 							onReject={(c) => reject(item, c)}
+							onReview={item.kind === "claim" ? () => setReviewClaimId(item.id) : undefined}
 						/>
 					))}
 				</div>
 			)}
+
+			<ClaimReviewDrawer
+				claimId={reviewClaimId}
+				onClose={() => setReviewClaimId(null)}
+				onActed={() => {
+					setReviewClaimId(null);
+					void refresh();
+				}}
+			/>
 		</div>
 	);
 }

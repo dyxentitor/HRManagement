@@ -47,6 +47,7 @@ export interface UnifiedApprovalCardProps {
 	onToggleSelect: () => void;
 	onApprove: (comment: string) => Promise<void>;
 	onReject: (comment: string) => Promise<void>;
+	onReview?: () => void;
 }
 
 /** What is being requested — the focal "big number" + context per kind. */
@@ -107,6 +108,7 @@ export function UnifiedApprovalCard({
 	onToggleSelect,
 	onApprove,
 	onReject,
+	onReview,
 }: UnifiedApprovalCardProps) {
 	const [comment, setComment] = useState("");
 	const [busy, setBusy] = useState(false);
@@ -173,6 +175,11 @@ export function UnifiedApprovalCard({
 							placeholder="Comment (required to reject)…"
 							className="flex-1 h-8 text-small"
 						/>
+						{onReview && (
+							<Button type="button" variant="outline" size="sm" onClick={onReview}>
+								Review
+							</Button>
+						)}
 						<Button
 							type="button"
 							variant="outline"

@@ -45,6 +45,7 @@ vi.mock("../api", () => ({
 	rejectItem: mocks.rejectItem,
 }));
 vi.mock("@/modules/leave/api", () => ({ leaveApi: { coverage: mocks.coverage } }));
+vi.mock("@/lib/perm", () => ({ useCan: () => false }));
 
 import UnifiedInboxPage from "./UnifiedInboxPage";
 

@@ -32,6 +32,7 @@ export default function ClaimSubmitPage() {
 	const [expenseDate, setExpenseDate] = useState("");
 	const [merchant, setMerchant] = useState("");
 	const [description, setDescription] = useState("");
+	const [businessJustification, setBusinessJustification] = useState("");
 	const [files, setFiles] = useState<File[]>([]);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -91,6 +92,7 @@ export default function ClaimSubmitPage() {
 				expense_date: expenseDate,
 				description,
 				merchant: merchant || undefined,
+				business_justification: businessJustification || undefined,
 			});
 			for (const f of files) {
 				await uploadFile(created.id, f);
@@ -208,6 +210,19 @@ export default function ClaimSubmitPage() {
 							onChange={(e) => setDescription(e.target.value)}
 							rows={2}
 							placeholder="What was it for…"
+						/>
+					</div>
+
+					<div>
+						<span className="text-label uppercase text-text-tertiary block mb-1.5">
+							Business justification{" "}
+							<span className="normal-case tracking-normal text-text-tertiary">· optional</span>
+						</span>
+						<Textarea
+							value={businessJustification}
+							onChange={(e) => setBusinessJustification(e.target.value)}
+							rows={2}
+							placeholder="Why is this expense justified for the business…"
 						/>
 					</div>
 
