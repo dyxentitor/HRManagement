@@ -129,4 +129,37 @@ export const claimsApi = {
 		_get<{ url: string; filename: string }>(
 			`/api/v1/claims/${claimId}/attachments/${attachmentId}/download/`,
 		),
+	approvalsQueue: (tab: ApprovalTab) =>
+		_get<ClaimApprovalRow[]>(`/api/v1/claims/approvals/?tab=${tab}`),
+	approvalsSummary: () => _get<ApprovalSummary>("/api/v1/claims/approvals/summary/"),
+};
+
+export type ApprovalTab = "awaiting" | "all" | "approved" | "rejected";
+
+export type ClaimApprovalRow = {
+	id: string;
+	employee_name: string;
+	employee_role_title: string | null;
+	employee_code: string;
+	amount: string;
+	currency_code: string;
+	category_name: string;
+	merchant: string;
+	submitted_at: string | null;
+	status: ClaimStatus;
+	stage_label: string;
+	attachments_count: number;
+	is_high_value: boolean;
+	age_days: number;
+	is_overdue: boolean;
+	actionable: boolean;
+};
+
+export type ApprovalSummary = {
+	awaiting_count: number;
+	pending_value: string;
+	oldest_days: number;
+	overdue_count: number;
+	high_value_count: number;
+	approved_this_week: number;
 };
