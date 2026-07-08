@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { PageHeader } from "@/components/shell/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -25,7 +24,7 @@ import {
   paginate,
 } from "./approvals-filter"
 
-export default function ClaimApprovalsPage() {
+export function ClaimsSegment({ onChanged }: { onChanged?: () => void }) {
   const [tab, setTab] = useState<ApprovalTab>("awaiting")
   const [rows, setRows] = useState<Row[]>([])
   const [summary, setSummary] = useState<ApprovalSummary | null>(null)
@@ -93,6 +92,7 @@ export default function ClaimApprovalsPage() {
       await claimsApi.approve(id, "")
       toast.success("Claim approved")
       await refresh()
+      onChanged?.()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Approve failed")
     }
@@ -101,8 +101,6 @@ export default function ClaimApprovalsPage() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-col gap-4 pb-16">
-        <PageHeader title="Claims Approvals" subtitle="Review and act on claims awaiting you." />
-
         <ApprovalKpiBand
           summary={summary}
           overdueActive={filters.overdueOnly}
@@ -206,7 +204,10 @@ export default function ClaimApprovalsPage() {
         <BulkApproveBar
           selected={selectedRows}
           onClear={() => setSelected(new Set())}
-          onDone={() => void refresh()}
+          onDone={() => {
+            void refresh()
+            onChanged?.()
+          }}
         />
 
         <ClaimReviewDrawer
@@ -215,6 +216,7 @@ export default function ClaimApprovalsPage() {
           onActed={() => {
             setPreviewId(null)
             void refresh()
+            onChanged?.()
           }}
         />
       </div>
