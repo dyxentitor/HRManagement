@@ -158,22 +158,50 @@ class WorkflowEngine:
             )
             return
 
-        # APPROVE — advance or terminate
-        workflow_step_approved.send(
-            sender=self.__class__,
-            subject=subject,
-            chain=chain,
-            level=subject.current_level,
-            actor=actor,
-            comment=comment,
-        )
-        next_level = subject.current_level + 1
-        if next_level > chain.total_steps:
-            subject.status = "approved"
-            workflow_approved.send(sender=self.__class__, subject=subject, chain=chain)
-            return
+        # APPROVE — advance, auto-skipping consecutive stages the SAME actor may act
+        # on (e.g. a manager who is also the department head). This collapses a
+        # single approval action across every stage routed to the same authorized
+        # person, so one click advances to the next *different* approver. Each stage
+        # still fires its own step-approved signal (ClaimApproval rows, notifications,
+        # audit) atomically. Only runs when an authorizer is provided (claims); the
+        # legacy path (leave) advances exactly one stage as before.
+        while True:
+            approved_step = chain.get_step(subject.current_level)
+            workflow_step_approved.send(
+                sender=self.__class__,
+                subject=subject,
+                chain=chain,
+                level=subject.current_level,
+                actor=actor,
+                comment=comment,
+            )
+            next_level = subject.current_level + 1
+            if next_level > chain.total_steps:
+                subject.status = "approved"
+                workflow_approved.send(sender=self.__class__, subject=subject, chain=chain)
+                return
 
-        subject.current_level = next_level
+            subject.current_level = next_level
+
+            if authorizer is None:
+                return
+            next_step = chain.get_step(next_level)
+            if next_step is None or next_step.routing is None:
+                return
+            # Only collapse stages of the SAME functional tier (same required
+            # permission) — so a manager's approval covers Manager + Dept-Head but
+            # never auto-performs a different-tier stage (e.g. Finance): the claim
+            # lands in the Finance queue for an explicit finance approval.
+            if approved_step is None or next_step.required_permission != approved_step.required_permission:
+                return
+            if not authorizer.can_act(
+                next_step,
+                actor,
+                subject,
+                resolve_target=lambda lvl=next_level: self._resolve_step(subject, chain, lvl),
+            ):
+                return
+            # Same tier + same authorized actor — loop to auto-approve the next stage.
 
     def cancel(self, subject: WorkflowSubject, actor: User) -> None:
         if subject.status not in {"draft", "submitted"}:

@@ -147,7 +147,9 @@ def test_under_500_two_step_flow(stack) -> None:
 
 @pytest.mark.django_db
 def test_500_to_5000_three_step_flow(stack) -> None:
-    """500..5000 uses 3-step chain. mgr_user acts as both manager AND dept head."""
+    """500..5000 is a 3-step chain (Manager → Dept-Head → Finance). When the dept
+    head is the same person as the manager, a SINGLE manager approval covers both
+    same-tier stages (skip-same-approver) and lands the claim at Finance."""
     org, mgr_user, fin_user, emp_user, emp_emp, cat = stack
     # Make mgr_emp both manager and dept head of emp_emp's department
     emp_emp.department.head_employee_id = emp_emp.manager_id
@@ -164,9 +166,10 @@ def test_500_to_5000_three_step_flow(stack) -> None:
     )
 
     ClaimRequestService.submit(claim, actor=emp_user)
+    # ONE manager approval covers Manager (L1) + Dept-Head (L2) → advances to Finance (L3).
     ClaimRequestService.act(claim, actor=mgr_user, decision=Decision.APPROVE, comment="ok")
-    # Step 2: dept head — same user (mgr_user)
-    ClaimRequestService.act(claim, actor=mgr_user, decision=Decision.APPROVE, comment="ok dept")
+    claim.refresh_from_db()
+    assert claim.current_level == 3 and claim.status == "submitted"
     ClaimRequestService.act(claim, actor=fin_user, decision=Decision.APPROVE, comment="paid")
     claim.refresh_from_db()
     assert claim.status == "finance_approved"

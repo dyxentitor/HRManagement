@@ -135,6 +135,25 @@ def test_override_holder_can_act_on_any_stage(env):
 
 
 @pytest.mark.django_db
+def test_single_manager_approval_advances_past_same_person_dept_head(env):
+    """500-5000 chain is Manager -> Dept-Head -> Finance. When the dept head is the
+    same person as the manager, ONE manager approval must advance to the finance
+    stage (skip-same-approver), not stop at the dept-head stage needing a 2nd click."""
+    org, dept, cat = env
+    mgr = _user_with(org, "mgr@x.com", "claim:approve:team")
+    mgr_emp = _emp(org, dept, "MGR", mgr)
+    dept.head_employee_id = mgr_emp.id  # dept head == the manager
+    dept.save()
+    emp = _emp(org, dept, "EMP", _user_with(org, "emp@x.com"), manager=mgr_emp)
+
+    claim = _claim(org, cat, emp, amount="1000")  # 500-5000 -> 3-step chain
+    ClaimRequestService.act(claim, actor=mgr, decision=Decision.APPROVE)  # ONE click
+    claim.refresh_from_db()
+    assert claim.current_level == 3  # advanced past dept-head (L2) to finance (L3)
+    assert claim.status == "submitted"  # at finance stage, not yet finance-approved
+
+
+@pytest.mark.django_db
 def test_multi_role_single_person_approves_both_stages(env):
     """Small-business case: one person is manager AND finance — one login, both stages."""
     org, dept, cat = env
