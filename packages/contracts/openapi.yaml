@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.56.0
+  version: 1.58.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -8498,6 +8498,10 @@ components:
         approver_id:
           type: string
           format: uuid
+        approver_name:
+          type: string
+          nullable: true
+          readOnly: true
         status:
           $ref: '#/components/schemas/Status872Enum'
         comment:
@@ -8512,6 +8516,7 @@ components:
           nullable: true
       required:
       - approver_id
+      - approver_name
       - id
       - level
     ClaimApprovalRequest:
@@ -8730,10 +8735,30 @@ components:
           type: string
           format: uuid
           readOnly: true
+        employee_name:
+          type: string
+          readOnly: true
+        employee_code:
+          type: string
+          readOnly: true
+        employee_department_name:
+          type: string
+          readOnly: true
+        employee_role_title:
+          type: string
+          readOnly: true
+          nullable: true
+        employee_manager_name:
+          type: string
+          nullable: true
+          readOnly: true
         category:
           type: string
           format: uuid
         category_code:
+          type: string
+          readOnly: true
+        category_name:
           type: string
           readOnly: true
         amount:
@@ -8751,6 +8776,8 @@ components:
         merchant:
           type: string
           maxLength: 200
+        business_justification:
+          type: string
         status:
           allOf:
           - $ref: '#/components/schemas/ClaimStatusEnum'
@@ -8795,9 +8822,15 @@ components:
       - attachments
       - category
       - category_code
+      - category_name
       - created_at
       - current_level
       - employee
+      - employee_code
+      - employee_department_name
+      - employee_manager_name
+      - employee_name
+      - employee_role_title
       - expense_date
       - id
       - org_id
@@ -8828,6 +8861,8 @@ components:
         merchant:
           type: string
           maxLength: 200
+        business_justification:
+          type: string
       required:
       - amount
       - category
@@ -10880,6 +10915,8 @@ components:
         merchant:
           type: string
           maxLength: 200
+        business_justification:
+          type: string
     PatchedCustomerRequest:
       type: object
       properties:

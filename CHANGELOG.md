@@ -2,6 +2,33 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.0] — 2026-07-08
+
+**Claim approval review redesign** — a rich, in-context Claim Review drawer so approvers can decide
+without navigating away. Additive and backward-compatible.
+
+### Added
+- **`ClaimReviewDrawer`** (opened via a **Review** button on claim inbox items): requester header
+  (name · department · **reporting manager** · role · code) with a status badge + amount; a claim
+  summary (category, expense date, merchant, submitted date, description, **business justification**);
+  a **receipts gallery** (preview + download); a **visual approval timeline** built from the real
+  approval history (approver name · decision · comment · timestamp, reflecting the v1.57.1 same-tier
+  collapse); expandable metadata; an **audit-trail tab shown only to `audit:read:org` holders**; and a
+  **sticky footer** with a comment box + Approve/Reject (reject requires a comment).
+- **`business_justification`** field on `ClaimRequest` (additive migration, blank default) + an
+  optional textarea on the claim submit form.
+
+### Changed
+- `ClaimRequestSerializer` now returns a complete review payload — `employee_name`,
+  `employee_department_name`, `employee_manager_name`, `employee_role_title`, `employee_code`,
+  `category_name`, and `approver_name` per approval row — so the drawer needs no N+1 fetches.
+  Contracts regenerated.
+
+### Notes
+- Leave/KPI approval cards unchanged (scope kept to claims). Approve/reject/workflow/permissions
+  unchanged; old claims render with a blank justification. Tests: +2 serializer, +2 drawer, + inbox
+  test updated for the new `useCan` dependency.
+
 ## [1.57.1] — 2026-07-08
 
 **Fix: claim approval no longer requires two clicks.** For claims ≥ 500 the approval chain has a

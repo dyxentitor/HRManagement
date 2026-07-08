@@ -4496,6 +4496,7 @@ export interface components {
             level: number;
             /** Format: uuid */
             approver_id: string;
+            readonly approver_name: string | null;
             status?: components["schemas"]["Status872Enum"];
             comment?: string;
             /** Format: date-time */
@@ -4586,9 +4587,15 @@ export interface components {
             readonly org_id: string;
             /** Format: uuid */
             readonly employee: string;
+            readonly employee_name: string;
+            readonly employee_code: string;
+            readonly employee_department_name: string;
+            readonly employee_role_title: string | null;
+            readonly employee_manager_name: string | null;
             /** Format: uuid */
             category: string;
             readonly category_code: string;
+            readonly category_name: string;
             /** Format: decimal */
             amount: string;
             currency_code?: string;
@@ -4596,6 +4603,7 @@ export interface components {
             expense_date: string;
             description?: string;
             merchant?: string;
+            business_justification?: string;
             readonly status: components["schemas"]["ClaimStatusEnum"];
             readonly current_level: number;
             /** Format: date-time */
@@ -4620,6 +4628,7 @@ export interface components {
             expense_date: string;
             description?: string;
             merchant?: string;
+            business_justification?: string;
         };
         /**
          * @description * `pending` - Pending
@@ -5469,6 +5478,7 @@ export interface components {
             expense_date?: string;
             description?: string;
             merchant?: string;
+            business_justification?: string;
         };
         PatchedCustomerRequest: {
             name?: string;
