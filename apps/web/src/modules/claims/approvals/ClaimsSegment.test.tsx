@@ -63,8 +63,8 @@ describe("ClaimsSegment", () => {
     const user = userEvent.setup()
     wrap(<ClaimsSegment />)
     await waitFor(() => expect(screen.getByText("Nurul Izzah")).toBeInTheDocument())
-    // KPI band metric present
-    expect(screen.getByText(/12d · 1/)).toBeInTheDocument()
+    // lens chip carries the overdue count from the summary (band removed)
+    expect(screen.getByRole("button", { name: "Overdue" })).toHaveTextContent("1")
     // clicking the row body opens the (mocked) drawer
     await user.click(screen.getByText("Nurul Izzah"))
     await waitFor(() => expect(screen.getByText("drawer:c1")).toBeInTheDocument())

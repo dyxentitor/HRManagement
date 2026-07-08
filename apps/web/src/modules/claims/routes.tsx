@@ -9,7 +9,7 @@ const FinanceQueuePage = lazy(() => import("./pages/FinanceQueuePage"));
 export const claimsRoutes: RouteObject[] = [
 	{ path: "claims/submit", element: <ClaimSubmitPage /> },
 	{ path: "claims/me", element: <MyClaimsPage /> },
-	// Claims approvals now live in the unified Approval Center.
-	{ path: "claims/approvals", element: <Navigate to="/approvals?type=claim" replace /> },
+	// Claims approvals now live in the Approval Center shell.
+	{ path: "claims/approvals", element: <Navigate to="/approvals/claims" replace /> },
 	{ path: "claims/finance", element: <FinanceQueuePage /> },
 ];
