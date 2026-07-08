@@ -79,6 +79,7 @@ class ClaimRequest(TenantBaseModel):
     expense_date = models.DateField()
     description = models.TextField(blank=True)
     merchant = models.CharField(max_length=200, blank=True)
+    business_justification = models.TextField(blank=True, default="")
     status = models.CharField(max_length=20, choices=REQUEST_STATUSES, default="draft")
     current_level = models.IntegerField(default=0)
     submitted_at = models.DateTimeField(null=True, blank=True)
