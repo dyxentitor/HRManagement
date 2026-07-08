@@ -26,22 +26,43 @@ export type ClaimStatus =
 	| "rejected"
 	| "cancelled";
 
+export type ClaimApproval = {
+	id: number;
+	level: number;
+	approver_id: string;
+	approver_name: string | null;
+	status: "pending" | "approved" | "rejected" | "delegated" | "skipped";
+	comment: string;
+	acted_at: string | null;
+	delegated_to: string | null;
+};
+
 export type ClaimRequest = {
 	id: string;
 	employee: string;
+	employee_name?: string;
+	employee_code?: string;
+	employee_department_name?: string;
+	employee_role_title?: string | null;
+	employee_manager_name?: string | null;
 	category: string;
 	category_code: string;
+	category_name?: string;
 	amount: string;
 	currency_code: string;
 	expense_date: string;
 	description: string;
 	merchant: string;
+	business_justification?: string;
 	status: ClaimStatus;
 	current_level: number;
 	submitted_at: string | null;
 	reimbursed_at: string | null;
 	reimbursement_reference: string;
+	approvals?: ClaimApproval[];
 	attachments: ClaimAttachment[];
+	created_at?: string;
+	updated_at?: string;
 };
 
 async function _get<T>(url: string): Promise<T> {
@@ -80,6 +101,7 @@ export const claimsApi = {
 		expense_date: string;
 		description: string;
 		merchant?: string;
+		business_justification?: string;
 	}) => _post<ClaimRequest>("/api/v1/claims/", body),
 	submit: (id: string) => _post<ClaimRequest>(`/api/v1/claims/${id}/submit/`),
 	approve: (id: string, comment = "") =>
