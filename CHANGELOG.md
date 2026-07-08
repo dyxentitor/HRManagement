@@ -2,6 +2,19 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.57.1] — 2026-07-08
+
+**Fix: claim approval no longer requires two clicks.** For claims ≥ 500 the approval chain has a
+Department-Head stage between Manager and Finance; when the department head resolves to the same
+person as the manager, that person had to click Approve twice (once per same-tier stage) before the
+claim reached Finance. The workflow engine now **collapses consecutive stages of the same functional
+tier** (same `required_permission`) that the same actor is authorized for, within one atomic approval:
+a single manager approval covers Manager + Dept-Head and lands the claim in the **Finance queue**. It
+**stops at a different tier**, so Finance stays an explicit, separate approval. Each collapsed stage
+still fires its signals (ClaimApproval rows, notifications, audit). Gated on the authorizer, so
+Leave's legacy path advances exactly one stage as before. No new permission, no migration; tests: +1
+reproduction, existing 500–5000 flow updated (165 workflow/leave/inbox + 20 claims tests green).
+
 ## [1.57.0] — 2026-07-08
 
 **Permission-driven claims approval (RBAC).** The claims approval **workflow is unchanged**
