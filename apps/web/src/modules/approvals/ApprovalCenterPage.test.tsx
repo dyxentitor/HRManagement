@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest"
 const mocks = vi.hoisted(() => ({
   getInbox: vi.fn(),
   coverage: vi.fn().mockResolvedValue({ per_day: {}, people: [] }),
+  can: vi.fn((_p: string) => true),
 }))
 vi.mock("./api", () => ({
   getInbox: mocks.getInbox,
@@ -14,7 +15,7 @@ vi.mock("./api", () => ({
   rejectItem: vi.fn(),
 }))
 vi.mock("@/modules/leave/api", () => ({ leaveApi: { coverage: mocks.coverage } }))
-vi.mock("@/lib/perm", () => ({ useCan: () => true }))
+vi.mock("@/lib/perm", () => ({ useCan: (p: string) => mocks.can(p) }))
 vi.mock("@/lib/auth", () => ({ useAuth: () => ({ user: { id: "me" } }) }))
 vi.mock("./components/ClaimReviewDrawer", () => ({ ClaimReviewDrawer: () => null }))
 // Claims segment is heavy + self-fetches — stub it.
@@ -42,6 +43,7 @@ const wrap = (ui: ReactNode) => render(<MemoryRouter>{ui}</MemoryRouter>)
 
 describe("ApprovalCenterPage", () => {
   it("shows the rail and switches to the Claims segment", async () => {
+    mocks.can.mockReturnValue(true)
     mocks.getInbox.mockResolvedValue([claim])
     const user = userEvent.setup()
     wrap(<ApprovalCenterPage />)
@@ -50,5 +52,15 @@ describe("ApprovalCenterPage", () => {
     // rail has Claims tab
     await user.click(screen.getByRole("button", { name: /^claims/i }))
     await waitFor(() => expect(screen.getByText("claims-segment")).toBeInTheDocument())
+  })
+
+  it("shows the Leave tab for a leave approver even with no pending leave", async () => {
+    // Only the real leave-approval perm is granted; the inbox has no leave items.
+    mocks.can.mockImplementation((p: string) => p === "leave:request:approve:team")
+    mocks.getInbox.mockResolvedValue([])
+    wrap(<ApprovalCenterPage />)
+    await waitFor(() => expect(screen.getByRole("button", { name: /^leave/i })).toBeInTheDocument())
+    // Claims tab is NOT shown (no claim perm, no claim items)
+    expect(screen.queryByRole("button", { name: /^claims/i })).not.toBeInTheDocument()
   })
 })

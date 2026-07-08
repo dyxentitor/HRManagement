@@ -41,7 +41,7 @@ export const APPROVAL_SEGMENTS: ApprovalSegmentDescriptor[] = [
   {
     key: "leave",
     label: "Leave",
-    anyPerm: ["leave:approve:team"],
+    anyPerm: ["leave:request:approve:team"],
     badge: leaveBadge,
     Component: LeaveSegment,
   },

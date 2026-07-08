@@ -16,7 +16,7 @@ export default function ApprovalCenterPage() {
   // All hooks called unconditionally (rules of hooks).
   const canClaimTeam = useCan("claim:approve:team")
   const canClaimFinance = useCan("claim:approve:finance")
-  const canLeave = useCan("leave:approve:team")
+  const canLeave = useCan("leave:request:approve:team")
   const perms = { claim: canClaimTeam || canClaimFinance, leave: canLeave }
 
   // A segment shows if the user holds its perm (or it's "always"), or its badge > 0.
