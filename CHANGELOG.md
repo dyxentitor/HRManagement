@@ -2,6 +2,33 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.61.0] — 2026-07-08
+
+**Approvals page adopts the People/Settings shell.** The `/approvals` "Approval Center" is rebuilt to
+match the design language of the People (`/admin/people`) and Settings (`/admin/settings`) hubs —
+a **220px left-nav panel + nested routes + `<Outlet/>`** replaces the horizontal pill tabs and the
+`?type=` search-param registry. Users now recognise Approvals as part of the same unified HRMS.
+
+- **Left nav — types only.** `All Approvals · Claims · Leave · KPI`, with lucide icons, coral pending
+  badges, NavLink active states, and hover states identical to People/Settings. Cross-cutting **lenses**
+  (Overdue, High Value) become **toolbar filter chips** inside each workspace, not nav items — so types
+  and lenses stay on separate axes and the nav scales without redesign. (`Pending` dropped — All *is*
+  the pending queue; `Returned` dropped — no rework state exists in the data model; `High Value` is
+  claims-only.)
+- **Real nested routes.** `/approvals` (→ All), `/approvals/claims`, `/approvals/leave`, `/approvals/kpi`
+  — deep-linkable, with working browser back/forward. `/claims/approvals` → `/approvals/claims`;
+  `/leave/approvals` → `/approvals/leave`.
+- **Calm content, hero band removed.** The Claims aurora `ApprovalKpiBand` (v1.59.0) is deleted; every
+  type page is `PageHeader → toolbar → list`, like the sibling pages. The band's Overdue / High-Value
+  toggles move into `ApprovalToolbar` as counted chips; awaiting counts live in the nav badges.
+- **Responsive.** Below `md`, the left panel collapses to a horizontal, swipeable pill row above the
+  content (icons + badges preserved); `main` gets `min-w-0` so long employee/merchant names can't blow
+  out the layout. Row content keeps its existing `ClampText`/`TruncTip` overflow protection.
+- New: `ApprovalsShell`, `ApprovalsNav` (+ `approvals-nav-config`), `InboxToolbar`, `inbox-filter`
+  helpers, and four workspace pages. Removed: `ApprovalCenterPage`, `approval-registry`, the
+  `All/Leave/KPI` segment wrappers, and `ApprovalKpiBand`. **Frontend-only — no DB / API / permission /
+  workflow change; no new perm codes.** Approvals + claims-approvals suites green (29 tests).
+
 ## [1.60.1] — 2026-07-08
 
 **Fix: the Leave tab was missing from the Approval Center.** The segment registry gated Leave on a
