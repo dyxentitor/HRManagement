@@ -2,6 +2,13 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.60.1] — 2026-07-08
+
+**Fix: the Leave tab was missing from the Approval Center.** The segment registry gated Leave on a
+non-existent permission `leave:approve:team`, so the Leave tab only appeared when there were pending
+leave items — never on permission alone. Now uses the real `leave:request:approve:team` (matches the
+leave viewset + default roles). Regression test added.
+
 ## [1.60.0] — 2026-07-08
 
 **Unified Approval Center** — consolidates the two approval surfaces (the unified inbox + the separate
