@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.58.0
+  version: 1.59.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -1708,6 +1708,36 @@ paths:
             schema:
               $ref: '#/components/schemas/ClaimRequestRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/approvals/:
+    get:
+      operationId: claims_approvals_retrieve
+      description: Claims Approvals workspace rows for the current approver (?tab=).
+      tags:
+      - claims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimRequest'
+          description: ''
+  /api/v1/claims/approvals/summary/:
+    get:
+      operationId: claims_approvals_summary_retrieve
+      description: KPI summary for the Claims Approvals workspace.
+      tags:
+      - claims
       security:
       - jwtAuth: []
       responses:

@@ -2,6 +2,35 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.59.0] — 2026-07-08
+
+**Claims Approvals workspace** — a dedicated, premium approvals surface at `/claims/approvals`
+designed collaboratively section-by-section (visual companion). The unified inbox stays for leave/KPI.
+
+### Added
+- **Hero-skinned KPI band** — 5 decision metrics (Awaiting-you · Pending value · Oldest/overdue ·
+  High-value ≥RM 5,000 · Approved-this-week) sharing the app's aurora/eyebrow/pastel hero language;
+  the overdue and high-value tiles are one-tap filters.
+- **Filter toolbar** — status tabs (Awaiting you / All / Approved / Rejected), search
+  (employee/merchant/claim #), a Filters popover (category, min amount) with a badge + removable
+  chips, and sort (Urgency / Newest / Amount high→low).
+- **Two-line claim rows** — identity + amount (tabular) + stage + inline Approve + ⋯ (Review/Reject);
+  urgency left-accent (coral overdue, amber high-value); row click opens the review drawer, checkbox
+  selects for bulk. Every user field is overflow-safe (TruncTip + wrapping).
+- **Floating bulk-Approve** — count + total + high-value flag; a confirmation runs each approval
+  through the existing `StageAuthorizer` and reports "N approved · M skipped".
+- **Backend**: `GET /claims/approvals/?tab=` + `/claims/approvals/summary/` (gated on
+  `claim:approve:team` OR `claim:approve:finance`), backed by a shared `actionable_claim_ids()`
+  helper **extracted from the inbox** (structural + permission-pool authz in one place; inbox
+  refactored to use it, parity preserved). `ClampText`/`TruncTip` extracted to
+  `components/hrms/overflow` for reuse.
+
+### Notes
+- Additive: new endpoints/page, no migration, workflow/permissions unchanged; reuses the existing
+  approve endpoint + `ClaimReviewDrawer` (v1.58.1). Pagination client-side (10/25/50); keyboard
+  shortcuts deferred. Contracts regenerated. Tests: **+8 backend**, **+10 frontend**. Pre-existing
+  `OrgLogo` org-name test drift unchanged.
+
 ## [1.58.1] — 2026-07-08
 
 **Claim Review panel — overflow-safe redesign.** Fixes real text-overflow and clutter seen in the

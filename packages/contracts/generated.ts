@@ -1101,6 +1101,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/claims/approvals/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Claims Approvals workspace rows for the current approver (?tab=). */
+        get: operations["claims_approvals_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/claims/approvals/summary/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description KPI summary for the Claims Approvals workspace. */
+        get: operations["claims_approvals_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/claims/categories/": {
         parameters: {
             query?: never;
@@ -8085,6 +8119,44 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["ClaimRequestRequest"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_approvals_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimRequest"];
+                };
+            };
+        };
+    };
+    claims_approvals_summary_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
