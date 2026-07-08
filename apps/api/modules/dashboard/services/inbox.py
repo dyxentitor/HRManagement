@@ -54,6 +54,61 @@ class InboxItem:
         }
 
 
+def _claim_inbox_item(c) -> InboxItem:
+    return InboxItem(
+        kind="claim",
+        id=str(c.id),
+        employee_code=c.employee.employee_code,
+        summary=f"{c.category.code} — {c.currency_code} {c.amount} ({c.expense_date})",
+        submitted_at=c.submitted_at,
+        deep_link=f"/approvals?focus={c.id}",
+        employee_id=str(c.employee_id),
+        name=_emp_name(c.employee) or c.employee.employee_code,
+        department=_emp_dept(c.employee),
+        type_code=c.category.code,
+        detail={
+            "amount": str(c.amount),
+            "currency_code": c.currency_code,
+            "expense_date": c.expense_date.isoformat(),
+            "attachments": [
+                {"id": a.id, "filename": a.filename, "size_bytes": a.size_bytes}
+                for a in c.attachments.all()
+            ],
+        },
+    )
+
+
+def _append_pool_claim_items(items: list[InboxItem], user: User, seen_claim_ids: set) -> None:
+    """Add claims whose current stage is a permission pool the user can act on."""
+    from common.workflow.chain import RoutingKind
+    from modules.claims.chains import select_chain
+    from modules.identity.services.permissions import get_user_perms
+
+    perms = get_user_perms(user)
+    candidates = (
+        ClaimRequest.all_objects.filter(
+            org_id=user.org_id, status="submitted", deleted_at__isnull=True
+        )
+        .exclude(id__in=seen_claim_ids)
+        .select_related("employee__department", "category")
+        .prefetch_related("attachments", "category__policies")
+    )
+    for c in candidates:
+        if c.employee.user_id == user.id:  # never your own claim
+            continue
+        policy = c.category.policies.filter(deleted_at__isnull=True).first()
+        chain = select_chain(
+            amount=c.amount, override_code=policy.approval_chain_code if policy else ""
+        )
+        step = chain.get_step(c.current_level)
+        if step is None or step.routing != RoutingKind.PERMISSION_POOL:
+            continue
+        if not step.required_permission or step.required_permission not in perms:
+            continue
+        seen_claim_ids.add(c.id)
+        items.append(_claim_inbox_item(c))
+
+
 def get_inbox(*, user: User) -> list[InboxItem]:
     """Pending leave + claim items where this user is the current approver."""
     items: list[InboxItem] = []
@@ -102,12 +157,17 @@ def get_inbox(*, user: User) -> list[InboxItem]:
             )
         )
 
-    # Claims: same pattern
+    # Claims — two sources, deduped by claim id:
+    #  (a) structural: I'm the resolved approver of a pending ClaimApproval row.
+    #  (b) pool: the claim's current stage is a permission-pool step whose required
+    #      permission I hold (any holder sees it; it clears once the stage advances).
+    seen_claim_ids: set = set()
+
     pending_claim_ids = ClaimApproval.objects.filter(
         approver_id=user.id,
         status="pending",
     ).values_list("claim_id", flat=True)
-    claim_qs = (
+    structural_qs = (
         ClaimRequest.all_objects.filter(
             id__in=pending_claim_ids,
             status__in=("submitted", "manager_approved"),
@@ -116,30 +176,11 @@ def get_inbox(*, user: User) -> list[InboxItem]:
         .select_related("employee__department", "category")
         .prefetch_related("attachments")
     )
-    for c in claim_qs:
-        items.append(
-            InboxItem(
-                kind="claim",
-                id=str(c.id),
-                employee_code=c.employee.employee_code,
-                summary=f"{c.category.code} — {c.currency_code} {c.amount} ({c.expense_date})",
-                submitted_at=c.submitted_at,
-                deep_link=f"/approvals?focus={c.id}",
-                employee_id=str(c.employee_id),
-                name=_emp_name(c.employee) or c.employee.employee_code,
-                department=_emp_dept(c.employee),
-                type_code=c.category.code,
-                detail={
-                    "amount": str(c.amount),
-                    "currency_code": c.currency_code,
-                    "expense_date": c.expense_date.isoformat(),
-                    "attachments": [
-                        {"id": a.id, "filename": a.filename, "size_bytes": a.size_bytes}
-                        for a in c.attachments.all()
-                    ],
-                },
-            )
-        )
+    for c in structural_qs:
+        seen_claim_ids.add(c.id)
+        items.append(_claim_inbox_item(c))
+
+    _append_pool_claim_items(items, user, seen_claim_ids)
 
     # KPI: assignments in manager_review cycle where the current user is the employee's manager
     try:
