@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from modules.claims.models import ClaimApproval, ClaimRequest
+from modules.claims.models import ClaimRequest
 from modules.identity.models import User
 from modules.leave.models import LeaveApproval, LeaveRequest
 
@@ -78,37 +78,6 @@ def _claim_inbox_item(c) -> InboxItem:
     )
 
 
-def _append_pool_claim_items(items: list[InboxItem], user: User, seen_claim_ids: set) -> None:
-    """Add claims whose current stage is a permission pool the user can act on."""
-    from common.workflow.chain import RoutingKind
-    from modules.claims.chains import select_chain
-    from modules.identity.services.permissions import get_user_perms
-
-    perms = get_user_perms(user)
-    candidates = (
-        ClaimRequest.all_objects.filter(
-            org_id=user.org_id, status="submitted", deleted_at__isnull=True
-        )
-        .exclude(id__in=seen_claim_ids)
-        .select_related("employee__department", "category")
-        .prefetch_related("attachments", "category__policies")
-    )
-    for c in candidates:
-        if c.employee.user_id == user.id:  # never your own claim
-            continue
-        policy = c.category.policies.filter(deleted_at__isnull=True).first()
-        chain = select_chain(
-            amount=c.amount, override_code=policy.approval_chain_code if policy else ""
-        )
-        step = chain.get_step(c.current_level)
-        if step is None or step.routing != RoutingKind.PERMISSION_POOL:
-            continue
-        if not step.required_permission or step.required_permission not in perms:
-            continue
-        seen_claim_ids.add(c.id)
-        items.append(_claim_inbox_item(c))
-
-
 def get_inbox(*, user: User) -> list[InboxItem]:
     """Pending leave + claim items where this user is the current approver."""
     items: list[InboxItem] = []
@@ -157,30 +126,18 @@ def get_inbox(*, user: User) -> list[InboxItem]:
             )
         )
 
-    # Claims — two sources, deduped by claim id:
-    #  (a) structural: I'm the resolved approver of a pending ClaimApproval row.
-    #  (b) pool: the claim's current stage is a permission-pool step whose required
-    #      permission I hold (any holder sees it; it clears once the stage advances).
-    seen_claim_ids: set = set()
+    # Claims I can act on now — structural (resolved approver) + permission pool.
+    from modules.claims.services.approver_scope import actionable_claim_ids
 
-    pending_claim_ids = ClaimApproval.objects.filter(
-        approver_id=user.id,
-        status="pending",
-    ).values_list("claim_id", flat=True)
-    structural_qs = (
+    claim_qs = (
         ClaimRequest.all_objects.filter(
-            id__in=pending_claim_ids,
-            status__in=("submitted", "manager_approved"),
-            deleted_at__isnull=True,
+            id__in=actionable_claim_ids(user), deleted_at__isnull=True
         )
         .select_related("employee__department", "category")
         .prefetch_related("attachments")
     )
-    for c in structural_qs:
-        seen_claim_ids.add(c.id)
+    for c in claim_qs:
         items.append(_claim_inbox_item(c))
-
-    _append_pool_claim_items(items, user, seen_claim_ids)
 
     # KPI: assignments in manager_review cycle where the current user is the employee's manager
     try:
