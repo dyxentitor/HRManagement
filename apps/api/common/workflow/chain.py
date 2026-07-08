@@ -2,11 +2,28 @@
 
 from __future__ import annotations
 
+import enum
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from modules.identity.models import User
+
+
+class RoutingKind(str, enum.Enum):
+    """How a step targets its approver(s).
+
+    - DIRECT_MANAGER / DEPARTMENT_HEAD: structural — routed to the requester's
+      specific manager/dept-head (via the resolver); that person must also hold
+      the step's ``required_permission``.
+    - PERMISSION_POOL: functional — any org user holding ``required_permission``
+      may act (first valid action wins); the resolver is used only to pick a
+      representative to notify.
+    """
+
+    DIRECT_MANAGER = "direct_manager"
+    DEPARTMENT_HEAD = "department_head"
+    PERMISSION_POOL = "permission_pool"
 
 
 class ApproverResolver(Protocol):
@@ -21,6 +38,10 @@ class ApprovalStep:
     resolver: ApproverResolver
     required: bool = True
     deadline_hours: int | None = None  # Phase 2: SLA / escalation
+    # Permission-driven authorization (opt-in; leave steps leave these None and
+    # keep the engine's legacy identity-match). See common/workflow/authorization.
+    routing: RoutingKind | None = None
+    required_permission: str | None = None
 
 
 @dataclass(frozen=True)

@@ -15,7 +15,10 @@ def __getattr__(name: str):
         # chain
         "ApprovalStep",
         "ApproverResolver",
+        "RoutingKind",
         "WorkflowChain",
+        # authorization
+        "StageAuthorizer",
         # engine
         "Decision",
         "WorkflowEngine",
@@ -46,14 +49,19 @@ def __getattr__(name: str):
     if name not in _public:
         raise AttributeError(f"module 'common.workflow' has no attribute {name!r}")
 
-    if name in {"ApprovalStep", "ApproverResolver", "WorkflowChain"}:
-        from .chain import ApprovalStep, ApproverResolver, WorkflowChain
+    if name in {"ApprovalStep", "ApproverResolver", "RoutingKind", "WorkflowChain"}:
+        from .chain import ApprovalStep, ApproverResolver, RoutingKind, WorkflowChain
 
         _map = {
             "ApprovalStep": ApprovalStep,
             "ApproverResolver": ApproverResolver,
+            "RoutingKind": RoutingKind,
             "WorkflowChain": WorkflowChain,
         }
+    elif name == "StageAuthorizer":
+        from .authorization import StageAuthorizer
+
+        _map = {"StageAuthorizer": StageAuthorizer}
     elif name in {
         "Decision",
         "WorkflowEngine",
@@ -154,6 +162,8 @@ __all__ = [
     "NoApproverFound",
     "NotAuthorizedToAct",
     "RoleResolver",
+    "RoutingKind",
+    "StageAuthorizer",
     "WorkflowChain",
     "WorkflowEngine",
     "WorkflowError",
