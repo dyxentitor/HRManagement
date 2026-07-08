@@ -17,7 +17,9 @@ from modules.identity.services.permissions import get_user_perms
 
 from .models import ClaimCategory, ClaimPolicy, ClaimRequest
 from .serializers import (
+    ApprovalSummarySerializer,
     ClaimActionSerializer,
+    ClaimApprovalRowSerializer,
     ClaimAttachmentSerializer,
     ClaimCategorySerializer,
     ClaimPolicySerializer,
@@ -142,6 +144,32 @@ class ClaimRequestViewSet(viewsets.ModelViewSet):
         if not emp:
             raise NotFound("No employee profile linked to this user.")
         serializer.save(org_id=self.request.user.org_id, employee=emp)
+
+    _APPROVER_PERMS: ClassVar[frozenset] = frozenset(
+        {"claim:approve:team", "claim:approve:finance"}
+    )
+
+    def _require_approver(self, request) -> None:
+        if not (get_user_perms(request.user) & self._APPROVER_PERMS):
+            raise PermissionDenied("Claims approval access required.")
+
+    @action(detail=False, methods=["get"], url_path="approvals")
+    def approvals(self, request):
+        """Claims Approvals workspace rows for the current approver (?tab=)."""
+        self._require_approver(request)
+        from .services.approvals_queue import list_for_approver
+
+        tab = request.query_params.get("tab", "awaiting")
+        rows = list_for_approver(request.user, tab)
+        return Response(ClaimApprovalRowSerializer(rows, many=True).data)
+
+    @action(detail=False, methods=["get"], url_path="approvals/summary")
+    def approvals_summary(self, request):
+        """KPI summary for the Claims Approvals workspace."""
+        self._require_approver(request)
+        from .services.approvals_queue import summary_for_approver
+
+        return Response(ApprovalSummarySerializer(summary_for_approver(request.user)).data)
 
     @action(detail=True, methods=["post"], url_path="submit")
     def submit(self, request, pk=None):

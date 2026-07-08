@@ -170,3 +170,33 @@ class RegisterAttachmentSerializer(serializers.Serializer):
     content_type = serializers.CharField(max_length=100)
     size_bytes = serializers.IntegerField(min_value=1)
     s3_key = serializers.CharField(max_length=500)
+
+
+class ClaimApprovalRowSerializer(serializers.Serializer):
+    """A row in the Claims Approvals workspace (read-only, built from a dict)."""
+
+    id = serializers.CharField()
+    employee_name = serializers.CharField()
+    employee_role_title = serializers.CharField(allow_null=True)
+    employee_code = serializers.CharField()
+    amount = serializers.CharField()
+    currency_code = serializers.CharField()
+    category_name = serializers.CharField()
+    merchant = serializers.CharField(allow_blank=True)
+    submitted_at = serializers.CharField(allow_null=True)
+    status = serializers.CharField()
+    stage_label = serializers.CharField()
+    attachments_count = serializers.IntegerField()
+    is_high_value = serializers.BooleanField()
+    age_days = serializers.IntegerField()
+    is_overdue = serializers.BooleanField()
+    actionable = serializers.BooleanField()
+
+
+class ApprovalSummarySerializer(serializers.Serializer):
+    awaiting_count = serializers.IntegerField()
+    pending_value = serializers.CharField()
+    oldest_days = serializers.IntegerField()
+    overdue_count = serializers.IntegerField()
+    high_value_count = serializers.IntegerField()
+    approved_this_week = serializers.IntegerField()
