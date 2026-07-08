@@ -91,6 +91,21 @@ describe("approvals components", () => {
     expect(onApprove).toHaveBeenCalled()
   })
 
+  it("a non-actionable row has no Approve button and no selection checkbox", () => {
+    wrap(
+      <ClaimApprovalRow
+        row={row({ actionable: false })}
+        selected={false}
+        onToggleSelect={() => {}}
+        onOpen={() => {}}
+        onApprove={() => {}}
+      />,
+    )
+    // already-approved/rejected rows can't be re-approved or bulk-selected
+    expect(screen.queryByRole("button", { name: /^approve$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument()
+  })
+
   it("bulk bar approves selected via the API", async () => {
     const onDone = vi.fn()
     wrap(

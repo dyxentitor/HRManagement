@@ -62,13 +62,19 @@ export function ClaimApprovalRow({
         selected && "ring-1 ring-accent-500/60",
       )}
     >
-      <input
-        type="checkbox"
-        checked={selected}
-        onChange={onToggleSelect}
-        aria-label={`Select ${row.employee_name}'s claim`}
-        className="shrink-0"
-      />
+      {row.actionable ? (
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={`Select ${row.employee_name}'s claim`}
+          className="shrink-0"
+        />
+      ) : (
+        // Non-actionable rows (already approved/rejected, or not at your stage) can't
+        // be selected — keeps the layout aligned without an interactive checkbox.
+        <span aria-hidden className="w-[13px] shrink-0" />
+      )}
       <button
         type="button"
         onClick={onOpen}
