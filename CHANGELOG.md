@@ -2,6 +2,15 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.61.1] — 2026-07-08
+
+**Fix: already-approved claims could be re-selected for bulk-approve.** On the Claims Approvals
+Approved / Rejected / All tabs, the row checkbox ignored `row.actionable`, so an already-approved
+claim could still be ticked and pushed through the bulk-approve bar — a redundant no-op (the backend
+rejected it as "not at your stage"). The inline Approve button already respected `row.actionable`; the
+checkbox now does too. Non-actionable rows render no checkbox, making those tabs read-only for
+approval. Regression test added. Frontend-only; no backend/permission change.
+
 ## [1.61.0] — 2026-07-08
 
 **Approvals page adopts the People/Settings shell.** The `/approvals` "Approval Center" is rebuilt to
