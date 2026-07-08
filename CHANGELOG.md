@@ -2,6 +2,41 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.57.0] — 2026-07-08
+
+**Permission-driven claims approval (RBAC).** The claims approval **workflow is unchanged**
+(Employee → Manager → [Dept Head] → Finance → Payment); its **authorization** is now driven entirely
+by permissions + routing instead of hardcoded role names or a single pre-resolved approver. Separates
+workflow execution from authorization via a new isolated `StageAuthorizer`. Backward-compatible;
+Leave is untouched.
+
+### Added
+- **`StageAuthorizer`** (`common/workflow/authorization.py`) — the single place that decides who may
+  act on a step: override → structural → permission pool. `ApprovalStep` gains optional `routing`
+  (`DIRECT_MANAGER`/`DEPARTMENT_HEAD`/`PERMISSION_POOL`) + `required_permission` (opt-in; Leave steps
+  keep the engine's legacy identity-match).
+- **Structural stages** (manager, dept-head) stay hierarchy-routed to the requester's actual
+  manager/head, now permission-gated on `claim:approve:team`.
+- **Functional stages** (finance, and the >5000 HR step) are **permission pools** on
+  `claim:approve:finance`: any holder may act, first-action-wins (serialized by a row lock + level
+  advance). A multi-role person (e.g. manager + finance in a small business) approves consecutive
+  stages in one login — no forced segregation of duties.
+- **Permission-driven approvals inbox** — a claim's current pool stage is visible to every holder of
+  its permission (not just one pre-resolved approver); it clears once the stage advances.
+- New permission **`claim:approve:override`** (break-glass: act on any stage, audited; org_admin by
+  default). The dormant `claim:approve:finance` is now **enforced**.
+
+### Changed
+- `WorkflowEngine.act(..., authorizer=None)` delegates claims authorization to `StageAuthorizer`.
+  Claims `approve`/`reject` endpoints no longer hardcode `claim:approve:team`; the authorizer is the
+  single source of truth. Claim service serializes actions with `select_for_update`.
+
+### Notes
+- Only one new permission code (125 → 126). No migration. Frontend already permission-gated
+  (`claim:approve:finance` / server-filtered inbox) — no changes needed.
+- Tests: **+19 backend** (8 authorizer unit, 5 RBAC integration, 1 inbox pool, + updated fixtures/count).
+  Future stages (Payroll/Compliance/CEO) = one `ApprovalStep(PERMISSION_POOL, ...)` + a permission code.
+
 ## [1.56.1] — 2026-07-07
 
 **Archive → retire-login cascade.** Archiving an employee now automatically **disables** their linked
