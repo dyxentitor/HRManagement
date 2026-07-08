@@ -6,20 +6,30 @@ import { Skeleton } from "@/components/ui/skeleton"
 import type { InboxItem } from "../api"
 import { ClaimReviewDrawer } from "../components/ClaimReviewDrawer"
 import { UnifiedApprovalCard } from "../components/UnifiedApprovalCard"
+import { isInboxOverdue, matchesInboxSearch } from "../lib/inbox-filter"
 import type { SegmentProps } from "./types"
 
-/** Shared card list for the All / Leave / KPI segments. `filterKind` narrows to
- * one type (undefined = all). `allowBulk` shows the single-type bulk-approve bar. */
+/** Shared card list for the All / Leave / KPI pages. `filterKind` narrows to one
+ * type (undefined = all); `search` / `overdueOnly` apply the toolbar lenses. */
 export function InboxCardList({
   inbox,
   filterKind,
   emptyLabel,
-}: SegmentProps & { filterKind?: InboxItem["kind"]; emptyLabel: string }) {
+  search = "",
+  overdueOnly = false,
+}: SegmentProps & {
+  filterKind?: InboxItem["kind"]
+  emptyLabel: string
+  search?: string
+  overdueOnly?: boolean
+}) {
   const [reviewClaimId, setReviewClaimId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
 
-  const items = filterKind ? inbox.items.filter((i) => i.kind === filterKind) : inbox.items
+  const items = (filterKind ? inbox.items.filter((i) => i.kind === filterKind) : inbox.items)
+    .filter((i) => (overdueOnly ? isInboxOverdue(i) : true))
+    .filter((i) => matchesInboxSearch(i, search))
   const selectedItems = items.filter((i) => inbox.selected.has(i.id))
   const selectedKinds = new Set(selectedItems.map((i) => i.kind))
   const bulkAllowed = selectedItems.length > 0 && selectedKinds.size === 1

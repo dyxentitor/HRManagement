@@ -60,6 +60,26 @@ describe("InboxCardList", () => {
     expect(screen.getByText("Bea Lim")).toBeInTheDocument()
   })
 
+  it("filters by search query", () => {
+    const inbox = makeInbox(new Set(), [
+      item({ id: "a", name: "Alex Tan" }),
+      item({ id: "b", name: "Bea Lim" }),
+    ])
+    wrap(<InboxCardList inbox={inbox} onChanged={() => {}} emptyLabel="empty" search="alex" />)
+    expect(screen.getByText("Alex Tan")).toBeInTheDocument()
+    expect(screen.queryByText("Bea Lim")).not.toBeInTheDocument()
+  })
+
+  it("filters to overdue items when overdueOnly is set", () => {
+    const inbox = makeInbox(new Set(), [
+      item({ id: "a", name: "Old One", submitted_at: "2020-01-01T00:00:00Z" }),
+      item({ id: "b", name: "Fresh One", submitted_at: new Date().toISOString() }),
+    ])
+    wrap(<InboxCardList inbox={inbox} onChanged={() => {}} emptyLabel="empty" overdueOnly />)
+    expect(screen.getByText("Old One")).toBeInTheDocument()
+    expect(screen.queryByText("Fresh One")).not.toBeInTheDocument()
+  })
+
   it("disables bulk-approve for a mixed-kind selection, enables for one kind", () => {
     const items = [
       item({ id: "a", kind: "claim" }),
