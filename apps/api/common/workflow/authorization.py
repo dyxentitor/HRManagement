@@ -8,10 +8,14 @@ Rules (in order):
   1. Override: actor holds ``override_permission`` → allowed (break-glass; audit upstream).
   2. Structural (DIRECT_MANAGER / DEPARTMENT_HEAD): actor is the resolved target AND
      holds the step's ``required_permission``.
-  3. Pool (PERMISSION_POOL): actor holds ``required_permission`` AND has not already
-     acted on this subject (separation of duties / first-action-wins).
+  3. Pool (PERMISSION_POOL): actor holds ``required_permission``.
 
-The self-approval guard lives in the engine and runs before this authorizer.
+A single multi-role person (e.g. manager + finance in a small business) may act at
+consecutive stages — the model does not enforce segregation of duties (that's an org
+policy expressed by assigning different people). Re-approving a *completed* stage is
+impossible because acting advances the level. First-action-wins on a pool stage is
+enforced by the caller's row lock + level advance. The self-approval guard (requester
+may never approve their own request) lives in the engine, before this authorizer.
 """
 
 from __future__ import annotations
@@ -28,9 +32,8 @@ if TYPE_CHECKING:
 
 
 class StageAuthorizer:
-    def __init__(self, *, override_permission: str, prior_actor_ids: set | None = None) -> None:
+    def __init__(self, *, override_permission: str) -> None:
         self.override_permission = override_permission
-        self.prior_actor_ids = prior_actor_ids or set()
 
     def can_act(
         self, step: ApprovalStep, actor: User, subject: Any, resolve_target: Callable[[], User | None]
@@ -71,15 +74,11 @@ class StageAuthorizer:
                 )
             return
 
-        # 3. Permission pool — any holder may act, once, if they didn't already act.
+        # 3. Permission pool — any holder of the required permission may act.
         if step.routing == RoutingKind.PERMISSION_POOL:
             if not step.required_permission or step.required_permission not in perms:
                 raise NotAuthorizedToAct(
                     f"User {actor.id} lacks {step.required_permission} for pool level {step.level}"
-                )
-            if actor.id in self.prior_actor_ids:
-                raise NotAuthorizedToAct(
-                    f"User {actor.id} has already acted on this request (separation of duties)"
                 )
             return
 

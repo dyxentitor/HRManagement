@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from django.db import transaction
 from django.utils import timezone
 
-from common.workflow import Decision, WorkflowEngine
+from common.workflow import Decision, StageAuthorizer, WorkflowEngine
 from common.workflow.resolvers import FinanceResolver
 
 from ..chains import select_chain
 from ..models import ClaimRequest
+
+OVERRIDE_PERMISSION = "claim:approve:override"
 
 
 def _is_user_on_approved_leave(user, on_date) -> bool:
@@ -36,15 +39,30 @@ class ClaimRequestService:
         return claim
 
     @staticmethod
+    @transaction.atomic
     def act(
         claim: ClaimRequest,
         actor,
         decision: Decision,
         comment: str = "",
     ) -> ClaimRequest:
+        # Serialize concurrent actions on the same claim so pool stages are
+        # first-action-wins (the loser re-reads the advanced state and is denied).
+        # Lock the row, then re-sync the caller's instance under the lock so the
+        # engine mutates it in place (callers rely on this).
+        ClaimRequest.all_objects.select_for_update().get(pk=claim.pk)
+        claim.refresh_from_db()
         chain = _select_chain_for(claim)
+        authorizer = StageAuthorizer(override_permission=OVERRIDE_PERMISSION)
         engine = WorkflowEngine(is_on_leave_lookup=_is_user_on_approved_leave)
-        engine.act(claim, chain=chain, actor=actor, decision=decision, comment=comment)
+        engine.act(
+            claim,
+            chain=chain,
+            actor=actor,
+            decision=decision,
+            comment=comment,
+            authorizer=authorizer,
+        )
 
         # Engine sets status = "approved" when final step is approved.
         # Map to our granular statuses: check if last step uses FinanceResolver.

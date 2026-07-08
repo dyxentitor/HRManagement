@@ -81,6 +81,7 @@
     - "claim:read:org"
     - "claim:approve:team"
     - "claim:approve:finance"
+    - "claim:approve:override"
     - "claim:reimburse:finance"
     - "claim:cancel:self"
     - "claim:category:write"

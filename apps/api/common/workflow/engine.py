@@ -100,6 +100,7 @@ class WorkflowEngine:
         actor: User,
         decision: Decision,
         comment: str = "",
+        authorizer: Any = None,
     ) -> None:
         if subject.status != "submitted":
             raise InvalidTransition(f"Cannot act on status='{subject.status}'")
@@ -113,16 +114,30 @@ class WorkflowEngine:
                 f"(chain={chain.code} level={subject.current_level})"
             )
 
-        expected_approver = self._resolve_step(subject, chain, level=subject.current_level)
-        if expected_approver is None:
-            raise NoApproverFound(
-                f"No approver found for chain={chain.code} level={subject.current_level}"
+        step = chain.get_step(subject.current_level)
+        if step is not None and step.routing is not None and authorizer is not None:
+            # Permission-driven authorization (claims). Structural stages verify the
+            # routed target inside the authorizer; pool stages accept any holder.
+            authorizer.authorize(
+                step,
+                actor,
+                subject,
+                resolve_target=lambda: self._resolve_step(
+                    subject, chain, level=subject.current_level
+                ),
             )
-        if expected_approver.id != actor.id:
-            raise NotAuthorizedToAct(
-                f"User {actor.id} is not the resolved approver ({expected_approver.id}) "
-                f"for chain={chain.code} level={subject.current_level}"
-            )
+        else:
+            # Legacy identity-match path (leave, and any step without routing).
+            expected_approver = self._resolve_step(subject, chain, level=subject.current_level)
+            if expected_approver is None:
+                raise NoApproverFound(
+                    f"No approver found for chain={chain.code} level={subject.current_level}"
+                )
+            if expected_approver.id != actor.id:
+                raise NotAuthorizedToAct(
+                    f"User {actor.id} is not the resolved approver ({expected_approver.id}) "
+                    f"for chain={chain.code} level={subject.current_level}"
+                )
 
         if decision == Decision.REJECT:
             subject.status = "rejected"

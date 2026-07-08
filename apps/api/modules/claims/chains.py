@@ -8,33 +8,43 @@ from common.workflow import (
     DirectManagerResolver,
     FinanceResolver,
     RoleResolver,
+    RoutingKind,
     WorkflowChain,
 )
+
+# Per-stage authorization (v1.57.0): routing = who is targeted, required_permission
+# = the capability that gates the action. Manager/dept-head stay structural (routed
+# to the requester's actual manager/head, who must hold claim:approve:team). Finance
+# and the >5000 HR step are permission pools on claim:approve:finance (any holder acts;
+# the "already acted" guard enforces separation of duties across the two pool steps).
+_MANAGER = dict(routing=RoutingKind.DIRECT_MANAGER, required_permission="claim:approve:team")
+_DEPT_HEAD = dict(routing=RoutingKind.DEPARTMENT_HEAD, required_permission="claim:approve:team")
+_FINANCE_POOL = dict(routing=RoutingKind.PERMISSION_POOL, required_permission="claim:approve:finance")
 
 CLAIM_UNDER_500 = WorkflowChain(
     code="claim_under_500",
     steps=[
-        ApprovalStep(level=1, resolver=DirectManagerResolver()),
-        ApprovalStep(level=2, resolver=FinanceResolver()),
+        ApprovalStep(level=1, resolver=DirectManagerResolver(), **_MANAGER),
+        ApprovalStep(level=2, resolver=FinanceResolver(), **_FINANCE_POOL),
     ],
 )
 
 CLAIM_500_TO_5000 = WorkflowChain(
     code="claim_500_to_5000",
     steps=[
-        ApprovalStep(level=1, resolver=DirectManagerResolver()),
-        ApprovalStep(level=2, resolver=DepartmentHeadResolver()),
-        ApprovalStep(level=3, resolver=FinanceResolver()),
+        ApprovalStep(level=1, resolver=DirectManagerResolver(), **_MANAGER),
+        ApprovalStep(level=2, resolver=DepartmentHeadResolver(), **_DEPT_HEAD),
+        ApprovalStep(level=3, resolver=FinanceResolver(), **_FINANCE_POOL),
     ],
 )
 
 CLAIM_OVER_5000 = WorkflowChain(
     code="claim_over_5000",
     steps=[
-        ApprovalStep(level=1, resolver=DirectManagerResolver()),
-        ApprovalStep(level=2, resolver=DepartmentHeadResolver()),
-        ApprovalStep(level=3, resolver=RoleResolver(role_code="hr_manager")),
-        ApprovalStep(level=4, resolver=FinanceResolver()),
+        ApprovalStep(level=1, resolver=DirectManagerResolver(), **_MANAGER),
+        ApprovalStep(level=2, resolver=DepartmentHeadResolver(), **_DEPT_HEAD),
+        ApprovalStep(level=3, resolver=RoleResolver(role_code="hr_manager"), **_FINANCE_POOL),
+        ApprovalStep(level=4, resolver=FinanceResolver(), **_FINANCE_POOL),
     ],
 )
 

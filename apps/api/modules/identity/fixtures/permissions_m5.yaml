@@ -7,6 +7,7 @@
 - { code: "claim:read:org",          description: Read all claims in org }
 - { code: "claim:approve:team",      description: Manager-level claim approval }
 - { code: "claim:approve:finance",   description: Finance-level claim approval }
+- { code: "claim:approve:override",  description: "Override claim approval (break-glass, act on any stage)", label: "Override claim approval", is_dangerous: true }
 - { code: "claim:reimburse:finance", description: Mark claim reimbursed }
 - { code: "claim:cancel:self",       description: Cancel own claim }
 - { code: "claim:category:write",    description: Create/edit claim categories }

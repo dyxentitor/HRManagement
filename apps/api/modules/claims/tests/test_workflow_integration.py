@@ -11,9 +11,16 @@ from common.workflow import Decision, NotAuthorizedToAct
 from modules.claims.models import ClaimApproval, ClaimCategory, ClaimRequest
 from modules.claims.services.claim_request import ClaimRequestService
 from modules.employee.models import Employee
-from modules.identity.models import Role, User, UserRole
+from modules.identity.models import Permission, Role, RolePermission, User, UserRole
 from modules.notification.models import Notification
 from modules.organization.models import Department, Organization
+
+
+def _grant(role, *codes):
+    """Attach permission codes to a role (creating Permission rows as needed)."""
+    for code in codes:
+        perm, _ = Permission.objects.get_or_create(code=code, defaults={"description": ""})
+        RolePermission.objects.get_or_create(role=role, permission=perm)
 
 
 @pytest.fixture(autouse=True)
@@ -54,7 +61,13 @@ def stack():
     )
 
     fin_role = Role.objects.create(org_id=org.id, code="finance", name="Finance", is_system=True)
+    _grant(fin_role, "claim:approve:finance")
     UserRole.objects.create(user=fin_user, role=fin_role, granted_by=None)
+
+    # Manager needs the structural-stage permission under the v1.57.0 RBAC model.
+    mgr_role = Role.objects.create(org_id=org.id, code="manager", name="Manager", is_system=True)
+    _grant(mgr_role, "claim:approve:team")
+    UserRole.objects.create(user=mgr_user, role=mgr_role, granted_by=None)
 
     def _emp(code, user, manager=None):
         return Employee.all_objects.create(

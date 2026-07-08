@@ -120,10 +120,11 @@ class ClaimRequestViewSet(viewsets.ModelViewSet):
         if self.action == "submit":
             return ["claim:create:self"]
         if self.action in ("approve", "reject"):
-            # Accept either manager or finance approver code; the engine's
-            # NotAuthorizedToAct will catch the wrong actor at runtime.
-            # Follow-up: split into two separate actions for finer perm control.
-            return ["claim:approve:team"]
+            # Authorization is fully owned by the StageAuthorizer inside the engine
+            # (structural routing + per-stage permission + pool + override). The
+            # endpoint only requires an authenticated user; the authorizer raises
+            # NotAuthorizedToAct (-> 403) for anyone not permitted at the current stage.
+            return []
         if self.action == "cancel":
             return ["claim:cancel:self"]
         if self.action == "mark_reimbursed":

@@ -92,13 +92,16 @@ def test_pool_denies_non_holder(patch_perms):
         auth.authorize(step, actor, subject=None, resolve_target=lambda: None)
 
 
-def test_pool_denies_already_acted(patch_perms):
+def test_pool_allows_multi_stage_same_person(patch_perms):
+    # A multi-role person (manager + finance) may act at consecutive pool stages;
+    # no segregation-of-duties block (small-business flexibility).
     patch_perms({"claim:approve:finance"})
     actor = _Dummy(uuid.uuid4())
-    auth = StageAuthorizer(override_permission=OVERRIDE, prior_actor_ids={actor.id})
-    step = _step(RoutingKind.PERMISSION_POOL, "claim:approve:finance")
-    with pytest.raises(NotAuthorizedToAct):
-        auth.authorize(step, actor, subject=None, resolve_target=lambda: None)
+    auth = StageAuthorizer(override_permission=OVERRIDE)
+    step_hr = _step(RoutingKind.PERMISSION_POOL, "claim:approve:finance", level=3)
+    step_fin = _step(RoutingKind.PERMISSION_POOL, "claim:approve:finance", level=4)
+    auth.authorize(step_hr, actor, subject=None, resolve_target=lambda: None)
+    auth.authorize(step_fin, actor, subject=None, resolve_target=lambda: None)  # no raise
 
 
 def test_override_holder_allowed_on_any_stage(patch_perms):
