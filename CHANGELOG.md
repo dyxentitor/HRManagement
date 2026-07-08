@@ -2,6 +2,35 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.60.0] — 2026-07-08
+
+**Unified Approval Center** — consolidates the two approval surfaces (the unified inbox + the separate
+v1.59.0 `/claims/approvals` workspace) into **one centralized Approval Center** at `/approvals`,
+removing the redundancy where a claim appeared on both pages / two nav items. Frontend information-
+architecture refactor; **no database, API, permission, or workflow change**.
+
+### Changed
+- `/approvals` is now an **`ApprovalCenterPage`** with a **type-segment rail** (All · Claims · Leave ·
+  KPI) driven by a small **descriptor registry** — adding a future type (Overtime, Purchase…) is one
+  descriptor entry, no new page/route/nav.
+  - **All** = cross-type triage (every pending item); bulk-approve is enabled only when the selection
+    is a single type ("Select one type to bulk-approve").
+  - **Claims** = the v1.59.0 rich workspace, reused verbatim as a self-fetching segment
+    (`ClaimsSegment`, formerly `ClaimApprovalsPage`).
+  - **Leave / KPI** = the existing card views, hosted (enrich later via their descriptors).
+- Shared **`useApprovalInbox`** hook (inbox fetch + coverage + approve/reject/bulk) feeds the rail
+  badges + the All/Leave/KPI segments. `UnifiedInboxPage` retired (superseded by the All segment).
+
+### Removed
+- The separate **"Claims Approvals" sidebar item**; `/claims/approvals` now **redirects** to
+  `/approvals?type=claim` (mirrors the existing leave/finance redirects). One "Approvals" nav item.
+
+### Notes
+- Reuses `UnifiedApprovalCard`, `ClaimReviewDrawer`, and all v1.59.0 claims components — nothing
+  discarded. No contract change (no API change). Tests: +6 frontend (hook, segments, center);
+  retargeted the claims-page test to `ClaimsSegment`. Pre-existing `AppShell`/`OrgLogo` org-name
+  drift unchanged.
+
 ## [1.59.0] — 2026-07-08
 
 **Claims Approvals workspace** — a dedicated, premium approvals surface at `/claims/approvals`
