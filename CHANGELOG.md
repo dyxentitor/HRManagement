@@ -2,6 +2,28 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.58.1] — 2026-07-08
+
+**Claim Review panel — overflow-safe redesign.** Fixes real text-overflow and clutter seen in the
+320px review drawer and improves visual hierarchy for approvers.
+
+### Fixed
+- **Header truncation** — every line used `truncate` (`Cybe…` / `Operati…` / `Manage…`); now a
+  stacked layout with **wrapping full names**, department · position, avatar, a derived claim ref
+  (`CLM-…`) and submission date. The **amount is the hero** (formatted with thousand separators) with
+  the status badge.
+- **Description/justification overflow** — `whitespace-pre-wrap` never breaks an unbroken string, so
+  long input ran outside the panel; now `break-words` + `overflow-wrap: anywhere` with a `ClampText`
+  primitive (line-clamp + **Show more / Show less**).
+- **Sticky footer width** — was a hand-rolled `fixed` bar at `32rem` (wider than the 320px panel);
+  now uses `DetailPanel`'s footer slot (correct width), with a stacked comment + Reject/Approve.
+
+### Changed
+- New overflow-safe primitives: **`ClampText`** (expandable long text) and **`TruncTip`** (ellipsis +
+  hover tooltip) applied to approver names, emails, merchant, claim UUID, and audit rows. Receipt
+  filenames are width-constrained with a filename tooltip. Reporting manager moved into the summary.
+  No backend change.
+
 ## [1.58.0] — 2026-07-08
 
 **Claim approval review redesign** — a rich, in-context Claim Review drawer so approvers can decide
