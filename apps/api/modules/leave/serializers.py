@@ -253,3 +253,14 @@ class LeaveApprovalSummarySerializer(serializers.Serializer):
     oldest_days = serializers.IntegerField()
     approved_this_week = serializers.IntegerField()
     rejected_this_week = serializers.IntegerField()
+
+
+class EntitlementPreviewItemSerializer(serializers.Serializer):
+    """One row in the entitlement-preview response."""
+
+    leave_type_id = serializers.UUIDField()
+    code = serializers.CharField()
+    name = serializers.CharField()
+    accrual_type = serializers.CharField()
+    days_per_year = serializers.DecimalField(max_digits=6, decimal_places=2)
+    prorated_days = serializers.DecimalField(max_digits=6, decimal_places=2)

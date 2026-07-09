@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from decimal import Decimal
 from typing import ClassVar
 
@@ -21,6 +22,7 @@ from modules.identity.permissions import HRMSPermission
 from .models import EmployeeLeaveOverride, LeaveBalance, LeavePolicy, LeaveRequest, LeaveType
 from .serializers import (
     EmployeeLeaveOverrideSerializer,
+    EntitlementPreviewItemSerializer,
     LeaveActionSerializer,
     LeaveApprovalRowSerializer,
     LeaveApprovalSummarySerializer,
@@ -30,6 +32,8 @@ from .serializers import (
     LeaveTypeSerializer,
 )
 from .services.accrual import (
+    prorate_for_hire_date,
+    resolve_entitlement,
     run_carry_forward_expiry,
     run_year_end_carry_forward,
     run_year_start_accrual,
@@ -601,4 +605,60 @@ class LeaveCoverageView(APIView):
                 "per_day": per_day,
                 "people": people if can_team else [],
             }
+        )
+
+
+@requires_feature("leave")
+class EntitlementPreviewView(APIView):
+    """Read-only preview of accrual-type leave entitlements for a prospective hire.
+
+    GET /api/v1/leave/entitlement-preview/?hire_date=YYYY-MM-DD[&department=<uuid>]
+
+    Returns the default days_per_year and §60E-prorated days for each
+    accrual-type (annual / monthly) leave type in the org, without
+    requiring an Employee row to exist yet.
+
+    Gated on leave:balance:adjust:org (HR / org_admin roles).
+    """
+
+    permission_classes: ClassVar[list] = [HRMSPermission]
+    required_perms: ClassVar[list[str]] = ["leave:balance:adjust:org"]
+
+    def get(self, request):
+        org_id = request.user.org_id
+        raw = request.query_params.get("hire_date")
+        if not raw:
+            raise ValidationError({"hire_date": "Required (YYYY-MM-DD)."})
+        try:
+            hire_date = datetime.date.fromisoformat(raw)
+        except ValueError:
+            raise ValidationError({"hire_date": "Invalid date."})
+        department_id = request.query_params.get("department") or None
+        year = timezone.localdate().year
+        items = []
+        for lt in LeaveType.all_objects.filter(
+            org_id=org_id, accrual_type__in=("annual", "monthly")
+        ).order_by("code"):
+            dpy = resolve_entitlement(
+                org_id=org_id,
+                department_id=department_id,
+                role_id=None,
+                hire_date=hire_date,
+                leave_type=lt,
+                year=year,
+            )
+            items.append(
+                {
+                    "leave_type_id": lt.id,
+                    "code": lt.code,
+                    "name": lt.name,
+                    "accrual_type": lt.accrual_type,
+                    "days_per_year": dpy,
+                    "prorated_days": prorate_for_hire_date(
+                        entitlement=dpy, hire_date=hire_date, year=year
+                    ),
+                }
+            )
+        return Response(
+            {"year": year, "items": EntitlementPreviewItemSerializer(items, many=True).data}
         )

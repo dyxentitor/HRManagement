@@ -6,6 +6,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AdminAccrualViewSet,
     EmployeeLeaveOverrideViewSet,
+    EntitlementPreviewView,
     LeaveBalanceViewSet,
     LeaveCoverageView,
     LeavePolicyViewSet,
@@ -27,4 +28,9 @@ router.register(r"admin/leave", AdminAccrualViewSet, basename="admin-leave")
 urlpatterns = [
     *router.urls,
     path("leave/coverage", LeaveCoverageView.as_view(), name="leave-coverage"),
+    path(
+        "leave/entitlement-preview/",
+        EntitlementPreviewView.as_view(),
+        name="entitlement-preview",
+    ),
 ]
