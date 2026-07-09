@@ -67,6 +67,36 @@ export type LeaveRequest = {
 
 export type Holiday = { date: string; name: string; type: string };
 
+/** A row in the Leave Approvals workspace — structurally an approvals InboxItem
+ * plus the queue decision flags. */
+export type LeaveApprovalRow = {
+	kind: "leave";
+	id: string;
+	employee_id: string;
+	employee_code: string;
+	name: string;
+	department: string;
+	type_code: string;
+	summary: string;
+	deep_link: string;
+	submitted_at: string | null;
+	detail: Record<string, unknown>;
+	status: string;
+	actionable: boolean;
+	age_days: number;
+	is_overdue: boolean;
+	is_conflict: boolean;
+};
+
+export type LeaveApprovalSummary = {
+	awaiting_count: number;
+	overdue_count: number;
+	conflict_count: number;
+	oldest_days: number;
+	approved_this_week: number;
+	rejected_this_week: number;
+};
+
 export type CoveragePerson = {
 	employee_id: string;
 	name: string;
@@ -208,4 +238,9 @@ export const leaveApi = {
 		_post<LeaveRequest>(`/api/v1/leave/requests/${id}/reject/`, { comment }),
 	cancel: (id: string) => _post<LeaveRequest>(`/api/v1/leave/requests/${id}/cancel/`),
 	withdraw: (id: string) => _post<LeaveRequest>(`/api/v1/leave/requests/${id}/withdraw/`),
+	// Approver workspace — tabbed history + summary (v1.63.0).
+	approvalsQueue: (tab: string) =>
+		_get<LeaveApprovalRow[]>(`/api/v1/leave/requests/approvals/?tab=${tab}`),
+	approvalsSummary: () =>
+		_get<LeaveApprovalSummary>("/api/v1/leave/requests/approvals/summary/"),
 };
