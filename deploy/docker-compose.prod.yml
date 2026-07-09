@@ -129,6 +129,10 @@ services:
     <<: *logging
 
   web:
+    # Override the base service's `image: node:20-alpine` so the built prod
+    # image is tagged distinctly and does NOT clobber the node base image the
+    # dev stack's web service runs vite under.
+    image: hrms-prod-web:latest
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
