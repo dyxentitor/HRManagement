@@ -637,7 +637,7 @@ class EntitlementPreviewView(APIView):
         year = timezone.localdate().year
         items = []
         for lt in LeaveType.all_objects.filter(
-            org_id=org_id, accrual_type__in=("annual", "monthly")
+            org_id=org_id, accrual_type__in=("annual", "monthly"), deleted_at__isnull=True
         ).order_by("code"):
             dpy = resolve_entitlement(
                 org_id=org_id,

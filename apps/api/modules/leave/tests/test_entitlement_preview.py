@@ -89,3 +89,22 @@ def test_preview_requires_perm(api_client_employee):
 
 def test_preview_400_without_hire_date(api_client_admin):
     assert api_client_admin.get("/api/v1/leave/entitlement-preview/").status_code == 400
+
+
+def test_preview_excludes_soft_deleted_leave_type(api_client_admin, org):
+    from django.utils import timezone
+
+    lt = LeaveType.all_objects.create(
+        org_id=org.id,
+        code="ANNUAL_DELETED",
+        name="Annual (soft-deleted)",
+        default_days=Decimal("8"),
+        accrual_type="annual",
+    )
+    lt.deleted_at = timezone.now()
+    lt.save()
+
+    r = api_client_admin.get("/api/v1/leave/entitlement-preview/?hire_date=2026-07-01")
+    assert r.status_code == 200
+    codes = {i["code"] for i in r.json()["items"]}
+    assert "ANNUAL_DELETED" not in codes
