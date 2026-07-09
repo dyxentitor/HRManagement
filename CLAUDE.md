@@ -279,7 +279,65 @@ key falls into this "unknown = enabled" bucket and bypasses the gate.
 - Make targets — `make help` (dev, test, migrate, contracts, lint, build, seed-provintell, verify-backup)
 - One-command boot after PC restart — `./start.sh`
 
-## 5. When in doubt
+## 5. Production deployment (internal, single-host) — READ BEFORE TOUCHING ANYTHING OPS
+
+> **Status (2026-07-09):** cutover is **designed and agreed, not yet
+> implemented.** Design spec: `docs/superpowers/specs/2026-07-09-hrms-production-cutover-design.md`
+> (gitignored, session-local). `deploy.sh` / `rollback.sh` and the prod stack
+> stand-up **do not exist yet** — they are the pending implementation plan. Do
+> not assume prod exists; verify with `docker ps` (`hrms-prod-*` vs `hrms-dev-*`).
+
+### 5.1 The model (why this matters)
+
+This box runs the HRMS for **real employees, daily**. The agreed topology is
+**two isolated stacks on one host**:
+
+- **Prod stack** (`hrms-prod-*`, `docker-compose.prod.yml` + `settings.prod`) —
+  container nginx owns :443 (internal-CA TLS), API is **gunicorn from a built
+  image with no mounted source** (frozen code), its **own** Postgres volume.
+  Serves employees continuously.
+- **Dev stack** (`hrms-dev-*`, :5173/:8000) — where ALL development and testing
+  happens, with its **own throwaway DB**. Isolated from prod by separate compose
+  project name **and** separate volumes.
+
+Prod serves a **compiled static bundle + frozen image**, so editing source
+NEVER leaks into prod. Prod changes **only** via an explicit, user-triggered
+deploy.
+
+### 5.2 HARD guardrails for every session (especially fresh ones)
+
+1. **NEVER run migrations, seeders, resets, `flush`, or any write/`shell`
+   command against the prod stack or prod DB** (`hrms-prod-*`). Develop and test
+   against the **dev** stack only.
+2. **NEVER deploy, rebuild, or restart the prod stack without the user's
+   explicit say-so.** Prod changes are **manual-trigger only** (`deploy.sh`,
+   once built). Building a tested, tagged version is fine; *promoting it is the
+   user's call.*
+3. **Git reverts code, not data.** A migration is not undone by `git revert`.
+   The **pre-deploy DB snapshot is the real rollback anchor** — deploy tooling
+   must snapshot first. Migrations stay **additive-only** (§3.6).
+4. **No unnecessary or unrequested changes.** This is a clean, test-covered,
+   production codebase. A bug fix is a bug fix — do not refactor, "tidy," or
+   rewrite surrounding code. Match surrounding style (§3.8). When unsure, ask.
+5. **The Fernet `HRMS_FIELD_ENCRYPTION_KEY` must be identical across api +
+   worker and never drift** — drift makes encrypted PII unreadable (§3.10).
+6. **Host nginx will be retired** in favour of the container nginx (§5.1). If
+   both are bound to :443 you have a conflict — do not "fix" it by editing
+   compose blindly; check the cutover spec.
+
+### 5.3 The update workflow (once tooling exists)
+
+`feat/*` branch → develop + test on the **dev** stack (lint + typecheck + tests
+green, browser-verified) → commit (one task = one commit) → merge to `master` →
+tag `vX.Y.Z`. **Then the user runs `deploy.sh vX.Y.Z`**, which snapshots the
+prod DB, checks out the tag, migrates, restarts, smoke-checks, and
+auto-rolls-back on failure. `rollback.sh` handles later regrets (restores the
+matching pre-deploy snapshot iff that deploy ran a migration).
+
+**Your job on an update request:** do the dev + test + packaging safely on the
+dev stack, hand the user a tested/tagged version, and stop. Do not touch prod.
+
+## 6. When in doubt
 
 - **Git is authoritative.** If a doc disagrees with `git tag --list` or `git log`, trust git and fix the doc.
 - **Memory may be stale.** Verify before quoting it (the auto-memory system marks stale entries; treat them as hypotheses, not facts).
