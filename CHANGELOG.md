@@ -2,6 +2,31 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.0] — 2026-07-09
+
+**Leave approvals get Claims-style history tabs + summary (phase 2).** The Leave tab now has the same
+**Awaiting / Approved / Rejected / All** tabs and count metrics as Claims, backed by real approval
+history. **KPI is intentionally deferred** (with the performance-management rebuild); the All tab is
+unchanged.
+
+- **Backend:** new `leave/services/approvals_queue.py` (`list_for_approver(user, tab)` +
+  `summary_for_approver`) over `LeaveApproval` records, exposed as **`GET /leave/requests/approvals/?tab=`**
+  and **`/leave/requests/approvals/summary/`** — two auth-only `@action`s on `LeaveRequestViewSet` (rows
+  are already scoped to the caller's own approvals, same rationale as the claims endpoints). Rows carry
+  `status`, `actionable`, `is_overdue`, `age_days`, and **`is_conflict`** (coverage clash, computed for
+  awaiting rows via a new `leave/services/coverage.py::has_conflict`). Summary: `awaiting_count /
+  overdue_count / conflict_count / oldest_days / approved_this_week / rejected_this_week`. OpenAPI
+  contract + TS types regenerated. No schema/migration, no new perm codes.
+- **Frontend:** the shared `ApprovalWorkspace` gains an optional **queue mode** — when a page supplies a
+  `{ tabs, fetchTab, fetchSummary }` descriptor it renders the Claims-style tab row and self-fetches
+  history by tab instead of reading the pending inbox (KPI + All stay inbox-mode). `ApprovalRow` honors
+  `actionable`/`is_overdue`/`is_conflict` row flags — **history rows show no action button** and their
+  review drawer is read-only. The **Conflict lens survives** the switch (driven by the backend flag).
+  Leave adopts queue mode; the `leaveApi` gains `approvalsQueue`/`approvalsSummary`.
+- Tests: `test_approvals_queue.py` (service + endpoint, 4 tests; backend leave suite 113 green);
+  frontend ApprovalRow/ApprovalWorkspace/inbox-filter queue-mode cases. Live-verified against the seeded
+  demo inboxes.
+
 ## [1.62.0] — 2026-07-09
 
 **All / Leave / KPI approval tabs get the Claims workspace feel.** The three tabs that rode the
