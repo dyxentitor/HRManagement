@@ -2,6 +2,15 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.4] — 2026-07-09
+
+**Fix: remaining bespoke API clients bypassed the shared token refresh.** Following v1.63.3, migrated
+`dashboard`, `onboarding`, `approvals`, and the Preferences page off their own `authFetch` (raw fetch,
+no refresh) onto the shared `lib/authed-fetch`, so all of them get the app-wide `401 → refresh → retry`
+and recover from access-token expiry instead of failing. Onboarding keeps its path-relative + JSON
+`Content-Type` wrapper (now delegating to `authedFetch`); the others alias it directly. No behavior
+change on the happy path; 69 tests across the migrated modules green.
+
 ## [1.63.3] — 2026-07-09
 
 **Fix: notifications 401 storm on token expiry.** The notifications module used its own `authFetch`
