@@ -55,7 +55,9 @@ def a_department(org: Organization) -> Department:
 @pytest.fixture
 def api_client_admin(org: Organization) -> APIClient:
     user = User.objects.create_user(
-        email="admin@test.com", password="admin!pass123", org_id=org.id  # pragma: allowlist secret
+        email="admin@test.com",
+        password="admin!pass123",
+        org_id=org.id,  # pragma: allowlist secret
     )
     role = Role.objects.get(org_id=org.id, code="org_admin")
     UserRole.objects.create(user=user, role=role, granted_by=None)
@@ -117,9 +119,7 @@ def test_create_user_with_employee_grants_leave(
     from modules.employee.models import Employee
 
     emp = Employee.all_objects.get(email="newhire@example.com")
-    assert LeaveBalance.all_objects.filter(
-        employee_id=emp.id, leave_type=lt, year=2026
-    ).exists()
+    assert LeaveBalance.all_objects.filter(employee_id=emp.id, leave_type=lt, year=2026).exists()
 
 
 def test_leave_grant_without_employee_is_400(

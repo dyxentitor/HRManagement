@@ -86,9 +86,7 @@ def grant_initial_leave(
             deleted_at__isnull=True,
         ).first()
         if lt is None:
-            raise ValidationError(
-                {"leave_type_id": f"Unknown leave type {item['leave_type_id']}."}
-            )
+            raise ValidationError({"leave_type_id": f"Unknown leave type {item['leave_type_id']}."})
         if lt.accrual_type not in ELIGIBLE_ACCRUAL_TYPES:
             raise ValidationError(
                 {

@@ -267,9 +267,7 @@ class LeaveBalanceViewSet(viewsets.ReadOnlyModelViewSet):
         if str(viewer.id) == str(employee_id):
             return "leave:balance:read:self" in perms
         # direct report → team scope
-        target = Employee.all_objects.filter(
-            id=employee_id, org_id=request.user.org_id
-        ).first()
+        target = Employee.all_objects.filter(id=employee_id, org_id=request.user.org_id).first()
         if target and str(target.manager_id) == str(viewer.id):
             return "leave:balance:read:team" in perms
         return False
@@ -632,7 +630,7 @@ class EntitlementPreviewView(APIView):
         try:
             hire_date = datetime.date.fromisoformat(raw)
         except ValueError:
-            raise ValidationError({"hire_date": "Invalid date."})
+            raise ValidationError({"hire_date": "Invalid date."}) from None
         department_id = request.query_params.get("department") or None
         year = timezone.localdate().year
         items = []

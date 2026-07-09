@@ -64,7 +64,11 @@ def api_client_employee(org):
 
 def test_preview_lists_only_accrual_types_with_numbers(api_client_admin, org):
     LeaveType.all_objects.create(
-        org_id=org.id, code="ANNUAL", name="Annual", default_days=Decimal("8"), accrual_type="annual"
+        org_id=org.id,
+        code="ANNUAL",
+        name="Annual",
+        default_days=Decimal("8"),
+        accrual_type="annual",
     )
     LeaveType.all_objects.create(
         org_id=org.id,

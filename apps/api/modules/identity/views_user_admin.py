@@ -11,10 +11,9 @@ from typing import ClassVar
 
 from django.db import transaction
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from rest_framework.exceptions import ValidationError
 
 from common.audit.service import append as audit_append
 from modules.identity.models import User

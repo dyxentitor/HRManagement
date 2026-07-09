@@ -71,9 +71,7 @@ def test_grants_prorated_balance_for_midyear_hire(org, employee_factory):
         actor_id=None,
         year=2026,
     )
-    bal = LeaveBalance.all_objects.get(
-        org_id=org.id, employee_id=emp.id, leave_type=lt, year=2026
-    )
+    bal = LeaveBalance.all_objects.get(org_id=org.id, employee_id=emp.id, leave_type=lt, year=2026)
     assert bal.entitled == Decimal("4.00")  # 8 * 6/12
     assert not EmployeeLeaveOverride.all_objects.filter(employee_id=emp.id).exists()
 
@@ -107,7 +105,9 @@ def test_grant_is_idempotent(org, employee_factory):
     grant_initial_leave(**args)
     grant_initial_leave(**args)
 
-    assert LeaveBalance.all_objects.filter(employee_id=emp.id, leave_type=lt, year=2026).count() == 1
+    assert (
+        LeaveBalance.all_objects.filter(employee_id=emp.id, leave_type=lt, year=2026).count() == 1
+    )
     assert EmployeeLeaveOverride.all_objects.filter(employee_id=emp.id, leave_type=lt).count() == 1
     assert LeaveBalanceLedger.objects.filter(employee_id=emp.id, leave_type=lt).count() == 1
 
