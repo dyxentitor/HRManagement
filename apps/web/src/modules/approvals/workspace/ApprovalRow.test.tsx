@@ -69,11 +69,7 @@ describe("ApprovalRow", () => {
 
   it("a non-actionable (history) row has no Approve/Review button", () => {
     draw(
-      <ApprovalRow
-        item={{ ...item(), actionable: false, status: "approved" }}
-        variant="typed"
-        {...props}
-      />,
+      <ApprovalRow item={{ ...item(), actionable: false }} variant="typed" {...props} />,
     )
     expect(screen.queryByRole("button", { name: /^approve$/i })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /^review$/i })).not.toBeInTheDocument()

@@ -1,17 +1,19 @@
 import type { FC } from "react"
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
-import type { InboxItem } from "../api"
+import { type InboxItem, approveItem } from "../api"
 import { matchesInboxSearch } from "../lib/inbox-filter"
 import type { Clash, UseApprovalInbox } from "../useApprovalInbox"
-import { ApprovalRow } from "./ApprovalRow"
-import type { LensTone } from "./WorkspaceToolbar"
+import { ApprovalRow, type ApprovalRowItem } from "./ApprovalRow"
 import { type ToolbarLens, WorkspaceToolbar } from "./WorkspaceToolbar"
+import type { LensTone } from "./WorkspaceToolbar"
 
+/** Inbox rows lack decision flags; queue rows (Leave history) carry them. */
+export type WorkspaceRow = ApprovalRowItem
 export type WorkspaceCtx = { clashes: Map<string, Clash> }
 
 export interface WorkspaceLens {
@@ -19,13 +21,22 @@ export interface WorkspaceLens {
   label: string
   icon: ToolbarLens["icon"]
   tone: LensTone
-  predicate: (item: InboxItem, ctx: WorkspaceCtx) => boolean
+  predicate: (item: WorkspaceRow, ctx: WorkspaceCtx) => boolean
 }
 
 export interface WorkspaceSort {
   key: string
   label: string
-  make: (ctx: WorkspaceCtx) => (a: InboxItem, b: InboxItem) => number
+  make: (ctx: WorkspaceCtx) => (a: WorkspaceRow, b: WorkspaceRow) => number
+}
+
+/** Queue mode: the page self-fetches tabbed history from a backend approvals
+ * endpoint instead of reading the shared pending inbox (how Claims already works). */
+export interface WorkspaceQueue {
+  tabs: { key: string; label: string }[]
+  fetchTab: (tab: string) => Promise<WorkspaceRow[]>
+  fetchSummary: () => Promise<Record<string, number>>
+  lensCount: (summary: Record<string, number>, lensKey: string) => number
 }
 
 export interface WorkspaceDescriptor {
@@ -33,6 +44,7 @@ export interface WorkspaceDescriptor {
   lenses: WorkspaceLens[]
   sorts: WorkspaceSort[]
   typeFilter?: boolean
+  queue?: WorkspaceQueue
   DetailDrawer: FC<{ item: InboxItem | null; onClose: () => void; onActed: () => void }>
 }
 
@@ -48,10 +60,11 @@ export function ApprovalWorkspace({
   filterKind,
   descriptor,
 }: {
-  inbox: UseApprovalInbox
+  inbox?: UseApprovalInbox
   filterKind?: InboxItem["kind"]
   descriptor: WorkspaceDescriptor
 }) {
+  const queue = descriptor.queue
   const [search, setSearch] = useState("")
   const [activeLens, setActiveLens] = useState<string | null>(null)
   const [sort, setSort] = useState(descriptor.sorts[0]?.key ?? "urgency")
@@ -59,19 +72,92 @@ export function ApprovalWorkspace({
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [tab, setTab] = useState(queue?.tabs[0]?.key ?? "awaiting")
 
-  const ctx: WorkspaceCtx = { clashes: inbox.clashes }
+  // Queue-mode state (unused in inbox mode).
+  const [qRows, setQRows] = useState<WorkspaceRow[]>([])
+  const [qSummary, setQSummary] = useState<Record<string, number>>({})
+  const [qLoading, setQLoading] = useState(false)
+  const [qSel, setQSel] = useState<Set<string>>(new Set())
 
-  // kind-scoped base (typed pages) or type-filtered base (all page)
-  const kindScoped = filterKind ? inbox.items.filter((i) => i.kind === filterKind) : inbox.items
-  const base = !filterKind && type !== "all" ? kindScoped.filter((i) => i.kind === type) : kindScoped
+  const refetch = useCallback(async () => {
+    if (!queue) return
+    setQLoading(true)
+    try {
+      const [rows, sum] = await Promise.all([queue.fetchTab(tab), queue.fetchSummary()])
+      setQRows(rows)
+      setQSummary(sum)
+      setQSel(new Set())
+    } catch {
+      setQRows([])
+    } finally {
+      setQLoading(false)
+    }
+  }, [queue, tab])
+
+  useEffect(() => {
+    void refetch()
+  }, [refetch])
+
+  const clashes = inbox?.clashes ?? new Map<string, Clash>()
+  const ctx: WorkspaceCtx = { clashes }
+
+  // Unified data + actions across the two modes.
+  const allItems: WorkspaceRow[] = queue ? qRows : (inbox?.items ?? [])
+  const loading = queue ? qLoading : (inbox?.loading ?? false)
+  const selected = queue ? qSel : (inbox?.selected ?? new Set<string>())
+
+  function toggleSel(id: string) {
+    if (queue) {
+      setQSel((s) => {
+        const next = new Set(s)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      })
+    } else inbox?.toggle(id)
+  }
+  const clearSel = queue ? () => setQSel(new Set()) : () => inbox?.clearSelection()
+
+  async function approveOne(item: WorkspaceRow) {
+    try {
+      if (queue) {
+        await approveItem(item.kind, item.id, "")
+        await refetch()
+      } else if (inbox) {
+        await inbox.approve(item, "")
+      }
+      toast.success("Approved")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Approve failed")
+    }
+  }
+  async function approveMany(ids: string[]) {
+    if (queue) {
+      for (const id of ids) await approveItem("leave", id, "")
+      await refetch()
+    } else if (inbox) {
+      await inbox.approveIds(ids)
+    }
+  }
+
+  // Base scope: queue rows are pre-scoped; inbox uses kind / type filters.
+  const kindScoped = queue
+    ? allItems
+    : filterKind
+      ? allItems.filter((i) => i.kind === filterKind)
+      : allItems
+  const base =
+    !queue && !filterKind && type !== "all" ? kindScoped.filter((i) => i.kind === type) : kindScoped
 
   const lenses: ToolbarLens[] = descriptor.lenses.map((l) => ({
     key: l.key,
     label: l.label,
     icon: l.icon,
     tone: l.tone,
-    count: base.filter((i) => l.predicate(i, ctx)).length,
+    count: queue
+      ? queue.lensCount(qSummary, l.key)
+      : base.filter((i) => l.predicate(i, ctx)).length,
   }))
 
   const lens = descriptor.lenses.find((l) => l.key === activeLens)
@@ -85,27 +171,20 @@ export function ApprovalWorkspace({
   const safePage = Math.min(page, totalPages)
   const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
-  const selectedItems = base.filter((i) => inbox.selected.has(i.id))
+  const selectedItems = base.filter((i) => selected.has(i.id))
   const singleKind = new Set(selectedItems.map((i) => i.kind)).size === 1
   const bulkAllowed = selectedItems.length > 0 && singleKind
 
-  async function quickApprove(item: InboxItem) {
-    try {
-      await inbox.approve(item, "")
-      toast.success("Approved")
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Approve failed")
-    }
-  }
-
-  const openItem = openId ? (inbox.items.find((i) => i.id === openId) ?? null) : null
+  const awaitingCount = queue ? (qSummary.awaiting_count ?? base.length) : base.length
+  const openItem = openId ? (allItems.find((i) => i.id === openId) ?? null) : null
   const Drawer = descriptor.DetailDrawer
+  const variant = queue || filterKind ? "typed" : "all"
 
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-col gap-3 pb-16">
         <WorkspaceToolbar
-          awaiting={base.length}
+          awaiting={awaitingCount}
           search={search}
           onSearch={(s) => {
             setSearch(s)
@@ -120,22 +199,34 @@ export function ApprovalWorkspace({
           sorts={descriptor.sorts}
           sort={sort}
           onSort={setSort}
+          tabs={
+            queue
+              ? {
+                  items: queue.tabs,
+                  value: tab,
+                  onChange: (t) => {
+                    setTab(t)
+                    setPage(1)
+                  },
+                }
+              : undefined
+          }
           typeFilter={
-            !filterKind && descriptor.typeFilter
+            !queue && !filterKind && descriptor.typeFilter
               ? {
                   value: type,
                   options: TYPE_OPTS,
                   onChange: (v) => {
                     setType(v)
                     setPage(1)
-                    inbox.clearSelection()
+                    clearSel()
                   },
                 }
               : undefined
           }
         />
 
-        {inbox.loading ? (
+        {loading ? (
           <div className="space-y-2">
             {["a", "b", "c", "d"].map((k) => (
               <Skeleton key={k} className="h-16 rounded-xl" />
@@ -152,12 +243,12 @@ export function ApprovalWorkspace({
                 <ApprovalRow
                   key={`${item.kind}-${item.id}`}
                   item={item}
-                  clash={inbox.clashes.get(item.id)}
-                  variant={filterKind ? "typed" : "all"}
-                  selected={inbox.selected.has(item.id)}
-                  onToggleSelect={() => inbox.toggle(item.id)}
+                  clash={clashes.get(item.id)}
+                  variant={variant}
+                  selected={selected.has(item.id)}
+                  onToggleSelect={() => toggleSel(item.id)}
                   onOpen={() => setOpenId(item.id)}
-                  onApprove={() => quickApprove(item)}
+                  onApprove={() => approveOne(item)}
                 />
               ))}
             </div>
@@ -217,7 +308,7 @@ export function ApprovalWorkspace({
               type="button"
               aria-label="Approve selected"
               disabled={!bulkAllowed}
-              onClick={() => inbox.approveIds(selectedItems.map((i) => i.id))}
+              onClick={() => approveMany(selectedItems.map((i) => i.id))}
               className="soft-glow bg-accent-500 text-canvas text-small font-semibold px-3 py-1.5 rounded-lg disabled:opacity-40"
             >
               Approve {selectedItems.length}
@@ -229,7 +320,7 @@ export function ApprovalWorkspace({
             )}
             <button
               type="button"
-              onClick={inbox.clearSelection}
+              onClick={clearSel}
               className="text-small text-text-tertiary hover:text-text-primary"
             >
               Clear
@@ -242,7 +333,8 @@ export function ApprovalWorkspace({
           onClose={() => setOpenId(null)}
           onActed={() => {
             setOpenId(null)
-            void inbox.refresh()
+            if (queue) void refetch()
+            else inbox?.refresh()
           }}
         />
       </div>

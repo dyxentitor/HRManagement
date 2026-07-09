@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { Flame } from "lucide-react"
 import { describe, expect, it, vi } from "vitest"
 
@@ -88,5 +88,35 @@ describe("ApprovalWorkspace", () => {
     )
     expect(screen.getByText(/select one type/i)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /approve selected/i })).toBeDisabled()
+  })
+
+  it("queue mode renders tabs, fetches on switch, hides action on history rows", async () => {
+    const fetchTab = vi.fn(async (t: string) =>
+      t === "approved"
+        ? [item({ id: "h", name: "HistoryRow", actionable: false, status: "approved" } as never)]
+        : [item({ id: "a", name: "AwaitRow", actionable: true } as never)],
+    )
+    const fetchSummary = vi.fn(async () => ({ awaiting_count: 1, overdue_count: 0 }))
+    const qDesc: WorkspaceDescriptor = {
+      ...descriptor,
+      queue: {
+        tabs: [
+          { key: "awaiting", label: "Awaiting" },
+          { key: "approved", label: "Approved" },
+        ],
+        fetchTab,
+        fetchSummary,
+        lensCount: (s, k) => s[`${k}_count`] ?? 0,
+      },
+    }
+    render(<ApprovalWorkspace descriptor={qDesc} />)
+    // awaiting tab loads + row has an Approve action
+    await waitFor(() => expect(screen.getByText("AwaitRow")).toBeInTheDocument())
+    expect(screen.getByRole("button", { name: /^approve$/i })).toBeInTheDocument()
+    // switch to Approved → fetchTab("approved"), history row has no action
+    fireEvent.click(screen.getByRole("button", { name: /^approved$/i }))
+    await waitFor(() => expect(screen.getByText("HistoryRow")).toBeInTheDocument())
+    expect(fetchTab).toHaveBeenCalledWith("approved")
+    expect(screen.queryByRole("button", { name: /^approve$/i })).not.toBeInTheDocument()
   })
 })
