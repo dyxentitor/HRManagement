@@ -64,3 +64,6 @@ logs/
 docs/
 References/
 presentation/
+
+# Internal PKI — never commit private keys
+deploy/nginx/pki/

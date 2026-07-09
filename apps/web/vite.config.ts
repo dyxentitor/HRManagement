@@ -12,9 +12,13 @@ export default defineConfig({
 	server: {
 		host: "0.0.0.0",
 		port: 5173,
+		// Allow any Host header (public IP / domain / dynamic-DNS) to reach the dev server.
+		allowedHosts: true,
 		proxy: {
-			"/api": "http://localhost:8000",
-			"/health": "http://localhost:8000",
+			// Target the API by its compose service name — the proxy runs inside the
+			// web container, where "localhost" is the web container itself.
+			"/api": "http://api:8000",
+			"/health": "http://api:8000",
 		},
 	},
 });
