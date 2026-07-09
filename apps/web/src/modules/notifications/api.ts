@@ -1,3 +1,5 @@
+import { authedFetch } from "@/lib/authed-fetch";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export type NotificationChannel = "in_app" | "email";
@@ -32,16 +34,9 @@ export class NotificationApiError extends Error {
 	}
 }
 
-async function authFetch(
-	url: string,
-	options: RequestInit = {},
-): Promise<Response> {
-	const { tokenStorage } = await import("@/lib/token-storage");
-	const token = tokenStorage.getAccess();
-	const headers = new Headers(options.headers);
-	if (token) headers.set("Authorization", `Bearer ${token}`);
-	return fetch(url, { ...options, headers });
-}
+// Use the shared authedFetch so notification requests get the app-wide
+// 401 → refresh → retry (previously they 401'd forever on token expiry).
+const authFetch = authedFetch;
 
 export async function listNotifications(
 	opts: { unreadOnly?: boolean; limit?: number; before?: number } = {},

@@ -1,35 +1,10 @@
 import createClient from "openapi-fetch";
 
 import type { paths } from "@hrms/contracts/generated";
+import { refreshTokens } from "./authed-fetch";
 import { tokenStorage } from "./token-storage";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-
-let refreshing: Promise<boolean> | null = null;
-
-async function refreshTokens(): Promise<boolean> {
-	if (refreshing) return refreshing;
-	const refresh = tokenStorage.getRefresh();
-	if (!refresh) return false;
-
-	refreshing = (async () => {
-		try {
-			const resp = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ refresh_token: refresh }),
-			});
-			if (!resp.ok) return false;
-			const body = await resp.json();
-			tokenStorage.set(body.access_token, body.refresh_token);
-			return true;
-		} finally {
-			refreshing = null;
-		}
-	})();
-
-	return refreshing;
-}
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 const baseClient = createClient<paths>({ baseUrl: BASE_URL });
 
