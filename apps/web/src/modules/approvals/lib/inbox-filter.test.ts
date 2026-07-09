@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest"
 
 import type { InboxItem } from "../api"
-import { isInboxOverdue, matchesInboxSearch } from "./inbox-filter"
+import type { Clash } from "../useApprovalInbox"
+import {
+  byLongest,
+  byNewest,
+  byUrgency,
+  hasCoverageClash,
+  isInboxOverdue,
+  matchesInboxSearch,
+} from "./inbox-filter"
 
 const NOW = Date.parse("2026-07-08T00:00:00Z")
 
@@ -47,5 +55,33 @@ describe("matchesInboxSearch", () => {
   })
   it("excludes non-matches", () => {
     expect(matchesInboxSearch(item(), "zzz")).toBe(false)
+  })
+})
+
+describe("lenses + sorts", () => {
+  const clashes = new Map<string, Clash>([["a", { count: 2, names: ["Bea"] }]])
+
+  it("hasCoverageClash reflects the clash map", () => {
+    expect(hasCoverageClash("a", clashes)).toBe(true)
+    expect(hasCoverageClash("b", clashes)).toBe(false)
+  })
+
+  it("byNewest orders newest submission first", () => {
+    const older = item({ id: "o", submitted_at: "2026-07-01T00:00:00Z" })
+    const newer = item({ id: "n", submitted_at: "2026-07-08T00:00:00Z" })
+    expect([older, newer].sort(byNewest)[0].id).toBe("n")
+  })
+
+  it("byLongest orders by total_days", () => {
+    const short = item({ id: "s", detail: { total_days: "1" } })
+    const long = item({ id: "l", detail: { total_days: "5" } })
+    expect([short, long].sort(byLongest)[0].id).toBe("l")
+  })
+
+  it("byUrgency puts overdue+clash first, then oldest", () => {
+    const overdueClash = item({ id: "a", submitted_at: "2026-06-01T00:00:00Z" }) // in clashes + old
+    const recent = item({ id: "b", submitted_at: "2026-07-08T00:00:00Z" })
+    const sorted = [recent, overdueClash].sort(byUrgency(clashes))
+    expect(sorted[0].id).toBe("a")
   })
 })

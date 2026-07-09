@@ -3,7 +3,12 @@ import { useCallback, useEffect, useState } from "react"
 import { leaveApi } from "@/modules/leave/api"
 
 import { type InboxItem, approveItem, getInbox, rejectItem } from "./api"
-import type { Clash } from "./components/UnifiedApprovalCard"
+
+/** Team-coverage clash for a leave item: how many teammates are already off, and who. */
+export interface Clash {
+  count: number
+  names: string[]
+}
 
 /** Shared approvals-inbox state + actions, used by the Approval Center and its
  * All / Leave / KPI segments (the Claims segment fetches its own richer data). */
