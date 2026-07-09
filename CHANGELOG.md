@@ -2,6 +2,17 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.3] — 2026-07-09
+
+**Fix: notifications 401 storm on token expiry.** The notifications module used its own `authFetch`
+that bypassed the shared `lib/api.ts` `401 → refresh → retry`, so once the access token expired the
+poller kept 401-ing forever while the rest of the app silently refreshed — and every concurrent poll
+request 401'd independently (the burst). Extracted a shared `authedFetch` + `refreshTokens` into
+`lib/authed-fetch.ts` with a single deduped in-flight refresh (shared with the typed openapi client, so
+the backend's refresh-token rotation can't race), and routed `notifications/api.ts` through it. N
+concurrent 401s now share one refresh and all retry. (`dashboard`, `onboarding`, and `approvals` API
+clients have the same bespoke-`authFetch` gap — follow-up to migrate them onto `authedFetch`.)
+
 ## [1.63.2] — 2026-07-09
 
 **Approval-action hardening + a command-palette a11y fix.**
