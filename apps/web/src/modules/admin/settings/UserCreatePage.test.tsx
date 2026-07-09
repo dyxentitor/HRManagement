@@ -34,8 +34,35 @@ vi.mock("sonner", () => ({
 	toast: { success: () => toast.success(), error: () => toast.error() },
 }));
 
+const mockEntitlementPreview = vi.fn();
+vi.mock("@/modules/leave/api", () => ({
+	entitlementPreview: (...args: unknown[]) => mockEntitlementPreview(...args),
+}));
+
 import { roleApi, userApi } from "../api";
 import { settingsApi } from "./settings-api";
+
+const PREVIEW_RESPONSE = {
+	year: 2026,
+	items: [
+		{
+			leave_type_id: "lt-annual",
+			code: "ANNUAL",
+			name: "Annual Leave",
+			accrual_type: "annual",
+			days_per_year: "16",
+			prorated_days: "8",
+		},
+		{
+			leave_type_id: "lt-sick",
+			code: "SICK",
+			name: "Sick Leave",
+			accrual_type: "annual",
+			days_per_year: "14",
+			prorated_days: "7",
+		},
+	],
+};
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -48,6 +75,7 @@ beforeEach(() => {
 		{ id: "d1", name: "Engineering", parent: null, head_employee_id: null },
 	]);
 	(userApi.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "new-1" });
+	mockEntitlementPreview.mockResolvedValue(PREVIEW_RESPONSE);
 });
 
 function renderPage() {
@@ -127,5 +155,116 @@ describe("UserCreatePage", () => {
 		renderPage();
 		expect(await screen.findByText(/don't have permission to create users/i)).toBeInTheDocument();
 		expect(screen.queryByLabelText(/^email/i)).not.toBeInTheDocument();
+	});
+
+	describe("Default Leaves panel", () => {
+		it("hides the grant-leave toggle when employee record is off", async () => {
+			renderPage();
+			await waitFor(() => screen.getByLabelText(/company email/i));
+
+			// employee toggle is off — grant leave switch must not appear
+			expect(
+				screen.queryByRole("switch", { name: /grant leave balances/i }),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows grant-leave toggle when employee record is on, but not the panel until toggled", async () => {
+			renderPage();
+			await waitFor(() => screen.getByLabelText(/company email/i));
+
+			// turn on employee creation
+			await userEvent.click(screen.getByRole("switch", { name: /create an employee record/i }));
+
+			// grant-leave toggle should appear, panel should not yet be visible
+			expect(
+				await screen.findByRole("switch", { name: /grant leave balances/i }),
+			).toBeInTheDocument();
+			expect(screen.queryByText(/annual leave/i)).not.toBeInTheDocument();
+		});
+
+		it("fetches preview and renders leave rows when both toggles are on", async () => {
+			renderPage();
+			await waitFor(() => screen.getByLabelText(/company email/i));
+
+			// turn on employee creation
+			await userEvent.click(screen.getByRole("switch", { name: /create an employee record/i }));
+
+			// fill hire date and department (needed for preview fetch)
+			await userEvent.type(screen.getByLabelText(/hire date/i), "2026-07-01");
+			await userEvent.selectOptions(screen.getByLabelText(/department/i), "d1");
+
+			// turn on grant leave
+			await userEvent.click(screen.getByRole("switch", { name: /grant leave balances/i }));
+
+			// wait for preview rows to render
+			await waitFor(() => expect(mockEntitlementPreview).toHaveBeenCalled());
+			expect(await screen.findAllByText(/annual leave/i)).not.toHaveLength(0);
+			expect(await screen.findAllByText(/sick leave/i)).not.toHaveLength(0);
+
+			// hint text includes prorated_days
+			expect(await screen.findByText(/grants ~8/i)).toBeInTheDocument();
+		});
+
+		it("sends leave_grant in the POST body when grant-leave is on", async () => {
+			renderPage();
+			await waitFor(() => screen.getByLabelText(/company email/i));
+
+			await userEvent.type(screen.getByLabelText(/company email/i), "newhire@x.com");
+			await userEvent.click(screen.getByRole("switch", { name: /create an employee record/i }));
+
+			await userEvent.type(screen.getByLabelText(/employee code/i), "EMP-77");
+			await userEvent.type(screen.getByLabelText(/first name/i), "Bob");
+			await userEvent.type(screen.getByLabelText(/last name/i), "Smith");
+			await userEvent.type(screen.getByLabelText(/hire date/i), "2026-07-01");
+			await userEvent.selectOptions(screen.getByLabelText(/department/i), "d1");
+
+			// toggle grant leave on
+			await userEvent.click(screen.getByRole("switch", { name: /grant leave balances/i }));
+
+			// wait for preview
+			await waitFor(() => expect(mockEntitlementPreview).toHaveBeenCalled());
+			await screen.findAllByText(/annual leave/i);
+
+			await userEvent.click(screen.getByRole("button", { name: /create user/i }));
+			await waitFor(() => expect(userApi.create).toHaveBeenCalled());
+
+			const body = (userApi.create as ReturnType<typeof vi.fn>).mock.calls[0][0];
+			expect(body.leave_grant).toMatchObject({
+				enabled: true,
+				items: expect.arrayContaining([
+					expect.objectContaining({
+						leave_type_id: "lt-annual",
+						days_per_year: "16",
+						permanent: false,
+					}),
+					expect.objectContaining({
+						leave_type_id: "lt-sick",
+						days_per_year: "14",
+						permanent: false,
+					}),
+				]),
+			});
+		});
+
+		it("omits leave_grant from POST body when grant-leave is off", async () => {
+			renderPage();
+			await waitFor(() => screen.getByLabelText(/company email/i));
+
+			await userEvent.type(screen.getByLabelText(/company email/i), "newhire@x.com");
+			await userEvent.click(screen.getByRole("switch", { name: /create an employee record/i }));
+
+			await userEvent.type(screen.getByLabelText(/employee code/i), "EMP-88");
+			await userEvent.type(screen.getByLabelText(/first name/i), "Carol");
+			await userEvent.type(screen.getByLabelText(/last name/i), "Jones");
+			await userEvent.type(screen.getByLabelText(/hire date/i), "2026-07-01");
+			await userEvent.selectOptions(screen.getByLabelText(/department/i), "d1");
+
+			// grant leave toggle remains off
+			await userEvent.click(screen.getByRole("button", { name: /create user/i }));
+			await waitFor(() => expect(userApi.create).toHaveBeenCalled());
+
+			const body = (userApi.create as ReturnType<typeof vi.fn>).mock.calls[0][0];
+			expect(body.leave_grant).toBeUndefined();
+		});
 	});
 });

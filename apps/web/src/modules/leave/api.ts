@@ -154,6 +154,29 @@ async function _patch<T>(url: string, body: unknown): Promise<T> {
 	return data as T;
 }
 
+export interface EntitlementPreviewItem {
+	leave_type_id: string;
+	code: string;
+	name: string;
+	accrual_type: string;
+	days_per_year: string;
+	prorated_days: string;
+}
+
+export interface EntitlementPreviewResult {
+	year: number;
+	items: EntitlementPreviewItem[];
+}
+
+export async function entitlementPreview(params: {
+	hire_date: string;
+	department?: string;
+}): Promise<EntitlementPreviewResult> {
+	const qs = new URLSearchParams({ hire_date: params.hire_date });
+	if (params.department) qs.set("department", params.department);
+	return _get<EntitlementPreviewResult>(`/api/v1/leave/entitlement-preview/?${qs.toString()}`);
+}
+
 export type LeaveAdjustment = {
 	ts: string;
 	leave_type: string;

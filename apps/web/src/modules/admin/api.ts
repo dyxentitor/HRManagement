@@ -264,6 +264,10 @@ export const userApi = {
 		temp_password?: string;
 		invite_email?: string;
 		employee?: Record<string, unknown>;
+		leave_grant?: {
+			enabled: boolean;
+			items: Array<{ leave_type_id: string; days_per_year: string; permanent: boolean }>;
+		};
 	}): Promise<{ id: string }> => {
 		// The auth/user views lack @extend_schema, so the request body is
 		// untyped in the OpenAPI contract — cast at the call site.
