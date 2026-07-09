@@ -1,12 +1,13 @@
+import { authedFetch } from "@/lib/authed-fetch";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
+// Path-relative wrapper over the shared authedFetch (adds the token +
+// 401 → refresh → retry). Keeps the JSON Content-Type these endpoints expect.
 async function authFetch(path: string, init: RequestInit = {}): Promise<Response> {
-	const { tokenStorage } = await import("@/lib/token-storage");
-	const token = tokenStorage.getAccess();
 	const headers = new Headers(init.headers);
 	headers.set("Content-Type", "application/json");
-	if (token) headers.set("Authorization", `Bearer ${token}`);
-	return fetch(`${BASE_URL}${path}`, { ...init, headers });
+	return authedFetch(`${BASE_URL}${path}`, { ...init, headers });
 }
 
 export interface OnboardingPrefs {

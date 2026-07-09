@@ -1,4 +1,9 @@
+import { authedFetch } from "@/lib/authed-fetch";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+
+// Shared client: token header + app-wide 401 → refresh → retry.
+const authFetch = authedFetch;
 
 export type InboxItem = {
 	kind: "leave" | "claim" | "kpi";
@@ -15,13 +20,6 @@ export type InboxItem = {
 	detail: Record<string, unknown>;
 };
 
-async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-	const { tokenStorage } = await import("@/lib/token-storage");
-	const token = tokenStorage.getAccess();
-	const headers = new Headers(options.headers);
-	if (token) headers.set("Authorization", `Bearer ${token}`);
-	return fetch(url, { ...options, headers });
-}
 
 export async function getInbox(): Promise<InboxItem[]> {
 	const resp = await authFetch(`${BASE_URL}/api/v1/approvals/inbox`);

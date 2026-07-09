@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { StatusPill } from "@/components/hrms";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
+import { authedFetch } from "@/lib/authed-fetch";
 import { useAuth } from "@/lib/auth";
 
 import {
@@ -17,7 +18,7 @@ import {
 	getEventLabel,
 } from "../../notifications/event-labels";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 const SECURITY_TYPES = new Set([
 	"auth.login",
@@ -29,16 +30,8 @@ const SECURITY_TYPES = new Set([
 
 const CHANNELS: Array<"in_app" | "email"> = ["in_app", "email"];
 
-async function authFetch(
-	url: string,
-	options: RequestInit = {},
-): Promise<Response> {
-	const { tokenStorage } = await import("@/lib/token-storage");
-	const token = tokenStorage.getAccess();
-	const headers = new Headers(options.headers);
-	if (token) headers.set("Authorization", `Bearer ${token}`);
-	return fetch(url, { ...options, headers });
-}
+// Shared client: token header + app-wide 401 → refresh → retry.
+const authFetch = authedFetch;
 
 // ────────────────────────────────────────────────────────────
 // MFA section
