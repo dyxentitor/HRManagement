@@ -2,6 +2,18 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.2] — 2026-07-09
+
+**Approval-action hardening + a command-palette a11y fix.**
+- **No more double-submit / cryptic 400s on approve.** The inline **Approve** button now disables while
+  its request is in flight (a double-click used to fire two requests — the second hitting the
+  already-changed claim → 400/403). On failure it shows a friendly message (*"already actioned"* /
+  *"moved to a stage you don't handle"*) and **refreshes the queue** so the stale row drops out instead
+  of lingering and re-erroring. Applies to the Claims workspace and the shared `ApprovalWorkspace`;
+  review-drawer errors use the same mapping. New `friendlyActionError` helper (tested).
+- **A11y:** the app-wide command palette (`CommandDialog`) rendered a Radix `DialogContent` with no
+  `DialogTitle`, warning on every page — added an `sr-only` title + description.
+
 ## [1.63.1] — 2026-07-09
 
 **Fix: cancelled/resolved claims stayed in the approver queue and 400'd on approve.** A manager could
