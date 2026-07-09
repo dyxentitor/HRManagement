@@ -22,6 +22,8 @@ from .models import EmployeeLeaveOverride, LeaveBalance, LeavePolicy, LeaveReque
 from .serializers import (
     EmployeeLeaveOverrideSerializer,
     LeaveActionSerializer,
+    LeaveApprovalRowSerializer,
+    LeaveApprovalSummarySerializer,
     LeaveBalanceSerializer,
     LeavePolicySerializer,
     LeaveRequestSerializer,
@@ -398,6 +400,10 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             return ["leave:request:create:self"]
         if self.action in ("approve", "reject"):
             return ["leave:request:approve:team"]
+        if self.action in ("approvals", "approvals_summary"):
+            # Auth-only: rows are already scoped to the caller's own LeaveApproval
+            # records (same rationale as the claims approvals actions).
+            return []
         return []
 
     @property
@@ -434,6 +440,22 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         LeaveRequestService.submit(req, actor=request.user)
         req.refresh_from_db()
         return Response(self.get_serializer(req).data)
+
+    @action(detail=False, methods=["get"], url_path="approvals")
+    def approvals(self, request):
+        """Leave Approvals workspace rows for the current approver (?tab=)."""
+        from .services.approvals_queue import list_for_approver
+
+        tab = request.query_params.get("tab", "awaiting")
+        rows = list_for_approver(request.user, tab)
+        return Response(LeaveApprovalRowSerializer(rows, many=True).data)
+
+    @action(detail=False, methods=["get"], url_path="approvals/summary")
+    def approvals_summary(self, request):
+        """Counts for the Leave Approvals workspace header + lenses."""
+        from .services.approvals_queue import summary_for_approver
+
+        return Response(LeaveApprovalSummarySerializer(summary_for_approver(request.user)).data)
 
     @action(detail=True, methods=["post"], url_path="approve")
     def approve(self, request, pk=None):

@@ -221,3 +221,35 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
 
 class LeaveActionSerializer(serializers.Serializer):
     comment = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class LeaveApprovalRowSerializer(serializers.Serializer):
+    """A row in the Leave Approvals workspace (read-only, built from a dict)."""
+
+    kind = serializers.CharField()
+    id = serializers.CharField()
+    employee_id = serializers.CharField()
+    employee_code = serializers.CharField(allow_blank=True)
+    name = serializers.CharField(allow_blank=True)
+    department = serializers.CharField(allow_blank=True)
+    type_code = serializers.CharField()
+    summary = serializers.CharField(allow_blank=True)
+    deep_link = serializers.CharField()
+    submitted_at = serializers.CharField(allow_null=True)
+    detail = serializers.DictField()
+    status = serializers.CharField()
+    actionable = serializers.BooleanField()
+    age_days = serializers.IntegerField()
+    is_overdue = serializers.BooleanField()
+    is_conflict = serializers.BooleanField()
+
+
+class LeaveApprovalSummarySerializer(serializers.Serializer):
+    """Counts for the Leave Approvals workspace header/lenses."""
+
+    awaiting_count = serializers.IntegerField()
+    overdue_count = serializers.IntegerField()
+    conflict_count = serializers.IntegerField()
+    oldest_days = serializers.IntegerField()
+    approved_this_week = serializers.IntegerField()
+    rejected_this_week = serializers.IntegerField()

@@ -152,3 +152,28 @@ def test_approved_tab_and_summary(env):
     s = summary_for_approver(env["mgr_user"])
     assert s["awaiting_count"] == 1
     assert s["approved_this_week"] == 1
+
+
+@pytest.mark.django_db
+def test_approvals_endpoint_is_auth_only(env):
+    from rest_framework.test import APIClient
+
+    req = _req(
+        env["org"], env["lt"], env["p1"].id, datetime.date(2026, 8, 20), datetime.date(2026, 8, 21)
+    )
+    LeaveApproval.objects.create(
+        leave_request=req, level=0, approver_id=env["mgr_user"].id, status="pending"
+    )
+    client = APIClient()
+    tok = client.post(
+        "/api/v1/auth/login", {"email": "mgr@x.com", "password": "x"}, format="json"
+    ).json()["access_token"]
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {tok}")
+
+    r = client.get("/api/v1/leave/requests/approvals/?tab=awaiting")
+    assert r.status_code == 200
+    assert [row["id"] for row in r.json()] == [str(req.id)]
+
+    s = client.get("/api/v1/leave/requests/approvals/summary/")
+    assert s.status_code == 200
+    assert s.json()["awaiting_count"] == 1

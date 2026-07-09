@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.59.0
+  version: 1.62.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -4771,6 +4771,36 @@ paths:
             schema:
               $ref: '#/components/schemas/LeaveRequestRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+          description: ''
+  /api/v1/leave/requests/approvals/:
+    get:
+      operationId: leave_requests_approvals_retrieve
+      description: Leave Approvals workspace rows for the current approver (?tab=).
+      tags:
+      - leave
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+          description: ''
+  /api/v1/leave/requests/approvals/summary/:
+    get:
+      operationId: leave_requests_approvals_summary_retrieve
+      description: Counts for the Leave Approvals workspace header + lenses.
+      tags:
+      - leave
       security:
       - jwtAuth: []
       responses:
