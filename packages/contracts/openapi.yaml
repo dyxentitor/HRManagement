@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.62.0
+  version: 1.63.4
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -5325,6 +5325,21 @@ paths:
       description: Lazy org-hierarchy reads for the Organization Chart.
       tags:
       - org-chart
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/org/branding:
+    get:
+      operationId: org_branding_retrieve
+      description: |-
+        Org name + logo for the app shell. Readable by ANY authenticated user —
+        branding isn't a secret and is shown in the shell to everyone; gating it on
+        org:settings:read 403'd the logo fetch for manager/employee-tier users (same
+        reasoning as the open feature-flags read).
+      tags:
+      - org
       security:
       - jwtAuth: []
       responses:

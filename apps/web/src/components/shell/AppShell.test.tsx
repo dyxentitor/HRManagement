@@ -33,7 +33,8 @@ describe("AppShell", () => {
 				</Routes>
 			</MemoryRouter>,
 		);
-		expect(screen.getByText("PROVINTELL")).toBeInTheDocument();
+		// OrgLogo renders the landscape wordmark image by default (org branding loads async).
+		expect(screen.getByRole("img", { name: /provintell/i })).toBeInTheDocument();
 		expect(screen.getByText("employees-route-rendered")).toBeInTheDocument();
 		expect(
 			screen.getByRole("link", { name: /skip to main content/i }),

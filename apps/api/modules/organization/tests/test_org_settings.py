@@ -140,3 +140,17 @@ def test_patch_org_settings_writes_audit_log(org: Organization) -> None:
     ).first()
     assert log is not None
     assert "name" in (log.after or {}).get("changed_fields", [])
+
+
+@pytest.mark.django_db
+def test_org_branding_readable_by_any_authenticated_user(org: Organization) -> None:
+    # A user with NO org:settings perms still gets branding (for the shell logo),
+    # while the full settings endpoint stays gated.
+    client, _ = _setup_user(org, [])
+    resp = client.get("/api/v1/org/branding")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["name"] == "Provintell"
+    assert body["logo_mode"] == "landscape"
+    assert set(body.keys()) == {"name", "logo_url", "logo_mode"}
+    assert client.get("/api/v1/org/settings").status_code == 403

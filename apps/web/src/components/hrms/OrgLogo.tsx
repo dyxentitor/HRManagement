@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { type OrgSettings, settingsApi } from "@/modules/admin/settings/settings-api";
+import { type OrgBranding, settingsApi } from "@/modules/admin/settings/settings-api";
 
 export type LogoMode = "landscape" | "legacy";
 
@@ -14,16 +14,18 @@ export function readLogoMode(settings: Record<string, unknown> | undefined | nul
  *  - "landscape" → the wide wordmark (uploaded `logo_url`, else the bundled `/logo.png`)
  *  - "legacy"    → the gradient mark + uppercase org name */
 export function OrgLogo() {
-	const [org, setOrg] = useState<OrgSettings | null>(null);
+	const [org, setOrg] = useState<OrgBranding | null>(null);
 
 	useEffect(() => {
+		// Branding is open to any authenticated user, so this no longer 403s for
+		// manager/employee-tier users the way the full getOrg() did.
 		settingsApi
-			.getOrg()
+			.getBranding()
 			.then(setOrg)
 			.catch(() => undefined);
 	}, []);
 
-	const mode = readLogoMode(org?.settings);
+	const mode: LogoMode = org?.logo_mode === "legacy" ? "legacy" : "landscape";
 
 	if (mode === "landscape") {
 		return (

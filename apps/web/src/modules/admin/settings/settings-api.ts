@@ -81,6 +81,13 @@ export interface OrgSettings {
 	logo_url: string | null;
 }
 
+/** Shell branding only — served by GET /api/v1/org/branding to any authenticated user. */
+export interface OrgBranding {
+	name: string;
+	logo_url: string | null;
+	logo_mode: "landscape" | "legacy";
+}
+
 function unwrapErr(error: unknown, fallback: string): never {
 	if (error && typeof error === "object" && "detail" in error) {
 		throw new Error(String((error as { detail: unknown }).detail));
@@ -100,6 +107,13 @@ export const settingsApi = {
 		const { data, error } = await api.GET("/api/v1/org/settings");
 		if (error) unwrapErr(error, "Failed to load org settings");
 		return data as unknown as OrgSettings;
+	},
+
+	// Shell branding — open to any authenticated user (unlike getOrg).
+	getBranding: async (): Promise<OrgBranding> => {
+		const { data, error } = await api.GET("/api/v1/org/branding");
+		if (error) unwrapErr(error, "Failed to load branding");
+		return data as unknown as OrgBranding;
 	},
 
 	patchOrg: async (payload: Partial<OrgSettings>): Promise<OrgSettings> => {

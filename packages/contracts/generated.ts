@@ -2882,6 +2882,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/org/branding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Org name + logo for the app shell. Readable by ANY authenticated user —
+         *     branding isn't a secret and is shown in the shell to everyone; gating it on
+         *     org:settings:read 403'd the logo fetch for manager/employee-tier users (same
+         *     reasoning as the open feature-flags read).
+         */
+        get: operations["org_branding_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/email-config/": {
         parameters: {
             query?: never;
@@ -11801,6 +11823,24 @@ export interface operations {
         };
     };
     org_chart_search_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_branding_retrieve: {
         parameters: {
             query?: never;
             header?: never;

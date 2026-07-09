@@ -15,7 +15,12 @@ from modules.employee.services.avatar import presigned_put_url
 from modules.identity.permissions import HRMSPermission
 
 from .models import Department, Organization
-from .serializers import DepartmentSerializer, OrganizationSerializer, OrgSettingsSerializer
+from .serializers import (
+    DepartmentSerializer,
+    OrganizationSerializer,
+    OrgBrandingSerializer,
+    OrgSettingsSerializer,
+)
 from .tasks import process_org_logo
 
 LOGO_ALLOWED_CONTENT_TYPES: frozenset[str] = frozenset({"image/png", "image/jpeg", "image/webp"})
@@ -69,6 +74,20 @@ class DepartmentViewSet(viewsets.ModelViewSet):
                 {"detail": "Department has active employees; reassign before deleting."}
             )
         super().perform_destroy(instance)
+
+
+class OrgBrandingView(APIView):
+    """Org name + logo for the app shell. Readable by ANY authenticated user —
+    branding isn't a secret and is shown in the shell to everyone; gating it on
+    org:settings:read 403'd the logo fetch for manager/employee-tier users (same
+    reasoning as the open feature-flags read)."""
+
+    permission_classes: ClassVar = [HRMSPermission]
+    required_perms: ClassVar[list[str]] = []
+
+    def get(self, request):
+        org = Organization.objects.get(id=request.user.org_id)
+        return Response(OrgBrandingSerializer(org).data)
 
 
 class OrgSettingsView(RetrieveModelMixin, UpdateModelMixin, GenericAPIView):

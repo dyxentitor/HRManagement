@@ -54,3 +54,24 @@ class OrgSettingsSerializer(serializers.ModelSerializer):
         if not obj.logo_s3_key:
             return None
         return presigned_get_url(obj.logo_s3_key, expires_in=3600)
+
+
+class OrgBrandingSerializer(serializers.ModelSerializer):
+    """Just the shell branding — org name + logo. Readable by any authenticated
+    user (unlike the full, admin-gated OrgSettingsSerializer)."""
+
+    logo_url = serializers.SerializerMethodField()
+    logo_mode = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Organization
+        fields = ("name", "logo_url", "logo_mode")
+
+    def get_logo_url(self, obj: Organization) -> str | None:
+        if not obj.logo_s3_key:
+            return None
+        return presigned_get_url(obj.logo_s3_key, expires_in=3600)
+
+    def get_logo_mode(self, obj: Organization) -> str:
+        mode = (obj.settings or {}).get("logo_mode")
+        return "legacy" if mode == "legacy" else "landscape"
