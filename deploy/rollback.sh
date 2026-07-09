@@ -9,7 +9,8 @@ echo "Rolling back to $TARGET" >&2
 git checkout --quiet "$TARGET"
 prod build && prod up -d
 if [[ "${2:-}" == "--restore-data" ]]; then
-  SNAP="$(ls -1t backups/predeploy-*.sql.gz | head -1)"
+  SNAP="$(ls -1t backups/predeploy-*.sql.gz 2>/dev/null | head -1)"
+  [[ -n "$SNAP" ]] || { echo "FATAL: no predeploy snapshot found to restore" >&2; exit 1; }
   echo "Restoring newest snapshot $SNAP" >&2
   deploy/restore.sh "$SNAP"
 fi

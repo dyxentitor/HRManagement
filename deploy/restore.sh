@@ -9,6 +9,9 @@ prod exec -T postgres psql -U "$POSTGRES_USER" -d postgres \
   -c "DROP DATABASE IF EXISTS ${POSTGRES_DB}_restore;" \
   -c "CREATE DATABASE ${POSTGRES_DB}_restore OWNER $POSTGRES_USER;"
 gunzip -c "$SQL_GZ" | prod exec -T postgres psql -U "$POSTGRES_USER" -d "${POSTGRES_DB}_restore" >/dev/null
+# Evict lingering connections so the rename cannot fail under set -e.
+prod exec -T postgres psql -U "$POSTGRES_USER" -d postgres \
+  -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$POSTGRES_DB' AND pid <> pg_backend_pid();" || true
 # swap: rename live -> old, restore -> live (atomic-ish; requires no active conns)
 prod exec -T postgres psql -U "$POSTGRES_USER" -d postgres \
   -c "ALTER DATABASE $POSTGRES_DB RENAME TO ${POSTGRES_DB}_old;" \

@@ -5,11 +5,16 @@ source deploy/lib/prod-env.sh
 source deploy/lib/smoke.sh
 REF="${1:?usage: deploy.sh <git-tag-or-commit>}"
 PREV_REF="$(git rev-parse HEAD)"
-migs() { prod exec -T api python manage.py showmigrations --plan 2>/dev/null | grep -c '\[X\]' || echo 0; }
+
+# Deterministic migration detection: check if the forward diff touches any migrations file.
+# Done here (before checkout) while both refs are resolvable in git.
+MIGRATED=no
+if ! git diff --quiet "$PREV_REF" "$REF" -- '*/migrations/*.py'; then
+  MIGRATED=yes
+fi
 
 echo "== 1/5 snapshot ==" >&2
 SNAP="$(deploy/backup.sh predeploy | tail -1)"
-BEFORE="$(migs)"
 
 echo "== 2/5 checkout $REF ==" >&2
 git fetch --tags --quiet
@@ -28,10 +33,9 @@ fi
 echo "!! smoke failed — AUTO-ROLLBACK to $PREV_REF" >&2
 git checkout --quiet "$PREV_REF"
 prod build && prod up -d
-AFTER="$(migs)"
-if [[ "$AFTER" -ne "$BEFORE" ]]; then
-  echo "migration ran ($BEFORE→$AFTER) — restoring snapshot $SNAP" >&2
-  deploy/restore.sh "$SNAP"
+if [[ "$MIGRATED" == yes ]]; then
+  echo "migration ran (git-detected) — restoring snapshot $SNAP" >&2
+  deploy/restore.sh "$SNAP" || echo "WARN: snapshot restore failed during rollback — manual DB recovery needed" >&2
 fi
 smoke_check || echo "WARN: still unhealthy after rollback — manual intervention needed" >&2
 exit 1
