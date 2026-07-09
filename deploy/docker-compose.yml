@@ -159,7 +159,13 @@ services:
              cd /repo && pnpm install --filter @hrms/web... &&
              cd /repo/apps/web && pnpm dev --host 0.0.0.0"
     environment:
-      VITE_API_BASE_URL: http://localhost:8000
+      # Empty = same-origin relative "/api" calls. The vite dev proxy (this
+      # file's web service) and the host nginx reverse proxy both forward
+      # "/api" to the API, so the SPA works both at http://localhost:5173 and
+      # behind https://<host>. A hardcoded absolute URL here reintroduces
+      # cross-origin + mixed-content (HTTPS page -> http://localhost:8000) CORS
+      # failures when the app is served through nginx.
+      VITE_API_BASE_URL: ""
     ports: ["5173:5173"]
 
 volumes:
