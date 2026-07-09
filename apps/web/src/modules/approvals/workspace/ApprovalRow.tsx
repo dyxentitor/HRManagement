@@ -85,8 +85,15 @@ function allSummary(item: InboxItem, clash?: Clash): string {
   return [`${str(d.cycle)} cycle`, "self-review ready"].filter(Boolean).join(" · ")
 }
 
+/** Queue rows (Leave history tabs) carry decision flags; inbox rows don't. */
+export type ApprovalRowItem = InboxItem & {
+  actionable?: boolean
+  is_overdue?: boolean
+  is_conflict?: boolean
+}
+
 export interface ApprovalRowProps {
-  item: InboxItem
+  item: ApprovalRowItem
   clash?: Clash
   variant: "typed" | "all"
   selected: boolean
@@ -108,10 +115,11 @@ export function ApprovalRow({
 }: ApprovalRowProps) {
   const name = item.name || item.employee_code
   const [from, to] = gradientFromName(name)
-  const overdue = isInboxOverdue(item)
-  const clashing = (clash?.count ?? 0) > 0
+  const actionable = item.actionable ?? true
+  const overdue = item.is_overdue ?? isInboxOverdue(item)
+  const clashing = (clash?.count ?? 0) > 0 || item.is_conflict === true
   const reviewFirst = item.kind === "kpi"
-  const canReject = item.kind !== "kpi"
+  const canReject = actionable && item.kind !== "kpi"
 
   return (
     <div
@@ -175,23 +183,24 @@ export function ApprovalRow({
       )}
 
       <div className="flex items-center gap-1.5 shrink-0">
-        {reviewFirst ? (
-          <button
-            type="button"
-            onClick={onOpen}
-            className="inline-flex items-center gap-1 border border-accent-500/60 text-accent-100 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg"
-          >
-            Review
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onApprove}
-            className="inline-flex items-center gap-1 bg-accent-500 text-canvas text-[11px] font-semibold px-2.5 py-1.5 rounded-lg"
-          >
-            <Check className="size-3.5" /> Approve
-          </button>
-        )}
+        {actionable &&
+          (reviewFirst ? (
+            <button
+              type="button"
+              onClick={onOpen}
+              className="inline-flex items-center gap-1 border border-accent-500/60 text-accent-100 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg"
+            >
+              Review
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onApprove}
+              className="inline-flex items-center gap-1 bg-accent-500 text-canvas text-[11px] font-semibold px-2.5 py-1.5 rounded-lg"
+            >
+              <Check className="size-3.5" /> Approve
+            </button>
+          ))}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
