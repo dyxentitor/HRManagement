@@ -141,9 +141,23 @@ class Command(BaseCommand):
             default="pvt-demo-001@provintell.local",
             help="Login email of the manager whose reports' items should be seeded.",
         )
+        parser.add_argument(
+            "--all",
+            action="store_true",
+            help="Seed pending items for EVERY employee with a manager (busy-inbox demo).",
+        )
+        parser.add_argument(
+            "--claims-per", type=int, default=3, help="Claims per employee in --all mode."
+        )
+        parser.add_argument(
+            "--leave-per", type=int, default=2, help="Leave requests per employee in --all mode."
+        )
 
     @transaction.atomic
     def handle(self, *args, **opts):
+        if opts["all"]:
+            self._seed_all(opts["claims_per"], opts["leave_per"])
+            return
         approver = Employee.all_objects.filter(user__email=opts["approver"]).first()
         if approver is None:
             raise CommandError(f"No employee found for approver {opts['approver']!r}")
@@ -174,11 +188,17 @@ class Command(BaseCommand):
         annual = LeaveType.all_objects.filter(org_id=org_id, code="ANNUAL").first()
         if annual is not None:
             _, l1 = _ensure_leave(
-                org_id, r1, annual, today + datetime.timedelta(days=20),
+                org_id,
+                r1,
+                annual,
+                today + datetime.timedelta(days=20),
                 today + datetime.timedelta(days=22),
             )
             _, l2 = _ensure_leave(
-                org_id, r3, annual, today + datetime.timedelta(days=30),
+                org_id,
+                r3,
+                annual,
+                today + datetime.timedelta(days=30),
                 today + datetime.timedelta(days=31),
             )
             created["leave"] = sum((l1, l2))
@@ -187,9 +207,7 @@ class Command(BaseCommand):
         # reviews land in the manager's inbox (inbox needs cycle=manager_review +
         # assignment=self_done).
         cycle = (
-            KpiCycle.all_objects.filter(
-                org_id=org_id, status__in=("self_review", "manager_review")
-            )
+            KpiCycle.all_objects.filter(org_id=org_id, status__in=("self_review", "manager_review"))
             .order_by("-created_at")
             .first()
         )
@@ -209,5 +227,67 @@ class Command(BaseCommand):
                 f"Seeded for {approver.employee_code} ({opts['approver']}): "
                 f"+{created['claims']} claims, +{created['leave']} leave, +{created['kpi']} KPI "
                 f"(existing items are left as-is)."
+            )
+        )
+
+    def _seed_all(self, claims_per: int, leave_per: int) -> None:
+        """Give every employee-with-manager several pending claims + leave requests, in
+        a realistic mix, so any manager's Approvals inbox looks busy. Each item is
+        isolated in a savepoint so one bad row (e.g. missing leave balance) is skipped,
+        not fatal. Nothing is approved."""
+        employees = list(
+            Employee.all_objects.filter(
+                deleted_at__isnull=True, manager__isnull=False, user__isnull=False
+            ).order_by("employee_code")
+        )
+        if not employees:
+            raise CommandError("No employees with a manager + user account to seed.")
+
+        today = timezone.localdate()
+        cat_by_org: dict = {}
+        annual_by_org: dict = {}
+        totals = {"claims": 0, "leave": 0, "skipped": 0}
+
+        for idx, emp in enumerate(employees):
+            org_id = emp.org_id
+            cat = cat_by_org.setdefault(org_id, _seed_category(org_id))
+            annual = annual_by_org.setdefault(
+                org_id, LeaveType.all_objects.filter(org_id=org_id, code="ANNUAL").first()
+            )
+
+            for j in range(claims_per):
+                gi = idx * claims_per + j
+                if gi % 6 == 0:  # high-value (>= RM 5,000)
+                    amount, days_ago = Decimal(5000 + (gi % 5) * 720), 2
+                elif gi % 4 == 0:  # overdue
+                    amount, days_ago = Decimal(500 + (gi % 9) * 190), 4 + (gi % 5)
+                else:  # everyday
+                    amount, days_ago = Decimal(80 + (gi % 12) * 95), gi % 3
+                merchant = f"SEED-{emp.employee_code}-C{j}"
+                try:
+                    with transaction.atomic():
+                        _, made = _ensure_claim(
+                            org_id, emp, cat, amount, merchant, days_ago=days_ago
+                        )
+                    totals["claims"] += int(made)
+                except Exception:
+                    totals["skipped"] += 1
+
+            if annual is not None:
+                for k in range(leave_per):
+                    start = today + datetime.timedelta(days=15 + idx * 3 + k * 11)
+                    end = start + datetime.timedelta(days=k)  # 1- or 2-day requests
+                    try:
+                        with transaction.atomic():
+                            _, made = _ensure_leave(org_id, emp, annual, start, end)
+                        totals["leave"] += int(made)
+                    except Exception:
+                        totals["skipped"] += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Seeded across {len(employees)} employees: +{totals['claims']} claims, "
+                f"+{totals['leave']} leave ({totals['skipped']} rows skipped — already present "
+                f"or no balance). Nothing approved."
             )
         )
