@@ -106,6 +106,7 @@ services:
     ports: !override
       - "80:80"
       - "443:443"
+      - "9443:9443"
     restart: unless-stopped
     depends_on:
       api:
