@@ -2,7 +2,29 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 2026-07-09 — Production cutover (internal single-host)
+## [1.64.0] — 2026-07-09 — Grant leave on employee creation
+
+**HR can now seed a new employee's leave at account creation.** On
+`/admin/people/accounts/new`, an opt-in "Grant leave balances now" toggle reveals a
+**Default Leaves** panel: one row per accrual-type leave (Annual/Medical/Hospitalization)
+pre-filled with the org default, editable, each with a "Make permanent" switch. Closes the
+gap where a mid-year hire had **no usable leave until the next Jan-1 accrual**.
+
+- **Added** `resolve_entitlement` (param-based split of `compute_entitlement`, no behaviour
+  change) so entitlements resolve before an Employee row exists.
+- **Added** `GET /api/v1/leave/entitlement-preview/` (accrual-types only, prorated preview;
+  gated on `leave:balance:adjust:org`).
+- **Added** `grant_initial_leave` service — seeds current-year `LeaveBalance` (hire-date
+  prorated, §60E) + optional standing `EmployeeLeaveOverride` for "permanent" rows; runs in
+  the same atomic transaction as user+employee creation.
+- **Changed** `POST /api/v1/users/` accepts an optional `leave_grant` block; wired into the
+  create flow (400 if enabled without an employee). No new permission code (reuses
+  `user:create` + `leave:balance:adjust:org`, both held by org_admin & hr_manager).
+- **Tests:** +14 backend (leave+identity), +6 frontend. Contracts regenerated.
+- **Deferred (follow-ups):** panel on standalone `/employees/new` (backend service is
+  reusable); live-recompute the "grants ~N" hint on edit; bulk-grant to existing employees.
+
+### Operational — Production cutover (internal single-host, same release)
 
 **Went live in production.** Stood up an isolated prod stack (`hrms-prod`) on the
 internal host, serving `https://192.168.1.111` behind the container nginx (internal-CA TLS,

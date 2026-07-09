@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.63.4
+  version: 1.64.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -4378,6 +4378,26 @@ paths:
       - jwtAuth: []
       responses:
         '204':
+          description: No response body
+  /api/v1/leave/entitlement-preview/:
+    get:
+      operationId: leave_entitlement_preview_retrieve
+      description: |-
+        Read-only preview of accrual-type leave entitlements for a prospective hire.
+
+        GET /api/v1/leave/entitlement-preview/?hire_date=YYYY-MM-DD[&department=<uuid>]
+
+        Returns the default days_per_year and §60E-prorated days for each
+        accrual-type (annual / monthly) leave type in the org, without
+        requiring an Employee row to exist yet.
+
+        Gated on leave:balance:adjust:org (HR / org_admin roles).
+      tags:
+      - leave
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
           description: No response body
   /api/v1/leave/policies/:
     get:

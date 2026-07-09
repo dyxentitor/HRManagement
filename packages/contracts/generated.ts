@@ -2372,6 +2372,33 @@ export interface paths {
         patch: operations["leave_employee_overrides_partial_update"];
         trace?: never;
     };
+    "/api/v1/leave/entitlement-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Read-only preview of accrual-type leave entitlements for a prospective hire.
+         *
+         *     GET /api/v1/leave/entitlement-preview/?hire_date=YYYY-MM-DD[&department=<uuid>]
+         *
+         *     Returns the default days_per_year and §60E-prorated days for each
+         *     accrual-type (annual / monthly) leave type in the org, without
+         *     requiring an Employee row to exist yet.
+         *
+         *     Gated on leave:balance:adjust:org (HR / org_admin roles).
+         */
+        get: operations["leave_entitlement_preview_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/leave/policies/": {
         parameters: {
             query?: never;
@@ -10848,6 +10875,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["EmployeeLeaveOverride"];
                 };
+            };
+        };
+    };
+    leave_entitlement_preview_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
