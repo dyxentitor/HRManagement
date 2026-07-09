@@ -95,3 +95,36 @@ def test_excludes_own_claim():
         status="submitted", current_level=1,
     )
     assert claim.id not in actionable_claim_ids(fin)
+
+
+@pytest.mark.django_db
+def test_cancelled_claim_not_actionable():
+    """A cancelled claim must drop out of the approver queue even though its
+    pending ClaimApproval row is left dangling by engine.cancel (regression)."""
+    org = Organization.objects.create(
+        name="X", slug="scope3", country_code="MY", default_currency="MYR",
+        default_timezone="Asia/Kuala_Lumpur", default_locale="en-MY",
+    )
+    dept = Department.all_objects.create(org_id=org.id, name="Eng")
+    cat = ClaimCategory.all_objects.create(
+        org_id=org.id, code="M", name="Meals", requires_attachment=False, currency_code="MYR"
+    )
+    mgr = _user(org, "mgr@x.com", "claim:approve:team")
+    mgr_emp = _emp(org, dept, "MGR", mgr)
+    emp = _emp(org, dept, "EMP", _user(org, "emp@x.com"), manager=mgr_emp)
+
+    claim = ClaimRequest.all_objects.create(
+        org_id=org.id, employee=emp, category=cat, amount=Decimal("100"),
+        currency_code="MYR", expense_date=datetime.date(2026, 6, 1), description="x",
+    )
+    ClaimRequestService.submit(claim, actor=emp.user)
+    claim.refresh_from_db()
+    assert claim.id in actionable_claim_ids(mgr)  # actionable while submitted
+
+    # Employee cancels → status cancelled; the pending ClaimApproval still dangles.
+    ClaimRequestService.cancel(claim, actor=emp.user)
+    claim.refresh_from_db()
+    assert claim.status == "cancelled"
+
+    # It must NOT appear in the manager's actionable queue anymore.
+    assert claim.id not in actionable_claim_ids(mgr)

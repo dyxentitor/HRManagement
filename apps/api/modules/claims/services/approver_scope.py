@@ -27,10 +27,17 @@ def actionable_claim_ids(user: User) -> set:
     from modules.claims.chains import select_chain
     from modules.identity.services.permissions import get_user_perms
 
+    # Structural: a pending ClaimApproval assigned to the user — but only for claims
+    # still awaiting action. engine.cancel/reject leaves the pending approval row
+    # dangling, so we must re-check the claim status here or cancelled/resolved claims
+    # keep surfacing in the queue (and 400 on approve).
+    structural = ClaimApproval.objects.filter(approver_id=user.id, status="pending").values_list(
+        "claim_id", flat=True
+    )
     ids: set = set(
-        ClaimApproval.objects.filter(approver_id=user.id, status="pending").values_list(
-            "claim_id", flat=True
-        )
+        ClaimRequest.all_objects.filter(
+            id__in=structural, org_id=user.org_id, status="submitted", deleted_at__isnull=True
+        ).values_list("id", flat=True)
     )
 
     perms = get_user_perms(user)
