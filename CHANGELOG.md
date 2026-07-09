@@ -2,6 +2,17 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.1] — 2026-07-09
+
+**Fix: cancelled/resolved claims stayed in the approver queue and 400'd on approve.** A manager could
+see a **cancelled** claim in their Claims approvals queue; approving it returned
+`400 "Cannot act on status='cancelled'"`. Root cause: `actionable_claim_ids`' structural branch
+returned every claim with a *pending* `ClaimApproval` without checking the claim's own status, and
+`engine.cancel` sets `status='cancelled'` but leaves the pending approval row dangling. Now the
+structural set is filtered to `status='submitted'` (the permission-pool branch already did this), so
+cancelled/rejected/resolved claims drop out of the queue and its awaiting count. Regression test added;
+backend-only, no schema/permission change.
+
 ## [1.63.0] — 2026-07-09
 
 **Leave approvals get Claims-style history tabs + summary (phase 2).** The Leave tab now has the same
