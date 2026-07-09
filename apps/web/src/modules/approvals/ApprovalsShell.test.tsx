@@ -20,7 +20,7 @@ function Probe() {
 describe("ApprovalsShell", () => {
   it("renders the nav and an index child that reads the inbox context", async () => {
     mocks.getInbox.mockResolvedValue([])
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={["/approvals"]}>
         <Routes>
           <Route path="/approvals" element={<ApprovalsShell />}>
@@ -31,5 +31,7 @@ describe("ApprovalsShell", () => {
     )
     expect(screen.getByRole("heading", { name: "Approvals" })).toBeInTheDocument()
     await waitFor(() => expect(screen.getByText(/index-child/)).toBeInTheDocument())
+    // AppShell owns the sole <main> landmark; the shell must not add a second one.
+    expect(container.querySelector("main")).toBeNull()
   })
 })

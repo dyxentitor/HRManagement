@@ -18,9 +18,10 @@ export default function ApprovalsShell() {
   return (
     <div className="flex flex-col md:flex-row gap-3 min-h-[calc(100vh-32px)]">
       <ApprovalsNav counts={counts} />
-      <main className="flex-1 min-w-0 bg-surface rounded-lg p-6 overflow-auto">
+      {/* Not <main> — AppShell already owns the single main landmark. */}
+      <div className="flex-1 min-w-0 bg-surface rounded-lg p-6 overflow-auto">
         <Outlet context={inbox} />
-      </main>
+      </div>
     </div>
   )
 }
