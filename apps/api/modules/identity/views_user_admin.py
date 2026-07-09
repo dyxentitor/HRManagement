@@ -14,6 +14,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from rest_framework.exceptions import ValidationError
+
 from common.audit.service import append as audit_append
 from modules.identity.models import User
 from modules.identity.permissions import HRMSPermission
@@ -53,6 +55,7 @@ class UserCreateView(APIView):
         # deliver the invite to the personal email (top-level invite_email, or the
         # employee block's personal_email); the login stays the company email.
         invite_email = v.get("invite_email") or (emp_data or {}).get("personal_email") or None
+        lg = v.get("leave_grant") or {}
         with transaction.atomic():
             user = provision_user(
                 org_id=request.user.org_id,
@@ -63,17 +66,30 @@ class UserCreateView(APIView):
                 actor_id=request.user.id,
                 invite_email=invite_email,
             )
+            employee = None
             if emp_data:
                 from modules.employee.serializers import EmployeeSerializer
 
                 es = EmployeeSerializer(data=emp_data)
                 es.is_valid(raise_exception=True)
-                emp = es.save(org_id=request.user.org_id, user_id=user.id)
+                employee = es.save(org_id=request.user.org_id, user_id=user.id)
                 audit_append(
                     org_id=request.user.org_id,
                     action="employee.user_linked",
                     entity="employee",
-                    entity_id=emp.id,
+                    entity_id=employee.id,
                     after={"user_id": str(user.id), "provisioned": True},
+                )
+            if lg.get("enabled"):
+                if employee is None:
+                    raise ValidationError(
+                        {"leave_grant": "Granting leave requires an employee record."}
+                    )
+                from modules.leave.services.initial_grant import grant_initial_leave
+
+                grant_initial_leave(
+                    employee=employee,
+                    items=lg.get("items", []),
+                    actor_id=request.user.id,
                 )
         return Response({"id": str(user.id)}, status=status.HTTP_201_CREATED)

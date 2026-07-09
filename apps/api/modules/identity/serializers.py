@@ -14,11 +14,25 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 
+class _LeaveGrantItemSerializer(serializers.Serializer):
+    leave_type_id = serializers.UUIDField()
+    days_per_year = serializers.DecimalField(max_digits=6, decimal_places=2)
+    permanent = serializers.BooleanField(default=False)
+
+
+class _LeaveGrantSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField(default=False)
+    items = _LeaveGrantItemSerializer(many=True, required=False, default=list)
+
+
 class UserCreateSerializer(serializers.Serializer):
     """User-first create payload (v1.11.0 Task 7).
 
     The optional `employee` dict is validated by EmployeeSerializer inside the
     view (atomically), not here.
+
+    The optional `leave_grant` block, when `enabled`, seeds LeaveBalance rows
+    for the newly created employee in the same atomic transaction (Task 4).
     """
 
     email = serializers.EmailField()
@@ -29,6 +43,7 @@ class UserCreateSerializer(serializers.Serializer):
     # `email` when blank. The login always stays `email`.
     invite_email = serializers.EmailField(required=False, allow_blank=True)
     employee = serializers.DictField(required=False)
+    leave_grant = _LeaveGrantSerializer(required=False)
 
 
 class LoginResponseSerializer(serializers.Serializer):
