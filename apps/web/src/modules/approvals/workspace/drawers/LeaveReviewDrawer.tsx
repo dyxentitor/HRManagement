@@ -11,6 +11,7 @@ import { type Coverage, type LeaveBalance, leaveApi } from "@/modules/leave/api"
 import { formatRange } from "@/modules/leave/lib/leave-dates"
 
 import { type InboxItem, approveItem, rejectItem } from "../../api"
+import { friendlyActionError } from "../../lib/action-errors"
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : String(v ?? "")
@@ -63,7 +64,7 @@ export function LeaveReviewDrawer({
       toast.success(kind === "approve" ? "Leave approved" : "Leave rejected")
       onActed()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Action failed")
+      toast.error(friendlyActionError(e))
     } finally {
       setBusy(false)
     }

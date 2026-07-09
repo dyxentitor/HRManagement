@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ClaimReviewDrawer } from "@/modules/approvals/components/ClaimReviewDrawer"
+import { friendlyActionError } from "@/modules/approvals/lib/action-errors"
 
 import {
   type ApprovalSummary,
@@ -34,6 +35,7 @@ export function ClaimsSegment({ onChanged }: { onChanged?: () => void }) {
   const [filters, setFilters] = useState<ApprovalFilters>(EMPTY_APPROVAL_FILTERS)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [previewId, setPreviewId] = useState<string | null>(null)
+  const [actingId, setActingId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -87,13 +89,20 @@ export function ClaimsSegment({ onChanged }: { onChanged?: () => void }) {
   }
 
   async function quickApprove(id: string) {
+    if (actingId) return // guard against a second click while one is in flight
+    setActingId(id)
     try {
       await claimsApi.approve(id, "")
       toast.success("Claim approved")
       await refresh()
       onChanged?.()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Approve failed")
+      // Stale row (already actioned / moved stage): tell the user + drop the row.
+      toast.error(friendlyActionError(e))
+      await refresh()
+      onChanged?.()
+    } finally {
+      setActingId(null)
     }
   }
 
@@ -147,6 +156,7 @@ export function ClaimsSegment({ onChanged }: { onChanged?: () => void }) {
                   onToggleSelect={() => toggleSelect(r.id)}
                   onOpen={() => setPreviewId(r.id)}
                   onApprove={() => quickApprove(r.id)}
+                  busy={actingId === r.id}
                 />
               ))}
             </div>

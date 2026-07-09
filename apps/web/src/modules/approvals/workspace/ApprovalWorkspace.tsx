@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 import { type InboxItem, approveItem } from "../api"
+import { friendlyActionError } from "../lib/action-errors"
 import { matchesInboxSearch } from "../lib/inbox-filter"
 import type { Clash, UseApprovalInbox } from "../useApprovalInbox"
 import { ApprovalRow, type ApprovalRowItem } from "./ApprovalRow"
@@ -72,6 +73,7 @@ export function ApprovalWorkspace({
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [actingId, setActingId] = useState<string | null>(null)
   const [tab, setTab] = useState(queue?.tabs[0]?.key ?? "awaiting")
 
   // Queue-mode state (unused in inbox mode).
@@ -120,6 +122,8 @@ export function ApprovalWorkspace({
   const clearSel = queue ? () => setQSel(new Set()) : () => inbox?.clearSelection()
 
   async function approveOne(item: WorkspaceRow) {
+    if (actingId) return // one action in flight at a time
+    setActingId(item.id)
     try {
       if (queue) {
         await approveItem(item.kind, item.id, "")
@@ -129,7 +133,12 @@ export function ApprovalWorkspace({
       }
       toast.success("Approved")
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Approve failed")
+      // Stale row (already actioned / moved stage): friendly message + refresh.
+      toast.error(friendlyActionError(e))
+      if (queue) await refetch()
+      else inbox?.refresh()
+    } finally {
+      setActingId(null)
     }
   }
   async function approveMany(ids: string[]) {
@@ -249,6 +258,7 @@ export function ApprovalWorkspace({
                   onToggleSelect={() => toggleSel(item.id)}
                   onOpen={() => setOpenId(item.id)}
                   onApprove={() => approveOne(item)}
+                  busy={actingId === item.id}
                 />
               ))}
             </div>

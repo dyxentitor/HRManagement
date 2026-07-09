@@ -32,6 +32,7 @@ export interface ClaimApprovalRowProps {
   onToggleSelect: () => void
   onOpen: () => void
   onApprove: () => void
+  busy?: boolean
 }
 
 export function ClaimApprovalRow({
@@ -40,6 +41,7 @@ export function ClaimApprovalRow({
   onToggleSelect,
   onOpen,
   onApprove,
+  busy = false,
 }: ClaimApprovalRowProps) {
   const [from, to] = gradientFromName(row.employee_name || row.employee_code)
   const context = [
@@ -121,7 +123,11 @@ export function ClaimApprovalRow({
           <button
             type="button"
             onClick={onApprove}
-            className="inline-flex items-center gap-1 bg-accent-500 text-canvas text-[11px] font-semibold px-2.5 py-1.5 rounded-lg"
+            disabled={busy}
+            className={cn(
+              "inline-flex items-center gap-1 bg-accent-500 text-canvas text-[11px] font-semibold px-2.5 py-1.5 rounded-lg",
+              busy && "opacity-60 cursor-not-allowed",
+            )}
           >
             <Check className="size-3.5" /> Approve
           </button>

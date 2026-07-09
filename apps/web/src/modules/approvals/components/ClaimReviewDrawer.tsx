@@ -11,6 +11,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { useCan } from "@/lib/perm"
 import { cn } from "@/lib/utils"
 import { listAuditLogs } from "@/modules/admin/audit-api"
+import { friendlyActionError } from "@/modules/approvals/lib/action-errors"
 import { type ClaimRequest, type ClaimStatus, claimsApi } from "@/modules/claims/api"
 import { ClaimReceipts } from "@/modules/claims/components/ClaimReceipts"
 
@@ -105,7 +106,7 @@ export function ClaimReviewDrawer({ claimId, onClose, onActed }: ClaimReviewDraw
       toast.success(kind === "approve" ? "Claim approved" : "Claim rejected")
       onActed()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Action failed")
+      toast.error(friendlyActionError(e))
     } finally {
       setBusy(false)
     }

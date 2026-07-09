@@ -100,6 +100,7 @@ export interface ApprovalRowProps {
   onToggleSelect: () => void
   onOpen: () => void
   onApprove: () => void
+  busy?: boolean
 }
 
 /** One dense approval row for any inbox item — mirrors the Claims ClaimApprovalRow
@@ -112,6 +113,7 @@ export function ApprovalRow({
   onToggleSelect,
   onOpen,
   onApprove,
+  busy = false,
 }: ApprovalRowProps) {
   const name = item.name || item.employee_code
   const [from, to] = gradientFromName(name)
@@ -196,7 +198,11 @@ export function ApprovalRow({
             <button
               type="button"
               onClick={onApprove}
-              className="inline-flex items-center gap-1 bg-accent-500 text-canvas text-[11px] font-semibold px-2.5 py-1.5 rounded-lg"
+              disabled={busy}
+              className={cn(
+                "inline-flex items-center gap-1 bg-accent-500 text-canvas text-[11px] font-semibold px-2.5 py-1.5 rounded-lg",
+                busy && "opacity-60 cursor-not-allowed",
+              )}
             >
               <Check className="size-3.5" /> Approve
             </button>
