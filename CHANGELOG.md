@@ -2,6 +2,33 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.62.0] — 2026-07-09
+
+**All / Leave / KPI approval tabs get the Claims workspace feel.** The three tabs that rode the
+generic inbox (big `UnifiedApprovalCard`s + a bare search toolbar) now share one **descriptor-driven
+`ApprovalWorkspace`** with the same interactions as Claims — dense rows, a Claims-style toolbar
+(search + lens chips + sort), single-type floating **bulk-approve**, client-side **pagination**, and
+row-click **review drawers**. Frontend-only; no backend/DB/permission/workflow change.
+
+- **Shared framework, not copy-paste.** `ApprovalWorkspace` (toolbar + rows + bulk + pagination +
+  drawer slot) is driven by a per-page descriptor `{ lenses, sorts, typeFilter?, DetailDrawer }`.
+  Leave/KPI/All are thin descriptors; Claims stays as the proven reference. Adding a future approval
+  type is now trivial.
+- **Dense rows per type** (`ApprovalRow`, typed + all variants): Leave shows days + the **coverage
+  clash**; KPI is **Review-first** (no reject — a manager review *is* the decision); All wears a type
+  tag + mini-summary. Urgency left-accent (coral overdue, amber coverage-clash).
+- **Lenses/sorts:** Leave = Overdue + **Conflict** (coverage clash) with Urgency/Newest/**Longest**
+  sorts; KPI = Overdue with Urgency/Newest; All = Overdue + a **type filter**.
+- **Review drawers:** a real **`LeaveReviewDrawer`** (dates, reason, per-day team coverage via
+  `leaveApi.coverage`, balance impact via `leaveApi.balancesFor`, Approve/Reject); a **minimal
+  `KpiReviewDrawer`** peek (read-only context + Approve, no scoring form — performance management is
+  mid-rebuild, so deep KPI investment waits for it); and an `InboxReviewDrawer` that dispatches the
+  right drawer by kind on the All tab.
+- **Removed:** `UnifiedApprovalCard`, `InboxCardList`, `InboxToolbar`, the empty `segments/` folder.
+- **Deferred (non-goals):** Awaiting/All/Approved/Rejected **history tabs + summary counts** for
+  Leave/KPI (needs new backend queue/summary endpoints — phase 2); a KPI scoring drawer; migrating
+  Claims onto the framework. Approvals + claims-approvals suites green.
+
 ## [1.61.1] — 2026-07-08
 
 **Fix: already-approved claims could be re-selected for bulk-approve.** On the Claims Approvals
