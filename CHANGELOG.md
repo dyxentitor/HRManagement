@@ -2,6 +2,17 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.5] — 2026-07-09
+
+**Fix: `/org/settings` 403 on every page for non-admins (shell logo).** `OrgLogo` — rendered in the shell
+on every page — fetched the admin-gated `GET /org/settings` for the org name/logo, so manager- and
+employee-tier users got a **403 on every page** and fell back to the default PROVINTELL logo instead of
+their org's branding. New **`GET /api/v1/org/branding`** (`{ name, logo_url, logo_mode }`) readable by
+**any authenticated user** — branding isn't a secret and is shown to everyone; mirrors the open
+feature-flags read. The full `/org/settings` endpoint stays gated on `org:settings:read`/`:write`.
+`OrgLogo` now uses `settingsApi.getBranding()`. Contract regenerated; backend org tests + the
+long-standing OrgLogo/AppShell "branding drift" tests now pass — **frontend suite 567/567 green.**
+
 ## [1.63.4] — 2026-07-09
 
 **Fix: remaining bespoke API clients bypassed the shared token refresh.** Following v1.63.3, migrated
