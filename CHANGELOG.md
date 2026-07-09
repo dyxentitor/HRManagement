@@ -2,6 +2,15 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.63.6] — 2026-07-09
+
+**A11y: duplicate `<main>` landmark on the module-shell pages.** `AppShell` already renders
+`<main id="main">`, but the Approvals / People / Settings / Help shells each rendered a *second*
+`<main>` inside it, so axe reported "Document should have one main landmark" on those pages. Changed the
+nested content wrapper to a `<div>` (styling unchanged); AppShell keeps the sole `main` landmark.
+Regression guard added. (The companion "page should contain a level-one heading" warning is a transient
+lazy-load artifact — every page provides an `<h1>` via `PageHeader` once loaded.)
+
 ## [1.63.5] — 2026-07-09
 
 **Fix: `/org/settings` 403 on every page for non-admins (shell logo).** `OrgLogo` — rendered in the shell
