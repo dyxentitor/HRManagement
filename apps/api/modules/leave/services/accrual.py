@@ -58,6 +58,39 @@ def _find_applicable_policy_org_scoped(
     ).first()
 
 
+def resolve_entitlement(
+    *,
+    org_id,
+    department_id,
+    role_id,
+    hire_date: datetime.date,
+    leave_type: LeaveType,
+    year: int,
+) -> Decimal:
+    """Policy(tenure)→default entitlement, WITHOUT the per-employee override.
+
+    Used by compute_entitlement (after its override step) and the preview endpoint.
+    Resolution order:
+        1. Applicable LeavePolicy (role > department > org-wide) with tenure brackets.
+        2. LeaveType.default_days fallback.
+    """
+    year_start = datetime.date(year, 1, 1)
+    policy = _find_applicable_policy_org_scoped(
+        org_id=org_id,
+        leave_type=leave_type,
+        as_of=year_start,
+        role_id=role_id,
+        department_id=department_id,
+    )
+    if policy is not None:
+        return PolicyService.compute_entitled_days(
+            policy=policy,
+            hire_date=hire_date,
+            as_of=year_start,
+        )
+    return Decimal(str(leave_type.default_days))
+
+
 def compute_entitlement(
     *,
     employee,
@@ -87,25 +120,17 @@ def compute_entitlement(
     if override is not None:
         return Decimal(str(override.days_override))
 
-    # 2) Policy with tenure brackets (role > department > org-wide specificity)
+    # 2+3) Delegate to param-based resolver (policy → fallback)
     role_id = getattr(employee, "primary_role_id", None)
     department_id = getattr(employee.department, "id", None) if employee.department else None
-    policy = _find_applicable_policy_org_scoped(
+    return resolve_entitlement(
         org_id=employee.org_id,
-        leave_type=leave_type,
-        as_of=year_start,
-        role_id=role_id,
         department_id=department_id,
+        role_id=role_id,
+        hire_date=employee.hire_date,
+        leave_type=leave_type,
+        year=year,
     )
-    if policy is not None:
-        return PolicyService.compute_entitled_days(
-            policy=policy,
-            hire_date=employee.hire_date,
-            as_of=year_start,
-        )
-
-    # 3) Fallback
-    return Decimal(str(leave_type.default_days))
 
 
 def prorate_for_hire_date(
