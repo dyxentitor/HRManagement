@@ -27,6 +27,19 @@ export function hasCoverageClash(id: string, clashes: Map<string, Clash>): boole
   return (clashes.get(id)?.count ?? 0) > 0
 }
 
+/** Overdue for either mode: a queue row's backend flag, else computed from submitted_at. */
+export function rowOverdue(item: InboxItem & { is_overdue?: boolean }): boolean {
+  return item.is_overdue ?? isInboxOverdue(item)
+}
+
+/** Conflict for either mode: a queue row's backend flag, else the inbox coverage map. */
+export function rowConflict(
+  item: InboxItem & { is_conflict?: boolean },
+  clashes: Map<string, Clash>,
+): boolean {
+  return item.is_conflict === true || hasCoverageClash(item.id, clashes)
+}
+
 const submittedMs = (i: InboxItem): number => (i.submitted_at ? Date.parse(i.submitted_at) : 0)
 
 /** Newest submission first. */
@@ -42,7 +55,7 @@ export function byLongest(a: InboxItem, b: InboxItem): number {
 /** Most urgent first: overdue + coverage-clash weighted, then oldest submission. */
 export function byUrgency(clashes: Map<string, Clash>) {
   const weight = (i: InboxItem): number =>
-    (isInboxOverdue(i) ? 2 : 0) + (hasCoverageClash(i.id, clashes) ? 1 : 0)
+    (rowOverdue(i) ? 2 : 0) + (rowConflict(i, clashes) ? 1 : 0)
   return (a: InboxItem, b: InboxItem): number =>
     weight(b) - weight(a) || submittedMs(a) - submittedMs(b)
 }

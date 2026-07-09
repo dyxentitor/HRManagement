@@ -1,12 +1,8 @@
 import { AlertTriangle, Flame } from "lucide-react"
 
-import {
-  byLongest,
-  byNewest,
-  byUrgency,
-  hasCoverageClash,
-  isInboxOverdue,
-} from "../lib/inbox-filter"
+import { leaveApi } from "@/modules/leave/api"
+
+import { byLongest, byNewest, byUrgency, rowConflict, rowOverdue } from "../lib/inbox-filter"
 import type { WorkspaceDescriptor, WorkspaceLens, WorkspaceSort } from "./ApprovalWorkspace"
 import { InboxReviewDrawer } from "./drawers/InboxReviewDrawer"
 import { KpiReviewDrawer } from "./drawers/KpiReviewDrawer"
@@ -17,7 +13,7 @@ const overdueLens: WorkspaceLens = {
   label: "Overdue",
   icon: Flame,
   tone: "coral",
-  predicate: (i) => isInboxOverdue(i),
+  predicate: (i) => rowOverdue(i),
 }
 
 const conflictLens: WorkspaceLens = {
@@ -25,7 +21,7 @@ const conflictLens: WorkspaceLens = {
   label: "Conflict",
   icon: AlertTriangle,
   tone: "amber",
-  predicate: (i, ctx) => hasCoverageClash(i.id, ctx.clashes),
+  predicate: (i, ctx) => rowConflict(i, ctx.clashes),
 }
 
 const urgencySort: WorkspaceSort = {
@@ -37,9 +33,21 @@ const newestSort: WorkspaceSort = { key: "newest", label: "Newest", make: () => 
 const longestSort: WorkspaceSort = { key: "longest", label: "Longest", make: () => byLongest }
 
 export const leaveDescriptor: WorkspaceDescriptor = {
-  emptyLabel: "No leave requests awaiting you.",
+  emptyLabel: "No leave requests here.",
   lenses: [overdueLens, conflictLens],
   sorts: [urgencySort, newestSort, longestSort],
+  queue: {
+    tabs: [
+      { key: "awaiting", label: "Awaiting" },
+      { key: "approved", label: "Approved" },
+      { key: "rejected", label: "Rejected" },
+      { key: "all", label: "All" },
+    ],
+    fetchTab: (tab) => leaveApi.approvalsQueue(tab),
+    fetchSummary: () => leaveApi.approvalsSummary(),
+    lensCount: (s, key) =>
+      key === "overdue" ? (s.overdue_count ?? 0) : key === "conflict" ? (s.conflict_count ?? 0) : 0,
+  },
   DetailDrawer: LeaveReviewDrawer,
 }
 

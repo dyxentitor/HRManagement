@@ -32,6 +32,8 @@ export function LeaveReviewDrawer({
 
   const start = str(item?.detail.start_date)
   const end = str(item?.detail.end_date)
+  // History rows (already approved/rejected) are read-only — no action footer.
+  const isActionable = (item as { actionable?: boolean } | null)?.actionable !== false
 
   useEffect(() => {
     if (!item) return
@@ -67,37 +69,38 @@ export function LeaveReviewDrawer({
     }
   }
 
-  const footer = item ? (
-    <div className="flex flex-col gap-2">
-      <textarea
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        placeholder="Add a comment (required to reject)…"
-        aria-label="Approval comment"
-        rows={2}
-        className="w-full resize-none rounded-lg bg-surface-elevated/60 border border-border-subtle px-3 py-2 text-small text-text-primary break-words"
-      />
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={busy}
-          onClick={() => act("reject")}
-          className="flex-1 text-coral border-coral/40"
-        >
-          <X className="size-4 mr-1" /> Reject
-        </Button>
-        <Button
-          type="button"
-          disabled={busy}
-          onClick={() => act("approve")}
-          className="flex-1 soft-glow"
-        >
-          <Check className="size-4 mr-1" /> Approve
-        </Button>
+  const footer =
+    item && isActionable ? (
+      <div className="flex flex-col gap-2">
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Add a comment (required to reject)…"
+          aria-label="Approval comment"
+          rows={2}
+          className="w-full resize-none rounded-lg bg-surface-elevated/60 border border-border-subtle px-3 py-2 text-small text-text-primary break-words"
+        />
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => act("reject")}
+            className="flex-1 text-coral border-coral/40"
+          >
+            <X className="size-4 mr-1" /> Reject
+          </Button>
+          <Button
+            type="button"
+            disabled={busy}
+            onClick={() => act("approve")}
+            className="flex-1 soft-glow"
+          >
+            <Check className="size-4 mr-1" /> Approve
+          </Button>
+        </div>
       </div>
-    </div>
-  ) : undefined
+    ) : undefined
 
   return (
     <DetailPanel open={item !== null} onClose={onClose} title="Leave review" footer={footer}>

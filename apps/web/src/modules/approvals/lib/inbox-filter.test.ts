@@ -9,11 +9,15 @@ import {
   hasCoverageClash,
   isInboxOverdue,
   matchesInboxSearch,
+  rowConflict,
+  rowOverdue,
 } from "./inbox-filter"
 
 const NOW = Date.parse("2026-07-08T00:00:00Z")
 
-function item(over: Partial<InboxItem> = {}): InboxItem {
+function item(
+  over: Partial<InboxItem> & { is_overdue?: boolean; is_conflict?: boolean } = {},
+): InboxItem {
   return {
     kind: "claim",
     id: "c1",
@@ -76,6 +80,16 @@ describe("lenses + sorts", () => {
     const short = item({ id: "s", detail: { total_days: "1" } })
     const long = item({ id: "l", detail: { total_days: "5" } })
     expect([short, long].sort(byLongest)[0].id).toBe("l")
+  })
+
+  it("rowOverdue/rowConflict prefer the backend flag, else fall back", () => {
+    // flag wins even when submitted_at is recent
+    expect(rowOverdue(item({ submitted_at: "2026-07-08T00:00:00Z", is_overdue: true }))).toBe(true)
+    // no flag → computed from submitted_at
+    expect(rowOverdue(item({ submitted_at: "2020-01-01T00:00:00Z" }))).toBe(true)
+    // conflict flag wins with no clash map entry
+    expect(rowConflict(item({ id: "z", is_conflict: true }), clashes)).toBe(true)
+    expect(rowConflict(item({ id: "z" }), clashes)).toBe(false)
   })
 
   it("byUrgency puts overdue+clash first, then oldest", () => {
