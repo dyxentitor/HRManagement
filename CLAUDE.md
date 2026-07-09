@@ -281,11 +281,17 @@ key falls into this "unknown = enabled" bucket and bypasses the gate.
 
 ## 5. Production deployment (internal, single-host) — READ BEFORE TOUCHING ANYTHING OPS
 
-> **Status (2026-07-09):** cutover is **designed and agreed, not yet
-> implemented.** Design spec: `docs/superpowers/specs/2026-07-09-hrms-production-cutover-design.md`
-> (gitignored, session-local). `deploy.sh` / `rollback.sh` and the prod stack
-> stand-up **do not exist yet** — they are the pending implementation plan. Do
-> not assume prod exists; verify with `docker ps` (`hrms-prod-*` vs `hrms-dev-*`).
+> **Status (2026-07-09): LIVE.** The prod stack is stood up and serving on this
+> host at `https://192.168.1.111` (project `hrms-prod`), alongside the dev stack
+> (`hrms-dev`, `http://localhost:5173`). Fresh prod DB `hrms_prod`, org_admin
+> `cyberlab@provintell.com` (temp password, must change on first login). Deploy
+> tooling exists and is tested: `deploy/deploy.sh`, `deploy/rollback.sh`,
+> `deploy/backup.sh`, `deploy/restore.sh` (+ `deploy/lib/`). Nightly backup cron
+> at 02:00. Real secrets live in `.env.prod` (gitignored, **never commit**).
+> Design spec + plan: `docs/superpowers/{specs,plans}/2026-07-09-hrms-production-cutover*.md`
+> (gitignored). Verify current state with `docker ps` (`hrms-prod-*` healthy).
+> **Deferred (do when needed):** SMTP is a placeholder — email (reset/invite) is
+> configured in-app, not via `.env.prod`.
 
 ### 5.1 The model (why this matters)
 

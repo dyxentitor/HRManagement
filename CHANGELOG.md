@@ -2,6 +2,26 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 2026-07-09 — Production cutover (internal single-host)
+
+**Went live in production.** Stood up an isolated prod stack (`hrms-prod`) on the
+internal host, serving `https://192.168.1.111` behind the container nginx (internal-CA TLS,
+host nginx retired), alongside the untouched dev stack (`hrms-dev`, `:5173`).
+
+- **Added** `deploy/docker-compose.prod.yml` hardening: persistent MinIO (own volume) with a
+  TLS reverse proxy on `:9443` for presigned-URL reachability; env-driven Postgres + MinIO
+  credentials; full env passthroughs (SMTP/CSRF/ALLOWED_HOSTS/JWT) to api/worker/beat so prod
+  no longer inherits dev anchor literals; distinct `hrms-prod-web` image name.
+- **Added** deploy tooling: `deploy/{deploy,rollback,backup,restore}.sh` + `deploy/lib/{prod-env,smoke}.sh`.
+  `deploy.sh` snapshots the DB, migrates, smoke-checks, and auto-rolls-back (git-based migration
+  detection); nightly `backup.sh` cron at 02:00 (DB + MinIO, 14-file rotation); restore drill tested.
+- **Added** `.env.prod.example` template; real `.env.prod` + `deploy/nginx/pki/**` gitignored.
+- **Data**: fresh prod DB `hrms_prod` (dev DB left aside); reference data seeded
+  (`seed_provintell --prod --no-employees`); org_admin `cyberlab@provintell.com` created via
+  `provision_user` (temp password, forced change on first login); S3 bucket `hrms` created.
+- **Deferred**: SMTP (email configured in-app, placeholder in `.env.prod`).
+- Commits on `feat/org-chart` (not yet pushed). See `docs/superpowers/{specs,plans}/2026-07-09-hrms-production-cutover*`.
+
 ## [1.63.6] — 2026-07-09
 
 **A11y: duplicate `<main>` landmark on the module-shell pages.** `AppShell` already renders
