@@ -130,6 +130,9 @@
     - "assignment:read:org"
     - "payroll:exception:read"
     - "payroll:exception:write"
+    - "feedback:submit:self"
+    - "feedback:read:self"
+    - "feedback:manage:org"
 
 - code: hr_manager
   name: HR Manager
@@ -250,6 +253,8 @@
     - "assignment:create:org"
     - "assignment:read:org"
     - "payroll:exception:read"
+    - "feedback:submit:self"
+    - "feedback:read:self"
 
 - code: finance
   name: Finance
@@ -298,6 +303,8 @@
     - "announcement:read"
     - "payroll:exception:read"
     - "payroll:exception:write"
+    - "feedback:submit:self"
+    - "feedback:read:self"
 
 - code: manager
   name: Manager
@@ -365,6 +372,8 @@
     - "report:saved_view:write"
     - "announcement:read"
     - "onboarding:read"
+    - "feedback:submit:self"
+    - "feedback:read:self"
 
 - code: team_lead
   name: Team Lead
@@ -431,6 +440,8 @@
     - "report:export"
     - "report:saved_view:write"
     - "announcement:read"
+    - "feedback:submit:self"
+    - "feedback:read:self"
 
 - code: employee
   name: Employee
@@ -471,6 +482,8 @@
     - "report:run"
     - "report:saved_view:write"
     - "announcement:read"
+    - "feedback:submit:self"
+    - "feedback:read:self"
 
 - code: auditor
   name: Auditor
@@ -538,3 +551,5 @@
     - "announcement:read"
     - "onboarding:read"
     - "payroll:exception:read"
+    - "feedback:submit:self"
+    - "feedback:read:self"

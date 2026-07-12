@@ -1,0 +1,3 @@
+- { code: "feedback:submit:self", description: Submit own feedback and attachments }
+- { code: "feedback:read:self",   description: View and track own feedback }
+- { code: "feedback:manage:org",  description: Manage all feedback (status, assign, notes) }

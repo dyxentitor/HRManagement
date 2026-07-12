@@ -55,6 +55,7 @@ MODULES: list[dict[str, Any]] = [
         "icon": "ListChecks",
         "prefixes": ["assignment", "announcement", "onboarding"],
     },
+    {"key": "feedback", "label": "Feedback", "icon": "MessageSquare", "prefixes": ["feedback"]},
     {"key": "approvals", "label": "Approvals", "icon": "ClipboardCheck", "prefixes": ["approvals"]},
     {"key": "reports", "label": "Reports", "icon": "FileSpreadsheet", "prefixes": ["report"]},
     {
