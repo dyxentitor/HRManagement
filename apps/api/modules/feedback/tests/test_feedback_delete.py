@@ -6,7 +6,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from common.audit.models import AuditLog
-from modules.feedback.models import Feedback
+from modules.feedback.models import Feedback, FeedbackAttachment
 from modules.identity.models import Permission, Role, RolePermission, User
 from modules.organization.models import Organization
 
@@ -115,9 +115,20 @@ def _fb(client):
 def test_admin_deletes_resolved(admin_client, emp_client, org):
     fid = _fb(emp_client)
     admin_client.patch(f"/api/v1/feedback/{fid}/", {"status": "resolved"}, format="json")
-    with patch("modules.feedback.services.attachment.FeedbackAttachmentService.delete") as m:  # noqa: F841
+    # Attach a file so the S3-cleanup loop has something to delete — this makes the
+    # mock assertion below load-bearing (a regression dropping the loop would fail it).
+    FeedbackAttachment.objects.create(
+        feedback_id=fid,
+        filename="a.png",
+        content_type="image/png",
+        size_bytes=10,
+        s3_key=f"feedback/{fid}/x_a.png",
+        uploaded_by=org.id,
+    )
+    with patch("modules.feedback.services.attachment.FeedbackAttachmentService.delete") as m:
         r = admin_client.delete(f"/api/v1/feedback/{fid}/")
     assert r.status_code == 204
+    assert m.call_count == 1  # the attachment's S3 object was cleaned up before hard-delete
     assert not Feedback.all_objects.filter(id=fid).exists()  # hard-deleted
     assert AuditLog.objects.filter(
         entity="feedback",
