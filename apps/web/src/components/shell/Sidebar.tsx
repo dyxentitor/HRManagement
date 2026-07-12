@@ -13,12 +13,21 @@ import { NAV, type NavItem } from "./sidebar-nav";
 // count is fixed at build time — React requires the same number of hook calls each render.
 const ALL_ITEMS = NAV.flatMap((g) => g.items);
 
+// Nav paths that are a strict prefix of another nav item's path (e.g. "/feedback" is a
+// parent of "/feedback/manage"). NavLink prefix-matches by default, which would light up
+// BOTH parent and child when the child route is active — so parents must match exactly.
+const PARENT_PATHS = new Set(
+	ALL_ITEMS.filter((item) =>
+		ALL_ITEMS.some((other) => other.to !== item.to && other.to.startsWith(`${item.to}/`)),
+	).map((item) => item.to),
+);
+
 function NavItemLink({ item, count }: { item: NavItem; count?: number }) {
 	const Icon = item.icon;
 	return (
 		<NavLink
 			to={item.to}
-			end={item.to === "/"}
+			end={item.to === "/" || PARENT_PATHS.has(item.to)}
 			className={({ isActive }) =>
 				cn(
 					"group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-body text-text-secondary transition-colors duration-fast",

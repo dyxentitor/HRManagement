@@ -146,4 +146,33 @@ describe("Sidebar", () => {
 		);
 		expect(screen.queryByRole("link", { name: /^settings$/i })).not.toBeInTheDocument();
 	});
+
+	it("marks only Feedback Management active on /feedback/manage (parent path not prefix-highlighted)", () => {
+		mocks.perms = new Set(["feedback:submit:self", "feedback:manage:org"]);
+		mocks.flags = {};
+		render(
+			<MemoryRouter initialEntries={["/feedback/manage"]}>
+				<Sidebar />
+			</MemoryRouter>,
+		);
+		const feedback = screen.getByRole("link", { name: /^feedback$/i });
+		const management = screen.getByRole("link", { name: /feedback management/i });
+		// NavLink sets aria-current="page" on the active link.
+		expect(management).toHaveAttribute("aria-current", "page");
+		expect(feedback).not.toHaveAttribute("aria-current", "page");
+	});
+
+	it("marks Feedback active on /feedback", () => {
+		mocks.perms = new Set(["feedback:submit:self", "feedback:manage:org"]);
+		mocks.flags = {};
+		render(
+			<MemoryRouter initialEntries={["/feedback"]}>
+				<Sidebar />
+			</MemoryRouter>,
+		);
+		expect(screen.getByRole("link", { name: /^feedback$/i })).toHaveAttribute(
+			"aria-current",
+			"page",
+		);
+	});
 });
