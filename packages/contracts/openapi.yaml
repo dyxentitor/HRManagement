@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.64.0
+  version: 1.65.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -2691,6 +2691,181 @@ paths:
               schema:
                 $ref: '#/components/schemas/Employee'
           description: ''
+  /api/v1/feedback/:
+    get:
+      operationId: feedback_retrieve
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: feedback_create
+      tags:
+      - feedback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeedbackCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackCreate'
+          description: ''
+  /api/v1/feedback/{id}/:
+    get:
+      operationId: feedback_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: feedback_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFeedbackUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFeedbackUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackUpdate'
+          description: ''
+  /api/v1/feedback/{id}/attachments/:
+    get:
+      operationId: feedback_attachments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: feedback_attachments_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/feedback/{id}/attachments/{attachment_id}/download/:
+    get:
+      operationId: feedback_attachments_download_retrieve
+      description: Return a short-lived presigned URL to view/download one attachment.
+      parameters:
+      - in: path
+        name: attachment_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/feedback/{id}/attachments/presigned-upload/:
+    post:
+      operationId: feedback_attachments_presigned_upload_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/feedback/{id}/notes/:
+    get:
+      operationId: feedback_notes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: feedback_notes_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/incentive/bonds/:
     get:
       operationId: incentive_bonds_list
@@ -7844,7 +8019,7 @@ components:
         body:
           type: string
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/CategoryE26Enum'
         priority:
           $ref: '#/components/schemas/PriorityE72Enum'
         status:
@@ -7906,7 +8081,7 @@ components:
           type: string
           minLength: 1
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/CategoryE26Enum'
         priority:
           $ref: '#/components/schemas/PriorityE72Enum'
         pinned:
@@ -7950,7 +8125,7 @@ components:
         body:
           type: string
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/CategoryE26Enum'
         priority:
           $ref: '#/components/schemas/PriorityE72Enum'
         pinned:
@@ -7981,7 +8156,7 @@ components:
           type: string
           minLength: 1
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/CategoryE26Enum'
         priority:
           $ref: '#/components/schemas/PriorityE72Enum'
         pinned:
@@ -8350,7 +8525,7 @@ components:
       - employee_id
       - period_end
       - period_start
-    CategoryEnum:
+    CategoryE26Enum:
       enum:
       - policy
       - event
@@ -9646,6 +9821,86 @@ components:
         * `none` - None
         * `ssl` - SSL/TLS
         * `starttls` - STARTTLS
+    FeedbackCreate:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/FeedbackCreateCategoryEnum'
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        affected_module:
+          type: string
+          default: ''
+          maxLength: 64
+      required:
+      - category
+      - description
+      - title
+    FeedbackCreateCategoryEnum:
+      enum:
+      - bug
+      - feature
+      - improvement
+      - uiux
+      - performance
+      - security
+      - documentation
+      - general
+      type: string
+      description: |-
+        * `bug` - bug
+        * `feature` - feature
+        * `improvement` - improvement
+        * `uiux` - uiux
+        * `performance` - performance
+        * `security` - security
+        * `documentation` - documentation
+        * `general` - general
+    FeedbackCreateRequest:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/FeedbackCreateCategoryEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+        affected_module:
+          type: string
+          minLength: 1
+          default: ''
+          maxLength: 64
+      required:
+      - category
+      - description
+      - title
+    FeedbackUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/FeedbackUpdateStatusEnum'
+        assignee_id:
+          type: string
+          format: uuid
+          nullable: true
+    FeedbackUpdateStatusEnum:
+      enum:
+      - new
+      - in_review
+      - resolved
+      - closed
+      type: string
+      description: |-
+        * `new` - new
+        * `in_review` - in_review
+        * `resolved` - resolved
+        * `closed` - closed
     GenderEnum:
       enum:
       - male
@@ -10837,7 +11092,7 @@ components:
           type: string
           minLength: 1
         category:
-          $ref: '#/components/schemas/CategoryEnum'
+          $ref: '#/components/schemas/CategoryE26Enum'
         priority:
           $ref: '#/components/schemas/PriorityE72Enum'
         pinned:
@@ -11287,6 +11542,15 @@ components:
         locale:
           type: string
           maxLength: 10
+    PatchedFeedbackUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/FeedbackUpdateStatusEnum'
+        assignee_id:
+          type: string
+          format: uuid
+          nullable: true
     PatchedHolidayRequest:
       type: object
       properties:

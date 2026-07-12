@@ -2,6 +2,33 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.65.0] — 2026-07-12 — Feedback module
+
+**New Feedback module.** Authenticated users submit feedback (8 categories: Bug Report,
+Feature Request, Improvement, UI/UX, Performance, Security, Documentation, General) with
+title, description, optional affected-module, and optional attachments; org_admins manage
+all feedback from a searchable/filterable admin page.
+
+- **Added** `modules.feedback` app: `Feedback` (reporter, category, title, description,
+  affected_module, flat status New/In Review/Resolved/Closed default New, assignee),
+  `FeedbackAttachment` (S3, 25 MB, presigned flow mirroring claims), `FeedbackNote`
+  (internal admin thread). Migration `feedback.0001`.
+- **Added** `FeedbackViewSet` (`/api/v1/feedback/`): submit (reporter forced), `?scope=self`
+  vs `?scope=org` (filter status/category/q/assignee), own-or-manage retrieve, PATCH
+  status/assignee (audit + in-app notification to reporter), internal notes, attachment
+  presigned-upload/register/download. PUT/DELETE disabled (405).
+- **Added** `/feedback` Feedback Center (submit + My Feedback) and `/feedback/manage`
+  admin workspace (filter table + detail with status/assignee/notes). Registered as a
+  togglable module.
+- **Security:** reporter-safe serializer excludes internal notes/assignee; a separate
+  admin serializer exposes them only to `feedback:manage:org` holders. In-app-only
+  notification (`feedback.status_changed`, email default off). Full audit trail on status
+  + assignee changes.
+- **Perms (3):** `feedback:submit:self` + `feedback:read:self` (all 7 roles),
+  `feedback:manage:org` (org_admin only). Run `seed_permission_catalogue` +
+  `grant_default_perms` at deploy.
+- Contracts regenerated. Backend +26 feedback tests; frontend +10.
+
 ## [1.64.0] — 2026-07-09 — Grant leave on employee creation
 
 **HR can now seed a new employee's leave at account creation.** On

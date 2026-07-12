@@ -1514,6 +1514,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/feedback/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["feedback_retrieve"];
+        put?: never;
+        post: operations["feedback_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["feedback_retrieve_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["feedback_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/feedback/{id}/attachments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["feedback_attachments_retrieve"];
+        put?: never;
+        post: operations["feedback_attachments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/{id}/attachments/{attachment_id}/download/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Return a short-lived presigned URL to view/download one attachment. */
+        get: operations["feedback_attachments_download_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/{id}/attachments/presigned-upload/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["feedback_attachments_presigned_upload_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/{id}/notes/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["feedback_notes_retrieve"];
+        put?: never;
+        post: operations["feedback_notes_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/incentive/bonds/": {
         parameters: {
             query?: never;
@@ -4287,7 +4384,7 @@ export interface components {
             readonly id: string;
             title: string;
             body: string;
-            category?: components["schemas"]["CategoryEnum"];
+            category?: components["schemas"]["CategoryE26Enum"];
             priority?: components["schemas"]["PriorityE72Enum"];
             readonly status: components["schemas"]["AnnouncementStatusEnum"];
             pinned?: boolean;
@@ -4309,7 +4406,7 @@ export interface components {
         AnnouncementRequest: {
             title: string;
             body: string;
-            category?: components["schemas"]["CategoryEnum"];
+            category?: components["schemas"]["CategoryE26Enum"];
             priority?: components["schemas"]["PriorityE72Enum"];
             pinned?: boolean;
             /** Format: date-time */
@@ -4332,7 +4429,7 @@ export interface components {
             readonly id: string;
             title: string;
             body: string;
-            category?: components["schemas"]["CategoryEnum"];
+            category?: components["schemas"]["CategoryE26Enum"];
             priority?: components["schemas"]["PriorityE72Enum"];
             pinned?: boolean;
             /** Format: date-time */
@@ -4345,7 +4442,7 @@ export interface components {
         AnnouncementWriteRequest: {
             title: string;
             body: string;
-            category?: components["schemas"]["CategoryEnum"];
+            category?: components["schemas"]["CategoryE26Enum"];
             priority?: components["schemas"]["PriorityE72Enum"];
             pinned?: boolean;
             /** Format: date-time */
@@ -4521,7 +4618,7 @@ export interface components {
          *     * `general` - General
          * @enum {string}
          */
-        CategoryEnum: "policy" | "event" | "maintenance" | "holiday" | "general";
+        CategoryE26Enum: "policy" | "event" | "maintenance" | "holiday" | "general";
         Certification: {
             /** Format: uuid */
             readonly id: string;
@@ -5020,6 +5117,45 @@ export interface components {
          * @enum {string}
          */
         EncryptionEnum: "none" | "ssl" | "starttls";
+        FeedbackCreate: {
+            category: components["schemas"]["FeedbackCreateCategoryEnum"];
+            title: string;
+            description: string;
+            /** @default  */
+            affected_module: string;
+        };
+        /**
+         * @description * `bug` - bug
+         *     * `feature` - feature
+         *     * `improvement` - improvement
+         *     * `uiux` - uiux
+         *     * `performance` - performance
+         *     * `security` - security
+         *     * `documentation` - documentation
+         *     * `general` - general
+         * @enum {string}
+         */
+        FeedbackCreateCategoryEnum: "bug" | "feature" | "improvement" | "uiux" | "performance" | "security" | "documentation" | "general";
+        FeedbackCreateRequest: {
+            category: components["schemas"]["FeedbackCreateCategoryEnum"];
+            title: string;
+            description: string;
+            /** @default  */
+            affected_module: string;
+        };
+        FeedbackUpdate: {
+            status?: components["schemas"]["FeedbackUpdateStatusEnum"];
+            /** Format: uuid */
+            assignee_id?: string | null;
+        };
+        /**
+         * @description * `new` - new
+         *     * `in_review` - in_review
+         *     * `resolved` - resolved
+         *     * `closed` - closed
+         * @enum {string}
+         */
+        FeedbackUpdateStatusEnum: "new" | "in_review" | "resolved" | "closed";
         /**
          * @description * `male` - Male
          *     * `female` - Female
@@ -5512,7 +5648,7 @@ export interface components {
         PatchedAnnouncementWriteRequest: {
             title?: string;
             body?: string;
-            category?: components["schemas"]["CategoryEnum"];
+            category?: components["schemas"]["CategoryE26Enum"];
             priority?: components["schemas"]["PriorityE72Enum"];
             pinned?: boolean;
             /** Format: date-time */
@@ -5702,6 +5838,11 @@ export interface components {
             status?: components["schemas"]["EmployeeStatusEnum"];
             timezone?: string;
             locale?: string;
+        };
+        PatchedFeedbackUpdateRequest: {
+            status?: components["schemas"]["FeedbackUpdateStatusEnum"];
+            /** Format: uuid */
+            assignee_id?: string | null;
         };
         PatchedHolidayRequest: {
             /** Format: date */
@@ -9191,6 +9332,215 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Employee"];
                 };
+            };
+        };
+    };
+    feedback_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    feedback_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackCreateRequest"];
+                "multipart/form-data": components["schemas"]["FeedbackCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackCreate"];
+                };
+            };
+        };
+    };
+    feedback_retrieve_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    feedback_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedFeedbackUpdateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedFeedbackUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackUpdate"];
+                };
+            };
+        };
+    };
+    feedback_attachments_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    feedback_attachments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    feedback_attachments_download_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    feedback_attachments_presigned_upload_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    feedback_notes_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    feedback_notes_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
