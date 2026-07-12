@@ -5196,6 +5196,23 @@ paths:
                 items:
                   $ref: '#/components/schemas/Notification'
           description: ''
+  /api/v1/notifications/{id}:
+    delete:
+      operationId: notifications_destroy
+      description: Hard-delete the caller's own in-app notification (Teams-style clear).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/notifications/{id}/read:
     patch:
       operationId: notifications_read_partial_update
@@ -5206,6 +5223,21 @@ paths:
         schema:
           type: integer
         required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/notifications/clear-all:
+    post:
+      operationId: notifications_clear_all_create
+      description: Hard-delete all the caller's in-app notifications (read + unread).
       tags:
       - notifications
       security:

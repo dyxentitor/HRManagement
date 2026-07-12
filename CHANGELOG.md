@@ -2,6 +2,11 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.66.0] — 2026-07-12 — Notification clear/dismiss + unread filter
+
+- **Added** Notification bell **clear/dismiss** (Teams-style): dismiss a single notification (× on row hover), **Clear all** (header), and an **"All | Unread"** filter toggle. New endpoints `DELETE /api/v1/notifications/{id}` and `POST /api/v1/notifications/clear-all` hard-delete the caller's own `in_app` rows (email/digest rows untouched). No migration, no new permission.
+- Contracts regenerated. Backend: 44 notification tests passed; frontend: 30 notification tests passed.
+
 ## [1.65.0] — 2026-07-12 — Feedback module
 
 **New Feedback module.** Authenticated users submit feedback (8 categories: Bug Report,

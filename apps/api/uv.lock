@@ -734,7 +734,7 @@ wheels = [
 
 [[package]]
 name = "hrms-api"
-version = "1.49.0"
+version = "1.66.0"
 source = { virtual = "." }
 dependencies = [
     { name = "argon2-cffi" },

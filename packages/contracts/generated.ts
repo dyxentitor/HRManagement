@@ -2745,6 +2745,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Hard-delete the caller's own in-app notification (Teams-style clear). */
+        delete: operations["notifications_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/{id}/read": {
         parameters: {
             query?: never;
@@ -2760,6 +2777,23 @@ export interface paths {
         head?: never;
         /** @description List, mark-read, mark-all-read for own notifications. */
         patch: operations["notifications_read_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/notifications/clear-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Hard-delete all the caller's in-app notifications (read + unread). */
+        post: operations["notifications_clear_all_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/notifications/preferences": {
@@ -11886,6 +11920,26 @@ export interface operations {
             };
         };
     };
+    notifications_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     notifications_read_partial_update: {
         parameters: {
             query?: never;
@@ -11893,6 +11947,25 @@ export interface operations {
             path: {
                 id: number;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+        };
+    };
+    notifications_clear_all_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
