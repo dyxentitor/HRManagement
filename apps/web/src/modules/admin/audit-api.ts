@@ -25,6 +25,7 @@ export interface AuditFilters {
 	page?: number;
 	page_size?: number;
 	entity?: string;
+	entity_id?: string;
 	action?: string;
 	date_from?: string;
 	date_to?: string;

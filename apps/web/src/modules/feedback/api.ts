@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { tokenStorage } from "@/lib/token-storage";
+import { listAuditLogs, type AuditRow } from "@/modules/admin/audit-api";
 
 export type FeedbackCategory =
 	| "bug"
@@ -85,6 +86,8 @@ function _unwrap<T>(d: { results?: T[] } | T[]): T[] {
 	return Array.isArray(d) ? d : d.results || [];
 }
 
+export type FeedbackActivity = Pick<AuditRow, "id" | "action" | "actor" | "before" | "after" | "ts">;
+
 export const feedbackApi = {
 	listMine: () =>
 		_get<{ results?: FeedbackItem[] } | FeedbackItem[]>("/api/v1/feedback/?scope=self").then(
@@ -163,4 +166,9 @@ export const feedbackApi = {
 		_get<{ url: string; filename: string }>(
 			`/api/v1/feedback/${feedbackId}/attachments/${attachmentId}/download/`,
 		),
+	/** Admin: audit activity rows for a specific feedback item (newest first, max 50). */
+	listActivity: async (feedbackId: string): Promise<FeedbackActivity[]> => {
+		const page = await listAuditLogs({ entity: "feedback", entity_id: feedbackId, page_size: 50 });
+		return page.results as FeedbackActivity[];
+	},
 };
