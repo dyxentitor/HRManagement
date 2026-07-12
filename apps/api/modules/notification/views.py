@@ -90,6 +90,18 @@ class NotificationViewSet(GenericViewSet):
         ).count()
         return Response({"count": count})
 
+    @action(detail=True, methods=["delete"], url_path="")
+    def dismiss(self, request: Request, pk=None) -> Response:
+        """Hard-delete the caller's own in-app notification (Teams-style clear)."""
+        Notification.objects.filter(user=request.user, channel="in_app", pk=pk).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["post"], url_path="clear-all")
+    def clear_all(self, request: Request) -> Response:
+        """Hard-delete all the caller's in-app notifications (read + unread)."""
+        deleted, _ = Notification.objects.filter(user=request.user, channel="in_app").delete()
+        return Response({"cleared": deleted})
+
 
 @requires_feature("notifications")
 class NotificationPreferencesView(APIView):

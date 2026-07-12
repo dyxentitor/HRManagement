@@ -152,3 +152,64 @@ def test_bulk_update_preferences(authed_client, user):
     ).first()
     if sec_pref:
         assert sec_pref.enabled is True
+
+
+def _make_email(user, notif_type="leave.approved"):
+    return Notification.objects.create(
+        org_id=user.org_id,
+        user=user,
+        type=notif_type,
+        channel="email",
+        payload={"test": True},
+    )
+
+
+@pytest.mark.django_db
+def test_dismiss_deletes_own(authed_client, user):
+    n = _make_in_app(user)
+    resp = authed_client.delete(f"/api/v1/notifications/{n.id}")
+    assert resp.status_code == 204
+    assert not Notification.objects.filter(id=n.id).exists()
+
+
+@pytest.mark.django_db
+def test_dismiss_ignores_other_users_row(authed_client, user):
+    other = User.objects.create_user(
+        email="other@x.com", password="testpass", org_id=user.org_id
+    )  # pragma: allowlist secret
+    theirs = _make_in_app(other)
+    resp = authed_client.delete(f"/api/v1/notifications/{theirs.id}")
+    assert resp.status_code == 204  # idempotent no-op
+    assert Notification.objects.filter(id=theirs.id).exists()  # not deleted
+
+
+@pytest.mark.django_db
+def test_dismiss_leaves_email_rows(authed_client, user):
+    email_row = _make_email(user)
+    resp = authed_client.delete(f"/api/v1/notifications/{email_row.id}")
+    assert resp.status_code == 204  # channel filter makes it a no-op
+    assert Notification.objects.filter(id=email_row.id).exists()  # email untouched
+
+
+@pytest.mark.django_db
+def test_clear_all_deletes_all_in_app(authed_client, user):
+    _make_in_app(user, read=False)
+    _make_in_app(user, read=False)
+    _make_in_app(user, read=True)
+    email_row = _make_email(user)
+    resp = authed_client.post("/api/v1/notifications/clear-all")
+    assert resp.status_code == 200
+    assert resp.json() == {"cleared": 3}
+    assert not Notification.objects.filter(user=user, channel="in_app").exists()
+    assert Notification.objects.filter(id=email_row.id).exists()  # email untouched
+
+
+@pytest.mark.django_db
+def test_clear_all_leaves_other_users(authed_client, user):
+    other = User.objects.create_user(
+        email="other2@x.com", password="testpass", org_id=user.org_id
+    )  # pragma: allowlist secret
+    theirs = _make_in_app(other)
+    _make_in_app(user)
+    authed_client.post("/api/v1/notifications/clear-all")
+    assert Notification.objects.filter(id=theirs.id).exists()
