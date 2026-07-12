@@ -215,6 +215,15 @@ export const NAV: NavGroup[] = [
 	{
 		id: "admin",
 		label: "Admin",
-		items: [{ label: "Settings", to: "/admin/settings", icon: Settings, perm: "role:read" }],
+		items: [
+			{ label: "Settings", to: "/admin/settings", icon: Settings, perm: "role:read" },
+			{
+				label: "Feedback Management",
+				to: "/feedback/manage",
+				icon: MessageSquare,
+				perm: "feedback:manage:org",
+				module: "feedback",
+			},
+		],
 	},
 ];

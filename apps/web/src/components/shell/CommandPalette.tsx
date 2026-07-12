@@ -186,6 +186,13 @@ const PAGES = [
 		perm: "feedback:submit:self",
 		module: "feedback",
 	},
+	{
+		label: "Feedback Management",
+		to: "/feedback/manage",
+		icon: MessageSquare,
+		perm: "feedback:manage:org",
+		module: "feedback",
+	},
 ];
 
 export function CommandPalette() {
