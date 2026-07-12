@@ -6,12 +6,16 @@ const mocks = vi.hoisted(() => ({
   count: vi.fn(),
   markRead: vi.fn(),
   markAllRead: vi.fn(),
+  dismiss: vi.fn(),
+  clearAll: vi.fn(),
 }))
 vi.mock("./api", () => ({
   listNotifications: mocks.list,
   getUnreadCount: mocks.count,
   markRead: mocks.markRead,
   markAllRead: mocks.markAllRead,
+  dismissNotification: mocks.dismiss,
+  clearAll: mocks.clearAll,
   NotificationApiError: class extends Error {},
 }))
 
@@ -35,6 +39,8 @@ beforeEach(() => {
   mocks.list.mockResolvedValue([notif(2), notif(1)])
   mocks.markRead.mockResolvedValue(notif(2, "2026-07-06T01:00:00Z"))
   mocks.markAllRead.mockResolvedValue({ updated: 2 })
+  mocks.dismiss.mockResolvedValue(undefined)
+  mocks.clearAll.mockResolvedValue({ cleared: 2 })
 })
 
 describe("useNotifications", () => {
@@ -59,5 +65,40 @@ describe("useNotifications", () => {
     mocks.list.mockRejectedValueOnce(new Error("boom"))
     const { result } = renderHook(() => useNotifications(0))
     await waitFor(() => expect(result.current.error).toBe(true))
+  })
+
+  it("dismiss removes the row and drops the unread count", async () => {
+    const { result } = renderHook(() => useNotifications(0))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    await act(async () => {
+      await result.current.dismiss(2)
+    })
+    expect(result.current.items.find((n) => n.id === 2)).toBeUndefined()
+    expect(result.current.unreadCount).toBe(1)
+    expect(mocks.dismiss).toHaveBeenCalledWith(2)
+  })
+
+  it("clearAll empties the list and zeroes the count", async () => {
+    const { result } = renderHook(() => useNotifications(0))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    await act(async () => {
+      await result.current.clearAll()
+    })
+    expect(result.current.items).toHaveLength(0)
+    expect(result.current.unreadCount).toBe(0)
+    expect(mocks.clearAll).toHaveBeenCalled()
+  })
+
+  it("setFilter('unread') refetches with unreadOnly", async () => {
+    const { result } = renderHook(() => useNotifications(0))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    mocks.list.mockClear()
+    await act(async () => {
+      result.current.setFilter("unread")
+    })
+    await waitFor(() =>
+      expect(mocks.list).toHaveBeenCalledWith(expect.objectContaining({ unreadOnly: true })),
+    )
+    expect(result.current.filter).toBe("unread")
   })
 })

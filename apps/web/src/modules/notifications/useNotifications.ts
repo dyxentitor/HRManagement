@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import { getUnreadCount, listNotifications, markAllRead, markRead } from "./api"
+import {
+  clearAll as clearAllApi,
+  dismissNotification,
+  getUnreadCount,
+  listNotifications,
+  markAllRead,
+  markRead,
+} from "./api"
 import type { Notification } from "./api"
 
 const PAGE = 20
@@ -12,12 +19,13 @@ export function useNotifications(pollMs = 35_000) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [filter, setFilter] = useState<"all" | "unread">("all")
   const mounted = useRef(true)
 
   const refresh = useCallback(async () => {
     try {
       const [rows, count] = await Promise.all([
-        listNotifications({ limit: PAGE }),
+        listNotifications({ limit: PAGE, unreadOnly: filter === "unread" }),
         getUnreadCount(),
       ])
       if (!mounted.current) return
@@ -30,7 +38,7 @@ export function useNotifications(pollMs = 35_000) {
     } finally {
       if (mounted.current) setLoading(false)
     }
-  }, [])
+  }, [filter])
 
   const refreshCount = useCallback(async () => {
     try {
@@ -46,7 +54,11 @@ export function useNotifications(pollMs = 35_000) {
     setLoadingMore(true)
     try {
       const oldest = items[items.length - 1]
-      const rows = await listNotifications({ limit: PAGE, before: oldest.id })
+      const rows = await listNotifications({
+        limit: PAGE,
+        before: oldest.id,
+        unreadOnly: filter === "unread",
+      })
       if (!mounted.current) return
       setItems((prev) => [...prev, ...rows])
       setHasMore(rows.length === PAGE)
@@ -55,7 +67,7 @@ export function useNotifications(pollMs = 35_000) {
     } finally {
       if (mounted.current) setLoadingMore(false)
     }
-  }, [items, hasMore, loadingMore])
+  }, [items, hasMore, loadingMore, filter])
 
   const markOneRead = useCallback(
     async (id: number) => {
@@ -81,6 +93,31 @@ export function useNotifications(pollMs = 35_000) {
     setUnreadCount(0)
     try {
       await markAllRead()
+    } catch {
+      refresh()
+    }
+  }, [refresh])
+
+  const dismiss = useCallback(
+    async (id: number) => {
+      const target = items.find((n) => n.id === id)
+      setItems((prev) => prev.filter((n) => n.id !== id))
+      if (target && !target.read_at) setUnreadCount((c) => Math.max(0, c - 1))
+      try {
+        await dismissNotification(id)
+      } catch {
+        refresh()
+      }
+    },
+    [items, refresh],
+  )
+
+  const clearAll = useCallback(async () => {
+    setItems([])
+    setUnreadCount(0)
+    setHasMore(false)
+    try {
+      await clearAllApi()
     } catch {
       refresh()
     }
@@ -116,10 +153,14 @@ export function useNotifications(pollMs = 35_000) {
     loadingMore,
     error,
     hasMore,
+    filter,
+    setFilter,
     refresh,
     loadMore,
     markOneRead,
     markAll,
+    dismiss,
+    clearAll,
     onOpen,
   }
 }

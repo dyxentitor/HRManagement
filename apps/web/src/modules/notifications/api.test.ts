@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { NotificationApiError, getUnreadCount, listNotifications } from "./api"
+import { NotificationApiError, clearAll, dismissNotification, getUnreadCount, listNotifications } from "./api"
 
 const okJson = (body: unknown) =>
   Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as Response)
@@ -32,4 +32,21 @@ describe("notifications api", () => {
     )
     await expect(listNotifications()).rejects.toBeInstanceOf(NotificationApiError)
   })
+
+	it("dismissNotification issues a DELETE to the row url", async () => {
+		const fetchMock = vi.fn(() => Promise.resolve({ ok: true } as Response))
+		vi.stubGlobal("fetch", fetchMock)
+		await dismissNotification(42)
+		const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+		expect(String(url)).toContain("/api/v1/notifications/42")
+		expect(init.method).toBe("DELETE")
+	})
+
+	it("clearAll POSTs to clear-all and returns the count", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(() => okJson({ cleared: 5 })),
+		)
+		expect(await clearAll()).toEqual({ cleared: 5 })
+	})
 })

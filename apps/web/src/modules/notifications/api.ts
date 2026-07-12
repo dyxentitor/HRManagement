@@ -95,3 +95,15 @@ export async function updatePreferences(
 	if (!resp.ok) return [];
 	return resp.json();
 }
+
+export async function dismissNotification(id: number): Promise<void> {
+	await authFetch(`${BASE_URL}/api/v1/notifications/${id}`, { method: "DELETE" });
+}
+
+export async function clearAll(): Promise<{ cleared: number }> {
+	const resp = await authFetch(`${BASE_URL}/api/v1/notifications/clear-all`, {
+		method: "POST",
+	});
+	if (!resp.ok) return { cleared: 0 };
+	return resp.json();
+}
