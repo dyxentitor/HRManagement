@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "modules.notification",
     "modules.dashboard",
     "modules.announcements",
+    "modules.feedback",
     "modules.onboarding",
     "modules.assignments",
     "modules.incentive",

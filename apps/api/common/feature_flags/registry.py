@@ -23,6 +23,7 @@ TOGGLABLE_MODULES: dict[str, dict] = {
     "notifications": {"label": "Notifications", "depends_on": []},
     "incentive": {"label": "Incentive (Mandays)", "depends_on": []},
     "announcements": {"label": "Announcements", "depends_on": []},
+    "feedback": {"label": "Feedback", "depends_on": []},
 }
 
 # Always-on. Disabling = system lockout. is_enabled() short-circuits
