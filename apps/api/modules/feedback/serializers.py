@@ -190,3 +190,7 @@ class RegisterAttachmentSerializer(serializers.Serializer):
     content_type = serializers.CharField(max_length=100)
     size_bytes = serializers.IntegerField(min_value=1)
     s3_key = serializers.CharField(max_length=500)
+
+
+class FeedbackNoteWriteSerializer(serializers.Serializer):
+    body = serializers.CharField(min_length=1)

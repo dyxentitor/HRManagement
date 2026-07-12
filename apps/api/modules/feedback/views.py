@@ -8,7 +8,8 @@ from typing import ClassVar
 from django.db import transaction
 from rest_framework import status as drf_status
 from rest_framework import viewsets
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from common.audit.service import append as audit_append
@@ -17,13 +18,19 @@ from modules.identity.models import User
 from modules.identity.permissions import HRMSPermission
 from modules.identity.services.permissions import get_user_perms
 
-from .models import Feedback
+from .models import Feedback, FeedbackNote
 from .serializers import (
     FeedbackAdminSerializer,
+    FeedbackAttachmentSerializer,
     FeedbackCreateSerializer,
+    FeedbackNoteSerializer,
+    FeedbackNoteWriteSerializer,
     FeedbackSerializer,
     FeedbackUpdateSerializer,
+    PresignedUploadSerializer,
+    RegisterAttachmentSerializer,
 )
+from .services.attachment import FeedbackAttachmentService
 
 logger = logging.getLogger(__name__)
 
@@ -174,3 +181,74 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 )
 
         return Response(FeedbackAdminSerializer(obj).data)
+
+    # ------------------------------------------------------------------
+    # Notes (manage-only)
+    # ------------------------------------------------------------------
+
+    @action(detail=True, methods=["get", "post"], url_path="notes")
+    def notes(self, request, pk=None):
+        obj = self.get_object()
+        if not self._can_manage():
+            raise PermissionDenied()
+        if request.method == "POST":
+            ser = FeedbackNoteWriteSerializer(data=request.data)
+            ser.is_valid(raise_exception=True)
+            note = FeedbackNote.objects.create(
+                feedback=obj,
+                author_id=request.user.id,
+                body=ser.validated_data["body"],
+            )
+            return Response(FeedbackNoteSerializer(note).data, status=drf_status.HTTP_201_CREATED)
+        return Response(FeedbackNoteSerializer(obj.notes.order_by("created_at"), many=True).data)
+
+    # ------------------------------------------------------------------
+    # Attachments — presigned upload / register / list / download
+    # ------------------------------------------------------------------
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="attachments/presigned-upload",
+    )
+    def presigned_upload(self, request, pk=None):
+        obj = self.get_object()
+        ser = PresignedUploadSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        result = FeedbackAttachmentService.presigned_upload(
+            feedback=obj,
+            filename=ser.validated_data["filename"],
+            content_type=ser.validated_data["content_type"],
+        )
+        return Response(result)
+
+    @action(detail=True, methods=["post", "get"], url_path="attachments")
+    def attachments(self, request, pk=None):
+        obj = self.get_object()
+        if request.method == "GET":
+            return Response(FeedbackAttachmentSerializer(obj.attachments.all(), many=True).data)
+        # POST: register a new attachment after S3 PUT
+        ser = RegisterAttachmentSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        att = FeedbackAttachmentService.register(
+            feedback=obj,
+            filename=ser.validated_data["filename"],
+            content_type=ser.validated_data["content_type"],
+            size_bytes=ser.validated_data["size_bytes"],
+            s3_key=ser.validated_data["s3_key"],
+            uploaded_by=request.user.id,
+        )
+        return Response(FeedbackAttachmentSerializer(att).data, status=drf_status.HTTP_201_CREATED)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"attachments/(?P<attachment_id>[^/.]+)/download",
+    )
+    def download_attachment(self, request, pk=None, attachment_id=None):
+        """Return a short-lived presigned URL to view/download one attachment."""
+        obj = self.get_object()
+        att = obj.attachments.filter(id=attachment_id).first()
+        if att is None:
+            raise NotFound("Attachment not found.")
+        return Response(FeedbackAttachmentService.download_url(attachment=att))
