@@ -16,6 +16,7 @@ import { certificationRoutes } from "./modules/certification/routes";
 import { claimsRoutes } from "./modules/claims/routes";
 import { dashboardRoutes } from "./modules/dashboard/routes";
 import { employeeRoutes } from "./modules/employee/routes";
+import { feedbackRoutes } from "./modules/feedback/routes";
 import { helpRoutes } from "./modules/help/routes";
 import { kpiRoutes } from "./modules/kpi/routes";
 import { leaveRoutes } from "./modules/leave/routes";
@@ -116,6 +117,11 @@ const router = createBrowserRouter([
 				element: <Suspense fallback={null}>{r.element}</Suspense>,
 			})),
 			...withFeature("announcements", announcementsRoutes).map((r) => ({
+				...r,
+				path: r.path?.replace(/^\//, ""),
+				element: <Suspense fallback={null}>{r.element}</Suspense>,
+			})),
+			...withFeature("feedback", feedbackRoutes).map((r) => ({
 				...r,
 				path: r.path?.replace(/^\//, ""),
 				element: <Suspense fallback={null}>{r.element}</Suspense>,

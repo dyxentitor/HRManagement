@@ -18,6 +18,7 @@ const MODULE_LABELS: Record<string, string> = {
 	notifications: "Notifications",
 	approvals: "Approvals",
 	dashboard: "Dashboard",
+	feedback: "Feedback",
 };
 
 interface ModuleDisabledProps {

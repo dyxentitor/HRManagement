@@ -8,6 +8,7 @@ import {
 	LayoutDashboard,
 	ListChecks,
 	Megaphone,
+	MessageSquare,
 	Receipt,
 	Settings,
 	Shield,
@@ -177,6 +178,13 @@ const PAGES = [
 		icon: BarChart3,
 		perm: "kpi:cycle:write",
 		module: "kpi",
+	},
+	{
+		label: "Feedback",
+		to: "/feedback",
+		icon: MessageSquare,
+		perm: "feedback:submit:self",
+		module: "feedback",
 	},
 ];
 
