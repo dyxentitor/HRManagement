@@ -71,6 +71,9 @@ class AuditLogListView(APIView):
             qs = qs.filter(actor_id=actor_id)
         if entity:
             qs = qs.filter(entity=entity)
+        entity_id = request.query_params.get("entity_id")
+        if entity_id:
+            qs = qs.filter(entity_id=entity_id)
         if action:
             qs = qs.filter(action__icontains=action)
         if date_from:
