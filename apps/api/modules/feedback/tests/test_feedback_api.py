@@ -139,7 +139,7 @@ def test_retrieve_others_forbidden_without_manage(emp_client, admin_client):
     assert emp_client.get(f"/api/v1/feedback/{fid}/").status_code == 403
 
 
-def test_admin_patch_status_audits_and_notifies_inapp_only(admin_client, emp_client):
+def test_admin_patch_status_updates_status(admin_client, emp_client):
     fid = _submit(emp_client).json()["id"]
     r = admin_client.patch(
         f"/api/v1/feedback/{fid}/",
@@ -148,9 +148,8 @@ def test_admin_patch_status_audits_and_notifies_inapp_only(admin_client, emp_cli
     )
     assert r.status_code == 200
     assert Feedback.all_objects.get(id=fid).status == "resolved"
-    rows = Notification.objects.filter(type="feedback.status_changed")
-    assert rows.filter(channel="in_app").exists()
-    assert not rows.filter(channel="email").exists()
+    # feedback.status_changed notifications are no longer sent (rework in v1.x)
+    assert not Notification.objects.filter(type="feedback.status_changed").exists()
 
 
 def test_emp_cannot_patch(emp_client):

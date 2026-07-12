@@ -106,6 +106,24 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             reporter=request.user,
             **ser.validated_data,
         )
+        try:
+            from modules.identity.models import UserRole
+            from modules.notification.services.notify import notify
+
+            admin_ids = UserRole.objects.filter(
+                role__org_id=request.user.org_id,
+                role__code="org_admin",
+            ).values_list("user_id", flat=True)
+            for admin in User.objects.filter(id__in=admin_ids).exclude(id=request.user.id):
+                notify(
+                    user=admin,
+                    type="feedback.received",
+                    payload={"feedback_id": str(instance.id)},
+                    deep_link="/feedback/manage",
+                    priority="normal",
+                )
+        except Exception:
+            logger.exception("feedback.received notify failed")
         return Response({"id": str(instance.id)}, status=drf_status.HTTP_201_CREATED)
 
     # ------------------------------------------------------------------
@@ -151,18 +169,6 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                     after={"status": obj.status},
                     actor_id=request.user.id,
                 )
-                try:
-                    from modules.notification.services.notify import notify
-
-                    notify(
-                        user=obj.reporter,
-                        type="feedback.status_changed",
-                        payload={"feedback_id": str(obj.id)},
-                        deep_link="/feedback",
-                        priority="normal",
-                    )
-                except Exception:
-                    logger.exception("feedback notify failed for feedback_id=%s", obj.id)
 
             if "assignee_id" in validated:
                 aid = validated["assignee_id"]

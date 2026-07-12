@@ -53,7 +53,7 @@ DEFAULT_PREFERENCES: list[tuple[str, bool, bool, bool]] = [
     # incentive submission (to approver)
     ("incentive.claim_submitted", True, False, False),
     # feedback
-    ("feedback.status_changed", True, False, False),
+    ("feedback.received", True, False, False),
 ]
 
 SECURITY_TYPES: frozenset[str] = frozenset(t for t, _i, _e, sec in DEFAULT_PREFERENCES if sec)
