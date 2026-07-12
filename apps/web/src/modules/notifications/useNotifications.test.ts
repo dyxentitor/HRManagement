@@ -78,6 +78,18 @@ describe("useNotifications", () => {
     expect(mocks.dismiss).toHaveBeenCalledWith(2)
   })
 
+  it("dismissing an already-read row leaves the unread count unchanged", async () => {
+    mocks.count.mockResolvedValue(1)
+    mocks.list.mockResolvedValue([notif(2), notif(1, "2026-07-06T01:00:00Z")])
+    const { result } = renderHook(() => useNotifications(0))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    await act(async () => {
+      await result.current.dismiss(1)
+    })
+    expect(result.current.items.find((n) => n.id === 1)).toBeUndefined()
+    expect(result.current.unreadCount).toBe(1)
+  })
+
   it("clearAll empties the list and zeroes the count", async () => {
     const { result } = renderHook(() => useNotifications(0))
     await waitFor(() => expect(result.current.loading).toBe(false))
