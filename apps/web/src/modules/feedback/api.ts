@@ -34,6 +34,7 @@ export type FeedbackItem = {
 	updated_at: string;
 	attachments?: FeedbackAttachment[];
 	// Admin-only fields (present when scope=org)
+	reporter_name?: string | null;
 	assignee_id?: string | null;
 	assignee_name?: string | null;
 	reporter_email?: string | null;
