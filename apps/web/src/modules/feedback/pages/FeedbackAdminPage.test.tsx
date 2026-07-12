@@ -18,7 +18,9 @@ const mocks = vi.hoisted(() => ({
 	listNotes: vi.fn(),
 	addNote: vi.fn(),
 	listAdmins: vi.fn(),
+	listActivity: vi.fn(),
 	get: vi.fn(),
+	listAuditLogs: vi.fn(),
 }));
 
 vi.mock("../api", () => ({
@@ -29,14 +31,24 @@ vi.mock("../api", () => ({
 		listNotes: mocks.listNotes,
 		addNote: mocks.addNote,
 		listAdmins: mocks.listAdmins,
+		listActivity: mocks.listActivity,
 		get: mocks.get,
 	},
 }));
 
+vi.mock("@/modules/admin/audit-api", () => ({
+	listAuditLogs: mocks.listAuditLogs,
+}));
+
 const mockUseCan = vi.fn(() => true);
-vi.mock("@/lib/perm", () => ({ useCan: (...args: Parameters<typeof mockUseCan>) => mockUseCan(...args) }));
+vi.mock("@/lib/perm", () => ({
+	useCan: (...args: Parameters<typeof mockUseCan>) => mockUseCan(...args),
+}));
 vi.mock("@/lib/auth", () => ({
-	useAuth: () => ({ user: { id: "admin-1", email: "admin@example.com" }, perms: new Set(["feedback:manage:org"]) }),
+	useAuth: () => ({
+		user: { id: "admin-1", email: "admin@example.com" },
+		perms: new Set(["feedback:manage:org"]),
+	}),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -53,6 +65,7 @@ const adminFeedback = [
 		created_at: "2026-07-01T10:00:00Z",
 		updated_at: "2026-07-01T10:00:00Z",
 		reporter_email: "user1@example.com",
+		reporter_name: "User One",
 		assignee_id: null,
 		assignee_name: null,
 		notes: [],
@@ -68,9 +81,10 @@ const adminFeedback = [
 		created_at: "2026-07-02T10:00:00Z",
 		updated_at: "2026-07-02T10:00:00Z",
 		reporter_email: "user2@example.com",
+		reporter_name: "User Two",
 		assignee_id: "admin-1",
 		assignee_name: "Admin User",
-		notes: [{ id: 1, body: "Being investigated.", author_id: "admin-1", author_name: "Admin User", created_at: "2026-07-02T11:00:00Z" }],
+		notes: [],
 		attachments: [],
 	},
 ];
@@ -79,6 +93,15 @@ const admins = [
 	{ id: "admin-1", email: "admin@example.com", role_codes: ["org_admin"] },
 	{ id: "admin-2", email: "admin2@example.com", role_codes: ["org_admin"] },
 ];
+
+const sampleAuditRow = {
+	id: 99,
+	action: "feedback.status.changed",
+	actor: "Admin User",
+	before: { status: "new" },
+	after: { status: "in_review" },
+	ts: "2026-07-01T11:00:00Z",
+};
 
 function renderPage() {
 	return render(
@@ -94,68 +117,118 @@ beforeEach(() => {
 	mocks.listAll.mockResolvedValue(adminFeedback);
 	mocks.listAdmins.mockResolvedValue(admins);
 	mocks.listNotes.mockResolvedValue([]);
+	mocks.listActivity.mockResolvedValue([]);
+	mocks.listAuditLogs.mockResolvedValue({ results: [], count: 0, page: 1, page_size: 50, entities: [] });
 	mocks.updateStatus.mockResolvedValue({ ...adminFeedback[0], status: "in_review" });
-	mocks.assign.mockResolvedValue({ ...adminFeedback[0], assignee_id: "admin-2" });
-	mocks.addNote.mockResolvedValue({ id: 2, body: "New note.", author_id: "admin-1", author_name: "Admin User", created_at: "2026-07-03T10:00:00Z" });
+	mocks.assign.mockResolvedValue({ ...adminFeedback[0], assignee_id: "admin-2", assignee_name: "Admin2" });
+	mocks.addNote.mockResolvedValue({
+		id: 2,
+		body: "New note.",
+		author_id: "admin-1",
+		author_name: "Admin User",
+		created_at: "2026-07-03T10:00:00Z",
+	});
 });
 
 describe("FeedbackAdminPage", () => {
-	it("renders a table of all org feedback from ?scope=org", async () => {
+	it("renders one row per item showing title, status pill, and assignee", async () => {
 		renderPage();
+		// Both rows appear
 		await waitFor(() => expect(screen.getByText("Login button broken")).toBeInTheDocument());
 		expect(screen.getByText("Dark mode")).toBeInTheDocument();
-		expect(screen.getByText("user1@example.com")).toBeInTheDocument();
+		// Status pills rendered inside rows (getAllByText since chip "New" also exists)
+		expect(screen.getAllByText("New").length).toBeGreaterThanOrEqual(1);
+		expect(screen.getAllByText("In Review").length).toBeGreaterThanOrEqual(1);
+		// Assignee shown on row 2; row 1 is unassigned
+		expect(screen.getByText("Unassigned")).toBeInTheDocument();
 		expect(mocks.listAll).toHaveBeenCalled();
 	});
 
-	it("filters by status when the status Select is changed", async () => {
+	it("shows empty-select state (no item selected) on initial render", async () => {
+		renderPage();
+		await waitFor(() => expect(screen.getByText("Login button broken")).toBeInTheDocument());
+		expect(screen.getByText("Select a submission")).toBeInTheDocument();
+	});
+
+	it("clicking a row shows it in the pane (title + description) and fetches notes + activity", async () => {
+		const user = userEvent.setup();
+		mocks.listNotes.mockResolvedValue([
+			{
+				id: 1,
+				body: "Being investigated.",
+				author_id: "admin-1",
+				author_name: "Admin User",
+				created_at: "2026-07-02T11:00:00Z",
+			},
+		]);
+		mocks.listActivity.mockResolvedValue([sampleAuditRow]);
+
+		renderPage();
+		await screen.findByText("Login button broken");
+
+		await user.click(screen.getByText("Login button broken"));
+
+		// Pane header shows the title
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: /login button broken/i })).toBeInTheDocument(),
+		);
+		// Description appears in pane
+		expect(screen.getByText("Cannot log in after password reset.")).toBeInTheDocument();
+		// Notes fetched and shown
+		await waitFor(() => expect(screen.getByText("Being investigated.")).toBeInTheDocument());
+		// Activity fetched and shown
+		expect(mocks.listActivity).toHaveBeenCalledWith("fb1");
+		expect(mocks.listNotes).toHaveBeenCalledWith("fb1");
+	});
+
+	it("status chip filters call listAll with the right params", async () => {
 		const user = userEvent.setup();
 		mocks.listAll.mockResolvedValue([adminFeedback[0]]);
 		renderPage();
 		await screen.findByText("Login button broken");
 
-		// Find and interact with the status filter
-		const statusTrigger = screen.getByRole("combobox", { name: /filter by status/i });
-		await user.click(statusTrigger);
-		// "New" appears as a filter option (not "All statuses")
-		const newOpt = await screen.findByRole("option", { name: /^new$/i });
-		await user.click(newOpt);
+		// Click the "New" status chip
+		const newChip = screen.getByRole("button", { name: /^new$/i });
+		await user.click(newChip);
 
 		await waitFor(() =>
-			expect(mocks.listAll).toHaveBeenCalledWith(expect.objectContaining({ status: "new" })),
+			expect(mocks.listAll).toHaveBeenCalledWith(
+				expect.objectContaining({ status: "new" }),
+			),
 		);
 	});
 
-	it("opens detail panel when a row is clicked, showing status and notes", async () => {
+	it("category select filters call listAll with the right params", async () => {
 		const user = userEvent.setup();
-		mocks.listNotes.mockResolvedValue([
-			{ id: 1, body: "Being investigated.", author_id: "admin-1", author_name: "Admin User", created_at: "2026-07-02T11:00:00Z" },
-		]);
+		mocks.listAll.mockResolvedValue([adminFeedback[0]]);
 		renderPage();
-		await screen.findByText("Dark mode");
+		await screen.findByText("Login button broken");
 
-		await user.click(screen.getByText("Dark mode"));
+		const categoryTrigger = screen.getByRole("combobox", { name: /filter by category/i });
+		await user.click(categoryTrigger);
+		const bugOpt = await screen.findByRole("option", { name: /^bug$/i });
+		await user.click(bugOpt);
 
-		// Detail panel should appear with a status select
 		await waitFor(() =>
-			expect(screen.getByRole("combobox", { name: /status/i })).toBeInTheDocument(),
-		);
-		// Note should be visible (loaded from listNotes)
-		await waitFor(() =>
-			expect(screen.getByText("Being investigated.")).toBeInTheDocument(),
+			expect(mocks.listAll).toHaveBeenCalledWith(
+				expect.objectContaining({ category: "bug" }),
+			),
 		);
 	});
 
-	it("calls updateStatus (PATCH) when status is changed in the detail panel", async () => {
+	it("status change in pane calls updateStatus", async () => {
 		const user = userEvent.setup();
 		renderPage();
 		await screen.findByText("Login button broken");
 
-		// Click the first row
+		// Open detail for first item
 		await user.click(screen.getByText("Login button broken"));
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: /login button broken/i })).toBeInTheDocument(),
+		);
 
-		// Wait for detail panel with status select
-		const statusSelect = await screen.findByRole("combobox", { name: /status/i });
+		// Change status in the pane's Status select
+		const statusSelect = screen.getByRole("combobox", { name: /status/i });
 		await user.click(statusSelect);
 		const inReviewOpt = await screen.findByRole("option", { name: /in review/i });
 		await user.click(inReviewOpt);
@@ -165,18 +238,37 @@ describe("FeedbackAdminPage", () => {
 		);
 	});
 
-	it("calls addNote (POST notes endpoint) when add note button is clicked", async () => {
+	it("assign in pane calls assign API", async () => {
+		const user = userEvent.setup();
+		renderPage();
+		await screen.findByText("Login button broken");
+
+		await user.click(screen.getByText("Login button broken"));
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: /login button broken/i })).toBeInTheDocument(),
+		);
+
+		const assigneeSelect = screen.getByRole("combobox", { name: /assignee/i });
+		await user.click(assigneeSelect);
+		const admin2Opt = await screen.findByRole("option", { name: /admin2@example.com/i });
+		await user.click(admin2Opt);
+
+		await waitFor(() =>
+			expect(mocks.assign).toHaveBeenCalledWith("fb1", "admin-2"),
+		);
+	});
+
+	it("add note calls addNote API", async () => {
 		const user = userEvent.setup();
 		mocks.listNotes.mockResolvedValue([]);
 		renderPage();
 		await screen.findByText("Login button broken");
 
 		await user.click(screen.getByText("Login button broken"));
+		await waitFor(() =>
+			expect(screen.getByRole("heading", { name: /login button broken/i })).toBeInTheDocument(),
+		);
 
-		// Wait for detail panel
-		await screen.findByRole("combobox", { name: /status/i });
-
-		// Type a note
 		const textarea = screen.getByPlaceholderText(/add an internal note/i);
 		await user.type(textarea, "Investigating now.");
 
@@ -188,10 +280,25 @@ describe("FeedbackAdminPage", () => {
 		);
 	});
 
-	it("non_admin_sees_denied_and_no_fetch — denied state shown and no network calls fired", async () => {
+	it("Activity section shows synthesized 'submitted' entry + mocked audit row", async () => {
+		const user = userEvent.setup();
+		mocks.listActivity.mockResolvedValue([sampleAuditRow]);
+
+		renderPage();
+		await screen.findByText("Login button broken");
+		await user.click(screen.getByText("Login button broken"));
+
+		// Synthesized submitted entry
+		await waitFor(() =>
+			expect(screen.getByText(/submitted this feedback/i)).toBeInTheDocument(),
+		);
+		// Mocked audit row from listActivity
+		expect(screen.getByText(/changed status/i)).toBeInTheDocument();
+	});
+
+	it("non-admin sees denied state and calls no listAll", async () => {
 		mockUseCan.mockReturnValue(false);
 		renderPage();
-		// Denied state renders immediately — no waitFor needed, but use it for robustness
 		await waitFor(() =>
 			expect(
 				screen.getByText(/you don't have permission to manage feedback/i),
@@ -199,5 +306,13 @@ describe("FeedbackAdminPage", () => {
 		);
 		expect(mocks.listAll).not.toHaveBeenCalled();
 		expect(mocks.listAdmins).not.toHaveBeenCalled();
+	});
+
+	it("shows empty state in list when no items match filters", async () => {
+		mocks.listAll.mockResolvedValue([]);
+		renderPage();
+		await waitFor(() =>
+			expect(screen.getByText("No feedback")).toBeInTheDocument(),
+		);
 	});
 });
