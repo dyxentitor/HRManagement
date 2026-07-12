@@ -1540,7 +1540,7 @@ export interface paths {
         get: operations["feedback_retrieve_2"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["feedback_destroy"];
         options?: never;
         head?: never;
         patch: operations["feedback_partial_update"];
@@ -9390,6 +9390,26 @@ export interface operations {
         responses: {
             /** @description No response body */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    feedback_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

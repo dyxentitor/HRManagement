@@ -2766,6 +2766,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/FeedbackUpdate'
           description: ''
+    delete:
+      operationId: feedback_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - feedback
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/feedback/{id}/attachments/:
     get:
       operationId: feedback_attachments_retrieve

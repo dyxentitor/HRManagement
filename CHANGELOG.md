@@ -32,6 +32,14 @@ all feedback from a searchable/filterable admin page.
   single-scroll reading pane (Description → Details → Internal notes → Attachments →
   Activity) with status/assignee/mark-resolved actions. The **Activity** timeline reads
   the audit log via a new `entity_id` filter on `GET /api/v1/audit/logs`.
+- **Delete resolved feedback** — org_admins can permanently (hard) delete `resolved`/`closed`
+  feedback (S3 attachments cleaned up + a `feedback.deleted` audit row written); a confirm
+  dialog in the reading pane, gated to terminal statuses only.
+- **Notifications reworked** — new feedback now pushes an in-app `feedback.received` to every
+  org_admin (except the reporter); the reporter-facing `feedback.status_changed` notification
+  was removed (clutter) — the status-change *audit* row is kept for the Activity timeline. A
+  `purge_notification_type <type>` command clears existing bell entries; run
+  `purge_notification_type feedback.status_changed` once at deploy.
 - Contracts regenerated. Backend +27 feedback/audit tests; frontend +30.
 
 ## [1.64.0] — 2026-07-09 — Grant leave on employee creation
