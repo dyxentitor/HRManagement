@@ -41,8 +41,9 @@ export type FeedbackItem = {
 
 export type FeedbackNote = {
 	id: number;
+	author_id: string;
+	author_name: string;
 	body: string;
-	author_email: string;
 	created_at: string;
 };
 

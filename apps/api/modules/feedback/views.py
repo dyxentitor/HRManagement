@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 @requires_feature("feedback")
 class FeedbackViewSet(viewsets.ModelViewSet):
     permission_classes: ClassVar[list] = [HRMSPermission]
+    http_method_names: ClassVar[list[str]] = ["get", "post", "patch", "head", "options"]
 
     # ------------------------------------------------------------------
     # Permission helpers

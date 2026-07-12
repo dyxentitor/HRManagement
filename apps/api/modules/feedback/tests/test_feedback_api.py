@@ -200,3 +200,17 @@ def test_patch_status_plus_bad_assignee_is_atomic(admin_client, emp_client):
         entity_id=fid,
         action="feedback.status.changed",
     ).exists()
+
+
+def test_delete_and_put_not_allowed(admin_client, emp_client):
+    """DELETE and PUT must be rejected with 405 (spec has no delete/replace)."""
+    fid = _submit(emp_client).json()["id"]
+    assert admin_client.delete(f"/api/v1/feedback/{fid}/").status_code == 405
+    assert (
+        admin_client.put(
+            f"/api/v1/feedback/{fid}/",
+            {"status": "closed"},
+            format="json",
+        ).status_code
+        == 405
+    )

@@ -106,10 +106,23 @@ export default function FeedbackCenterPage() {
 				description,
 				...(affectedModule ? { affected_module: affectedModule } : {}),
 			});
+			// Feedback persisted — now attempt attachment uploads. A failure here
+			// must NOT show "Submission failed" (the record was created), so we
+			// handle upload errors separately and show a partial-success message.
+			let attachmentFailed = false;
 			for (const f of files) {
-				await uploadFile(created.id, f);
+				try {
+					await uploadFile(created.id, f);
+				} catch {
+					attachmentFailed = true;
+					break;
+				}
 			}
-			toast.success("Feedback submitted — thank you!");
+			if (attachmentFailed) {
+				toast.success("Feedback submitted, but an attachment failed to upload.");
+			} else {
+				toast.success("Feedback submitted — thank you!");
+			}
 			setCategory("");
 			setTitle("");
 			setDescription("");
@@ -286,7 +299,7 @@ export default function FeedbackCenterPage() {
 								<span className="text-accent-200">browse</span>
 							</span>
 							<span className="text-small text-text-tertiary">
-								Max 10 MB · Images, PDF, video
+								Max 25 MB · Images, PDF, video
 							</span>
 							<input
 								id="feedback-file"
@@ -303,8 +316,8 @@ export default function FeedbackCenterPage() {
 						</label>
 						{files.length > 0 && (
 							<ul className="mt-2 space-y-1">
-								{files.map((f) => (
-									<li key={f.name} className="text-small text-text-secondary truncate">
+								{files.map((f, index) => (
+									<li key={`${f.name}-${index}`} className="text-small text-text-secondary truncate">
 										{f.name}
 									</li>
 								))}

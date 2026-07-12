@@ -425,7 +425,7 @@ export default function FeedbackAdminPage() {
 										>
 											<p className="text-text-primary whitespace-pre-wrap">{n.body}</p>
 											<p className="text-text-tertiary mt-1">
-												{n.author_email} · {fmtDate(n.created_at)}
+												{n.author_name} · {fmtDate(n.created_at)}
 											</p>
 										</li>
 									))}

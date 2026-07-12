@@ -70,7 +70,7 @@ const adminFeedback = [
 		reporter_email: "user2@example.com",
 		assignee_id: "admin-1",
 		assignee_name: "Admin User",
-		notes: [{ id: 1, body: "Being investigated.", author_email: "admin@example.com", created_at: "2026-07-02T11:00:00Z" }],
+		notes: [{ id: 1, body: "Being investigated.", author_id: "admin-1", author_name: "Admin User", created_at: "2026-07-02T11:00:00Z" }],
 		attachments: [],
 	},
 ];
@@ -96,7 +96,7 @@ beforeEach(() => {
 	mocks.listNotes.mockResolvedValue([]);
 	mocks.updateStatus.mockResolvedValue({ ...adminFeedback[0], status: "in_review" });
 	mocks.assign.mockResolvedValue({ ...adminFeedback[0], assignee_id: "admin-2" });
-	mocks.addNote.mockResolvedValue({ id: 2, body: "New note.", author_email: "admin@example.com", created_at: "2026-07-03T10:00:00Z" });
+	mocks.addNote.mockResolvedValue({ id: 2, body: "New note.", author_id: "admin-1", author_name: "Admin User", created_at: "2026-07-03T10:00:00Z" });
 });
 
 describe("FeedbackAdminPage", () => {
@@ -129,7 +129,7 @@ describe("FeedbackAdminPage", () => {
 	it("opens detail panel when a row is clicked, showing status and notes", async () => {
 		const user = userEvent.setup();
 		mocks.listNotes.mockResolvedValue([
-			{ id: 1, body: "Being investigated.", author_email: "admin@example.com", created_at: "2026-07-02T11:00:00Z" },
+			{ id: 1, body: "Being investigated.", author_id: "admin-1", author_name: "Admin User", created_at: "2026-07-02T11:00:00Z" },
 		]);
 		renderPage();
 		await screen.findByText("Dark mode");
