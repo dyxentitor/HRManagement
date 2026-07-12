@@ -27,7 +27,12 @@ all feedback from a searchable/filterable admin page.
 - **Perms (3):** `feedback:submit:self` + `feedback:read:self` (all 7 roles),
   `feedback:manage:org` (org_admin only). Run `seed_permission_catalogue` +
   `grant_default_perms` at deploy.
-- Contracts regenerated. Backend +26 feedback tests; frontend +10.
+- **Nav:** Feedback + Feedback Management placed in a dedicated **Support** sidebar group.
+- **Feedback Management is a mailbox** — a left inbox list of all submissions + a right
+  single-scroll reading pane (Description → Details → Internal notes → Attachments →
+  Activity) with status/assignee/mark-resolved actions. The **Activity** timeline reads
+  the audit log via a new `entity_id` filter on `GET /api/v1/audit/logs`.
+- Contracts regenerated. Backend +27 feedback/audit tests; frontend +30.
 
 ## [1.64.0] — 2026-07-09 — Grant leave on employee creation
 
