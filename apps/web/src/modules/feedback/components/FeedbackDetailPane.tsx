@@ -48,6 +48,7 @@ export interface FeedbackDetailPaneProps {
 	onStatusChange: (status: string) => void;
 	onAssigneeChange: (assigneeId: string) => void;
 	onDownload: (feedbackId: string, attachmentId: number) => void;
+	onDelete: () => void;
 	busy: boolean;
 }
 
@@ -62,6 +63,7 @@ export function FeedbackDetailPane({
 	onStatusChange,
 	onAssigneeChange,
 	onDownload,
+	onDelete,
 	busy,
 }: FeedbackDetailPaneProps) {
 	const isTerminal = item.status === "resolved" || item.status === "closed";
@@ -132,6 +134,18 @@ export function FeedbackDetailPane({
 							disabled={busy}
 						>
 							Mark Resolved
+						</Button>
+					)}
+					{isTerminal && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="text-coral"
+							onClick={onDelete}
+							disabled={busy}
+						>
+							Delete
 						</Button>
 					)}
 				</div>

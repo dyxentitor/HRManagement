@@ -172,4 +172,20 @@ export const feedbackApi = {
 		const page = await listAuditLogs({ entity: "feedback", entity_id: feedbackId, page_size: 50 });
 		return page.results as FeedbackActivity[];
 	},
+	/** Admin: permanently delete a resolved/closed feedback item. Returns 204 on success. */
+	remove: async (id: string): Promise<void> => {
+		const token = tokenStorage.getAccess();
+		const headers: Record<string, string> = {};
+		if (token) headers["Authorization"] = `Bearer ${token}`;
+		const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || "";
+		const res = await fetch(`${BASE_URL}/api/v1/feedback/${id}/`, {
+			method: "DELETE",
+			headers,
+		});
+		if (!res.ok) {
+			const payload = await res.json().catch(() => ({})) as Record<string, unknown>;
+			const msgs = payload?.errors as Array<{ message: string }> | undefined;
+			throw new Error(msgs?.[0]?.message ?? (payload?.detail as string | undefined) ?? `DELETE /api/v1/feedback/${id}/ failed`);
+		}
+	},
 };

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/hrms";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -56,6 +57,7 @@ export default function FeedbackAdminPage() {
 	const [addingNote, setAddingNote] = useState(false);
 	const [updatingStatus, setUpdatingStatus] = useState(false);
 	const [assigning, setAssigning] = useState(false);
+	const [confirmDelete, setConfirmDelete] = useState(false);
 
 	const refresh = useCallback(async () => {
 		if (!canManage) return;
@@ -175,6 +177,23 @@ export default function FeedbackAdminPage() {
 		}
 	}
 
+	function handleDelete() {
+		setConfirmDelete(true);
+	}
+
+	async function doDelete() {
+		if (!selected) return;
+		try {
+			await feedbackApi.remove(selected.id);
+			toast.success("Feedback deleted");
+			setConfirmDelete(false);
+			setSelected(null);
+			await refresh();
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Failed to delete feedback");
+		}
+	}
+
 	if (!canManage) {
 		return (
 			<div className="glass-surface rounded-2xl p-8 text-center">
@@ -267,6 +286,7 @@ export default function FeedbackAdminPage() {
 						onStatusChange={(s) => void handleStatusChange(s)}
 						onAssigneeChange={(a) => void handleAssigneeChange(a)}
 						onDownload={(fid, aid) => void openDownload(fid, aid)}
+						onDelete={handleDelete}
 						busy={updatingStatus || assigning || addingNote}
 					/>
 				) : (
@@ -279,6 +299,16 @@ export default function FeedbackAdminPage() {
 					</div>
 				)}
 			</div>
+
+			<ConfirmDialog
+				open={confirmDelete}
+				onOpenChange={setConfirmDelete}
+				title="Delete feedback?"
+				description="This permanently removes the feedback and its attachments. This can't be undone."
+				confirmLabel="Delete"
+				variant="danger"
+				onConfirm={() => void doDelete()}
+			/>
 		</div>
 	);
 }

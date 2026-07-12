@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
 	listAdmins: vi.fn(),
 	listActivity: vi.fn(),
 	get: vi.fn(),
+	remove: vi.fn(),
 	listAuditLogs: vi.fn(),
 }));
 
@@ -33,6 +34,7 @@ vi.mock("../api", () => ({
 		listAdmins: mocks.listAdmins,
 		listActivity: mocks.listActivity,
 		get: mocks.get,
+		remove: mocks.remove,
 	},
 }));
 
@@ -87,6 +89,22 @@ const adminFeedback = [
 		notes: [],
 		attachments: [],
 	},
+	{
+		id: "fb3",
+		category: "bug" as const,
+		title: "Resolved: export CSV fails",
+		description: "CSV export was fixed last release.",
+		affected_module: "reports",
+		status: "resolved" as const,
+		created_at: "2026-07-03T10:00:00Z",
+		updated_at: "2026-07-03T11:00:00Z",
+		reporter_email: "user3@example.com",
+		reporter_name: "User Three",
+		assignee_id: null,
+		assignee_name: null,
+		notes: [],
+		attachments: [],
+	},
 ];
 
 const admins = [
@@ -128,6 +146,7 @@ beforeEach(() => {
 		author_name: "Admin User",
 		created_at: "2026-07-03T10:00:00Z",
 	});
+	mocks.remove.mockResolvedValue(undefined);
 });
 
 describe("FeedbackAdminPage", () => {
@@ -139,8 +158,8 @@ describe("FeedbackAdminPage", () => {
 		// Status pills rendered inside rows (getAllByText since chip "New" also exists)
 		expect(screen.getAllByText("New").length).toBeGreaterThanOrEqual(1);
 		expect(screen.getAllByText("In Review").length).toBeGreaterThanOrEqual(1);
-		// Assignee shown on row 2; row 1 is unassigned
-		expect(screen.getByText("Unassigned")).toBeInTheDocument();
+		// Assignee shown on row 2; rows 1 and 3 are unassigned
+		expect(screen.getAllByText("Unassigned").length).toBeGreaterThanOrEqual(1);
 		expect(mocks.listAll).toHaveBeenCalled();
 	});
 
@@ -313,6 +332,43 @@ describe("FeedbackAdminPage", () => {
 		renderPage();
 		await waitFor(() =>
 			expect(screen.getByText("No feedback")).toBeInTheDocument(),
+		);
+	});
+
+	it("selecting resolved feedback → click Delete → confirm → removes item from list", async () => {
+		const user = userEvent.setup();
+		// After delete, listAll returns only the first two items
+		mocks.listAll
+			.mockResolvedValueOnce(adminFeedback) // initial load
+			.mockResolvedValueOnce(adminFeedback.slice(0, 2)); // after delete refresh
+
+		renderPage();
+		await screen.findByText("Resolved: export CSV fails");
+
+		// Select the resolved feedback row
+		await user.click(screen.getByText("Resolved: export CSV fails"));
+		await waitFor(() =>
+			expect(
+				screen.getByRole("heading", { name: /resolved: export csv fails/i }),
+			).toBeInTheDocument(),
+		);
+
+		// Delete button is visible (status is "resolved")
+		const deleteBtn = screen.getByRole("button", { name: /^delete$/i });
+		await user.click(deleteBtn);
+
+		// Confirm dialog appears
+		const confirmBtn = await screen.findByRole("button", { name: /^delete$/i });
+		await user.click(confirmBtn);
+
+		// feedbackApi.remove called with the item's id
+		await waitFor(() =>
+			expect(mocks.remove).toHaveBeenCalledWith("fb3"),
+		);
+
+		// After refresh, resolved item is gone
+		await waitFor(() =>
+			expect(screen.queryByText("Resolved: export CSV fails")).not.toBeInTheDocument(),
 		);
 	});
 });

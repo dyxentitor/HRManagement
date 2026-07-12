@@ -68,6 +68,7 @@ function renderPane(overrides?: Partial<Parameters<typeof FeedbackDetailPane>[0]
 	const onAssigneeChange = vi.fn();
 	const onDownload = vi.fn();
 	const onNoteBodyChange = vi.fn();
+	const onDelete = vi.fn();
 
 	render(
 		<FeedbackDetailPane
@@ -81,12 +82,13 @@ function renderPane(overrides?: Partial<Parameters<typeof FeedbackDetailPane>[0]
 			onStatusChange={onStatusChange}
 			onAssigneeChange={onAssigneeChange}
 			onDownload={onDownload}
+			onDelete={onDelete}
 			busy={false}
 			{...overrides}
 		/>,
 	);
 
-	return { onAddNote, onStatusChange, onAssigneeChange, onDownload, onNoteBodyChange };
+	return { onAddNote, onStatusChange, onAssigneeChange, onDownload, onNoteBodyChange, onDelete };
 }
 
 describe("FeedbackDetailPane", () => {
@@ -144,6 +146,7 @@ describe("FeedbackDetailPane", () => {
 				onStatusChange={vi.fn()}
 				onAssigneeChange={vi.fn()}
 				onDownload={vi.fn()}
+				onDelete={vi.fn()}
 				busy={false}
 			/>,
 		);
@@ -206,5 +209,35 @@ describe("FeedbackDetailPane", () => {
 
 		expect(onDownload).toHaveBeenCalledOnce();
 		expect(onDownload).toHaveBeenCalledWith("fb-test-1", 1);
+	});
+
+	it("does NOT render Delete button when status is 'new'", () => {
+		renderPane({ item: { ...sampleItem, status: "new" } });
+		expect(screen.queryByRole("button", { name: /^delete$/i })).not.toBeInTheDocument();
+	});
+
+	it("does NOT render Delete button when status is 'in_review'", () => {
+		renderPane({ item: { ...sampleItem, status: "in_review" } });
+		expect(screen.queryByRole("button", { name: /^delete$/i })).not.toBeInTheDocument();
+	});
+
+	it("renders Delete button when status is 'resolved'", () => {
+		renderPane({ item: { ...sampleItem, status: "resolved" } });
+		expect(screen.getByRole("button", { name: /^delete$/i })).toBeInTheDocument();
+	});
+
+	it("renders Delete button when status is 'closed'", () => {
+		renderPane({ item: { ...sampleItem, status: "closed" } });
+		expect(screen.getByRole("button", { name: /^delete$/i })).toBeInTheDocument();
+	});
+
+	it("clicking Delete button calls onDelete", async () => {
+		const user = userEvent.setup();
+		const { onDelete } = renderPane({ item: { ...sampleItem, status: "resolved" } });
+
+		const deleteBtn = screen.getByRole("button", { name: /^delete$/i });
+		await user.click(deleteBtn);
+
+		expect(onDelete).toHaveBeenCalledOnce();
 	});
 });
