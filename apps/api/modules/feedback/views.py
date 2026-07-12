@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 @requires_feature("feedback")
 class FeedbackViewSet(viewsets.ModelViewSet):
     permission_classes: ClassVar[list] = [HRMSPermission]
-    http_method_names: ClassVar[list[str]] = ["get", "post", "patch", "head", "options"]
+    http_method_names: ClassVar[list[str]] = ["get", "post", "patch", "delete", "head", "options"]
 
     # ------------------------------------------------------------------
     # Permission helpers
@@ -55,6 +55,8 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 return ["feedback:manage:org"]
             return ["feedback:read:self"]
         if self.action in ("partial_update", "update"):
+            return ["feedback:manage:org"]
+        if self.action == "destroy":
             return ["feedback:manage:org"]
         # retrieve: object-level check inside get_object
         return []
@@ -182,6 +184,29 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 )
 
         return Response(FeedbackAdminSerializer(obj).data)
+
+    # ------------------------------------------------------------------
+    # Destroy (org_admin only, resolved/closed status required)
+    # ------------------------------------------------------------------
+
+    def destroy(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if not self._can_manage():
+            raise PermissionDenied()
+        if obj.status not in ("resolved", "closed"):
+            raise ValidationError({"status": "Only resolved or closed feedback can be deleted."})
+        for att in obj.attachments.all():
+            FeedbackAttachmentService.delete(att)
+        audit_append(
+            org_id=obj.org_id,
+            action="feedback.deleted",
+            entity="feedback",
+            entity_id=obj.id,
+            before={"status": obj.status, "title": obj.title},
+            actor_id=request.user.id,
+        )
+        obj.hard_delete()
+        return Response(status=drf_status.HTTP_204_NO_CONTENT)
 
     # ------------------------------------------------------------------
     # Notes (manage-only)
