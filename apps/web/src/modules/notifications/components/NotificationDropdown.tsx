@@ -3,6 +3,7 @@ import { Bell } from "lucide-react"
 import { EmptyState } from "@/components/hrms"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 import type { Notification } from "../api"
 import { useNotifications } from "../useNotifications"
@@ -42,10 +43,14 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
     loadingMore,
     error,
     hasMore,
+    filter,
+    setFilter,
     refresh,
     loadMore,
     markOneRead,
     markAll,
+    dismiss,
+    clearAll,
   } = useNotifications()
 
   async function handleRow(n: Notification) {
@@ -55,6 +60,10 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
 
   function handleMarkRead(n: Notification) {
     void markOneRead(n.id)
+  }
+
+  function handleDismiss(n: Notification) {
+    void dismiss(n.id)
   }
 
   function onScroll(e: React.UIEvent<HTMLDivElement>) {
@@ -68,8 +77,8 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
 
   return (
     <div className="flex w-[min(24rem,calc(100vw-2rem))] flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-border-subtle px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="border-b border-border-subtle">
+        <div className="flex items-center gap-2 px-4 pt-3">
           <span className="truncate text-body font-semibold text-text-primary">Notifications</span>
           {unreadCount > 0 && (
             <span
@@ -82,14 +91,48 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={markAll}
-          disabled={unreadCount === 0}
-          className="shrink-0 rounded-md text-small text-accent-300 transition-colors hover:text-accent-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 disabled:text-text-disabled"
-        >
-          Mark all read
-        </button>
+        <div className="flex items-center justify-between gap-2 px-4 py-2">
+          <div
+            role="group"
+            aria-label="Filter notifications"
+            className="inline-flex rounded-md bg-surface-hover p-0.5"
+          >
+            {(["all", "unread"] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                aria-pressed={filter === f}
+                className={cn(
+                  "rounded px-2 py-0.5 text-small capitalize transition-colors",
+                  filter === f
+                    ? "bg-accent-500/15 text-text-primary"
+                    : "text-text-tertiary hover:text-text-secondary",
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={markAll}
+              disabled={unreadCount === 0}
+              className="shrink-0 rounded-md text-small text-accent-300 transition-colors hover:text-accent-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 disabled:text-text-disabled"
+            >
+              Mark all read
+            </button>
+            <button
+              type="button"
+              onClick={clearAll}
+              disabled={items.length === 0}
+              className="shrink-0 rounded-md text-small text-text-tertiary transition-colors hover:text-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/50 disabled:text-text-disabled"
+            >
+              Clear all
+            </button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -129,6 +172,7 @@ export function NotificationDropdown({ onNavigate }: { onNavigate: (path: string
                       onClick={handleRow}
                       onMarkRead={handleMarkRead}
                       onView={handleRow}
+                      onDismiss={handleDismiss}
                     />
                   ))}
                 </div>

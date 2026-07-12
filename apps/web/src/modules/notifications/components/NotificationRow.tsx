@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check } from "lucide-react"
+import { ArrowUpRight, Check, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -26,11 +26,13 @@ export function NotificationRow({
   onClick,
   onMarkRead,
   onView,
+  onDismiss,
 }: {
   notification: Notification
   onClick: (n: Notification) => void
   onMarkRead: (n: Notification) => void
   onView: (n: Notification) => void
+  onDismiss: (n: Notification) => void
 }) {
   const unread = !notification.read_at
   const Icon = domainIcon(notification.type)
@@ -117,6 +119,15 @@ export function NotificationRow({
             className={actionBtn}
           >
             <ArrowUpRight className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            title="Dismiss"
+            onClick={() => onDismiss(notification)}
+            className={cn(actionBtn, "hover:text-coral")}
+          >
+            <X className="size-4" />
           </button>
         </div>
       </div>

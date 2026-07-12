@@ -26,10 +26,14 @@ beforeEach(() => {
     loadingMore: false,
     error: false,
     hasMore: false,
+    filter: "all",
+    setFilter: vi.fn(),
     refresh: vi.fn(),
     loadMore: vi.fn(),
     markOneRead: vi.fn().mockResolvedValue(undefined),
     markAll: vi.fn(),
+    dismiss: vi.fn().mockResolvedValue(undefined),
+    clearAll: vi.fn(),
     onOpen: vi.fn(),
   }
 })
@@ -79,4 +83,26 @@ test("error state offers retry", () => {
   render(<NotificationDropdown onNavigate={() => {}} />)
   fireEvent.click(screen.getByRole("button", { name: /retry/i }))
   expect(refresh).toHaveBeenCalled()
+})
+
+test("Clear all is disabled when there are no items", () => {
+  hook.value = { ...hook.value, items: [], unreadCount: 0 }
+  render(<NotificationDropdown onNavigate={() => {}} />)
+  expect(screen.getByRole("button", { name: /clear all/i })).toBeDisabled()
+})
+
+test("Clear all calls the hook clearAll", () => {
+  const clearAll = vi.fn()
+  hook.value = { ...hook.value, clearAll }
+  render(<NotificationDropdown onNavigate={() => {}} />)
+  fireEvent.click(screen.getByRole("button", { name: /clear all/i }))
+  expect(clearAll).toHaveBeenCalled()
+})
+
+test("clicking Unread calls setFilter('unread')", () => {
+  const setFilter = vi.fn()
+  hook.value = { ...hook.value, setFilter }
+  render(<NotificationDropdown onNavigate={() => {}} />)
+  fireEvent.click(screen.getByRole("button", { name: /^unread$/i }))
+  expect(setFilter).toHaveBeenCalledWith("unread")
 })

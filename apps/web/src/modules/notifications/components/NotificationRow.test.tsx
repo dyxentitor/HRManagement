@@ -19,7 +19,7 @@ const noop = () => {}
 
 test("renders the friendly label and row click fires onClick", () => {
   const onClick = vi.fn()
-  render(<NotificationRow notification={base} onClick={onClick} onMarkRead={noop} onView={noop} />)
+  render(<NotificationRow notification={base} onClick={onClick} onMarkRead={noop} onView={noop} onDismiss={noop} />)
   expect(screen.getByText("Leave request approved")).toBeInTheDocument()
   fireEvent.click(screen.getByRole("button", { name: /leave request approved/i }))
   expect(onClick).toHaveBeenCalledWith(base)
@@ -35,6 +35,7 @@ test("Mark as read fires onMarkRead and not onView/onClick", () => {
       onClick={onClick}
       onMarkRead={onMarkRead}
       onView={onView}
+      onDismiss={noop}
     />,
   )
   fireEvent.click(screen.getByRole("button", { name: /mark as read/i }))
@@ -45,14 +46,14 @@ test("Mark as read fires onMarkRead and not onView/onClick", () => {
 
 test("View details fires onView", () => {
   const onView = vi.fn()
-  render(<NotificationRow notification={base} onClick={noop} onMarkRead={noop} onView={onView} />)
+  render(<NotificationRow notification={base} onClick={noop} onMarkRead={noop} onView={onView} onDismiss={noop} />)
   fireEvent.click(screen.getByRole("button", { name: /view details/i }))
   expect(onView).toHaveBeenCalledWith(base)
 })
 
 test("unread indicator + Mark-as-read only present when unread", () => {
   const { rerender } = render(
-    <NotificationRow notification={base} onClick={noop} onMarkRead={noop} onView={noop} />,
+    <NotificationRow notification={base} onClick={noop} onMarkRead={noop} onView={noop} onDismiss={noop} />,
   )
   expect(screen.getByLabelText(/unread/i)).toBeInTheDocument()
   expect(screen.getByRole("button", { name: /mark as read/i })).toBeInTheDocument()
@@ -62,8 +63,24 @@ test("unread indicator + Mark-as-read only present when unread", () => {
       onClick={noop}
       onMarkRead={noop}
       onView={noop}
+      onDismiss={noop}
     />,
   )
   expect(screen.queryByLabelText(/unread/i)).toBeNull()
   expect(screen.queryByRole("button", { name: /mark as read/i })).toBeNull()
+})
+
+test("Dismiss fires onDismiss", () => {
+  const onDismiss = vi.fn()
+  render(
+    <NotificationRow
+      notification={base}
+      onClick={noop}
+      onMarkRead={noop}
+      onView={noop}
+      onDismiss={onDismiss}
+    />,
+  )
+  fireEvent.click(screen.getByRole("button", { name: /dismiss/i }))
+  expect(onDismiss).toHaveBeenCalledWith(base)
 })
