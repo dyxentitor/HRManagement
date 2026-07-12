@@ -12,6 +12,7 @@ import {
 	ListChecks,
 	Megaphone,
 	MessageSquare,
+	MessagesSquare,
 	Receipt,
 	Settings,
 	Target,
@@ -203,6 +204,16 @@ export const NAV: NavGroup[] = [
 				perm: "report:list",
 				module: "reports",
 			},
+		],
+	},
+	{
+		// Support = the "talk to us / manage what users tell us" domain. Feedback
+		// (self-submit) and Feedback Management (admin) are co-located here per the
+		// domain-co-location IA convention above — feedback is communication/support,
+		// not analytics (Insights) or system config (Admin).
+		id: "support",
+		label: "Support",
+		items: [
 			{
 				label: "Feedback",
 				to: "/feedback",
@@ -210,20 +221,18 @@ export const NAV: NavGroup[] = [
 				perm: "feedback:submit:self",
 				module: "feedback",
 			},
+			{
+				label: "Feedback Management",
+				to: "/feedback/manage",
+				icon: MessagesSquare,
+				perm: "feedback:manage:org",
+				module: "feedback",
+			},
 		],
 	},
 	{
 		id: "admin",
 		label: "Admin",
-		items: [
-			{ label: "Settings", to: "/admin/settings", icon: Settings, perm: "role:read" },
-			{
-				label: "Feedback Management",
-				to: "/feedback/manage",
-				icon: MessageSquare,
-				perm: "feedback:manage:org",
-				module: "feedback",
-			},
-		],
+		items: [{ label: "Settings", to: "/admin/settings", icon: Settings, perm: "role:read" }],
 	},
 ];
