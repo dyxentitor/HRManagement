@@ -118,7 +118,7 @@ describe("MyProfilePage", () => {
 		renderPage();
 		await ready();
 		const editButtons = screen.getAllByRole("button", { name: /^edit$/i });
-		await user.click(editButtons[0]);
+		await user.click(editButtons[1]);
 		expect(screen.getByLabelText(/^phone$/i)).toBeInstanceOf(HTMLInputElement);
 		expect(screen.getByRole("button", { name: /^save$/i })).toBeInTheDocument();
 	});
@@ -128,7 +128,7 @@ describe("MyProfilePage", () => {
 		const user = userEvent.setup();
 		renderPage();
 		await ready();
-		await user.click(screen.getAllByRole("button", { name: /^edit$/i })[0]);
+		await user.click(screen.getAllByRole("button", { name: /^edit$/i })[1]);
 		const phone = screen.getByLabelText(/^phone$/i) as HTMLInputElement;
 		await user.clear(phone);
 		await user.type(phone, "+60123");
@@ -156,8 +156,8 @@ describe("MyProfilePage", () => {
 		const user = userEvent.setup();
 		renderPage();
 		await ready();
-		// editable order: Contact(0), Address(1), Banking(2), Emergency(3)
-		await user.click(screen.getAllByRole("button", { name: /^edit$/i })[2]);
+		// editable order: PersonalDetails(0), Contact(1), Address(2), Banking(3), Emergency(4)
+		await user.click(screen.getAllByRole("button", { name: /^edit$/i })[3]);
 		const bankInput = screen.getByLabelText(/bank name/i);
 		await user.clear(bankInput);
 		await user.type(bankInput, "NewBank");
@@ -165,10 +165,24 @@ describe("MyProfilePage", () => {
 		expect(await screen.findByRole("dialog", { name: /mfa required/i })).toBeInTheDocument();
 	});
 
-	it("read-only sections have no Edit button (4 editable only)", async () => {
+	it("read-only sections have no Edit button (5 editable sections)", async () => {
 		renderPage();
 		await ready();
 		const editButtons = screen.queryAllByRole("button", { name: /^edit$/i });
-		expect(editButtons.length).toBe(4);
+		expect(editButtons.length).toBe(5);
+	});
+
+	it("Personal details is editable — changing gender saves via updateMe", async () => {
+		const user = userEvent.setup();
+		renderPage();
+		await ready();
+		// Personal details is the first editable section (index 0).
+		await user.click(screen.getAllByRole("button", { name: /^edit$/i })[0]);
+		const gender = screen.getByLabelText(/^gender$/i) as HTMLSelectElement;
+		await user.selectOptions(gender, "male");
+		await user.click(screen.getByRole("button", { name: /^save$/i }));
+		await waitFor(() => expect(mocks.updateMe).toHaveBeenCalled());
+		const payload = mocks.updateMe.mock.calls[0][0];
+		expect(payload.gender).toBe("male");
 	});
 });

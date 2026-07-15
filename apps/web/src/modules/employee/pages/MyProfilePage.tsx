@@ -14,6 +14,21 @@ import { type EmployeeWritePayload, employeeApi } from "../api";
 import { AvatarUpload } from "../components/AvatarUpload";
 import { LeaveBalanceCard } from "../components/LeaveBalanceCard";
 
+const GENDER_OPTIONS = [
+	{ value: "", label: "—" },
+	{ value: "male", label: "Male" },
+	{ value: "female", label: "Female" },
+	{ value: "other", label: "Other" },
+	{ value: "undisclosed", label: "Undisclosed" },
+];
+const MARITAL_OPTIONS = [
+	{ value: "", label: "—" },
+	{ value: "single", label: "Single" },
+	{ value: "married", label: "Married" },
+	{ value: "divorced", label: "Divorced" },
+	{ value: "widowed", label: "Widowed" },
+];
+
 interface EmployeeProfile {
 	id: string;
 	employee_code: string;
@@ -49,7 +64,7 @@ interface EmployeeProfile {
 	photo_url?: string | null;
 }
 
-type SectionId = "personal" | "address" | "banking" | "emergency";
+type SectionId = "details" | "personal" | "address" | "banking" | "emergency";
 
 function tenureFromHireDate(hireDate?: string): string {
 	if (!hireDate) return "—";
@@ -110,6 +125,10 @@ export default function MyProfilePage() {
 		if (!profile) return;
 		setEditing(id);
 		setDraft({
+			date_of_birth: profile.date_of_birth ?? "",
+			gender: profile.gender ?? "",
+			nationality: profile.nationality ?? "",
+			marital_status: profile.marital_status ?? "",
 			phone: profile.phone ?? "",
 			alt_phone: profile.alt_phone ?? "",
 			personal_email: profile.personal_email ?? "",
@@ -161,6 +180,7 @@ export default function MyProfilePage() {
 
 	function saveSection(section: SectionId) {
 		const fieldsBySection: Record<SectionId, (keyof EmployeeWritePayload)[]> = {
+			details: ["date_of_birth", "gender", "nationality", "marital_status"],
 			personal: ["phone", "alt_phone", "personal_email", "preferred_name"],
 			address: ["address_line1", "address_line2", "city", "state", "postcode", "country_code"],
 			banking: ["bank_name"],
@@ -173,6 +193,10 @@ export default function MyProfilePage() {
 		const payload: Partial<EmployeeWritePayload> = {};
 		for (const k of fieldsBySection[section]) {
 			(payload as Record<string, unknown>)[k] = draft[k];
+		}
+
+		if (section === "details" && payload.date_of_birth === "") {
+			delete (payload as Record<string, unknown>).date_of_birth;
 		}
 
 		if (section === "banking" && profile && draft.bank_name !== profile.bank_name) {
@@ -253,20 +277,56 @@ export default function MyProfilePage() {
 
 				<div className="space-y-4">
 					<LeaveBalanceCard employeeId={profile.id} />
-					<ReadOnlySection
+					<EditableSection
+						id="details"
 						title="Personal details"
-						fields={[
-							{ k: "Full name", v: profile.full_name },
-							{ k: "Date of birth", v: formatDob(profile.date_of_birth) },
-							{ k: "Gender", v: titleCase(profile.gender) },
-							{ k: "Nationality", v: profile.nationality || "—" },
-							{ k: "Marital status", v: titleCase(profile.marital_status) },
-							{
-								k: "IC",
-								v: profile.ic_last4 ? `•••• ${profile.ic_last4}` : "—",
-								mono: true,
-							},
-						]}
+						editing={editing}
+						onEdit={() => startEdit("details")}
+						onCancel={cancelEdit}
+						onSave={() => saveSection("details")}
+						saving={saving}
+						readView={
+							<dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-body">
+								<Field k="Full name" v={profile.full_name} />
+								<Field k="Date of birth" v={formatDob(profile.date_of_birth)} />
+								<Field k="Gender" v={titleCase(profile.gender)} />
+								<Field k="Nationality" v={profile.nationality || "—"} />
+								<Field k="Marital status" v={titleCase(profile.marital_status)} />
+								<Field
+									k="IC"
+									v={profile.ic_last4 ? `•••• ${profile.ic_last4}` : "—"}
+									mono
+								/>
+							</dl>
+						}
+						editView={
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<LabeledInput
+									label="Date of birth"
+									type="date"
+									value={draft.date_of_birth ?? ""}
+									onChange={(v) => setField("date_of_birth", v)}
+								/>
+								<LabeledSelect
+									label="Gender"
+									value={draft.gender ?? ""}
+									onChange={(v) => setField("gender", v)}
+									options={GENDER_OPTIONS}
+								/>
+								<LabeledInput
+									label="Nationality"
+									maxLength={2}
+									value={draft.nationality ?? ""}
+									onChange={(v) => setField("nationality", v.toUpperCase())}
+								/>
+								<LabeledSelect
+									label="Marital status"
+									value={draft.marital_status ?? ""}
+									onChange={(v) => setField("marital_status", v)}
+									options={MARITAL_OPTIONS}
+								/>
+							</div>
+						}
 					/>
 
 					<EditableSection
@@ -482,10 +542,14 @@ function LabeledInput({
 	label,
 	value,
 	onChange,
+	type,
+	maxLength,
 }: {
 	label: string;
 	value: string;
 	onChange: (v: string) => void;
+	type?: string;
+	maxLength?: number;
 }) {
 	const id = `f-${label.replace(/\s+/g, "-").toLowerCase()}`;
 	return (
@@ -493,7 +557,46 @@ function LabeledInput({
 			<label htmlFor={id} className="text-label uppercase text-text-tertiary">
 				{label}
 			</label>
-			<Input id={id} value={value} onChange={(e) => onChange(e.target.value)} />
+			<Input
+				id={id}
+				type={type}
+				maxLength={maxLength}
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+			/>
+		</div>
+	);
+}
+
+function LabeledSelect({
+	label,
+	value,
+	onChange,
+	options,
+}: {
+	label: string;
+	value: string;
+	onChange: (v: string) => void;
+	options: { value: string; label: string }[];
+}) {
+	const id = `f-${label.replace(/\s+/g, "-").toLowerCase()}`;
+	return (
+		<div className="flex flex-col gap-1">
+			<label htmlFor={id} className="text-label uppercase text-text-tertiary">
+				{label}
+			</label>
+			<select
+				id={id}
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				className="bg-canvas border border-border-subtle rounded px-3 py-2 text-body text-text-primary"
+			>
+				{options.map((o) => (
+					<option key={o.value} value={o.value}>
+						{o.label}
+					</option>
+				))}
+			</select>
 		</div>
 	);
 }
