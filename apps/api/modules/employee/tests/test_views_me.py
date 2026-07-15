@@ -166,3 +166,39 @@ def test_me_get_includes_photo_url_null_when_no_photo(employee_with_user) -> Non
     body = resp.json()
     assert "photo_url" in body
     assert body["photo_url"] is None
+
+
+@pytest.mark.django_db
+def test_patch_me_can_edit_personal_details(employee_with_user) -> None:
+    """gender / date_of_birth / nationality / marital_status are now self-editable."""
+    _, emp, client = employee_with_user
+    resp = client.patch(
+        "/api/v1/employees/me/",
+        {
+            "gender": "male",
+            "date_of_birth": "1988-03-09",
+            "nationality": "SG",
+            "marital_status": "married",
+        },
+        format="json",
+    )
+    assert resp.status_code == 200, resp.content
+    emp.refresh_from_db()
+    assert emp.gender == "male"
+    assert emp.date_of_birth == datetime.date(1988, 3, 9)
+    assert emp.nationality == "SG"
+    assert emp.marital_status == "married"
+
+
+@pytest.mark.django_db
+def test_patch_me_rejects_invalid_gender(employee_with_user) -> None:
+    """Model choices still validate — a bad gender is a 400, not a silent write."""
+    _, emp, client = employee_with_user
+    resp = client.patch(
+        "/api/v1/employees/me/",
+        {"gender": "notachoice"},
+        format="json",
+    )
+    assert resp.status_code == 400
+    emp.refresh_from_db()
+    assert emp.gender == "female"  # unchanged
