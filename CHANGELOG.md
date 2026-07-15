@@ -2,6 +2,14 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.67.0] — 2026-07-15 — Employee self-edit personal details + reset-link fix
+
+### Added
+- Employees can self-edit their Personal Details on My Profile — `gender`, `date_of_birth`, `nationality`, `marital_status` are now editable via `PATCH /api/v1/employees/me/` (added to `SELF_EDIT_WHITELIST`; the section on `/me/profile` gained an inline editor). IC stays HR-only/encrypted. No migration, no new permission.
+
+### Fixed
+- Password-reset email now sends a clickable link (`FRONTEND_BASE_URL/reset-password?token=…`) instead of a bare token string, so the reset page can auto-fill the token from the URL. Previously the token had nowhere to be entered.
+
 ## [1.66.0] — 2026-07-12 — Notification clear/dismiss + unread filter
 
 - **Added** Notification bell **clear/dismiss** (Teams-style): dismiss a single notification (× on row hover), **Clear all** (header), and an **"All | Unread"** filter toggle. New endpoints `DELETE /api/v1/notifications/{id}` and `POST /api/v1/notifications/clear-all` hard-delete the caller's own `in_app` rows (email/digest rows untouched). No migration, no new permission.
