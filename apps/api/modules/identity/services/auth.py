@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import secrets
 
+from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -88,6 +89,16 @@ def logout(refresh_token: str) -> None:
     revoke_session_by_token(refresh_token)
 
 
+def _password_reset_link(token: str) -> str:
+    """Build the frontend reset URL the reset page reads its token from.
+
+    Mirrors the invitation flow's build_activation_link so both emails deliver
+    a clickable link rather than a bare token the user has nowhere to enter.
+    """
+    base = (getattr(settings, "FRONTEND_BASE_URL", "") or "").rstrip("/")
+    return f"{base}/reset-password?token={token}"
+
+
 def initiate_password_reset(email: str) -> None:
     """If a user with this email exists, send them a reset link.
 
@@ -98,14 +109,16 @@ def initiate_password_reset(email: str) -> None:
         return
     token = secrets.token_urlsafe(32)
     cache.set(f"pwreset:{token}", str(user.id), timeout=3600)  # 1 hour
+    reset_url = _password_reset_link(token)
     from common.mail import send as mail_send
 
     mail_send(
         org_id=user.org_id,
         subject="HRMS — Password reset",
         body=(
-            f"Use this token to reset your password.\n\n"
-            f"token: {token}\n\n"
+            "We received a request to reset your HRMS password.\n\n"
+            "Click the link below to choose a new password. It expires in 1 hour.\n\n"
+            f"{reset_url}\n\n"
             "If you did not request this, ignore this email."
         ),
         to=[user.email],

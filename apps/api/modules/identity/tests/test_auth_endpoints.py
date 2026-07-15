@@ -162,6 +162,9 @@ def test_password_forgot_sends_email(client: APIClient, user: User) -> None:
     assert resp.status_code == 200
     assert len(mail.outbox) == 1
     assert "alice@example.com" in mail.outbox[0].to
+    # The email must carry a clickable reset link (not a bare token) so the
+    # user lands on /reset-password with the token pre-filled from the URL.
+    assert "/reset-password?token=" in mail.outbox[0].body
 
 
 @pytest.mark.django_db
@@ -237,10 +240,10 @@ def test_password_reset_sets_new_password(client: APIClient, user: User) -> None
     """End-to-end reset: forgot -> capture token from email -> reset -> login with new password."""
     client.post("/api/v1/auth/password/forgot", {"email": "alice@example.com"}, format="json")
     body = mail.outbox[0].body
-    # The email body contains the token. Format expectation: "token: <token>"
+    # The email carries a reset link: ".../reset-password?token=<token>"
     import re
 
-    m = re.search(r"token:\s*(\S+)", body)
+    m = re.search(r"token=(\S+)", body)
     assert m is not None
     token = m.group(1)
 
