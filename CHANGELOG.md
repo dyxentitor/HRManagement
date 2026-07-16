@@ -2,6 +2,11 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.67.1] — 2026-07-16 — Fix prod attachment/photo uploads (proxy MinIO via :443)
+
+### Fixed
+- Feedback attachments and profile-photo uploads failed in production ("feedback sent, attachment failed"). The browser PUTs the file directly to the presigned S3 endpoint, which was a **separate origin** `https://192.168.1.111:9443`; its internal-CA cert isn't trusted, and a per-host:port cert click-through on `:443` doesn't cover `:9443` (a background `fetch()` can't prompt), so the upload was silently blocked while the feedback API call on `:443` succeeded. Fix: proxy MinIO through the app's own already-trusted `:443` origin at the bucket path `/hrms/` (path-style, no rewrite, so the SigV4 signature still validates), paired with `S3_PUBLIC_ENDPOINT_URL=https://192.168.1.111`. Also removes the cross-origin CORS and mixed-content surface. Config-only — no migration, no code-behaviour change.
+
 ## [1.67.0] — 2026-07-15 — Employee self-edit personal details + reset-link fix
 
 ### Added
