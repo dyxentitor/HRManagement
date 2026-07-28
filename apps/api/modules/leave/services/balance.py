@@ -203,7 +203,12 @@ class BalanceService:
         actor_id: uuid.UUID | None = None,
     ) -> LeaveBalance:
         """Idempotent grant for HolidayWorkConfirmed."""
-        return BalanceService.accrue(
+        already = LeaveBalanceLedger.objects.filter(
+            reference_type=reference_type,
+            reference_id=reference_id,
+            reason="holiday_replacement",
+        ).exists()
+        bal = BalanceService.accrue(
             org_id=org_id,
             employee_id=employee_id,
             leave_type=leave_type,
@@ -214,3 +219,37 @@ class BalanceService:
             reference_id=reference_id,
             actor_id=actor_id,
         )
+        if not already:
+            BalanceService._notify_replacement(org_id, employee_id, leave_type, year, days)
+        return bal
+
+    @staticmethod
+    def _notify_replacement(
+        org_id: uuid.UUID,
+        employee_id: uuid.UUID,
+        leave_type: LeaveType,
+        year: int,
+        days: Decimal,
+    ) -> None:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        try:
+            from modules.employee.models import Employee
+            from modules.notification.services.notify import notify
+
+            emp = Employee.all_objects.filter(id=employee_id).first()
+            user = getattr(emp, "user", None) if emp else None
+            if user is None:
+                return
+            notify(
+                user=user,
+                type="leave.replacement_granted",
+                payload={"leave_type": leave_type.code, "year": year, "days": str(days)},
+                deep_link="/leave/me",
+                priority="normal",
+            )
+        except Exception:
+            logger.exception(
+                "Failed to notify replacement grant for employee %s", employee_id
+            )
