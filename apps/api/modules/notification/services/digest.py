@@ -5,9 +5,11 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 
+from django.conf import settings
 from django.utils import timezone
 
 from common.mail import send as mail_send
+from modules.notification.labels import domain_label, domain_of, label_for
 from modules.notification.models import EmailDigestRun, Notification
 
 logger = logging.getLogger(__name__)
@@ -40,16 +42,32 @@ def send_digests() -> dict[str, int]:
                 n.save(update_fields=["delivery_status", "sent_at"])
             continue
 
-        body_lines = [f"You have {len(notifs)} new HRMS notification(s):", ""]
+        base = (getattr(settings, "FRONTEND_BASE_URL", "") or "").rstrip("/")
+        groups: dict[str, list[Notification]] = defaultdict(list)
         for n in notifs:
-            body_lines.append(f"  - [{n.type}] -- {n.payload}")
-        body = "\n".join(body_lines)
+            groups[domain_of(n.type)].append(n)
+
+        text_lines = [f"You have {len(notifs)} new HRMS notification(s):", ""]
+        html_parts = [f"<p>You have {len(notifs)} new HRMS notification(s):</p>"]
+        for _domain, items in groups.items():
+            heading = domain_label(items[0].type)
+            text_lines.append(f"{heading}:")
+            html_parts.append(f"<h3>{heading}</h3><ul>")
+            for n in items:
+                link = f"{base}{n.deep_link}" if n.deep_link else base
+                text_lines.append(f"  - {label_for(n.type)} — {link}")
+                html_parts.append(f'<li><a href="{link}">{label_for(n.type)}</a></li>')
+            html_parts.append("</ul>")
+            text_lines.append("")
+        body = "\n".join(text_lines)
+        html_body = "".join(html_parts)
 
         try:
             sent = mail_send(
                 org_id=user.org_id,
                 subject=f"[HRMS] {len(notifs)} new notification(s)",
                 body=body,
+                html_body=html_body,
                 to=[user.email],
                 category="notification",
                 append_signature=True,

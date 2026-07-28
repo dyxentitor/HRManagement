@@ -8,8 +8,10 @@ import uuid
 import pytest
 from cryptography.fernet import Fernet
 from django.core import mail
+from django.test import override_settings
 
 from modules.identity.models import User
+from modules.notification.labels import domain_label, label_for
 from modules.notification.models import EmailDigestRun, Notification
 from modules.notification.services.digest import send_digests
 
@@ -120,3 +122,65 @@ def test_digest_bounded_retry(monkeypatch, user_with_pending_email_notif):
     d.send_digests()
     n.refresh_from_db()
     assert n.send_attempts == 3 and n.delivery_status == "failed"
+
+
+@pytest.mark.django_db
+@override_settings(FRONTEND_BASE_URL="https://hrms.example.com")
+def test_digest_humanized_body(user):
+    """Digest email body contains friendly labels, domain headings, absolute deep-links,
+    and an HTML alternative is present.
+    """
+    # Two notifications from different domains, each with a deep_link
+    Notification.objects.create(
+        org_id=user.org_id,
+        user=user,
+        type="leave.approved",
+        channel="email",
+        delivery_status="pending",
+        payload={"msg": "test"},
+        deep_link="/leave/123",
+    )
+    Notification.objects.create(
+        org_id=user.org_id,
+        user=user,
+        type="claim.submitted",
+        channel="email",
+        delivery_status="pending",
+        payload={"msg": "test"},
+        deep_link="/claims/456",
+    )
+
+    result = send_digests()
+    assert result["users"] == 1
+    assert result["notifications"] == 2
+    assert len(mail.outbox) == 1
+
+    msg = mail.outbox[0]
+    text_body = msg.body
+
+    # Friendly labels appear in text body
+    assert label_for("leave.approved") in text_body
+    assert label_for("claim.submitted") in text_body
+
+    # Domain headings appear in text body
+    assert domain_label("leave.approved") in text_body
+    assert domain_label("claim.submitted") in text_body
+
+    # Absolute deep-links appear in text body
+    assert "https://hrms.example.com/leave/123" in text_body
+    assert "https://hrms.example.com/claims/456" in text_body
+
+    # HTML alternative is present
+    assert len(msg.alternatives) >= 1
+    html_body = msg.alternatives[0][0]
+    assert msg.alternatives[0][1] == "text/html"
+
+    # HTML also contains labels and links
+    assert label_for("leave.approved") in html_body
+    assert label_for("claim.submitted") in html_body
+    assert "https://hrms.example.com/leave/123" in html_body
+    assert "https://hrms.example.com/claims/456" in html_body
+    # HTML has structural elements
+    assert "<h3>" in html_body
+    assert "<ul>" in html_body
+    assert "<li>" in html_body
