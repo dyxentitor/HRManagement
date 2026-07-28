@@ -216,7 +216,9 @@ def _claim_card(n: Notification) -> CardContext:
                 ("Expense date", _fmt_date(cr.expense_date)),
             ],
             cta_label="Review claim",
-            cta_url=_abs(n.deep_link) if n.deep_link else _abs("/claims/approvals"),
+            # The real call site (_notify_for_claim) always sets deep_link="/claims/me"
+            # even for approver notifications, so we must hardcode the approvals URL here.
+            cta_url=_abs("/claims/approvals"),
         )
 
     if n.type == "claim.approved":
@@ -477,7 +479,26 @@ def _kpi_card(n: Notification) -> CardContext:
         )
 
     if suffix in ("review_submitted_self", "review_submitted_manager"):
-        rows = [("Cycle", cycle)] if cycle else []
+        # The real call site (modules/kpi/services/review.py) sends only
+        # {"assignment_id": str(assignment.id)} — no "cycle" key — so hydrate
+        # the cycle name from the KpiAssignment row instead of reading p["cycle"].
+        cycle_name: str = cycle  # may be non-empty if caller added it (forward-compat)
+        if not cycle_name:
+            assignment_id = p.get("assignment_id")
+            if assignment_id:
+                try:
+                    from modules.kpi.models import KpiAssignment
+
+                    ka = (
+                        KpiAssignment.all_objects.filter(id=assignment_id)
+                        .select_related("cycle")
+                        .first()
+                    )
+                    if ka is not None:
+                        cycle_name = ka.cycle.name
+                except Exception:
+                    pass
+        rows = [("Cycle", cycle_name)] if cycle_name else []
         return CardContext(
             greeting_name=name,
             headline="A KPI review was submitted",

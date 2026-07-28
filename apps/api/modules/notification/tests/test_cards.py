@@ -530,13 +530,16 @@ def test_claim_submitted_card_targets_approver(claim_setup):
         merchant="Hotel KL",
         status="submitted",
     )
+    # Real call site (_notify_for_claim in claims/signals.py) always sends
+    # deep_link="/claims/me" — even for the approver — so use that here.
+    # The builder must hardcode /claims/approvals for this type, ignoring deep_link.
     n = Notification(
         org_id=org.id,
         user=approver_user,
         type="claim.submitted",
         channel="email",
         payload={"claim_request_id": str(cr.id)},
-        deep_link="/claims/approvals",
+        deep_link="/claims/me",
     )
     card = build_card(n)
     assert "Bob" in card.headline
@@ -864,7 +867,11 @@ def test_roster_published_card_from_payload(make_user_with_employee):
 
 @pytest.mark.django_db
 def test_assignment_reminder_card_shows_task_and_due(make_user_with_employee):
-    """assignment.reminder card shows Task, Due date rows and whats_next."""
+    """assignment.reminder card shows Task, Due date rows and whats_next.
+
+    Real call site (modules/assignments/tasks.py) sends
+    payload={"title": ..., "due": str(r.due_date)}, deep_link="/action-center".
+    """
     user = make_user_with_employee(first_name="Farid")
     n = Notification(
         org_id=user.org_id,
@@ -872,7 +879,7 @@ def test_assignment_reminder_card_shows_task_and_due(make_user_with_employee):
         type="assignment.reminder",
         channel="email",
         payload={"title": "Complete onboarding checklist", "due": "2026-08-20"},
-        deep_link="/assignments/me",
+        deep_link="/action-center",
     )
     card = build_card(n)
     assert "Reminder" in card.headline
@@ -881,20 +888,25 @@ def test_assignment_reminder_card_shows_task_and_due(make_user_with_employee):
     assert d.get("Task") == "Complete onboarding checklist"
     assert "Due date" in d
     assert card.whats_next == "Due soon."
-    assert card.cta_url.endswith("/assignments/me")
+    assert card.cta_url.endswith("/action-center")
 
 
 @pytest.mark.django_db
 def test_assignment_assigned_card(make_user_with_employee):
-    """assignment.assigned card shows Task, Due date, Type rows."""
+    """assignment.assigned card shows Task and Due date rows.
+
+    Real call site (modules/assignments/services/engine.py) sends
+    payload={"title": ..., "due": str(assignment.default_due_date or "")},
+    deep_link="/action-center" — no "type" key.
+    """
     user = make_user_with_employee(first_name="Gina")
     n = Notification(
         org_id=user.org_id,
         user=user,
         type="assignment.assigned",
         channel="email",
-        payload={"title": "Sign NDA", "due": "2026-09-01", "type": "document"},
-        deep_link="/assignments/me",
+        payload={"title": "Sign NDA", "due": "2026-09-01"},
+        deep_link="/action-center",
     )
     card = build_card(n)
     assert "New task" in card.headline
@@ -902,12 +914,18 @@ def test_assignment_assigned_card(make_user_with_employee):
     d = dict(card.rows)
     assert d.get("Task") == "Sign NDA"
     assert "Due date" in d
-    assert d.get("Type") == "document"
+    # No "type" key in real payload — assert it is absent from rows
+    assert "Type" not in d
+    assert card.cta_url.endswith("/action-center")
 
 
 @pytest.mark.django_db
 def test_assignment_overdue_card(make_user_with_employee):
-    """assignment.overdue card shows Task, Due date and whats_next about overdue."""
+    """assignment.overdue card shows Task, Due date and whats_next about overdue.
+
+    Real call site (modules/assignments/tasks.py) sends
+    payload={"title": ..., "due": str(r.due_date)}, deep_link="/action-center".
+    """
     user = make_user_with_employee(first_name="Hani")
     n = Notification(
         org_id=user.org_id,
@@ -915,7 +933,7 @@ def test_assignment_overdue_card(make_user_with_employee):
         type="assignment.overdue",
         channel="email",
         payload={"title": "Submit timesheet", "due": "2026-07-31"},
-        deep_link="/assignments/me",
+        deep_link="/action-center",
     )
     card = build_card(n)
     assert "Overdue" in card.headline
@@ -924,6 +942,7 @@ def test_assignment_overdue_card(make_user_with_employee):
     assert d.get("Task") == "Submit timesheet"
     assert "Due date" in d
     assert "overdue" in card.whats_next.lower()
+    assert card.cta_url.endswith("/action-center")
 
 
 # ---------------------------------------------------------------------------
@@ -975,19 +994,47 @@ def test_kpi_cycle_opens_manager_review_card(make_user_with_employee):
 
 @pytest.mark.django_db
 def test_kpi_review_submitted_self_card(make_user_with_employee):
-    """kpi.review_submitted_self card shows generic headline + Cycle row."""
+    """kpi.review_submitted_self card hydrates Cycle row from a real KpiAssignment.
+
+    The real call site (modules/kpi/services/review.py::_notify_manager_for_review)
+    sends payload={"assignment_id": str(assignment.id)} with NO "cycle" key.
+    The builder must hydrate the cycle name from the KpiAssignment FK.
+    """
+    from modules.kpi.models import KpiAssignment, KpiCycle, KpiTemplate
+
     user = make_user_with_employee(first_name="Kev")
+    cycle = KpiCycle.all_objects.create(
+        org_id=user.org_id,
+        name="Q3 2026",
+        type="quarterly",
+        starts_on=datetime.date(2026, 7, 1),
+        ends_on=datetime.date(2026, 9, 30),
+        review_opens_on=datetime.date(2026, 9, 15),
+        review_closes_on=datetime.date(2026, 9, 30),
+        status="self_review",
+    )
+    template = KpiTemplate.all_objects.create(org_id=user.org_id, name="Default")
+    assignment = KpiAssignment.all_objects.create(
+        org_id=user.org_id,
+        cycle=cycle,
+        employee_id=uuid.uuid4(),
+        template=template,
+        kpis=[],
+        status="self_done",
+    )
+    # Real call site sends only assignment_id — no "cycle" key
     n = Notification(
         org_id=user.org_id,
         user=user,
         type="kpi.review_submitted_self",
         channel="email",
-        payload={"cycle": "Q3 2026", "assignment_id": str(uuid.uuid4())},
-        deep_link="/kpi/me",
+        payload={"assignment_id": str(assignment.id)},
+        deep_link="/kpi/admin",
     )
     card = build_card(n)
     assert "submitted" in card.headline.lower() or "review" in card.headline.lower()
     d = dict(card.rows)
+    # Cycle name must be hydrated from the KpiAssignment FK, not from the payload
     assert d.get("Cycle") == "Q3 2026"
 
 
