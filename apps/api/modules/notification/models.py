@@ -44,6 +44,7 @@ class Notification(models.Model):
     priority = models.CharField(max_length=8, choices=PRIORITIES, default="normal")
     delivery_status = models.CharField(max_length=16, choices=DELIVERY_STATUSES, default="pending")
     sent_at = models.DateTimeField(null=True, blank=True)
+    send_attempts = models.PositiveSmallIntegerField(default=0)
     read_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 

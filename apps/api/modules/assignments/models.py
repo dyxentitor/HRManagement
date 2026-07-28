@@ -80,6 +80,7 @@ class AssignmentRecipient(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="recipients")
     employee_id = models.UUIDField(db_index=True)
     due_date = models.DateField(null=True, blank=True)
+    last_reminded_on = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=RECIPIENT_STATUS, default="pending")
     completed_at = models.DateTimeField(null=True, blank=True)
     completed_ip = models.CharField(max_length=64, blank=True)

@@ -54,6 +54,8 @@ DEFAULT_PREFERENCES: list[tuple[str, bool, bool, bool]] = [
     ("incentive.claim_submitted", True, False, False),
     # feedback
     ("feedback.received", True, False, False),
+    # system / ops
+    ("system.email_delivery_failed", True, False, False),  # in-app only; email is presumed down
 ]
 
 SECURITY_TYPES: frozenset[str] = frozenset(t for t, _i, _e, sec in DEFAULT_PREFERENCES if sec)
