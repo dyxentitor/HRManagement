@@ -2,6 +2,31 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.69.0] — 2026-07-28 — Email delivery UX (immediate lane, humanized digest, approver email)
+
+Phase 2 of the roadmap from `docs/audits/2026-07-28-email-notification-audit.md`. Builds on the v1.68.0 async foundation to deliver per-notification async send, friendly digest copy, and approver email on by default.
+
+### Added
+- **Server-side label map** (`modules/notification/labels.py`) — `EVENT_LABELS` + `DOMAIN_LABELS` dicts covering every type in `DEFAULT_PREFERENCES`, with `label_for()`, `domain_of()`, and `domain_label()` helpers. Mirrors the frontend `event-labels.ts` as a superset so both the digest and the immediate renderer can emit friendly strings instead of raw type codes. Includes a one-line label fix: `cert.expiring_soon` now reads "Certification expiring soon" instead of "…within 30 days" (wrong for the 90- and 60-day reminder emails — the scan fires at 90/60/30).
+- **Async per-notification email send task** (`send_notification_email`, `modules/notification/tasks.py`) — Celery task (bind, `max_retries=3`) that fetches a pending email-channel notification, renders it, sends it, and marks the row `sent`/`skipped`/`failed`. On exception the task retries (exponential back-off); after `MaxRetriesExceededError` the row is marked `failed`. Complements the existing digest path for the immediate lane.
+- **Unified renderer** (`render_notification_email` in `services/immediate.py`, `render_and_send` in `services/send.py`) — `render_notification_email(n)` produces `(subject, text, html)` for any notification: security types delegate to the existing `render_security_email` + wrap text in `<p>`; all others use `label_for()` for the subject + `_abs_link(deep_link)` for a clickable link in both text and HTML. `render_and_send(n)` calls it and dispatches via `mail_send` with `category="transactional"` for security types (bypasses the org email kill-switch) or `category="notification"` otherwise (respects it).
+- **Immediate lane for `urgent`/`high` priority + security types** — `notify()` now enqueues `send_notification_email.delay()` for every email-channel notification row that is either a `SECURITY_TYPE` or has priority `urgent`/`high`. The `.delay()` call is wrapped in a best-effort `try/except` so it never raises into callers even under `CELERY_TASK_EAGER_PROPAGATES=True`.
+- **Humanized digest** — digest rows are now domain-grouped (using `domain_label()`), show friendly event labels (`label_for()`), include absolute deep-links (`FRONTEND_BASE_URL + n.deep_link`), and send an HTML alternative (`html_body=`). Bounded-retry, skipped path, `EmailDigestRun`, and `mail_send` kwargs are unchanged.
+- **Approver email on by default** — `email_default` flipped `False → True` for `leave.submitted`, `claim.submitted`, `incentive.claim_submitted`, and `kpi.review_submitted_self` in `DEFAULT_PREFERENCES`; new users are now seeded with approver email enabled.
+- **`enable_approver_email` management command** — idempotent backfill: finds every `NotificationPreference` row for the 4 approver types where `email=False` and flips it to `True`. **Run once after deploying this release** (`python manage.py enable_approver_email`).
+
+### Changed / Retired
+- **Synchronous `send_immediate` retired** — the old synchronous `send_immediate()` function and `IMMEDIATE_TYPES` alias in `services/immediate.py` are removed. The immediate lane is now entirely async via `send_notification_email.delay()`.
+
+### Migrations
+- None. No schema change in this release.
+
+### Notes
+- No new permission codes (total unchanged at 111).
+- Contracts regenerated; only the `version:` line in `openapi.yaml` changed (no serializer added or removed).
+- **Deploy action required:** run `python manage.py enable_approver_email` once after deploy to backfill existing users' approver email preferences.
+- Backend guard: **73 passed** (`modules/notification`) + **3 passed** (`modules/identity/tests/test_security_notifications.py`) = 76 total, all green.
+
 ## [1.68.0] — 2026-07-28 — Email hardening (security alerts + reliability)
 
 Phase 1 of the roadmap from `docs/audits/2026-07-28-email-notification-audit.md`. (Prod email delivery was verified working — Microsoft 365 SMTP — during the audit; the CLAUDE.md §5 "placeholder" note was stale and is corrected in this release.)
