@@ -17,13 +17,13 @@ DEFAULT_PREFERENCES: list[tuple[str, bool, bool, bool]] = [
     ("employee.probation_ending_soon", True, True, False),
     ("employee.contract_ending_soon", True, True, False),
     # leave
-    ("leave.submitted", True, False, False),  # to approver
+    ("leave.submitted", True, True, False),  # to approver
     ("leave.approved", True, True, False),  # to requester
     ("leave.rejected", True, True, False),
     ("leave.cancelled", True, False, False),
     ("leave.replacement_granted", True, True, False),
     # claims
-    ("claim.submitted", True, False, False),
+    ("claim.submitted", True, True, False),
     ("claim.approved", True, True, False),
     ("claim.rejected", True, True, False),
     ("claim.reimbursed", True, True, False),
@@ -33,7 +33,7 @@ DEFAULT_PREFERENCES: list[tuple[str, bool, bool, bool]] = [
     # kpi
     ("kpi.cycle_opens_self_review", True, True, False),
     ("kpi.cycle_opens_manager_review", True, True, False),
-    ("kpi.review_submitted_self", True, False, False),
+    ("kpi.review_submitted_self", True, True, False),
     ("kpi.review_submitted_manager", True, True, False),
     # certification
     ("cert.expiring_soon", True, True, False),
@@ -51,7 +51,7 @@ DEFAULT_PREFERENCES: list[tuple[str, bool, bool, bool]] = [
     ("user.role_changed", True, True, True),  # security-relevant
     ("onboarding.activated", True, False, False),  # to HR
     # incentive submission (to approver)
-    ("incentive.claim_submitted", True, False, False),
+    ("incentive.claim_submitted", True, True, False),
     # feedback
     ("feedback.received", True, False, False),
     # system / ops
