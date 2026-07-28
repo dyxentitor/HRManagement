@@ -13,21 +13,13 @@ import {
 	updatePreferences,
 } from "../../notifications/api";
 import {
+	SECURITY_TYPES,
 	eventDomain,
 	getDomainLabel,
 	getEventLabel,
 } from "../../notifications/event-labels";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-
-const SECURITY_TYPES = new Set([
-	"auth.login",
-	"auth.password_changed",
-	"auth.mfa_enabled",
-	"auth.mfa_disabled",
-	"employee.bank_changed_self",
-	"user.role_changed",
-]);
 
 const CHANNELS: Array<"in_app" | "email"> = ["in_app", "email"];
 

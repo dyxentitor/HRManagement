@@ -5,15 +5,7 @@ import {
 	getPreferences,
 	updatePreferences,
 } from "../api";
-
-const SECURITY_TYPES = new Set([
-	"auth.login",
-	"auth.password_changed",
-	"auth.mfa_enabled",
-	"auth.mfa_disabled",
-	"employee.bank_changed_self",
-	"user.role_changed",
-]);
+import { SECURITY_TYPES } from "../event-labels";
 
 const CHANNELS: Array<"in_app" | "email"> = ["in_app", "email"];
 
