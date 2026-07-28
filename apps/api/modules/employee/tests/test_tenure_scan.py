@@ -11,6 +11,7 @@ import os
 
 import pytest
 from cryptography.fernet import Fernet
+from django.utils import timezone
 
 from modules.employee.models import Employee
 from modules.employee.services.tenure_scan import scan_tenure_endings
@@ -119,7 +120,7 @@ def make_employee_with_user(org: Organization, dept: Department):
 @pytest.mark.django_db
 def test_probation_ending_in_30_days_fires_once(make_employee_with_user, hr_manager_user):
     """Employee with probation_end_date = today+30 → alert fires; flag set; idempotent."""
-    today = datetime.date.today()
+    today = timezone.localdate()
     emp = make_employee_with_user(
         probation_end_date=today + datetime.timedelta(days=30),
     )
@@ -139,7 +140,7 @@ def test_probation_ending_in_30_days_fires_once(make_employee_with_user, hr_mana
 @pytest.mark.django_db
 def test_contract_ending_in_30_days_fires_once(make_employee_with_user, hr_manager_user):
     """Employee with contract_end_date = today+30 → alert fires; flag set; idempotent."""
-    today = datetime.date.today()
+    today = timezone.localdate()
     emp = make_employee_with_user(
         contract_end_date=today + datetime.timedelta(days=30),
     )
@@ -159,7 +160,7 @@ def test_contract_ending_in_30_days_fires_once(make_employee_with_user, hr_manag
 @pytest.mark.django_db
 def test_probation_ending_29_days_no_alert(make_employee_with_user, hr_manager_user):
     """Exact-day match only — 29 days away must not fire."""
-    today = datetime.date.today()
+    today = timezone.localdate()
     make_employee_with_user(
         probation_end_date=today + datetime.timedelta(days=29),
     )
@@ -170,7 +171,7 @@ def test_probation_ending_29_days_no_alert(make_employee_with_user, hr_manager_u
 @pytest.mark.django_db
 def test_probation_ending_31_days_no_alert(make_employee_with_user, hr_manager_user):
     """Exact-day match only — 31 days away must not fire."""
-    today = datetime.date.today()
+    today = timezone.localdate()
     make_employee_with_user(
         probation_end_date=today + datetime.timedelta(days=31),
     )
@@ -181,7 +182,7 @@ def test_probation_ending_31_days_no_alert(make_employee_with_user, hr_manager_u
 @pytest.mark.django_db
 def test_manager_also_receives_notification(make_employee_with_user, hr_manager_user, org, dept):
     """Employee's manager (a real User) must also receive the alert notification."""
-    today = datetime.date.today()
+    today = timezone.localdate()
     # Create a manager employee
     mgr_user = User.objects.create_user(
         email="mgr@tenureco.com",
@@ -217,7 +218,7 @@ def test_manager_also_receives_notification(make_employee_with_user, hr_manager_
 @pytest.mark.django_db
 def test_org_scoping_no_cross_org_alerts(make_employee_with_user, hr_manager_user):
     """scan_tenure_endings(org_id=X) must not fire alerts for employees in another org."""
-    today = datetime.date.today()
+    today = timezone.localdate()
     emp = make_employee_with_user(
         probation_end_date=today + datetime.timedelta(days=30),
     )
@@ -265,7 +266,7 @@ def test_org_scoping_no_cross_org_alerts(make_employee_with_user, hr_manager_use
 @pytest.mark.django_db
 def test_no_org_filter_scans_all_orgs(make_employee_with_user, hr_manager_user):
     """scan_tenure_endings() without org_id fires for every qualifying employee."""
-    today = datetime.date.today()
+    today = timezone.localdate()
     emp = make_employee_with_user(
         probation_end_date=today + datetime.timedelta(days=30),
     )
@@ -300,3 +301,29 @@ def test_no_org_filter_scans_all_orgs(make_employee_with_user, hr_manager_user):
 
     counts = scan_tenure_endings()
     assert counts["probation"] >= 2
+
+
+@pytest.mark.django_db
+def test_tenure_scan_no_manager_does_not_crash(make_employee_with_user, hr_manager_user, org):
+    """Employee with manager=None and probation_end_date=today+30 must not crash the scan.
+
+    HR managers must still receive the notification and the return count must
+    reflect one probation alert fired.
+    """
+    today = timezone.localdate()
+    emp = make_employee_with_user(
+        probation_end_date=today + datetime.timedelta(days=30),
+        manager=None,
+    )
+    # Should not raise even though there is no manager to notify.
+    counts = scan_tenure_endings(org_id=emp.org_id)
+
+    assert counts["probation"] == 1
+
+    notified_users = set(
+        Notification.objects.filter(type="employee.probation_ending_soon").values_list(
+            "user_id", flat=True
+        )
+    )
+    # HR manager must still be notified.
+    assert hr_manager_user.id in notified_users
