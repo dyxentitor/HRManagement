@@ -154,19 +154,39 @@ def run_connection_test(org_id, overrides: dict) -> dict:
     }
 
 
-def send_test_email(org_id, recipient: str, overrides: dict) -> dict:
+def send_test_email(
+    org_id, recipient: str, overrides: dict, *, template_key: str | None = None
+) -> dict:
     stored = get_or_create_config(org_id)
     draft = _draft_config(stored, overrides)
-    msg = EmailMultiAlternatives(
-        subject="[HRMS] Test email",
-        body=(
+
+    if template_key:
+        # Render the named template with sample data from PLACEHOLDERS.
+        from common.mail.emails import PLACEHOLDERS
+        from common.mail.render import render_email
+
+        sample_ctx = {t.name: t.sample for t in PLACEHOLDERS.get(template_key, [])}
+        try:
+            subject, body, html_body = render_email(template_key, sample_ctx, org_id=org_id)
+        except Exception as exc:
+            return {"success": False, "message": "Template render failed", "detail": str(exc)}
+    else:
+        subject = "[HRMS] Test email"
+        body = (
             "This is a test message from your HRMS email configuration.\n\n"
             f"Sent to: {recipient}\nIf you received this, SMTP delivery is working."
-        ),
+        )
+        html_body = None
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=body,
         from_email=_from_email(draft, None),
         to=[recipient],
         connection=build_connection(draft),
     )
+    if html_body:
+        msg.attach_alternative(html_body, "text/html")
     try:
         msg.send(fail_silently=False)
     except Exception as exc:

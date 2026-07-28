@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import EmailConfiguration
+from .emails import PLACEHOLDERS
+from .models import EmailConfiguration, EmailTemplate
 
 _READ_FIELDS = (
     "enabled",
@@ -20,6 +21,9 @@ _READ_FIELDS = (
     "max_retry_attempts",
     "retry_interval_seconds",
     "signature",
+    "accent_color",
+    "header_html",
+    "footer_html",
     "provider_preset",
     "last_test_at",
     "last_success_at",
@@ -44,8 +48,21 @@ _WRITE_FIELDS = (
     "max_retry_attempts",
     "retry_interval_seconds",
     "signature",
+    "accent_color",
+    "header_html",
+    "footer_html",
     "provider_preset",
 )
+
+# Human-readable labels for each known template key.
+_KEY_LABELS: dict[str, str] = {
+    "digest": "Notification Digest",
+    "notification": "Single Notification",
+    "security": "Security Alert",
+    "password_reset": "Password Reset",
+    "bank_changed": "Bank Info Changed",
+    "invite": "Account Invitation",
+}
 
 
 class EmailConfigurationSerializer(serializers.ModelSerializer):
@@ -119,6 +136,64 @@ class TestConnectionSerializer(EmailConfigWriteSerializer):
 
 class SendTestEmailSerializer(TestConnectionSerializer):
     recipient = serializers.EmailField(required=True)
+    template_key = serializers.CharField(required=False, allow_blank=True)
 
     class Meta(TestConnectionSerializer.Meta):
-        fields = ("recipient", *_WRITE_FIELDS)
+        fields = ("recipient", "template_key", *_WRITE_FIELDS)
+
+
+class TokenSpecSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    description = serializers.CharField()
+    sample = serializers.CharField()
+
+
+class EmailTemplateListSerializer(serializers.Serializer):
+    """Serializer for a single entry in the template list."""
+
+    key = serializers.CharField()
+    label = serializers.CharField()
+    has_override = serializers.BooleanField()
+    placeholders = TokenSpecSerializer(many=True)
+
+
+class EmailTemplateSerializer(serializers.Serializer):
+    """Serializer for the detail view of a template."""
+
+    key = serializers.CharField()
+    subject = serializers.CharField(allow_blank=True)
+    text_body = serializers.CharField(allow_blank=True)
+    html_body = serializers.CharField(allow_blank=True)
+    has_override = serializers.BooleanField()
+    placeholders = TokenSpecSerializer(many=True)
+
+
+class EmailTemplateWriteSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating an EmailTemplate override."""
+
+    subject = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    text_body = serializers.CharField(required=False, allow_blank=True)
+    html_body = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = EmailTemplate
+        fields = ("subject", "text_body", "html_body")
+
+
+class EmailTemplatePreviewSerializer(serializers.Serializer):
+    """Request body for the preview endpoint (all fields optional)."""
+
+    subject = serializers.CharField(required=False, allow_blank=True, default="")
+    text_body = serializers.CharField(required=False, allow_blank=True, default="")
+    html_body = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+def _placeholders_for(key: str) -> list[dict]:
+    return [
+        {"name": t.name, "description": t.description, "sample": t.sample}
+        for t in PLACEHOLDERS.get(key, [])
+    ]
+
+
+def _label_for(key: str) -> str:
+    return _KEY_LABELS.get(key, key.replace("_", " ").title())
