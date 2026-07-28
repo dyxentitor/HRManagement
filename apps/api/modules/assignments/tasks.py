@@ -20,9 +20,11 @@ def assignment_reminders() -> int:
     tomorrow = date.today() + timedelta(days=1)
     today = date.today()
     sent = 0
-    rows = AssignmentRecipient.objects.filter(
-        status="pending", due_date__in=[tomorrow, today]
-    ).select_related("assignment")
+    rows = (
+        AssignmentRecipient.objects.filter(status="pending", due_date__in=[tomorrow, today])
+        .exclude(last_reminded_on=today)
+        .select_related("assignment")
+    )
     for r in rows:
         emp = Employee.all_objects.filter(id=r.employee_id).first()
         u = User.objects.filter(id=emp.user_id).first() if emp and emp.user_id else None
@@ -38,6 +40,8 @@ def assignment_reminders() -> int:
             priority="high" if is_reminder else "urgent",
         )
         sent += 1
+        r.last_reminded_on = today
+        r.save(update_fields=["last_reminded_on"])
     return sent
 
 

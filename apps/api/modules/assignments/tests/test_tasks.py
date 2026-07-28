@@ -43,3 +43,40 @@ def test_reminder_notifies_recipient_due_tomorrow():
     sent = assignment_reminders()
     assert sent == 1
     assert Notification.objects.filter(user=u, type="assignment.reminder").exists()
+
+
+@pytest.mark.django_db
+def test_reminders_idempotent_same_day():
+    """Second run on the same day must not re-notify (idempotency guard)."""
+    org = Organization.objects.create(
+        name="Idem",
+        slug="x-idem",
+        country_code="MY",
+        default_currency="MYR",
+        default_timezone="Asia/Kuala_Lumpur",
+        default_locale="en-MY",
+    )
+    dept = Department.all_objects.create(org_id=org.id, name="Ops")
+    u = User.objects.create_user(email="idem@x.com", password="x", org_id=org.id)
+    emp = Employee.all_objects.create(
+        org_id=org.id,
+        user=u,
+        employee_code="IDEM",
+        first_name="Idem",
+        last_name="Test",
+        email="idem@x.com",
+        department=dept,
+        employment_type="fulltime",
+        hire_date=dt.date(2024, 1, 1),
+    )
+    a = Assignment.objects.create(org_id=org.id, title="Idem SOP", type="acknowledge")
+    AssignmentRecipient.objects.create(
+        org_id=org.id,
+        assignment=a,
+        employee_id=emp.id,
+        due_date=dt.date.today(),  # due today → overdue notice
+    )
+    first = assignment_reminders()
+    second = assignment_reminders()
+    assert first == 1
+    assert second == 0
