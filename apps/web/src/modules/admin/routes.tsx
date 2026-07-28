@@ -1,6 +1,8 @@
 import { lazy } from "react"
 import { Navigate, type RouteObject, useParams } from "react-router-dom"
 
+import { EmailTabIndexRedirect } from "./settings/email/EmailConfigurationPage"
+
 const AdminRolesPage = lazy(() => import("./pages/AdminRolesPage"))
 const AdminModulesPage = lazy(() => import("./pages/AdminModulesPage"))
 const AdminTeamsPage = lazy(() => import("./pages/AdminTeamsPage"))
@@ -10,8 +12,9 @@ const AdminAuditLogPage = lazy(() => import("./pages/AdminAuditLogPage"))
 const SettingsShell = lazy(() => import("./settings/SettingsShell"))
 const SettingsOverviewPage = lazy(() => import("./settings/SettingsOverviewPage"))
 const OrganizationSettingsPage = lazy(() => import("./settings/OrganizationSettingsPage"))
-const EmailNotificationSettingsPage = lazy(() => import("./settings/EmailNotificationSettingsPage"))
-const EmailTemplatesSettingsPage = lazy(() => import("./settings/EmailTemplatesSettingsPage"))
+const EmailConfigurationPage = lazy(() => import("./settings/email/EmailConfigurationPage"))
+const EmailServerConfigTab = lazy(() => import("./settings/email/EmailServerConfigTab"))
+const EmailTemplatesTab = lazy(() => import("./settings/email/EmailTemplatesTab"))
 const DepartmentsAdminPage = lazy(() => import("./settings/DepartmentsAdminPage"))
 const AccountsPage = lazy(() =>
   import("./people/AccountsPage").then((m) => ({
@@ -61,8 +64,23 @@ export const adminRoutes: RouteObject[] = [
     children: [
       { index: true, element: <SettingsOverviewPage /> },
       { path: "organization", element: <OrganizationSettingsPage /> },
-      { path: "email-notifications", element: <EmailNotificationSettingsPage /> },
-      { path: "email-templates", element: <EmailTemplatesSettingsPage /> },
+      {
+        path: "email",
+        element: <EmailConfigurationPage />,
+        children: [
+          { index: true, element: <EmailTabIndexRedirect /> },
+          { path: "server", element: <EmailServerConfigTab /> },
+          { path: "templates", element: <EmailTemplatesTab /> },
+        ],
+      },
+      {
+        path: "email-notifications",
+        element: <Navigate to="/admin/settings/email/server" replace />,
+      },
+      {
+        path: "email-templates",
+        element: <Navigate to="/admin/settings/email/templates" replace />,
+      },
       { path: "modules", element: <AdminModulesPage /> },
       { path: "departments", element: <DepartmentsAdminPage /> },
       { path: "teams", element: <AdminTeamsPage /> },

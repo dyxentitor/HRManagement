@@ -38,15 +38,8 @@ export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
     isNewInV190: true,
   },
   {
-    to: "/admin/settings/email-notifications",
-    label: "Email Notifications",
-    icon: Mail,
-    perm: "org:email_config:read",
-    isNewInV190: true,
-  },
-  {
-    to: "/admin/settings/email-templates",
-    label: "Email Templates",
+    to: "/admin/settings/email",
+    label: "Email Configuration",
     icon: Mail,
     perm: "org:email_config:read",
   },
