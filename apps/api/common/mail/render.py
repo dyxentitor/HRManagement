@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def render_email(key: str, context: dict, org_id=None) -> tuple[str, str, str]:
-    subject = render_tokens(SUBJECTS.get(key, "[HRMS]"), context)
+    subject = context.get("subject") or render_tokens(SUBJECTS.get(key, "[HRMS]"), context)
     text = render_to_string(f"email/{key}.txt", context)
     html = render_to_string(f"email/{key}.html", context)
     return subject, text, html
