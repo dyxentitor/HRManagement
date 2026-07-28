@@ -2,6 +2,31 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.68.0] — 2026-07-28 — Email hardening (security alerts + reliability)
+
+Phase 1 of the roadmap from `docs/audits/2026-07-28-email-notification-audit.md`. (Prod email delivery was verified working — Microsoft 365 SMTP — during the audit; the CLAUDE.md §5 "placeholder" note was stale and is corrected in this release.)
+
+### Added
+- **Account-security alerts now fire** — `auth.password_changed` (from `complete_password_reset` and `change_own_password`), `auth.mfa_enabled` (from `mfa.confirm()`), and `auth.mfa_disabled` (from `mfa.disable()`) were defined but never emitted; they now `notify()` the affected user on the triggering action. Best-effort (wrapped, never breaks the auth flow). Not fired on initial activation/provisioning (account creation).
+- **Immediate send for security notification types** — `IMMEDIATE_TYPES = SECURITY_TYPES`. In `notify()`, a security-type email row is sent right away (per-type subject/body via `render_security_email`) instead of waiting for the hourly digest. Sent `category="transactional"` so it **bypasses the org email kill-switch**; best-effort, and on failure the row is left `pending` so the digest is the fallback. The in-app channel is unchanged.
+- **Hourly SMTP health-check** — a new Celery beat task (`check-email-health`, :30 each hour) probes each org's SMTP connection; on a transition from healthy→failing it raises the new in-app `system.email_delivery_failed` notification to `org_admin` users (and logs), so broken mail is surfaced rather than silently dropped. Does not re-alert while already down.
+- **New notification type** `system.email_delivery_failed` (in-app only) added to the registry — no preferences backfill needed (unset types fall back to defaults). No new permission code.
+
+### Changed / Fixed
+- **Bounded digest retry** — on a send failure the digest now increments `Notification.send_attempts`; rows stay `pending` (retried next run) until 3 attempts, then flip to `failed` and log. Previously a single failure marked the batch permanently `failed`.
+- **Assignment-reminder idempotency** — `assignment_reminders` records `AssignmentRecipient.last_reminded_on` and skips rows already reminded **today**, so a second same-day beat run (clock skew / manual re-trigger) can't duplicate reminders.
+- **Frontend: `user.role_changed` locked as security** on **both** preferences surfaces (`/notifications/preferences` and `/me/preferences`) — each had its own hard-coded `SECURITY_TYPES` set omitting it, so the UI wrongly showed it as a togglable row. (Both sets should be replaced by an API-served registry in Phase 3.)
+- **Docs:** CLAUDE.md §5 SMTP note corrected to reflect the working Microsoft 365 configuration.
+
+### Migrations
+- `notification` — adds `send_attempts` (PositiveSmallIntegerField, default 0) to the `Notification` model.
+- `assignments` — adds `last_reminded_on` (DateField, nullable) to the `AssignmentRecipient` model.
+
+### Notes
+- No new permission codes (total unchanged at 111).
+- Contracts regenerated; only the `version:` line in `openapi.yaml` changed (no serializer added or removed).
+- Backend guard: **84 passed** (modules/notification + modules/identity/tests/test_security_notifications.py + modules/assignments). Frontend guard: **10 passed** (PreferencesPage).
+
 ## [1.67.1] — 2026-07-16 — Fix prod attachment/photo uploads (proxy MinIO via :443)
 
 ### Fixed
