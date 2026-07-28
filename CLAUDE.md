@@ -290,8 +290,8 @@ key falls into this "unknown = enabled" bucket and bypasses the gate.
 > at 02:00. Real secrets live in `.env.prod` (gitignored, **never commit**).
 > Design spec + plan: `docs/superpowers/{specs,plans}/2026-07-09-hrms-production-cutover*.md`
 > (gitignored). Verify current state with `docker ps` (`hrms-prod-*` healthy).
-> **Deferred (do when needed):** SMTP is a placeholder — email (reset/invite) is
-> configured in-app, not via `.env.prod`.
+> **Email:** prod SMTP is **Microsoft 365** (`smtp.office365.com:587` STARTTLS,
+> `hrms@provintell.com`), configured in `.env.prod` and verified working (2026-07-28).
 
 ### 5.1 The model (why this matters)
 
