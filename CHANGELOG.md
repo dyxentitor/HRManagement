@@ -31,7 +31,7 @@ Closes the remaining gaps from `docs/audits/2026-07-28-email-notification-audit.
 ### Notes
 - **No new permission codes** — the email-template endpoints reuse `org:email_config:read`/`:write`.
 - Contracts regenerated for the new email-template + branding endpoints.
-- Backend: **1172 passed, 3 skipped** (postgres-only trigger tests; 0 failed). Frontend: **642 passed** (0 failed). `make notif-registry-check` clean.
+- Backend: **1174 passed, 3 skipped** (postgres-only trigger tests; 0 failed). Frontend: **642 passed** (0 failed). `make notif-registry-check` clean.
 - DEV-only — built and tagged locally; not deployed.
 
 ## [1.70.0] — 2026-07-28 — Notification registry unification (Phase 3a)
