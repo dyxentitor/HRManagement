@@ -29,7 +29,7 @@ EVENT_LABELS: dict[str, str] = {
     "kpi.cycle_opens_manager_review": "KPI manager review opens",
     "kpi.review_submitted_self": "Employee submitted self-review",
     "kpi.review_submitted_manager": "Manager submitted review",
-    "cert.expiring_soon": "Certification expiring within 30 days",
+    "cert.expiring_soon": "Certification expiring soon",
     "employee.bank_changed_self": "Bank details changed",
     "employee.contract_ending_soon": "Contract ending within 30 days",
     "employee.probation_ending_soon": "Probation ending within 30 days",
