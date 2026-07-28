@@ -2,6 +2,29 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.72.0] — 2026-07-28 — Enriched notification emails
+
+Turns the dry notification emails into structured cards — greeting, headline, a details table of the key facts, an action button, and a short "what's next" line — with facts hydrated from the database by a central per-domain enricher. No migrations, no endpoints, no permission codes.
+
+### Added
+- **Per-notification card enricher** (`modules/notification/services/cards.py`) — `build_card(notification) -> CardContext` (greeting name, headline, detail rows, CTA, "what's next"). A domain-prefix registry dispatches to tailored builders for **Leave, Claims, Incentive, Payslip, Certifications, Roster, Assignments, KPI, and Probation/Contract**; each hydrates the record from the payload id and formats dates (`12 Aug 2026`, KL) and money (`MYR 1,250.00`). Every other type uses a **smart generic card** (greeting + friendly label + readable payload facts + CTA). Enrichment is best-effort — any missing record / bad payload / exception falls back to the generic card, so email delivery is never at risk.
+- **`email/notification_card.{txt,html}` template** — the structured card on the branded shell (extends `base.html`), replacing the old bare "label + link" notification template.
+
+### Changed
+- **All non-security notification emails now render as structured cards** via `build_card` → `notification_card`. The security emails (password_changed, mfa_*, role_changed, bank_changed_self) and the transactional emails (password_reset, invite, bank_changed) are unchanged.
+- **The hourly digest reuses each card's headline** (e.g. "Your leave request has been approved") instead of the bare event label; grouping, links, and delivery logic are unchanged. Best-effort with a `label_for` fallback.
+
+### Removed
+- The unused bare `email/notification.{txt,html}` templates.
+
+### Migrations
+- None. No schema, model, endpoint, or permission changes.
+
+### Notes
+- Backend: **1206 passed, 3 skipped** (postgres-only trigger tests; 0 failed) — +32 card-builder tests. Frontend: **642 passed** (0 failed, unchanged — backend-only feature).
+- Contracts: only the `version:` line changed in `openapi.yaml` (no schema change).
+- DEV-only — built and tagged locally; not deployed.
+
 ## [1.71.0] — 2026-07-28 — Notification orphans + editable email templates (Phase 3b + 3c)
 
 Closes the remaining gaps from `docs/audits/2026-07-28-email-notification-audit.md`: fires the orphaned notification types, moves every email body to real templates, and adds an admin settings page to customise each email's content + shared branding at runtime. Reuses the existing `org:email_config:read`/`:write` permissions — **no new permission codes**.
