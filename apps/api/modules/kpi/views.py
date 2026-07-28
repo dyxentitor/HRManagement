@@ -83,6 +83,9 @@ class KpiCycleViewSet(viewsets.ModelViewSet):
             CycleService.transition(cycle, "self_review")
         except InvalidTransition as e:
             raise ValidationError(str(e)) from e
+        from modules.kpi.services.notify_cycle import notify_cycle_self_review
+
+        notify_cycle_self_review(cycle)
         return Response(KpiCycleSerializer(cycle).data)
 
     @action(detail=True, methods=["post"], url_path="open-manager-review")
@@ -92,6 +95,9 @@ class KpiCycleViewSet(viewsets.ModelViewSet):
             CycleService.transition(cycle, "manager_review")
         except InvalidTransition as e:
             raise ValidationError(str(e)) from e
+        from modules.kpi.services.notify_cycle import notify_cycle_manager_review
+
+        notify_cycle_manager_review(cycle)
         return Response(KpiCycleSerializer(cycle).data)
 
     @action(detail=True, methods=["post"])
