@@ -1,5 +1,6 @@
 """Generate the frontend notification label/security constants from the registry."""
 
+import re
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -15,41 +16,46 @@ def _render() -> str:
         "export const EVENT_LABELS: Record<string, string> = {",
     ]
     for n in REGISTRY:
-        lines.append(f"\t{_key(n.type)}: {_str(n.label)},")
-    lines.append("};")
+        lines.append(f"  {_key(n.type)}: {_str(n.label)},")
+    lines.append("}")
     lines.append("")
     lines.append("export const DOMAIN_LABELS: Record<string, string> = {")
     for domain, label in DOMAIN_LABELS.items():
-        lines.append(f"\t{_key(domain)}: {_str(label)},")
-    lines.append("};")
+        lines.append(f"  {_key(domain)}: {_str(label)},")
+    lines.append("}")
     lines.append("")
     lines.append("export const SECURITY_TYPES: ReadonlySet<string> = new Set([")
     for n in REGISTRY:
         if n.security:
-            lines.append(f"\t{_str(n.type)},")
-    lines.append("]);")
+            lines.append(f"  {_str(n.type)},")
+    lines.append("])")
     lines.append("")
     lines.append("export function getEventLabel(type: string): string {")
-    lines.append("\treturn EVENT_LABELS[type] ?? type;")
+    lines.append("  return EVENT_LABELS[type] ?? type")
     lines.append("}")
     lines.append("")
     lines.append("export function getDomainLabel(domain: string): string {")
-    lines.append("\treturn DOMAIN_LABELS[domain] ?? domain;")
+    lines.append("  return DOMAIN_LABELS[domain] ?? domain")
     lines.append("}")
     lines.append("")
     lines.append("export function eventDomain(type: string): string {")
-    lines.append('\treturn type.split(".")[0] ?? type;')
+    lines.append('  return type.split(".")[0] ?? type')
     lines.append("}")
     lines.append("")
     return "\n".join(lines)
 
 
+_IDENT = re.compile(r"[A-Za-z_$][\w$]*")
+
+
 def _key(s: str) -> str:
-    return f'"{s}"'
+    # Unquoted for valid JS identifiers (biome useLiteralKeys); quoted otherwise
+    # (e.g. dotted event types like "leave.approved").
+    return s if _IDENT.fullmatch(s) else f'"{s}"'
 
 
 def _str(s: str) -> str:
-    return '"' + s.replace('"', '\\"') + '"'
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
 class Command(BaseCommand):

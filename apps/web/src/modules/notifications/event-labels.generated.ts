@@ -2,77 +2,77 @@
 // Source of truth: apps/api/modules/notification/registry.py
 
 export const EVENT_LABELS: Record<string, string> = {
-	"auth.login": "Successful sign-in",
-	"auth.password_changed": "Password changed",
-	"auth.mfa_enabled": "Two-step verification enabled",
-	"auth.mfa_disabled": "Two-step verification disabled",
-	"employee.bank_changed_self": "Bank details changed",
-	"employee.probation_ending_soon": "Probation ending within 30 days",
-	"employee.contract_ending_soon": "Contract ending within 30 days",
-	"leave.submitted": "Leave request submitted",
-	"leave.approved": "Leave request approved",
-	"leave.rejected": "Leave request rejected",
-	"leave.cancelled": "Leave request cancelled",
-	"leave.replacement_granted": "Replacement leave granted",
-	"claim.submitted": "Claim submitted",
-	"claim.approved": "Claim approved",
-	"claim.rejected": "Claim rejected",
-	"claim.reimbursed": "Claim reimbursed",
-	"incentive.claim_approved": "Mandays claim approved",
-	"incentive.claim_rejected": "Mandays claim rejected",
-	"kpi.cycle_opens_self_review": "KPI self-review window opens",
-	"kpi.cycle_opens_manager_review": "KPI manager review opens",
-	"kpi.review_submitted_self": "Employee submitted self-review",
-	"kpi.review_submitted_manager": "Manager submitted review",
-	"cert.expiring_soon": "Certification expiring soon",
-	"schedule.roster_published": "New roster published",
-	"assignment.assigned": "New assignment",
-	"assignment.reminder": "Assignment due soon",
-	"assignment.overdue": "Assignment overdue",
-	"announcement.published": "New announcement",
-	"payslip.published": "Payslip published",
-	"user.role_changed": "Your role was updated",
-	"onboarding.activated": "New account activated",
-	"incentive.claim_submitted": "Mandays claim submitted",
-	"feedback.received": "New feedback",
-	"system.email_delivery_failed": "Email delivery is failing",
-};
+  "auth.login": "Successful sign-in",
+  "auth.password_changed": "Password changed",
+  "auth.mfa_enabled": "Two-step verification enabled",
+  "auth.mfa_disabled": "Two-step verification disabled",
+  "employee.bank_changed_self": "Bank details changed",
+  "employee.probation_ending_soon": "Probation ending within 30 days",
+  "employee.contract_ending_soon": "Contract ending within 30 days",
+  "leave.submitted": "Leave request submitted",
+  "leave.approved": "Leave request approved",
+  "leave.rejected": "Leave request rejected",
+  "leave.cancelled": "Leave request cancelled",
+  "leave.replacement_granted": "Replacement leave granted",
+  "claim.submitted": "Claim submitted",
+  "claim.approved": "Claim approved",
+  "claim.rejected": "Claim rejected",
+  "claim.reimbursed": "Claim reimbursed",
+  "incentive.claim_approved": "Mandays claim approved",
+  "incentive.claim_rejected": "Mandays claim rejected",
+  "kpi.cycle_opens_self_review": "KPI self-review window opens",
+  "kpi.cycle_opens_manager_review": "KPI manager review opens",
+  "kpi.review_submitted_self": "Employee submitted self-review",
+  "kpi.review_submitted_manager": "Manager submitted review",
+  "cert.expiring_soon": "Certification expiring soon",
+  "schedule.roster_published": "New roster published",
+  "assignment.assigned": "New assignment",
+  "assignment.reminder": "Assignment due soon",
+  "assignment.overdue": "Assignment overdue",
+  "announcement.published": "New announcement",
+  "payslip.published": "Payslip published",
+  "user.role_changed": "Your role was updated",
+  "onboarding.activated": "New account activated",
+  "incentive.claim_submitted": "Mandays claim submitted",
+  "feedback.received": "New feedback",
+  "system.email_delivery_failed": "Email delivery is failing",
+}
 
 export const DOMAIN_LABELS: Record<string, string> = {
-	"auth": "Account & security",
-	"user": "Account & security",
-	"leave": "Leave",
-	"claim": "Claims",
-	"incentive": "Incentive",
-	"kpi": "KPI & performance",
-	"cert": "Certifications",
-	"employee": "Employee",
-	"schedule": "Schedule",
-	"assignment": "Action center",
-	"announcement": "Announcements",
-	"payslip": "Payroll",
-	"onboarding": "Onboarding",
-	"feedback": "Feedback",
-	"system": "System",
-};
+  auth: "Account & security",
+  user: "Account & security",
+  leave: "Leave",
+  claim: "Claims",
+  incentive: "Incentive",
+  kpi: "KPI & performance",
+  cert: "Certifications",
+  employee: "Employee",
+  schedule: "Schedule",
+  assignment: "Action center",
+  announcement: "Announcements",
+  payslip: "Payroll",
+  onboarding: "Onboarding",
+  feedback: "Feedback",
+  system: "System",
+}
 
 export const SECURITY_TYPES: ReadonlySet<string> = new Set([
-	"auth.login",
-	"auth.password_changed",
-	"auth.mfa_enabled",
-	"auth.mfa_disabled",
-	"employee.bank_changed_self",
-	"user.role_changed",
-]);
+  "auth.login",
+  "auth.password_changed",
+  "auth.mfa_enabled",
+  "auth.mfa_disabled",
+  "employee.bank_changed_self",
+  "user.role_changed",
+])
 
 export function getEventLabel(type: string): string {
-	return EVENT_LABELS[type] ?? type;
+  return EVENT_LABELS[type] ?? type
 }
 
 export function getDomainLabel(domain: string): string {
-	return DOMAIN_LABELS[domain] ?? domain;
+  return DOMAIN_LABELS[domain] ?? domain
 }
 
 export function eventDomain(type: string): string {
-	return type.split(".")[0] ?? type;
+  return type.split(".")[0] ?? type
 }
