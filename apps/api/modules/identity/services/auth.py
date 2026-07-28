@@ -111,16 +111,14 @@ def initiate_password_reset(email: str) -> None:
     cache.set(f"pwreset:{token}", str(user.id), timeout=3600)  # 1 hour
     reset_url = _password_reset_link(token)
     from common.mail import send as mail_send
+    from common.mail.render import render_email
 
+    subject, text, html = render_email("password_reset", {"reset_url": reset_url}, org_id=user.org_id)
     mail_send(
         org_id=user.org_id,
-        subject="HRMS — Password reset",
-        body=(
-            "We received a request to reset your HRMS password.\n\n"
-            "Click the link below to choose a new password. It expires in 1 hour.\n\n"
-            f"{reset_url}\n\n"
-            "If you did not request this, ignore this email."
-        ),
+        subject=subject,
+        body=text,
+        html_body=html,
         to=[user.email],
         category="transactional",
         fail_silently=False,

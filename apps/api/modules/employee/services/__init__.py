@@ -33,17 +33,22 @@ class EmployeeService:
         """
         recipient = getattr(settings, "HR_NOTIFICATION_EMAIL", "hr@provintell.local")
         from common.mail import send as mail_send
+        from common.mail.render import render_email
 
+        ctx = {
+            "name": f"{emp.first_name} {emp.last_name}",
+            "employee_code": emp.employee_code,
+            "bank_name": emp.bank_name or "",
+            "last4": emp.bank_account_last4 or "",
+            "email": emp.email,
+            "timestamp": emp.updated_at.isoformat(),
+        }
+        subject, text, html = render_email("bank_changed", ctx, org_id=emp.org_id)
         mail_send(
             org_id=emp.org_id,
-            subject=f"[HRMS] Bank info changed by {emp.email}",
-            body=(
-                f"Employee {emp.first_name} {emp.last_name} ({emp.employee_code}) "
-                f"changed their bank info via self-service.\n\n"
-                f"Bank: {emp.bank_name}\n"
-                f"Last4: {emp.bank_account_last4}\n"
-                f"Time: {emp.updated_at.isoformat()}"
-            ),
+            subject=subject,
+            body=text,
+            html_body=html,
             to=[recipient],
             category="transactional",
             fail_silently=True,

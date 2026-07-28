@@ -1,0 +1,6 @@
+{% autoescape off %}Employee {{ name }} ({{ employee_code }}) changed their bank info via self-service.
+
+Bank: {{ bank_name }}
+Last 4 digits: {{ last4 }}
+Changed by: {{ email }}
+Time: {{ timestamp }}{% endautoescape %}

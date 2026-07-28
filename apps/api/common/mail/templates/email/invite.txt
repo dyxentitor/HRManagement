@@ -1,0 +1,7 @@
+{% autoescape off %}Welcome to {{ org }}
+
+You have been invited to join the HR portal. Activate your account using the secure link below — it expires in {{ hours }} hours.
+
+{{ link }}
+
+If you did not expect this, you can ignore this email.{% endautoescape %}

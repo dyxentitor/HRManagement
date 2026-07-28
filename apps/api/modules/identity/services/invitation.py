@@ -63,31 +63,15 @@ def send_invitation_email(
     link = build_activation_link(raw_token)
     org = _org_name(user.org_id)
     hours = _expiry_hours()
-    text = (
-        f"Welcome to {org}\n\n"
-        "You have been invited to join the HR portal. Activate your account "
-        f"using the secure link below — it expires in {hours} hours.\n\n"
-        f"{link}\n\n"
-        "If you did not expect this, you can ignore this email."
-    )
-    html = f"""\
-<div style="font-family:Inter,Arial,sans-serif;max-width:480px;margin:auto;color:#1a1a2e">
-  <h2 style="font-weight:600">Welcome to {org} 👋</h2>
-  <p>You have been invited to join the HR portal. Let's set up your workspace —
-     it takes about 3 minutes.</p>
-  <p style="margin:24px 0">
-    <a href="{link}" style="background:#7c5cff;color:#fff;text-decoration:none;
-       padding:12px 22px;border-radius:10px;font-weight:600;display:inline-block">
-       Activate my account</a>
-  </p>
-  <p style="color:#6b6b80;font-size:13px">This invitation expires in {hours} hours.
-     If you did not expect this, you can ignore this email.</p>
-</div>"""
     from common.mail import send as mail_send
+    from common.mail.render import render_email
 
+    subject, text, html = render_email(
+        "invite", {"org": org, "link": link, "hours": hours}, org_id=user.org_id
+    )
     mail_send(
         org_id=user.org_id,
-        subject=f"Welcome to {org} — activate your account",
+        subject=subject,
         body=text,
         to=[to_email or user.email],
         html_body=html,

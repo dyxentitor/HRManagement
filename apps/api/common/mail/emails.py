@@ -26,6 +26,9 @@ PLACEHOLDERS: dict[str, list[TokenSpec]] = {
     "bank_changed": [
         TokenSpec("name", "Employee full name", "Jane Doe"),
         TokenSpec("employee_code", "Employee code", "E-1024"),
+        TokenSpec("bank_name", "Bank name", "Maybank"),
+        TokenSpec("last4", "Last 4 digits of account", "1234"),
+        TokenSpec("email", "Employee email", "jane@provintell.com"),
         TokenSpec("timestamp", "When it changed", "28 Jul 2026, 14:03"),
     ],
     "invite": [
