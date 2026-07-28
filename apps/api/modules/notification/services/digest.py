@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from common.mail import send as mail_send
+from common.mail.render import render_email
 from modules.notification.labels import domain_label, domain_of, label_for
 from modules.notification.models import EmailDigestRun, Notification
 
@@ -43,29 +44,28 @@ def send_digests() -> dict[str, int]:
             continue
 
         base = (getattr(settings, "FRONTEND_BASE_URL", "") or "").rstrip("/")
-        groups: dict[str, list[Notification]] = defaultdict(list)
+        groups_map: dict[str, list[Notification]] = defaultdict(list)
         for n in notifs:
-            groups[domain_of(n.type)].append(n)
-
-        text_lines = [f"You have {len(notifs)} new HRMS notification(s):", ""]
-        html_parts = [f"<p>You have {len(notifs)} new HRMS notification(s):</p>"]
-        for _domain, items in groups.items():
-            heading = domain_label(items[0].type)
-            text_lines.append(f"{heading}:")
-            html_parts.append(f"<h3>{heading}</h3><ul>")
-            for n in items:
-                link = f"{base}{n.deep_link}" if n.deep_link else base
-                text_lines.append(f"  - {label_for(n.type)} — {link}")
-                html_parts.append(f'<li><a href="{link}">{label_for(n.type)}</a></li>')
-            html_parts.append("</ul>")
-            text_lines.append("")
-        body = "\n".join(text_lines)
-        html_body = "".join(html_parts)
+            groups_map[domain_of(n.type)].append(n)
+        groups_ctx = [
+            {
+                "heading": domain_label(items[0].type),
+                "items": [
+                    {"label": label_for(n.type),
+                     "link": f"{base}{n.deep_link}" if n.deep_link else base}
+                    for n in items
+                ],
+            }
+            for items in groups_map.values()
+        ]
+        subject, body, html_body = render_email(
+            "digest", {"count": len(notifs), "groups": groups_ctx}, org_id=user.org_id
+        )
 
         try:
             sent = mail_send(
                 org_id=user.org_id,
-                subject=f"[HRMS] {len(notifs)} new notification(s)",
+                subject=subject,
                 body=body,
                 html_body=html_body,
                 to=[user.email],
