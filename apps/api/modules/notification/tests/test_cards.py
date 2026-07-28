@@ -673,3 +673,185 @@ def test_incentive_submitted_card(make_user_with_employee):
     assert d.get("Project") == "Gamma Project"
     assert d.get("Mandays") == "7"
     assert card.cta_url.endswith("/incentive")
+
+
+# ---------------------------------------------------------------------------
+# Payslip domain card tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def payslip_setup():
+    """Return (org, payslip_record, user) with a real PayslipRecord + PayrollPeriod."""
+    from decimal import Decimal
+
+    from modules.employee.models import Employee
+    from modules.organization.models import Department, Organization
+    from modules.payslip.models import PayrollPeriod, PayslipRecord
+
+    org_id = uuid.uuid4()
+    org = Organization.objects.create(
+        name="PayslipOrg",
+        slug=f"paysliporg-{org_id.hex[:8]}",
+        country_code="MY",
+        default_currency="MYR",
+        default_timezone="Asia/Kuala_Lumpur",
+        default_locale="en-MY",
+    )
+    dept = Department.all_objects.create(org_id=org.id, name="Finance")
+    user = User.objects.create_user(
+        email=f"emp-{org_id.hex[:8]}@payslip.test",
+        password="x",  # pragma: allowlist secret
+        org_id=org.id,
+    )
+    emp = Employee.all_objects.create(
+        org_id=org.id,
+        user=user,
+        employee_code=f"P{org_id.hex[:6]}",
+        first_name="Charlie",
+        last_name="Lim",
+        email=f"emp-{org_id.hex[:8]}@payslip.test",
+        phone="+60123456789",
+        date_of_birth=datetime.date(1985, 6, 15),
+        gender="male",
+        nationality="MY",
+        marital_status="married",
+        address_line1="3 Jalan Payslip",
+        city="KL",
+        state="Kuala Lumpur",
+        postcode="50000",
+        country_code="MY",
+        department=dept,
+        role_title="Accountant",
+        employment_type="fulltime",
+        hire_date=datetime.date(2021, 3, 1),
+        emergency_contact_name="Diana",
+        emergency_contact_relationship="spouse",
+        emergency_contact_phone="+60198765432",
+    )
+    period = PayrollPeriod.all_objects.create(
+        org_id=org.id,
+        period_start=datetime.date(2026, 7, 1),
+        period_end=datetime.date(2026, 7, 31),
+        period_type="monthly",
+        pay_date=datetime.date(2026, 7, 28),
+        status="completed",
+    )
+    payslip = PayslipRecord.all_objects.create(
+        org_id=org.id,
+        employee_id=emp.id,
+        period=period,
+        gross=Decimal("5000.00"),
+        net=Decimal("4200.50"),
+        currency_code="MYR",
+        source="manual",
+        status="published",
+    )
+    return org, payslip, user
+
+
+@pytest.mark.django_db
+def test_payslip_published_card_shows_period_and_net(payslip_setup):
+    """payslip.published card shows Pay period, Pay date, and Net pay."""
+    org, payslip, user = payslip_setup
+    n = Notification(
+        org_id=org.id,
+        user=user,
+        type="payslip.published",
+        channel="email",
+        payload={"payslip_id": str(payslip.id), "period_start": "2026-07-01"},
+        deep_link="/payslips/me",
+    )
+    card = build_card(n)
+    assert "July" in card.headline
+    assert "ready" in card.headline.lower()
+    d = dict(card.rows)
+    assert "Pay period" in d
+    assert "Pay date" in d
+    assert "Net pay" in d
+    assert "4,200.50" in d["Net pay"]
+    assert "MYR" in d["Net pay"]
+    assert card.cta_label == "View payslip"
+    assert card.cta_url.endswith("/payslips/me")
+    assert "Download" in card.whats_next
+
+
+@pytest.mark.django_db
+def test_payslip_card_falls_back_to_generic_on_missing_payslip(payslip_setup):
+    """Missing payslip_id returns a generic card without crashing."""
+    org, payslip, user = payslip_setup
+    n = Notification(
+        org_id=org.id,
+        user=user,
+        type="payslip.published",
+        channel="email",
+        payload={"payslip_id": str(uuid.uuid4())},  # non-existent
+        deep_link="/payslips/me",
+    )
+    card = build_card(n)
+    assert card is not None
+    assert isinstance(card.headline, str)
+
+
+# ---------------------------------------------------------------------------
+# Certification domain card tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_cert_expiring_soon_card_from_payload(make_user_with_employee):
+    """cert.expiring_soon card shows Certificate, Expires on, Days left from payload."""
+    user = make_user_with_employee(first_name="Diana")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="cert.expiring_soon",
+        channel="email",
+        payload={
+            "cert_id": str(uuid.uuid4()),
+            "cert_name": "AWS Solutions Architect",
+            "expires_on": "2026-08-15",
+            "days_remaining": 18,
+        },
+        deep_link="/certifications/me",
+    )
+    card = build_card(n)
+    assert "AWS Solutions Architect" in card.headline
+    assert "expires" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Certificate") == "AWS Solutions Architect"
+    assert "Expires on" in d
+    assert "15" in d["Expires on"] and "Aug" in d["Expires on"]
+    assert d.get("Days left") == "18"
+    assert card.cta_label == "View certifications"
+    assert card.cta_url.endswith("/certifications/me")
+    assert "Renew" in card.whats_next
+
+
+# ---------------------------------------------------------------------------
+# Roster domain card tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_roster_published_card_from_payload(make_user_with_employee):
+    """schedule.roster_published card shows Period from parsed date payload."""
+    user = make_user_with_employee(first_name="Eric")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="schedule.roster_published",
+        channel="email",
+        payload={
+            "date_from": "2026-08-01",
+            "date_to": "2026-08-31",
+        },
+        deep_link="/schedule/me",
+    )
+    card = build_card(n)
+    assert "roster" in card.headline.lower() or "published" in card.headline.lower()
+    d = dict(card.rows)
+    assert "Period" in d
+    assert "Aug" in d["Period"]
+    assert card.cta_label == "View my schedule"
+    assert card.cta_url.endswith("/schedule/me")

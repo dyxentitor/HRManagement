@@ -297,12 +297,113 @@ def _incentive_card(n: Notification) -> CardContext:
     )
 
 
+def _payslip_card(n: Notification) -> CardContext:
+    from modules.payslip.models import PayslipRecord
+
+    name = _greeting_name(n)
+    p = n.payload or {}
+
+    ps = (
+        PayslipRecord.all_objects.select_related("period")
+        .filter(id=p.get("payslip_id"))
+        .first()
+    )
+    if ps is None:
+        return _generic_card(n)
+
+    period = ps.period
+    return CardContext(
+        greeting_name=name,
+        headline=f"Your payslip for {period.period_start:%B} is ready \U0001f4c4",
+        rows=[
+            ("Pay period", _fmt_range(period.period_start, period.period_end)),
+            ("Pay date", _fmt_date(period.pay_date)),
+            ("Net pay", _fmt_money(ps.net, ps.currency_code)),
+        ],
+        cta_label="View payslip",
+        cta_url=_abs(n.deep_link),
+        whats_next="Download the PDF in HRMS.",
+    )
+
+
+def _cert_card(n: Notification) -> CardContext:
+    name = _greeting_name(n)
+    p = n.payload or {}
+
+    cert_name = str(p.get("cert_name", ""))
+    days_remaining = p.get("days_remaining", "")
+    expires_on_raw = p.get("expires_on", "")
+
+    # Parse expires_on — best-effort
+    try:
+        expires_date = datetime.date.fromisoformat(str(expires_on_raw))
+        expires_str = _fmt_date(expires_date)
+    except Exception:
+        expires_str = str(expires_on_raw)
+
+    # Optionally hydrate for issuer
+    issuer: str | None = None
+    cert_id = p.get("cert_id")
+    if cert_id:
+        try:
+            from modules.certification.models import Certification
+
+            cert_obj = Certification.all_objects.filter(id=cert_id).first()
+            if cert_obj and cert_obj.issuer:
+                issuer = cert_obj.issuer
+        except Exception:
+            pass
+
+    rows: list[tuple[str, str]] = [("Certificate", cert_name)]
+    if issuer:
+        rows.append(("Issuer", issuer))
+    rows.append(("Expires on", expires_str))
+    rows.append(("Days left", str(days_remaining)))
+
+    return CardContext(
+        greeting_name=name,
+        headline=f"Your {cert_name} certificate expires soon ⏰",
+        rows=rows,
+        cta_label="View certifications",
+        cta_url=_abs(n.deep_link),
+        whats_next="Renew before it lapses.",
+    )
+
+
+def _roster_card(n: Notification) -> CardContext:
+    name = _greeting_name(n)
+    p = n.payload or {}
+
+    # Parse date_from / date_to — best-effort
+    try:
+        date_from = datetime.date.fromisoformat(str(p.get("date_from", "")))
+    except Exception:
+        date_from = None  # type: ignore[assignment]
+    try:
+        date_to = datetime.date.fromisoformat(str(p.get("date_to", "")))
+    except Exception:
+        date_to = None  # type: ignore[assignment]
+
+    period_str = _fmt_range(date_from, date_to) if (date_from and date_to) else str(p.get("date_from", ""))
+
+    return CardContext(
+        greeting_name=name,
+        headline="A new roster is published \U0001f5d3️",
+        rows=[("Period", period_str)],
+        cta_label="View my schedule",
+        cta_url=_abs(n.deep_link),
+    )
+
+
 # domain prefix -> builder(n) -> CardContext. Populated by later tasks.
 DOMAIN_BUILDERS: dict[str, Callable[[Notification], CardContext]] = {}
 
 DOMAIN_BUILDERS["leave"] = _leave_card
 DOMAIN_BUILDERS["claim"] = _claim_card
 DOMAIN_BUILDERS["incentive"] = _incentive_card
+DOMAIN_BUILDERS["payslip"] = _payslip_card
+DOMAIN_BUILDERS["cert"] = _cert_card
+DOMAIN_BUILDERS["schedule"] = _roster_card
 
 
 def build_card(n: Notification) -> CardContext:
