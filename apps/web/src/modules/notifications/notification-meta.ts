@@ -8,8 +8,10 @@ import {
   LineChart,
   Lock,
   Megaphone,
+  MessageSquare,
   Palmtree,
   Receipt,
+  Server,
   ShieldCheck,
   UserPlus,
   Wallet,
@@ -33,6 +35,8 @@ const DOMAIN_ICON: Record<string, ComponentType<{ className?: string }>> = {
   schedule: CalendarDays,
   employee: Landmark,
   auth: Lock,
+  feedback: MessageSquare,
+  system: Server,
 }
 
 export function domainIcon(type: string): ComponentType<{ className?: string }> {

@@ -24,14 +24,14 @@ describe("PreferencesPage security rows", () => {
 		render(<PreferencesPage />);
 
 		// Wait for the prefs to load
-		await screen.findByText("user.role_changed");
+		await screen.findByText("Your role was updated");
 
 		// Security badge must appear at least once
 		expect(screen.getAllByText("(security)").length).toBeGreaterThanOrEqual(1);
 
 		// Find the auth.password_changed row by locating the <td> that holds the
 		// text, then walking up to the <tr> and querying its checkboxes.
-		const labelCell = screen.getByText("auth.password_changed");
+		const labelCell = screen.getByText("Password changed");
 		const row = labelCell.closest("tr")!;
 		const checkboxes = within(row).getAllByRole("checkbox") as HTMLInputElement[];
 		expect(checkboxes.length).toBeGreaterThanOrEqual(1);
@@ -46,10 +46,10 @@ describe("PreferencesPage security rows", () => {
 		render(<PreferencesPage />);
 
 		// Wait for the prefs to load
-		await screen.findByText("user.role_changed");
+		await screen.findByText("Your role was updated");
 
 		// Find the user.role_changed row
-		const labelCell = screen.getByText("user.role_changed");
+		const labelCell = screen.getByText("Your role was updated");
 		const row = labelCell.closest("tr")!;
 
 		// The row must show the (security) badge
@@ -68,9 +68,9 @@ describe("PreferencesPage security rows", () => {
 
 		render(<PreferencesPage />);
 
-		await screen.findByText("leave.approved");
+		await screen.findByText("Leave request approved");
 
-		const labelCell = screen.getByText("leave.approved");
+		const labelCell = screen.getByText("Leave request approved");
 		const row = labelCell.closest("tr")!;
 
 		// No security badge in this row

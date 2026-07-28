@@ -5,7 +5,7 @@ import {
 	getPreferences,
 	updatePreferences,
 } from "../api";
-import { SECURITY_TYPES } from "../event-labels";
+import { SECURITY_TYPES, getEventLabel } from "../event-labels";
 
 const CHANNELS: Array<"in_app" | "email"> = ["in_app", "email"];
 
@@ -74,8 +74,8 @@ export default function PreferencesPage() {
 							key={type}
 							className="border-b border-border-subtle hover:bg-surface-hover transition-colors"
 						>
-							<td className="py-2 pr-4 font-mono text-xs text-text-secondary">
-								{type}
+							<td className="py-2 pr-4 text-text-secondary">
+								{getEventLabel(type)}
 								{SECURITY_TYPES.has(type) && (
 									<span className="ml-2 text-yellow text-xs">(security)</span>
 								)}
