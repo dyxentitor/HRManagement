@@ -1,27 +1,22 @@
-"""Immediate email delivery for security-relevant notifications.
+"""Email rendering helpers for the notification module.
 
-Security alerts (password/MFA/role/bank changes) must reach the user now, not
-after the hourly digest. They send with category="transactional" so they bypass
-the org email kill-switch, and are best-effort: a send failure leaves the email
-row `pending` so the digest is the fallback, and never raises into the caller.
+``render_security_email`` and ``render_notification_email`` produce (subject,
+text) / (subject, text, html) tuples consumed by ``services/send.py`` and the
+async ``send_notification_email`` Celery task.
+
+The old synchronous ``send_immediate`` function has been retired in favour of
+enqueuing ``send_notification_email.delay()`` in ``notify()`` for both
+security types and urgent/high-priority notifications.
 """
 
 from __future__ import annotations
 
-import logging
-
 from django.conf import settings
 from django.utils import timezone
-
-from common.mail import send as mail_send
 
 from ..labels import label_for
 from ..models import Notification
 from .preferences import SECURITY_TYPES
-
-logger = logging.getLogger(__name__)
-
-IMMEDIATE_TYPES = SECURITY_TYPES
 
 
 def _ts(n: Notification) -> str:
@@ -84,26 +79,3 @@ def render_notification_email(n: Notification) -> tuple[str, str, str]:
     text = f"{label}.\n\nOpen in HRMS: {link}"
     html = f'<p>{label}.</p><p><a href="{link}">Open in HRMS</a></p>'
     return subject, text, html
-
-
-def send_immediate(n: Notification) -> None:
-    """Send one security email now. Best-effort: never raises; failure → leave pending."""
-    if not n.user.email:
-        return  # leave pending; digest will mark skipped
-    subject, body = render_security_email(n)
-    try:
-        mail_send(
-            org_id=n.org_id,
-            subject=subject,
-            body=body,
-            to=[n.user.email],
-            category="transactional",
-            append_signature=True,
-            fail_silently=False,
-        )
-    except Exception:
-        logger.warning("Immediate security email failed for notification %s; left pending", n.id)
-        return
-    n.delivery_status = "sent"
-    n.sent_at = timezone.now()
-    n.save(update_fields=["delivery_status", "sent_at"])
