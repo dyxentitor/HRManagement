@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import logging
 
+from django.conf import settings
 from django.utils import timezone
 
 from common.mail import send as mail_send
 
+from ..labels import label_for
 from ..models import Notification
 from .preferences import SECURITY_TYPES
 
@@ -63,6 +65,25 @@ def render_security_email(n: Notification) -> tuple[str, str]:
     # Fallback for any future immediate type
     fallback_body = f"A security-relevant change occurred on {ts}.\n{p}"
     return (f"[HRMS] Security alert: {n.type}", fallback_body)
+
+
+def _abs_link(deep_link: str) -> str:
+    base = (getattr(settings, "FRONTEND_BASE_URL", "") or "").rstrip("/")
+    return f"{base}{deep_link}" if deep_link else base
+
+
+def render_notification_email(n: Notification) -> tuple[str, str, str]:
+    """(subject, text_body, html_body). Security types keep their dedicated copy."""
+    if n.type in SECURITY_TYPES:
+        subject, text = render_security_email(n)
+        html = "<p>" + text.replace("\n", "<br>") + "</p>"
+        return subject, text, html
+    label = label_for(n.type)
+    link = _abs_link(n.deep_link)
+    subject = f"[HRMS] {label}"
+    text = f"{label}.\n\nOpen in HRMS: {link}"
+    html = f'<p>{label}.</p><p><a href="{link}">Open in HRMS</a></p>'
+    return subject, text, html
 
 
 def send_immediate(n: Notification) -> None:
