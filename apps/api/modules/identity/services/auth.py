@@ -127,6 +127,23 @@ def initiate_password_reset(email: str) -> None:
     )
 
 
+def _notify_password_changed(user, *, method: str) -> None:
+    try:
+        from modules.notification.services.notify import notify
+
+        notify(
+            user=user,
+            type="auth.password_changed",
+            payload={"method": method},
+            deep_link="/me/profile",
+            priority="high",
+        )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("auth.password_changed notify failed")
+
+
 def complete_password_reset(token: str, new_password: str) -> None:
     user_id = cache.get(f"pwreset:{token}")
     if not user_id:
@@ -138,6 +155,7 @@ def complete_password_reset(token: str, new_password: str) -> None:
     user.save(update_fields=["password", "updated_at"])
     cache.delete(f"pwreset:{token}")
     revoke_all_user_sessions(user)
+    _notify_password_changed(user, method="reset")
 
 
 def change_own_password(*, user: User, new_password: str) -> None:
@@ -145,3 +163,4 @@ def change_own_password(*, user: User, new_password: str) -> None:
     user.must_change_password = False
     user.save(update_fields=["password", "must_change_password", "updated_at"])
     revoke_all_user_sessions(user)
+    _notify_password_changed(user, method="self")

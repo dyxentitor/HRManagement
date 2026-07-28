@@ -52,6 +52,14 @@ def confirm(user: User, code: str) -> bool:
     device.save(update_fields=["confirmed_at", "last_used_at"])
     user.mfa_enabled = True
     user.save(update_fields=["mfa_enabled", "updated_at"])
+    try:
+        from modules.notification.services.notify import notify
+
+        notify(user=user, type="auth.mfa_enabled", deep_link="/me/profile", priority="high")
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("auth.mfa_enabled notify failed")
     return True
 
 
@@ -59,6 +67,14 @@ def disable(user: User) -> None:
     MFADevice.objects.filter(user=user).delete()
     user.mfa_enabled = False
     user.save(update_fields=["mfa_enabled", "updated_at"])
+    try:
+        from modules.notification.services.notify import notify
+
+        notify(user=user, type="auth.mfa_disabled", deep_link="/me/profile", priority="high")
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("auth.mfa_disabled notify failed")
 
 
 def verify_code_for_user(user: User, code: str) -> bool:
