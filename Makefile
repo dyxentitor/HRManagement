@@ -5,8 +5,8 @@ COMPOSE := docker compose --env-file .env -f deploy/docker-compose.yml
 COMPOSE_PROD := docker compose --env-file .env -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml
 
 .PHONY: help dev dev-down dev-logs migrate makemigrations shell test test-api test-web \
-        contracts lint lint-fix typecheck build seed seed-provintell seed-provintell-prod \
-        verify-backup clean
+        contracts notif-registry notif-registry-check lint lint-fix typecheck build seed \
+        seed-provintell seed-provintell-prod verify-backup clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -49,6 +49,16 @@ contracts: ## Regenerate OpenAPI schema and TS types
 	  --file ../../packages/contracts/openapi.yaml
 	cd packages/contracts && pnpm run generate
 	@echo "Contracts regenerated. Commit packages/contracts/ if there are changes."
+
+notif-registry: ## Regenerate the frontend notification label/security constants from the registry
+	docker exec hrms-dev-api-1 sh -c 'cd /app && uv run python manage.py export_notification_registry --output /tmp/event-labels.generated.ts'
+	docker cp hrms-dev-api-1:/tmp/event-labels.generated.ts apps/web/src/modules/notifications/event-labels.generated.ts
+	@echo "Regenerated event-labels.generated.ts — commit it if changed."
+
+notif-registry-check: ## Fail if the committed generated file is stale (CI drift guard)
+	docker exec hrms-dev-api-1 sh -c 'cd /app && uv run python manage.py export_notification_registry' > /tmp/nr-check.ts
+	diff -q /tmp/nr-check.ts apps/web/src/modules/notifications/event-labels.generated.ts || \
+	  { echo "event-labels.generated.ts is stale — run 'make notif-registry'"; exit 1; }
 
 lint: ## Run all linters
 	cd apps/api && uv run ruff check .
