@@ -398,12 +398,173 @@ def _roster_card(n: Notification) -> CardContext:
 # domain prefix -> builder(n) -> CardContext. Populated by later tasks.
 DOMAIN_BUILDERS: dict[str, Callable[[Notification], CardContext]] = {}
 
+def _assignment_card(n: Notification) -> CardContext:
+    """Assignment task notifications — payload carries title + due date."""
+    name = _greeting_name(n)
+    p = n.payload or {}
+
+    title = str(p.get("title", ""))
+    due_raw = p.get("due", "")
+
+    # Parse due date — best-effort
+    try:
+        due_date = datetime.date.fromisoformat(str(due_raw))
+        due_str = _fmt_date(due_date)
+    except Exception:
+        due_str = str(due_raw)
+
+    suffix = (n.type or "").split(".")[-1]
+
+    if suffix == "assigned":
+        rows: list[tuple[str, str]] = [("Task", title), ("Due date", due_str)]
+        task_type = p.get("type")
+        if task_type:
+            rows.append(("Type", str(task_type)))
+        return CardContext(
+            greeting_name=name,
+            headline=f"New task: {title}",
+            rows=rows,
+            cta_url=_abs(n.deep_link),
+        )
+
+    if suffix == "reminder":
+        return CardContext(
+            greeting_name=name,
+            headline=f"Reminder: {title} is due soon ⏰",
+            rows=[("Task", title), ("Due date", due_str)],
+            cta_url=_abs(n.deep_link),
+            whats_next="Due soon.",
+        )
+
+    if suffix == "overdue":
+        return CardContext(
+            greeting_name=name,
+            headline=f"Overdue: {title}",
+            rows=[("Task", title), ("Due date", due_str)],
+            cta_url=_abs(n.deep_link),
+            whats_next="This task is now overdue.",
+        )
+
+    return _generic_card(n)
+
+
+def _kpi_card(n: Notification) -> CardContext:
+    """KPI cycle and review notifications — payload carries cycle name."""
+    name = _greeting_name(n)
+    p = n.payload or {}
+
+    cycle = str(p.get("cycle", ""))
+    suffix = (n.type or "").split(".")[-1]
+
+    if suffix == "cycle_opens_self_review":
+        rows: list[tuple[str, str]] = [("Cycle", cycle)] if cycle else []
+        return CardContext(
+            greeting_name=name,
+            headline=f"Your self-review is open for {cycle}",
+            rows=rows,
+            cta_label="Start self-review",
+            cta_url=_abs("/kpi/me"),
+        )
+
+    if suffix == "cycle_opens_manager_review":
+        rows = [("Cycle", cycle)] if cycle else []
+        return CardContext(
+            greeting_name=name,
+            headline=f"Manager reviews are open for {cycle}",
+            rows=rows,
+            cta_label="Open reviews",
+            cta_url=_abs("/kpi/admin"),
+        )
+
+    if suffix in ("review_submitted_self", "review_submitted_manager"):
+        rows = [("Cycle", cycle)] if cycle else []
+        return CardContext(
+            greeting_name=name,
+            headline="A KPI review was submitted",
+            rows=rows,
+            cta_url=_abs(n.deep_link),
+        )
+
+    return _generic_card(n)
+
+
+def _employee_card(n: Notification) -> CardContext:
+    """Employee tenure notifications — probation/contract ending soon.
+
+    Payload: {"employee_id", "employee_code", "name"}
+    Hydrates Employee via all_objects for the end date field.
+    Falls back to payload-only card if the Employee row cannot be found.
+    employee.bank_changed_self is a security type handled elsewhere; fall
+    through to _generic_card if it somehow reaches here.
+    """
+    name = _greeting_name(n)
+    p = n.payload or {}
+
+    suffix = (n.type or "").split(".")[-1]
+
+    # Security type — should not reach this builder, but guard it
+    if suffix == "bank_changed_self":
+        return _generic_card(n)
+
+    emp_name = str(p.get("name", ""))
+    emp_code = str(p.get("employee_code", ""))
+    employee_id = p.get("employee_id")
+
+    # Hydrate Employee row (tenant-scoped via all_objects)
+    emp = None
+    if employee_id:
+        try:
+            from modules.employee.models import Employee
+
+            emp = Employee.all_objects.filter(id=employee_id).first()
+        except Exception:
+            pass
+
+    is_probation = suffix == "probation_ending_soon"
+    tenure_label = "probation" if is_probation else "contract"
+    headline = f"{emp_name}'s {tenure_label} ends in 30 days"
+
+    rows: list[tuple[str, str]] = [
+        ("Employee", f"{emp_name} ({emp_code})" if emp_code else emp_name),
+    ]
+
+    # End date from hydrated Employee
+    end_date = None
+    if emp is not None:
+        end_date = emp.probation_end_date if is_probation else emp.contract_end_date
+
+    if end_date is not None:
+        rows.append(("End date", _fmt_date(end_date)))
+
+        # Days left — compute from today
+        try:
+            today = datetime.date.today()
+            days_left = (end_date - today).days
+            rows.append(("Days left", str(max(days_left, 0))))
+        except Exception:
+            rows.append(("Days left", "30"))
+    else:
+        rows.append(("Days left", "30"))
+
+    return CardContext(
+        greeting_name=name,
+        headline=headline,
+        rows=rows,
+        cta_label="View employee",
+        cta_url=_abs(n.deep_link),
+        whats_next="Review and confirm next steps.",
+    )
+
+
 DOMAIN_BUILDERS["leave"] = _leave_card
 DOMAIN_BUILDERS["claim"] = _claim_card
 DOMAIN_BUILDERS["incentive"] = _incentive_card
 DOMAIN_BUILDERS["payslip"] = _payslip_card
 DOMAIN_BUILDERS["cert"] = _cert_card
 DOMAIN_BUILDERS["schedule"] = _roster_card
+DOMAIN_BUILDERS["assignment"] = _assignment_card
+DOMAIN_BUILDERS["kpi"] = _kpi_card
+DOMAIN_BUILDERS["employee"] = _employee_card
 
 
 def build_card(n: Notification) -> CardContext:

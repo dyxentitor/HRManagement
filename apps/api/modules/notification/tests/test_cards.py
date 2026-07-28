@@ -855,3 +855,275 @@ def test_roster_published_card_from_payload(make_user_with_employee):
     assert "Aug" in d["Period"]
     assert card.cta_label == "View my schedule"
     assert card.cta_url.endswith("/schedule/me")
+
+
+# ---------------------------------------------------------------------------
+# Assignment domain card tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_assignment_reminder_card_shows_task_and_due(make_user_with_employee):
+    """assignment.reminder card shows Task, Due date rows and whats_next."""
+    user = make_user_with_employee(first_name="Farid")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="assignment.reminder",
+        channel="email",
+        payload={"title": "Complete onboarding checklist", "due": "2026-08-20"},
+        deep_link="/assignments/me",
+    )
+    card = build_card(n)
+    assert "Reminder" in card.headline
+    assert "Complete onboarding checklist" in card.headline
+    d = dict(card.rows)
+    assert d.get("Task") == "Complete onboarding checklist"
+    assert "Due date" in d
+    assert card.whats_next == "Due soon."
+    assert card.cta_url.endswith("/assignments/me")
+
+
+@pytest.mark.django_db
+def test_assignment_assigned_card(make_user_with_employee):
+    """assignment.assigned card shows Task, Due date, Type rows."""
+    user = make_user_with_employee(first_name="Gina")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="assignment.assigned",
+        channel="email",
+        payload={"title": "Sign NDA", "due": "2026-09-01", "type": "document"},
+        deep_link="/assignments/me",
+    )
+    card = build_card(n)
+    assert "New task" in card.headline
+    assert "Sign NDA" in card.headline
+    d = dict(card.rows)
+    assert d.get("Task") == "Sign NDA"
+    assert "Due date" in d
+    assert d.get("Type") == "document"
+
+
+@pytest.mark.django_db
+def test_assignment_overdue_card(make_user_with_employee):
+    """assignment.overdue card shows Task, Due date and whats_next about overdue."""
+    user = make_user_with_employee(first_name="Hani")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="assignment.overdue",
+        channel="email",
+        payload={"title": "Submit timesheet", "due": "2026-07-31"},
+        deep_link="/assignments/me",
+    )
+    card = build_card(n)
+    assert "Overdue" in card.headline
+    assert "Submit timesheet" in card.headline
+    d = dict(card.rows)
+    assert d.get("Task") == "Submit timesheet"
+    assert "Due date" in d
+    assert "overdue" in card.whats_next.lower()
+
+
+# ---------------------------------------------------------------------------
+# KPI domain card tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_kpi_cycle_opens_self_review_card(make_user_with_employee):
+    """kpi.cycle_opens_self_review card headline mentions cycle + CTA goes to /kpi/me."""
+    user = make_user_with_employee(first_name="Ivan")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="kpi.cycle_opens_self_review",
+        channel="email",
+        payload={"cycle": "Q3 2026"},
+        deep_link="/kpi/me",
+    )
+    card = build_card(n)
+    assert "Q3 2026" in card.headline
+    assert "self-review" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Cycle") == "Q3 2026"
+    assert card.cta_label == "Start self-review"
+    assert card.cta_url.endswith("/kpi/me")
+
+
+@pytest.mark.django_db
+def test_kpi_cycle_opens_manager_review_card(make_user_with_employee):
+    """kpi.cycle_opens_manager_review card mentions cycle + CTA goes to /kpi/admin."""
+    user = make_user_with_employee(first_name="Julia")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="kpi.cycle_opens_manager_review",
+        channel="email",
+        payload={"cycle": "Q3 2026"},
+        deep_link="/kpi/admin",
+    )
+    card = build_card(n)
+    assert "Q3 2026" in card.headline
+    assert "manager" in card.headline.lower() or "review" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Cycle") == "Q3 2026"
+    assert card.cta_label == "Open reviews"
+    assert card.cta_url.endswith("/kpi/admin")
+
+
+@pytest.mark.django_db
+def test_kpi_review_submitted_self_card(make_user_with_employee):
+    """kpi.review_submitted_self card shows generic headline + Cycle row."""
+    user = make_user_with_employee(first_name="Kev")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="kpi.review_submitted_self",
+        channel="email",
+        payload={"cycle": "Q3 2026", "assignment_id": str(uuid.uuid4())},
+        deep_link="/kpi/me",
+    )
+    card = build_card(n)
+    assert "submitted" in card.headline.lower() or "review" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Cycle") == "Q3 2026"
+
+
+# ---------------------------------------------------------------------------
+# Employee tenure domain card tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def tenure_setup():
+    """Return (org, emp, user) with a real Employee row + probation/contract dates."""
+    from modules.employee.models import Employee
+    from modules.organization.models import Department, Organization
+
+    org_id = uuid.uuid4()
+    org = Organization.objects.create(
+        name="TenureOrg",
+        slug=f"tenureorg-{org_id.hex[:8]}",
+        country_code="MY",
+        default_currency="MYR",
+        default_timezone="Asia/Kuala_Lumpur",
+        default_locale="en-MY",
+    )
+    dept = Department.all_objects.create(org_id=org.id, name="Ops")
+    user = User.objects.create_user(
+        email=f"tenure-{org_id.hex[:8]}@x.com",
+        password="x",  # pragma: allowlist secret
+        org_id=org.id,
+    )
+    emp = Employee.all_objects.create(
+        org_id=org.id,
+        user=user,
+        employee_code=f"T{org_id.hex[:6]}",
+        first_name="Lena",
+        last_name="Cruz",
+        email=f"tenure-{org_id.hex[:8]}@x.com",
+        phone="+60123456789",
+        date_of_birth=datetime.date(1995, 3, 20),
+        gender="female",
+        nationality="MY",
+        marital_status="single",
+        address_line1="5 Jalan Tenure",
+        city="KL",
+        state="Kuala Lumpur",
+        postcode="50000",
+        country_code="MY",
+        department=dept,
+        role_title="Analyst",
+        employment_type="contract",
+        hire_date=datetime.date(2025, 8, 1),
+        emergency_contact_name="Marco",
+        emergency_contact_relationship="parent",
+        emergency_contact_phone="+60198765432",
+        probation_end_date=datetime.date(2026, 8, 27),
+        contract_end_date=datetime.date(2026, 12, 31),
+    )
+    return org, emp, user
+
+
+@pytest.mark.django_db
+def test_employee_probation_ending_soon_card_hydrated(tenure_setup):
+    """employee.probation_ending_soon card shows Employee row, End date from hydrated model."""
+    org, emp, user = tenure_setup
+    n = Notification(
+        org_id=org.id,
+        user=user,
+        type="employee.probation_ending_soon",
+        channel="email",
+        payload={
+            "employee_id": str(emp.id),
+            "employee_code": emp.employee_code,
+            "name": "Lena Cruz",
+        },
+        deep_link=f"/employees/{emp.id}",
+    )
+    card = build_card(n)
+    assert "Lena Cruz" in card.headline
+    assert "probation" in card.headline.lower()
+    d = dict(card.rows)
+    assert "Employee" in d
+    assert "Lena Cruz" in d["Employee"]
+    assert emp.employee_code in d["Employee"]
+    assert "End date" in d
+    assert "Aug" in d["End date"] and "2026" in d["End date"]
+    assert "Days left" in d
+    assert "Review" in card.whats_next
+    assert card.cta_label == "View employee"
+    assert str(emp.id) in card.cta_url
+
+
+@pytest.mark.django_db
+def test_employee_contract_ending_soon_card_hydrated(tenure_setup):
+    """employee.contract_ending_soon card shows Employee row and End date from hydrated model."""
+    org, emp, user = tenure_setup
+    n = Notification(
+        org_id=org.id,
+        user=user,
+        type="employee.contract_ending_soon",
+        channel="email",
+        payload={
+            "employee_id": str(emp.id),
+            "employee_code": emp.employee_code,
+            "name": "Lena Cruz",
+        },
+        deep_link=f"/employees/{emp.id}",
+    )
+    card = build_card(n)
+    assert "Lena Cruz" in card.headline
+    assert "contract" in card.headline.lower()
+    d = dict(card.rows)
+    assert "Employee" in d
+    assert "End date" in d
+    assert "Dec" in d["End date"] and "2026" in d["End date"]
+    assert card.cta_label == "View employee"
+
+
+@pytest.mark.django_db
+def test_employee_probation_ending_soon_card_no_hydration(make_user_with_employee):
+    """employee.probation_ending_soon still produces a card even without a matching Employee row."""
+    user = make_user_with_employee(first_name="Marc")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="employee.probation_ending_soon",
+        channel="email",
+        payload={
+            "employee_id": str(uuid.uuid4()),  # non-existent
+            "employee_code": "E99999",
+            "name": "Ghost User",
+        },
+        deep_link="/employees/ghost",
+    )
+    card = build_card(n)
+    assert "Ghost User" in card.headline
+    assert "probation" in card.headline.lower()
+    d = dict(card.rows)
+    assert "Employee" in d
+    # End date should be absent (no hydration)
+    assert "End date" not in d
