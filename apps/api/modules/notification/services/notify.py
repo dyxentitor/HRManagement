@@ -7,6 +7,7 @@ from typing import Any
 from modules.identity.models import User
 
 from ..models import Notification
+from .immediate import IMMEDIATE_TYPES, send_immediate
 from .preferences import is_enabled
 
 
@@ -38,4 +39,6 @@ def notify(
             priority=priority,
         )
         created.append(n)
+        if channel == "email" and type in IMMEDIATE_TYPES:
+            send_immediate(n)
     return created
