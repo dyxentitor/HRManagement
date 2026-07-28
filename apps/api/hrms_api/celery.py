@@ -60,6 +60,12 @@ app.conf.beat_schedule = {
         "task": "modules.assignments.tasks.spawn_recurring_assignments",
         "schedule": crontab(hour=3, minute=0),
     },
+    "detect-tenure-endings": {
+        # Daily 03:00 KL: alert HR managers + direct manager when an employee's
+        # probation or contract ends in exactly 30 days. Idempotent on flags.
+        "task": "modules.employee.tasks.detect_tenure_endings",
+        "schedule": crontab(hour=3, minute=0),
+    },
     "verify-payroll-ledger": {
         # Daily 03:15 KL: verify the payroll hash-chain; logs an error (→ Sentry)
         # if the chain is broken, so tampering is caught within a day.

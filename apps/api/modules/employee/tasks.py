@@ -23,6 +23,14 @@ THUMB_SIZE = 512
 THUMB_QUALITY = 82
 
 
+@shared_task
+def detect_tenure_endings():
+    """Daily scan: fire probation/contract-ending alerts for employees at the 30-day mark."""
+    from .services.tenure_scan import scan_tenure_endings
+
+    return scan_tenure_endings()
+
+
 @shared_task(bind=True, max_retries=3)
 def process_avatar_upload(self, employee_id: str, original_s3_key: str) -> None:
     """Resize the uploaded original to 512x512 WebP, strip EXIF, swap on Employee, cleanup."""
