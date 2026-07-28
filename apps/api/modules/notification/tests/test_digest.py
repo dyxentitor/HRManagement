@@ -95,3 +95,28 @@ def test_digest_empty_queue():
     """No pending email notifications => no-op."""
     result = send_digests()
     assert result == {"users": 0, "notifications": 0}
+
+
+@pytest.fixture
+def user_with_pending_email_notif(user):
+    """User with a single pending email-channel Notification."""
+    return _pending_email(user)
+
+
+@pytest.mark.django_db
+def test_digest_bounded_retry(monkeypatch, user_with_pending_email_notif):
+    """Failed send increments send_attempts; stays pending until attempt 3, then fails."""
+    import modules.notification.services.digest as d
+
+    def boom(**k):
+        raise RuntimeError("smtp")
+
+    monkeypatch.setattr(d, "mail_send", boom)
+    n = user_with_pending_email_notif
+    for expected in (1, 2):
+        d.send_digests()
+        n.refresh_from_db()
+        assert n.send_attempts == expected and n.delivery_status == "pending"
+    d.send_digests()
+    n.refresh_from_db()
+    assert n.send_attempts == 3 and n.delivery_status == "failed"

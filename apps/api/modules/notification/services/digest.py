@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 
 from django.utils import timezone
 
 from common.mail import send as mail_send
 from modules.notification.models import EmailDigestRun, Notification
+
+logger = logging.getLogger(__name__)
 
 
 def send_digests() -> dict[str, int]:
@@ -69,7 +72,16 @@ def send_digests() -> dict[str, int]:
             n_notifs += len(notifs)
         except Exception:
             for n in notifs:
-                n.delivery_status = "failed"
-                n.save(update_fields=["delivery_status"])
+                n.send_attempts += 1
+                if n.send_attempts >= 3:
+                    n.delivery_status = "failed"
+                    logger.error(
+                        "Email digest permanently failed for notification %s "
+                        "(user %s) after %s attempts",
+                        n.id,
+                        user.id,
+                        n.send_attempts,
+                    )
+                n.save(update_fields=["send_attempts", "delivery_status"])
 
     return {"users": n_users, "notifications": n_notifs}
