@@ -8,7 +8,6 @@ from modules.notification.services.preferences import DEFAULT_PREFERENCES, SECUR
 
 # Exact pre-refactor snapshot (type, in_app, email, security) — order-independent compare.
 _EXPECTED = {
-    ("auth.login", False, False, True),
     ("auth.password_changed", True, True, True),
     ("auth.mfa_enabled", True, True, True),
     ("auth.mfa_disabled", True, True, True),
@@ -44,7 +43,6 @@ _EXPECTED = {
     ("system.email_delivery_failed", True, False, False),
 }
 _EXPECTED_SECURITY = {
-    "auth.login",
     "auth.password_changed",
     "auth.mfa_enabled",
     "auth.mfa_disabled",
@@ -73,3 +71,12 @@ def test_labels_still_resolve():
     assert label_for("assignment.overdue") == "Assignment overdue"
     assert domain_label("leave.approved") == "Leave"
     assert label_for("unknown.x_y") == "X Y"  # fallback preserved
+
+
+def test_auth_login_removed_from_registry():
+    from modules.notification.registry import BY_TYPE, EVENT_LABELS
+    from modules.notification.services.preferences import SECURITY_TYPES
+
+    assert "auth.login" not in BY_TYPE
+    assert "auth.login" not in EVENT_LABELS
+    assert "auth.login" not in SECURITY_TYPES

@@ -2,7 +2,6 @@
 // Source of truth: apps/api/modules/notification/registry.py
 
 export const EVENT_LABELS: Record<string, string> = {
-  "auth.login": "Successful sign-in",
   "auth.password_changed": "Password changed",
   "auth.mfa_enabled": "Two-step verification enabled",
   "auth.mfa_disabled": "Two-step verification disabled",
@@ -57,7 +56,6 @@ export const DOMAIN_LABELS: Record<string, string> = {
 }
 
 export const SECURITY_TYPES: ReadonlySet<string> = new Set([
-  "auth.login",
   "auth.password_changed",
   "auth.mfa_enabled",
   "auth.mfa_disabled",

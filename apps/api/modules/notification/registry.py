@@ -21,7 +21,6 @@ class NotificationType:
 
 # (type, label, in_app_default, email_default, security)
 REGISTRY: tuple[NotificationType, ...] = (
-    NotificationType("auth.login", "Successful sign-in", False, False, True),
     NotificationType("auth.password_changed", "Password changed", True, True, True),
     NotificationType("auth.mfa_enabled", "Two-step verification enabled", True, True, True),
     NotificationType("auth.mfa_disabled", "Two-step verification disabled", True, True, True),
