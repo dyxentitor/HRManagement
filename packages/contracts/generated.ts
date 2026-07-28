@@ -3110,6 +3110,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/org/email-templates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET  /org/email-templates/ — list all known template keys with override status. */
+        get: operations["org_email_templates_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/org/email-templates/{key}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET    /org/email-templates/{key}/  — detail (override content or empty if none)
+         *     PATCH  /org/email-templates/{key}/  — upsert override
+         *     DELETE /org/email-templates/{key}/  — reset (delete override row)
+         */
+        get: operations["org_email_templates_retrieve_2"];
+        put?: never;
+        post?: never;
+        /**
+         * @description GET    /org/email-templates/{key}/  — detail (override content or empty if none)
+         *     PATCH  /org/email-templates/{key}/  — upsert override
+         *     DELETE /org/email-templates/{key}/  — reset (delete override row)
+         */
+        delete: operations["org_email_templates_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description GET    /org/email-templates/{key}/  — detail (override content or empty if none)
+         *     PATCH  /org/email-templates/{key}/  — upsert override
+         *     DELETE /org/email-templates/{key}/  — reset (delete override row)
+         */
+        patch: operations["org_email_templates_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/org/email-templates/{key}/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["org_email_templates_preview_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/feature-flags/": {
         parameters: {
             query?: never;
@@ -4953,6 +5017,9 @@ export interface components {
             max_retry_attempts?: number;
             retry_interval_seconds?: number;
             signature?: string;
+            accent_color?: string;
+            header_html?: string;
+            footer_html?: string;
             provider_preset?: string;
             /** Format: date-time */
             last_test_at?: string | null;
@@ -4963,6 +5030,15 @@ export interface components {
             last_failure_message?: string;
             /** Format: date-time */
             readonly updated_at: string;
+        };
+        /** @description Request body for the preview endpoint (all fields optional). */
+        EmailTemplatePreviewRequest: {
+            /** @default  */
+            subject: string;
+            /** @default  */
+            text_body: string;
+            /** @default  */
+            html_body: string;
         };
         /** @description Full HR view — all fields readable; encrypted fields write-through. */
         Employee: {
@@ -5797,6 +5873,9 @@ export interface components {
             max_retry_attempts?: number;
             retry_interval_seconds?: number;
             signature?: string;
+            accent_color?: string;
+            header_html?: string;
+            footer_html?: string;
             provider_preset?: string;
         };
         PatchedEmployeeLeaveOverrideRequest: {
@@ -6284,6 +6363,7 @@ export interface components {
         SendTestEmailRequest: {
             /** Format: email */
             recipient: string;
+            template_key?: string;
             enabled?: boolean;
             smtp_host?: string;
             smtp_port?: number;
@@ -6301,6 +6381,9 @@ export interface components {
             max_retry_attempts?: number;
             retry_interval_seconds?: number;
             signature?: string;
+            accent_color?: string;
+            header_html?: string;
+            footer_html?: string;
             provider_preset?: string;
         };
         Shift: {
@@ -6422,6 +6505,9 @@ export interface components {
             max_retry_attempts?: number;
             retry_interval_seconds?: number;
             signature?: string;
+            accent_color?: string;
+            header_html?: string;
+            footer_html?: string;
             provider_preset?: string;
         };
         TrainingAssignment: {
@@ -12426,6 +12512,112 @@ export interface operations {
             content: {
                 "application/json": components["schemas"]["TestConnectionRequest"];
                 "multipart/form-data": components["schemas"]["TestConnectionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    org_email_templates_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_email_templates_retrieve_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_email_templates_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_email_templates_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_email_templates_preview_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EmailTemplatePreviewRequest"];
+                "multipart/form-data": components["schemas"]["EmailTemplatePreviewRequest"];
             };
         };
         responses: {

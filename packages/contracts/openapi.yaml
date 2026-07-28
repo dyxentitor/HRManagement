@@ -5669,6 +5669,105 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/org/email-templates/:
+    get:
+      operationId: org_email_templates_retrieve
+      description: GET  /org/email-templates/ — list all known template keys with
+        override status.
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/org/email-templates/{key}/:
+    get:
+      operationId: org_email_templates_retrieve_2
+      description: |-
+        GET    /org/email-templates/{key}/  — detail (override content or empty if none)
+        PATCH  /org/email-templates/{key}/  — upsert override
+        DELETE /org/email-templates/{key}/  — reset (delete override row)
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: org_email_templates_partial_update
+      description: |-
+        GET    /org/email-templates/{key}/  — detail (override content or empty if none)
+        PATCH  /org/email-templates/{key}/  — upsert override
+        DELETE /org/email-templates/{key}/  — reset (delete override row)
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: org_email_templates_destroy
+      description: |-
+        GET    /org/email-templates/{key}/  — detail (override content or empty if none)
+        PATCH  /org/email-templates/{key}/  — upsert override
+        DELETE /org/email-templates/{key}/  — reset (delete override row)
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/org/email-templates/{key}/preview/:
+    post:
+      operationId: org_email_templates_preview_create
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailTemplatePreviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailTemplatePreviewRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/org/feature-flags/:
     get:
       operationId: org_feature_flags_retrieve
@@ -9354,6 +9453,13 @@ components:
           minimum: 0
         signature:
           type: string
+        accent_color:
+          type: string
+          maxLength: 9
+        header_html:
+          type: string
+        footer_html:
+          type: string
         provider_preset:
           type: string
           maxLength: 32
@@ -9379,6 +9485,19 @@ components:
       required:
       - has_password
       - updated_at
+    EmailTemplatePreviewRequest:
+      type: object
+      description: Request body for the preview endpoint (all fields optional).
+      properties:
+        subject:
+          type: string
+          default: ''
+        text_body:
+          type: string
+          default: ''
+        html_body:
+          type: string
+          default: ''
     Employee:
       type: object
       description: Full HR view — all fields readable; encrypted fields write-through.
@@ -11393,6 +11512,13 @@ components:
         signature:
           type: string
           maxLength: 2000
+        accent_color:
+          type: string
+          maxLength: 9
+        header_html:
+          type: string
+        footer_html:
+          type: string
         provider_preset:
           type: string
           maxLength: 32
@@ -12466,6 +12592,8 @@ components:
           type: string
           format: email
           minLength: 1
+        template_key:
+          type: string
         enabled:
           type: boolean
         smtp_host:
@@ -12516,6 +12644,13 @@ components:
         signature:
           type: string
           maxLength: 2000
+        accent_color:
+          type: string
+          maxLength: 9
+        header_html:
+          type: string
+        footer_html:
+          type: string
         provider_preset:
           type: string
           maxLength: 32
@@ -12807,6 +12942,13 @@ components:
         signature:
           type: string
           maxLength: 2000
+        accent_color:
+          type: string
+          maxLength: 9
+        header_html:
+          type: string
+        footer_html:
+          type: string
         provider_preset:
           type: string
           maxLength: 32
