@@ -66,4 +66,9 @@ app.conf.beat_schedule = {
         "task": "common.audit.tasks.verify_payroll_ledger",
         "schedule": crontab(hour=3, minute=15),
     },
+    "check-email-health": {
+        # Hourly at :30 — probe each org's SMTP; alert org_admins in-app on failure.
+        "task": "modules.notification.tasks.check_email_health",
+        "schedule": crontab(minute=30),
+    },
 }
