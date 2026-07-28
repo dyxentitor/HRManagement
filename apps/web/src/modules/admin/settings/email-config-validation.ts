@@ -17,6 +17,10 @@ export interface EmailConfigForm {
   retry_interval_seconds: number
   signature: string
   provider_preset: string
+  // Branding fields (optional — set via PATCH /org/email-config/ for template rendering)
+  accent_color?: string
+  header_html?: string
+  footer_html?: string
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

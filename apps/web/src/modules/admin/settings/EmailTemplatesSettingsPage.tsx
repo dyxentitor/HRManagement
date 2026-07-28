@@ -96,9 +96,9 @@ export default function EmailTemplatesSettingsPage() {
     try {
       const cfg = await emailConfigApi.get()
       setBranding({
-        accent_color: (cfg as unknown as Record<string, string>).accent_color ?? "",
-        header_html: (cfg as unknown as Record<string, string>).header_html ?? "",
-        footer_html: (cfg as unknown as Record<string, string>).footer_html ?? "",
+        accent_color: cfg.accent_color ?? "",
+        header_html: cfg.header_html ?? "",
+        footer_html: cfg.footer_html ?? "",
         signature: cfg.signature ?? "",
       })
     } catch {
@@ -230,7 +230,7 @@ export default function EmailTemplatesSettingsPage() {
   async function onSaveBranding() {
     setSavingBranding(true)
     try {
-      await emailConfigApi.patch(branding as never)
+      await emailConfigApi.patch(branding)
       toast.success("Branding saved")
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Branding save failed")
