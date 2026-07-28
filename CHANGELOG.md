@@ -2,6 +2,32 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.70.0] — 2026-07-28 — Notification registry unification (Phase 3a)
+
+Eliminates duplicated notification metadata across the backend and frontend. No new endpoints, no migrations, no new permission codes. No runtime or behaviour change — a pure refactor with regression guards.
+
+### Added
+- **One authoritative backend registry** (`modules/notification/registry.py`) — `REGISTRY` (list of `NotificationTypeDef` dataclasses) is now the single source of truth. `DEFAULT_PREFERENCES`, `SECURITY_TYPES`, and the label helpers (`EVENT_LABELS`, `DOMAIN_LABELS`, `label_for()`, `domain_of()`, `domain_label()`) are all derived from it at module load time, replacing the previously separate `defaults.py` and `labels.py` constants. No runtime or behaviour change; a regression test asserts the derived sets equal an explicit pre-refactor snapshot.
+- **`manage.py export_notification_registry` management command** — serialises the registry to a TypeScript constant file (`event-labels.generated.ts`) for the frontend. Run via `make notif-registry`; drift detected at CI time via `make notif-registry-check` (a `diff -q` gate).
+- **`make notif-registry` / `make notif-registry-check` Makefile targets** — codegen and drift-guard targets for the generated frontend file.
+- **`apps/web/src/modules/notifications/event-labels.generated.ts`** — generated constant file exporting `EVENT_LABELS`, `DOMAIN_LABELS`, `SECURITY_TYPES`, `getEventLabel()`, `getDomainLabel()`, and `eventDomain()` for the frontend, derived directly from the backend registry.
+- **Feedback and system domain icons** (`feedback` → `MessageSquare`, `system` → `Settings`) added to the notification bell's domain-icon map; the `/notifications/preferences` table now renders friendly human-readable event labels (from the generated registry) and a "Security" pill for locked rows.
+
+### Removed
+- Both hand-coded frontend `SECURITY_TYPES` sets (in `PreferencesPage.tsx` and `NotificationPreferencesSection.tsx`) removed; components now import from the generated file.
+
+### Fixed
+- Stale frontend label `cert.expiring_soon` ("…within 30 days") corrected to "Certification expiring soon" — wrong for the 90- and 60-day reminder emails. The fix originates in the backend registry and propagates to the frontend via codegen.
+
+### Migrations
+- None.
+
+### Notes
+- No new permission codes (total unchanged at 111).
+- Contracts regenerated; only the `version:` line in `openapi.yaml` changed (no serializer added or removed).
+- Backend guard: **78 passed** (`modules/notification`), all green.
+- Frontend guard: **18 passed** (PreferencesPage, notification-meta, NotificationRow test files), typecheck clean, `notif-registry-check` drift guard green.
+
 ## [1.69.0] — 2026-07-28 — Email delivery UX (immediate lane, humanized digest, approver email)
 
 Phase 2 of the roadmap from `docs/audits/2026-07-28-email-notification-audit.md`. Builds on the v1.68.0 async foundation to deliver per-notification async send, friendly digest copy, and approver email on by default.
