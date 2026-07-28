@@ -2,6 +2,26 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.73.0] — 2026-07-28 — Email Configuration consolidation
+
+Consolidates the two separate Settings pages — **Email Notifications** and **Email Templates** — into a single **Email Configuration** page with a tabbed interface. Frontend-only: no backend, API, permission, or schema changes.
+
+### Changed
+- **One "Email Configuration" settings item** replaces the two sidebar entries. The page uses the design-system `Tabs` bar with two **nested-route** tabs (consistent with the rest of the Settings shell): **Email Server Configuration** (`/admin/settings/email/server`, the renamed Email Notifications page — all SMTP/provider/identity/delivery/signature/connection-test/test-send/health/logs settings) and **Email Templates** (`/admin/settings/email/templates` — list/editor/preview/placeholders/reset/branding). The bar is route-driven and deep-linkable; the last-used tab is remembered (`localStorage`, default Server), and a direct child URL always wins.
+- The bare `/admin/settings/email` redirects to the remembered tab. The old routes redirect for bookmark compatibility: `email-notifications → email/server`, `email-templates → email/templates`.
+
+### Refactored
+- Extracted the two page bodies into reusable `EmailServerConfigTab` / `EmailTemplatesTab` components (under `settings/email/`), with a single `PageHeader` owned by the parent.
+- De-duplicated the `Section` component that was copy-pasted in both pages into one shared `settings/email/Section.tsx`. (The two test-send dialogs were reviewed and intentionally **not** merged — they differ in API call, copy, and side-effects, so a shared abstraction would be worse.)
+
+### Migrations
+- None. No backend, endpoint, permission, or schema changes.
+
+### Notes
+- Frontend: **649 passed** (0 failed) — +7 vs v1.72.0 (shared `Section` + the new `EmailConfigurationPage` tab-switch/redirect tests; the moved tab-body tests keep their original assertions). Backend unchanged (no backend files touched; **1206 passed** at v1.72.0).
+- Contracts: only the `version:` line changed in `openapi.yaml`.
+- DEV-only — built and tagged locally; not deployed.
+
 ## [1.72.0] — 2026-07-28 — Enriched notification emails
 
 Turns the dry notification emails into structured cards — greeting, headline, a details table of the key facts, an action button, and a short "what's next" line — with facts hydrated from the database by a central per-domain enricher. No migrations, no endpoints, no permission codes.
