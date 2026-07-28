@@ -187,10 +187,122 @@ def _leave_card(n: Notification) -> CardContext:
     return _generic_card(n)
 
 
+def _claim_card(n: Notification) -> CardContext:
+    from modules.claims.models import ClaimApproval, ClaimRequest
+
+    name = _greeting_name(n)
+    p = n.payload or {}
+
+    cr = (
+        ClaimRequest.all_objects.select_related("employee", "category")
+        .filter(id=p.get("claim_request_id"))
+        .first()
+    )
+    if cr is None:
+        return _generic_card(n)
+
+    amount_str = _fmt_money(cr.amount, cr.currency_code)
+
+    if n.type == "claim.submitted":
+        emp = cr.employee
+        who = f"{emp.first_name} {emp.last_name}".strip() if emp else str(cr.employee_id)
+        return CardContext(
+            greeting_name=name,
+            headline=f"{who} submitted a claim for your approval",
+            rows=[
+                ("Employee", who),
+                ("Category", cr.category.name),
+                ("Amount", amount_str),
+                ("Expense date", _fmt_date(cr.expense_date)),
+            ],
+            cta_label="Review claim",
+            cta_url=_abs(n.deep_link) if n.deep_link else _abs("/claims/approvals"),
+        )
+
+    if n.type == "claim.approved":
+        return CardContext(
+            greeting_name=name,
+            headline="Your claim was approved ✅",
+            rows=[
+                ("Category", cr.category.name),
+                ("Amount", amount_str),
+                ("Expense date", _fmt_date(cr.expense_date)),
+                ("Merchant", cr.merchant),
+            ],
+            cta_url=_abs(n.deep_link),
+        )
+
+    if n.type == "claim.rejected":
+        appr = (
+            ClaimApproval.objects.filter(claim=cr, status="rejected")
+            .order_by("-acted_at")
+            .first()
+        )
+        rows: list[tuple[str, str]] = [
+            ("Category", cr.category.name),
+            ("Amount", amount_str),
+        ]
+        if appr and appr.comment:
+            rows.append(("Reason", appr.comment))
+        return CardContext(
+            greeting_name=name,
+            headline="Your claim wasn't approved",
+            rows=rows,
+            cta_url=_abs(n.deep_link),
+            whats_next="Amend and resubmit.",
+        )
+
+    if n.type == "claim.reimbursed":
+        return CardContext(
+            greeting_name=name,
+            headline="Your claim has been reimbursed \U0001f4b8",
+            rows=[
+                ("Category", cr.category.name),
+                ("Amount", amount_str),
+                ("Merchant", cr.merchant),
+                ("Status", cr.get_status_display()),
+            ],
+            cta_url=_abs(n.deep_link),
+        )
+
+    return _generic_card(n)
+
+
+def _incentive_card(n: Notification) -> CardContext:
+    """Incentive mandays-claim notifications — payloads are rich, no DB hydration needed."""
+    name = _greeting_name(n)
+    p = n.payload or {}
+
+    suffix = (n.type or "").split(".")[-1]  # claim_submitted / claim_approved / claim_rejected
+    headline_map = {
+        "claim_submitted": "Your mandays claim was submitted",
+        "claim_approved": "Your mandays claim was approved ✅",
+        "claim_rejected": "Your mandays claim was rejected",
+    }
+    headline = headline_map.get(suffix, f"Your mandays claim was {suffix.replace('claim_', '')}")
+
+    rows: list[tuple[str, str]] = [
+        ("Project", str(p.get("project", ""))),
+        ("Mandays", str(p.get("mandays", ""))),
+    ]
+    reason = p.get("reason", "")
+    if suffix == "claim_rejected" and reason:
+        rows.append(("Reason", reason))
+
+    return CardContext(
+        greeting_name=name,
+        headline=headline,
+        rows=rows,
+        cta_url=_abs(n.deep_link),
+    )
+
+
 # domain prefix -> builder(n) -> CardContext. Populated by later tasks.
 DOMAIN_BUILDERS: dict[str, Callable[[Notification], CardContext]] = {}
 
 DOMAIN_BUILDERS["leave"] = _leave_card
+DOMAIN_BUILDERS["claim"] = _claim_card
+DOMAIN_BUILDERS["incentive"] = _incentive_card
 
 
 def build_card(n: Notification) -> CardContext:

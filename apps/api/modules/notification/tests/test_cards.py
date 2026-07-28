@@ -369,3 +369,307 @@ def test_leave_card_falls_back_to_generic_on_missing_request(leave_setup):
     # Should not raise; headline comes from label_for
     assert card is not None
     assert isinstance(card.headline, str)
+
+
+# ---------------------------------------------------------------------------
+# Claims domain card tests
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def claim_setup():
+    """Return (org, category, emp_employee, emp_user) with a real Employee + ClaimRequest."""
+    from modules.claims.models import ClaimCategory, ClaimRequest
+    from modules.employee.models import Employee
+    from modules.organization.models import Department, Organization
+
+    org_id = uuid.uuid4()
+    org = Organization.objects.create(
+        name="ClaimOrg",
+        slug=f"claimorg-{org_id.hex[:8]}",
+        country_code="MY",
+        default_currency="MYR",
+        default_timezone="Asia/Kuala_Lumpur",
+        default_locale="en-MY",
+    )
+    dept = Department.all_objects.create(org_id=org.id, name="Eng")
+    user = User.objects.create_user(
+        email=f"emp-{org_id.hex[:8]}@claim.test",
+        password="x",  # pragma: allowlist secret
+        org_id=org.id,
+    )
+    emp = Employee.all_objects.create(
+        org_id=org.id,
+        user=user,
+        employee_code=f"C{org_id.hex[:6]}",
+        first_name="Bob",
+        last_name="Tan",
+        email=f"emp-{org_id.hex[:8]}@claim.test",
+        phone="+60123456789",
+        date_of_birth=datetime.date(1988, 3, 15),
+        gender="male",
+        nationality="MY",
+        marital_status="single",
+        address_line1="2 Jalan Claim",
+        city="KL",
+        state="Kuala Lumpur",
+        postcode="50000",
+        country_code="MY",
+        department=dept,
+        role_title="Engineer",
+        employment_type="fulltime",
+        hire_date=datetime.date(2022, 6, 1),
+        emergency_contact_name="Ann",
+        emergency_contact_relationship="parent",
+        emergency_contact_phone="+60198765432",
+    )
+    cat = ClaimCategory.all_objects.create(
+        org_id=org.id,
+        code="MEAL",
+        name="Meals",
+        requires_attachment=False,
+        currency_code="MYR",
+    )
+    return org, cat, emp, user
+
+
+@pytest.mark.django_db
+def test_claim_approved_card(claim_setup):
+    """Approved claim card shows Category, Amount, Expense date, Merchant."""
+    from decimal import Decimal
+    from modules.claims.models import ClaimRequest
+
+    org, cat, emp, user = claim_setup
+    cr = ClaimRequest.all_objects.create(
+        org_id=org.id,
+        employee=emp,
+        category=cat,
+        amount=Decimal("125.50"),
+        currency_code="MYR",
+        expense_date=datetime.date(2026, 7, 15),
+        merchant="Nasi Kandar ABC",
+        status="finance_approved",
+    )
+    n = Notification(
+        org_id=org.id,
+        user=user,
+        type="claim.approved",
+        channel="email",
+        payload={"claim_request_id": str(cr.id)},
+        deep_link="/claims/me",
+    )
+    card = build_card(n)
+    assert "approved" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Category") == "Meals"
+    assert "125.50" in d.get("Amount", "")
+    assert "Expense date" in d or "Expense Date" in d
+    expense_val = d.get("Expense date") or d.get("Expense Date")
+    assert expense_val is not None
+    assert card.cta_url.endswith("/claims/me")
+
+
+@pytest.mark.django_db
+def test_claim_rejected_card_includes_reason(claim_setup):
+    """Rejected claim card shows Reason from ClaimApproval.comment."""
+    from decimal import Decimal
+    from modules.claims.models import ClaimApproval, ClaimRequest
+
+    org, cat, emp, user = claim_setup
+    cr = ClaimRequest.all_objects.create(
+        org_id=org.id,
+        employee=emp,
+        category=cat,
+        amount=Decimal("80.00"),
+        currency_code="MYR",
+        expense_date=datetime.date(2026, 7, 20),
+        merchant="Coffee Bean",
+        status="rejected",
+    )
+    ClaimApproval.objects.create(
+        claim=cr,
+        level=1,
+        approver_id=uuid.uuid4(),
+        status="rejected",
+        comment="Receipt does not match claimed amount.",
+    )
+    n = Notification(
+        org_id=org.id,
+        user=user,
+        type="claim.rejected",
+        channel="email",
+        payload={"claim_request_id": str(cr.id)},
+        deep_link="/claims/me",
+    )
+    card = build_card(n)
+    assert "approved" not in card.headline.lower() or "wasn't" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Reason") == "Receipt does not match claimed amount."
+    assert card.whats_next
+
+
+@pytest.mark.django_db
+def test_claim_submitted_card_targets_approver(claim_setup):
+    """Submitted card headline names the employee and CTA goes to /claims/approvals."""
+    from decimal import Decimal
+    from modules.claims.models import ClaimRequest
+    from modules.identity.models import User as HRMSUser
+
+    org, cat, emp, emp_user = claim_setup
+    approver_user = HRMSUser.objects.create_user(
+        email=f"approver-{org.id.hex[:8]}@claim.test",
+        password="x",  # pragma: allowlist secret
+        org_id=org.id,
+    )
+    cr = ClaimRequest.all_objects.create(
+        org_id=org.id,
+        employee=emp,
+        category=cat,
+        amount=Decimal("200.00"),
+        currency_code="MYR",
+        expense_date=datetime.date(2026, 7, 10),
+        merchant="Hotel KL",
+        status="submitted",
+    )
+    n = Notification(
+        org_id=org.id,
+        user=approver_user,
+        type="claim.submitted",
+        channel="email",
+        payload={"claim_request_id": str(cr.id)},
+        deep_link="/claims/approvals",
+    )
+    card = build_card(n)
+    assert "Bob" in card.headline
+    assert "approval" in card.headline.lower()
+    assert card.cta_url.endswith("/claims/approvals")
+    d = dict(card.rows)
+    assert d.get("Employee") == "Bob Tan"
+
+
+@pytest.mark.django_db
+def test_claim_reimbursed_card(claim_setup):
+    """Reimbursed claim card shows Category, Amount, Merchant, Status."""
+    from decimal import Decimal
+    from modules.claims.models import ClaimRequest
+
+    org, cat, emp, user = claim_setup
+    cr = ClaimRequest.all_objects.create(
+        org_id=org.id,
+        employee=emp,
+        category=cat,
+        amount=Decimal("350.00"),
+        currency_code="MYR",
+        expense_date=datetime.date(2026, 6, 30),
+        merchant="Grand Hotel",
+        status="reimbursed",
+    )
+    n = Notification(
+        org_id=org.id,
+        user=user,
+        type="claim.reimbursed",
+        channel="email",
+        payload={"claim_request_id": str(cr.id)},
+        deep_link="/claims/me",
+    )
+    card = build_card(n)
+    assert "reimbursed" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Category") == "Meals"
+    assert "350.00" in d.get("Amount", "")
+    assert d.get("Merchant") == "Grand Hotel"
+    assert "Status" in d
+
+
+@pytest.mark.django_db
+def test_claim_card_falls_back_to_generic_on_missing_request(claim_setup):
+    """Missing claim_request_id falls back to generic card without crashing."""
+    org, cat, emp, user = claim_setup
+    n = Notification(
+        org_id=org.id,
+        user=user,
+        type="claim.approved",
+        channel="email",
+        payload={"claim_request_id": str(uuid.uuid4())},  # non-existent
+        deep_link="/claims/me",
+    )
+    card = build_card(n)
+    assert card is not None
+    assert isinstance(card.headline, str)
+
+
+# ---------------------------------------------------------------------------
+# Incentive domain card tests
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_incentive_approved_card_from_payload(make_user_with_employee):
+    """incentive.claim_approved card shows Project and Mandays from payload."""
+    user = make_user_with_employee(first_name="Siti")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="incentive.claim_approved",
+        channel="email",
+        payload={
+            "claim_id": str(uuid.uuid4()),
+            "project": "Alpha Project",
+            "mandays": "5",
+            "reason": "",
+        },
+        deep_link="/incentive",
+    )
+    card = build_card(n)
+    assert "approved" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Project") == "Alpha Project"
+    assert d.get("Mandays") == "5"
+    assert card.cta_url.endswith("/incentive")
+
+
+@pytest.mark.django_db
+def test_incentive_rejected_card_includes_reason(make_user_with_employee):
+    """incentive.claim_rejected card shows Project, Mandays, and Reason."""
+    user = make_user_with_employee(first_name="Raj")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="incentive.claim_rejected",
+        channel="email",
+        payload={
+            "claim_id": str(uuid.uuid4()),
+            "project": "Beta Project",
+            "mandays": "3",
+            "reason": "Budget exceeded.",
+        },
+        deep_link="/incentive",
+    )
+    card = build_card(n)
+    assert "rejected" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Project") == "Beta Project"
+    assert d.get("Mandays") == "3"
+    assert d.get("Reason") == "Budget exceeded."
+
+
+@pytest.mark.django_db
+def test_incentive_submitted_card(make_user_with_employee):
+    """incentive.claim_submitted card shows Project and Mandays."""
+    user = make_user_with_employee(first_name="Lee")
+    n = Notification(
+        org_id=user.org_id,
+        user=user,
+        type="incentive.claim_submitted",
+        channel="email",
+        payload={
+            "claim_id": str(uuid.uuid4()),
+            "project": "Gamma Project",
+            "mandays": "7",
+        },
+        deep_link="/incentive",
+    )
+    card = build_card(n)
+    assert "submitted" in card.headline.lower() or "mandays" in card.headline.lower()
+    d = dict(card.rows)
+    assert d.get("Project") == "Gamma Project"
+    assert d.get("Mandays") == "7"
+    assert card.cta_url.endswith("/incentive")
