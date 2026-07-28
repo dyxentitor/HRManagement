@@ -39,9 +39,7 @@ vi.mock("@/lib/token-storage", () => ({
 // ── fixtures ─────────────────────────────────────────────────
 
 const PREFS = [
-	// auth domain
-	{ id: 1, type: "auth.login", channel: "in_app", enabled: true },
-	{ id: 2, type: "auth.login", channel: "email", enabled: true },
+	// auth domain (auth.login removed in v1.71.0)
 	{ id: 3, type: "auth.password_changed", channel: "in_app", enabled: true },
 	{ id: 4, type: "auth.password_changed", channel: "email", enabled: true },
 	{ id: 5, type: "auth.mfa_enabled", channel: "in_app", enabled: true },
@@ -211,19 +209,19 @@ describe("PreferencesPage", () => {
 		).toBeInTheDocument();
 	});
 
-	it("renders 22 notification rows (one per unique event type)", async () => {
+	it("renders 21 notification rows (one per unique event type)", async () => {
 		mocks.getPreferences.mockResolvedValue(PREFS);
 		renderPage();
-		await waitFor(() => screen.getByText("Successful sign-in"));
-		// Count checkboxes: 22 event types × 2 channels = 44
+		await waitFor(() => screen.getByText("Password changed"));
+		// Count checkboxes: 21 event types × 2 channels = 42
 		const checkboxes = screen.getAllByRole("checkbox");
-		expect(checkboxes.length).toBe(44);
+		expect(checkboxes.length).toBe(42);
 	});
 
 	it("groups rows by domain with domain headings", async () => {
 		mocks.getPreferences.mockResolvedValue(PREFS);
 		renderPage();
-		await waitFor(() => screen.getByText("Successful sign-in"));
+		await waitFor(() => screen.getByText("Password changed"));
 		expect(screen.getByText(/Account & security/i)).toBeInTheDocument();
 		// Domain headings
 		const leaveHeadings = screen.getAllByText(/^Leave$/i);
@@ -255,16 +253,16 @@ describe("PreferencesPage", () => {
 	it("security events show Security pill and disabled checkboxes", async () => {
 		mocks.getPreferences.mockResolvedValue(PREFS);
 		renderPage();
-		await waitFor(() => screen.getByText("Successful sign-in"));
+		await waitFor(() => screen.getByText("Password changed"));
 		const securityPills = screen.getAllByText("Security");
-		// 5 security event types
-		expect(securityPills.length).toBeGreaterThanOrEqual(5);
+		// 4 security event types (auth.login removed in v1.71.0)
+		expect(securityPills.length).toBeGreaterThanOrEqual(4);
 	});
 
 	it("Save preferences button is disabled when no changes have been made", async () => {
 		mocks.getPreferences.mockResolvedValue(PREFS);
 		renderPage();
-		await waitFor(() => screen.getByText("Successful sign-in"));
+		await waitFor(() => screen.getByText("Password changed"));
 		const saveBtn = screen.getByRole("button", { name: /Save preferences/i });
 		expect(saveBtn).toBeDisabled();
 		// Toggle a non-security checkbox to make it dirty
