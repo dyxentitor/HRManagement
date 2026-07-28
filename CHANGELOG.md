@@ -2,6 +2,38 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.71.0] — 2026-07-28 — Notification orphans + editable email templates (Phase 3b + 3c)
+
+Closes the remaining gaps from `docs/audits/2026-07-28-email-notification-audit.md`: fires the orphaned notification types, moves every email body to real templates, and adds an admin settings page to customise each email's content + shared branding at runtime. Reuses the existing `org:email_config:read`/`:write` permissions — **no new permission codes**.
+
+### Added
+- **Probation / contract-ending alerts** — new `modules/employee/services/tenure_scan.py` + daily Celery-beat task `detect_tenure_endings` (03:00 KL) mirrors the cert-expiry scan: when an employee's `probation_end_date` / `contract_end_date` falls exactly 30 days out, it fires `employee.probation_ending_soon` / `employee.contract_ending_soon` to **HR managers + the employee's manager**. Idempotent via two new `Employee` boolean flags (`probation_alert_sent`, `contract_alert_sent`); best-effort (a notify failure never aborts the scan).
+- **`leave.replacement_granted` alert** — `BalanceService.grant_replacement` now notifies the employee, gated on a *new* accrual only (idempotent replays with the same `reference_id` don't re-notify).
+- **KPI cycle-open alerts** — `open_self_review` / `open_manager_review` now fan out `kpi.cycle_opens_self_review` (to participants) / `kpi.cycle_opens_manager_review` (to participants' distinct managers) via `modules/kpi/services/notify_cycle.py`.
+- **Template-rendered emails** — new `common/mail/render.py::render_email(key, context, org_id) -> (subject, text, html)` + filesystem templates under `common/mail/templates/email/` (`base.html`, `_signature.{txt,html}`, and `.txt`+`.html` for `digest`, `notification`, `security`, `password_reset`, `bank_changed`, `invite`). Every email body — the hourly digest, per-notification/security renders, and the three transactional emails (password reset, bank-changed alert, invite) — now renders through this helper instead of inline Python strings.
+- **Editable email templates (admin settings page)** — new `EmailTemplate` per-org override model + a settings page (`/admin/settings/email-templates`) to edit each email's subject/HTML/plain-text and shared branding (`accent_color`, `header_html`, `footer_html`, signature on `EmailConfiguration`), with an allow-listed placeholder reference, a **live preview** (sandboxed `<iframe sandbox="">`), **test-send**, and **reset-to-default**. New endpoints under `/api/v1/org/`: `email-templates/` (list), `email-templates/{key}/` (GET/PATCH=upsert override/DELETE=reset), `email-templates/{key}/preview/`; `email-config/send-test-email/` gains an optional `template_key`.
+- **Safe placeholder engine** (`common/mail/tokens.py`) — DB-authored overrides render via `{{ token }}` substitution restricted to a per-key allow-list, with all `{% … %}` tags stripped (no SSTI) and HTML-value escaping on the HTML pass. A broken override falls back to the filesystem default without raising. Filesystem defaults (trusted code) still use full Django templating.
+
+### Changed
+- All outbound email bodies are now rendered from templates via `render_email` (no behaviour change to recipients, categories, or `fail_silently` flags). The bank-changed alert subject simplified to `[HRMS] Bank info changed` (the sender email moved into the body).
+
+### Removed
+- **`auth.login`** notification type — never fired (a per-login email is noise; real new-device detection is a separate feature). Removed from the registry; a data migration deletes existing `auth.login` preference rows so the dead toggle disappears from every user's Preferences page.
+
+### Migrations (all additive)
+- `notification 0003_delete_auth_login_prefs` — deletes `auth.login` preference rows (reverse: no-op).
+- `employee 0007…` — adds `probation_alert_sent`, `contract_alert_sent` booleans (default `False`).
+- `common.mail 0002…` — adds the `EmailTemplate` table + `accent_color`/`header_html`/`footer_html` on `EmailConfiguration`.
+
+### Fixed
+- Corrected two **stale count assertions** that were already failing on `master` (not caused by this release): the permission-catalogue total (`126` → `129`, matching the committed `permissions_*.yaml` fixtures after the feedback/incentive modules) and the feature-flag registry count (`17` → `18`, stale since the feedback module added the 18th flag in commit `3d11bb7`).
+
+### Notes
+- **No new permission codes** — the email-template endpoints reuse `org:email_config:read`/`:write`.
+- Contracts regenerated for the new email-template + branding endpoints.
+- Backend: **1172 passed, 3 skipped** (postgres-only trigger tests; 0 failed). Frontend: **642 passed** (0 failed). `make notif-registry-check` clean.
+- DEV-only — built and tagged locally; not deployed.
+
 ## [1.70.0] — 2026-07-28 — Notification registry unification (Phase 3a)
 
 Eliminates duplicated notification metadata across the backend and frontend. No new endpoints, no migrations, no new permission codes. No runtime or behaviour change — a pure refactor with regression guards.
