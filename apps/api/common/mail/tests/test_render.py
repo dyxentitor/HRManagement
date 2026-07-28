@@ -135,3 +135,69 @@ def test_bad_override_falls_back_to_default(caplog):
         )
     assert text  # non-empty default
     assert subject  # filesystem subject applied
+
+
+@pytest.mark.django_db
+def test_override_render_exception_falls_back_to_default():
+    """If render_tokens raises during override rendering, render_email must catch it
+    and return the filesystem default without propagating the exception."""
+    from unittest.mock import patch
+
+    from common.mail.models import EmailTemplate
+
+    org = _make_org()
+    EmailTemplate.objects.create(
+        org_id=org.id,
+        key="password_reset",
+        subject="Custom reset",
+        text_body="Reset: {{ reset_url }}",
+        html_body="<b>Reset:</b> {{ reset_url }}",
+    )
+    # Patch render_tokens as imported inside render.py.
+    # Raise on the first call (override rendering inside the try block) but
+    # delegate subsequent calls (the fallback subject at line 55) to the real function.
+    from common.mail import tokens as _tokens_mod
+
+    _real = _tokens_mod.render_tokens
+    _calls = {"n": 0}
+
+    def _side_effect(*args, **kwargs):
+        _calls["n"] += 1
+        if _calls["n"] == 1:
+            raise RuntimeError("boom")
+        return _real(*args, **kwargs)
+
+    with patch("common.mail.render.render_tokens", side_effect=_side_effect):
+        subject, text, html = render_email(
+            "password_reset", {"reset_url": "https://x/r"}, org_id=org.id
+        )
+    # Must not raise; must return the non-empty filesystem default.
+    assert subject
+    assert text.strip()
+
+
+@pytest.mark.django_db
+def test_override_html_escapes_token_values():
+    """Token values injected into the HTML override body must be HTML-escaped
+    (escape=True path in render_tokens) to prevent XSS from user-supplied data."""
+    from common.mail.models import EmailTemplate
+
+    org = _make_org()
+    EmailTemplate.objects.create(
+        org_id=org.id,
+        key="password_reset",
+        subject="Reset",
+        text_body="Reset: {{ reset_url }}",
+        html_body="<b>{{ reset_url }}</b>",
+    )
+    xss_payload = "<script>alert(1)</script>"
+    subject, text, html = render_email(
+        "password_reset", {"reset_url": xss_payload}, org_id=org.id
+    )
+    # The raw script tag must NOT appear unescaped in the HTML output.
+    assert "<script>" not in html, (
+        "XSS BLOCKER: render_email did not escape token values in html_body — "
+        "raw <script> tag found in returned html."
+    )
+    # The escaped form must be present.
+    assert "&lt;script&gt;" in html
