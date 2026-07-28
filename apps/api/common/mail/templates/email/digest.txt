@@ -1,0 +1,5 @@
+You have {{ count }} new HRMS notification(s):
+{% for g in groups %}
+{{ g.heading }}:{% for i in g.items %}
+  - {{ i.label }} — {{ i.link }}{% endfor %}
+{% endfor %}
