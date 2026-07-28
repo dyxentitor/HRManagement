@@ -12,8 +12,17 @@ from common.mail import send as mail_send
 from common.mail.render import render_email
 from modules.notification.labels import domain_label, domain_of, label_for
 from modules.notification.models import EmailDigestRun, Notification
+from modules.notification.services.cards import build_card
 
 logger = logging.getLogger(__name__)
+
+
+def _item_label(n: Notification) -> str:
+    """Return the enriched card headline for *n*, falling back to the bare label."""
+    try:
+        return build_card(n).headline
+    except Exception:
+        return label_for(n.type)
 
 
 def send_digests() -> dict[str, int]:
@@ -51,7 +60,7 @@ def send_digests() -> dict[str, int]:
             {
                 "heading": domain_label(items[0].type),
                 "items": [
-                    {"label": label_for(n.type),
+                    {"label": _item_label(n),
                      "link": f"{base}{n.deep_link}" if n.deep_link else base}
                     for n in items
                 ],

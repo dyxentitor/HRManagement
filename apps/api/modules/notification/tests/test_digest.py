@@ -184,3 +184,141 @@ def test_digest_humanized_body(user):
     assert "<h3>" in html_body
     assert "<ul>" in html_body
     assert "<li>" in html_body
+
+
+# ---------------------------------------------------------------------------
+# Task-7: digest items use card headline instead of bare label
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def _leave_approved_setup():
+    """Create org + dept + leave type + user + employee + leave request."""
+    import datetime
+    from decimal import Decimal
+
+    from modules.employee.models import Employee
+    from modules.leave.models import LeaveRequest, LeaveType
+    from modules.organization.models import Department, Organization
+
+    org_id = uuid.uuid4()
+    org = Organization.objects.create(
+        name=f"DigestOrg-{org_id.hex[:6]}",
+        slug=f"digestorg-{org_id.hex[:8]}",
+        country_code="MY",
+        default_currency="MYR",
+        default_timezone="Asia/Kuala_Lumpur",
+        default_locale="en-MY",
+    )
+    dept = Department.all_objects.create(org_id=org.id, name="HR")
+    lt = LeaveType.all_objects.create(
+        org_id=org.id,
+        code="ANNUAL",
+        name="Annual Leave",
+        accrual_type="annual",
+        default_days=Decimal("14"),
+        is_paid=True,
+        is_statutory=True,
+        gender_restriction="any",
+    )
+    user = User.objects.create_user(
+        email=f"duser-{org_id.hex[:8]}@digest.test",
+        password="x",  # pragma: allowlist secret
+        org_id=org.id,
+    )
+    emp = Employee.all_objects.create(
+        org_id=org.id,
+        user=user,
+        employee_code=f"D{org_id.hex[:6]}",
+        first_name="Alice",
+        last_name="Wong",
+        email=f"duser-{org_id.hex[:8]}@digest.test",
+        department=dept,
+        employment_type="fulltime",
+        hire_date=datetime.date(2023, 1, 1),
+    )
+    lr = LeaveRequest.all_objects.create(
+        org_id=org.id,
+        employee_id=emp.id,
+        leave_type=lt,
+        start_date=datetime.date(2026, 8, 10),
+        end_date=datetime.date(2026, 8, 12),
+        total_days=Decimal("3"),
+        is_half_day=False,
+        reason="Holiday",
+        status="approved",
+    )
+    return org, user, lr
+
+
+@pytest.mark.django_db
+def test_digest_item_uses_card_headline(_leave_approved_setup):
+    """Digest email body contains the enriched card headline (not the bare label)
+    when build_card can hydrate from the payload.
+    """
+    org, user, lr = _leave_approved_setup
+    Notification.objects.create(
+        org_id=org.id,
+        user=user,
+        type="leave.approved",
+        channel="email",
+        delivery_status="pending",
+        payload={"leave_request_id": str(lr.id)},
+        deep_link="/leave/me",
+    )
+
+    send_digests()
+    assert len(mail.outbox) == 1
+
+    text_body = mail.outbox[0].body
+    html_body = mail.outbox[0].alternatives[0][0]
+
+    # The enriched headline from _leave_card
+    expected_headline = "Your leave request has been approved"
+    assert expected_headline in text_body, (
+        f"Expected card headline '{expected_headline}' in text body, got: {text_body[:500]}"
+    )
+    assert expected_headline in html_body, (
+        f"Expected card headline '{expected_headline}' in HTML body"
+    )
+
+    # The bare label should NOT appear as the item line (it would if _item_label fell back)
+    bare_label = label_for("leave.approved")
+    # The bare label is a different string to the headline; it should not appear in the item list.
+    # (Domain headings may use domain_label which is different; we check for the specific bare label.)
+    assert bare_label != expected_headline  # sanity: they differ
+    # The bare label should not be in the body when the card headline is richer
+    assert bare_label not in text_body, (
+        f"Bare label '{bare_label}' should not appear when card headline is used"
+    )
+
+
+@pytest.mark.django_db
+def test_digest_item_falls_back_to_label_on_build_card_failure(user, monkeypatch):
+    """When build_card raises, _item_label falls back to label_for(n.type)."""
+    import modules.notification.services.digest as d
+
+    def _always_raise(n):
+        raise RuntimeError("card builder exploded")
+
+    monkeypatch.setattr(d, "build_card", _always_raise)
+
+    Notification.objects.create(
+        org_id=user.org_id,
+        user=user,
+        type="leave.approved",
+        channel="email",
+        delivery_status="pending",
+        payload={"leave_request_id": str(uuid.uuid4())},
+        deep_link="/leave/me",
+    )
+
+    send_digests()
+    assert len(mail.outbox) == 1
+
+    text_body = mail.outbox[0].body
+    html_body = mail.outbox[0].alternatives[0][0]
+
+    # Fallback to bare label
+    bare_label = label_for("leave.approved")
+    assert bare_label in text_body
+    assert bare_label in html_body
