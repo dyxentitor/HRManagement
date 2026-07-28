@@ -15,7 +15,7 @@
 </head>
 <body>
   <div class="wrapper">
-    <div class="header"><h1>HRMS</h1></div>
+    <div class="header"><h1>HRMS</h1>{{ header_html|safe }}</div>
     <div class="body">
       {% block body %}{% endblock %}
       {{ footer_html|safe }}

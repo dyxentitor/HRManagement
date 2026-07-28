@@ -201,3 +201,71 @@ def test_override_html_escapes_token_values():
     )
     # The escaped form must be present.
     assert "&lt;script&gt;" in html
+
+
+# ── Task 16: branding shell is live + notification org_id threads through ─────
+
+
+@pytest.mark.django_db
+def test_branding_accent_appears_in_rendered_html():
+    """EmailConfiguration accent_color must reach the rendered html via base.html."""
+    from common.mail.models import EmailConfiguration
+
+    org = _make_org()
+    EmailConfiguration.objects.create(org_id=org.id, accent_color="#123456")
+    ctx = {
+        "count": 1,
+        "groups": [
+            {
+                "heading": "Leave",
+                "items": [{"label": "Leave approved", "link": "https://x/leave/me"}],
+            }
+        ],
+    }
+    _, _, html = render_email("digest", ctx, org_id=org.id)
+    assert "#123456" in html, "accent_color must appear in rendered html (base.html not wired)"
+    assert "Leave approved" in html, "digest body content must still be present after wrapping"
+    assert "You have" in html, "digest body opening text must still be present after wrapping"
+
+
+@pytest.mark.django_db
+def test_notification_render_applies_org_override():
+    """render_notification_email must pass org_id so EmailTemplate overrides are applied."""
+    import uuid
+
+    from common.mail.models import EmailTemplate
+
+    from modules.identity.models import User
+    from modules.notification.models import Notification
+    from modules.notification.services.immediate import render_notification_email
+
+    org_id = uuid.uuid4()
+    EmailTemplate.objects.create(
+        org_id=org_id,
+        key="notification",
+        subject="Custom notification subject",
+        text_body="Custom text body for org",
+        html_body="<p>Custom HTML override for org</p>",
+    )
+    # Create a user and a notification row with the matching org_id
+    user = User.objects.create_user(  # pragma: allowlist secret
+        email=f"notif-test-{uuid.uuid4().hex[:6]}@x.com",
+        password="x",
+        org_id=org_id,
+    )
+    n = Notification.objects.create(
+        org_id=org_id,
+        user=user,
+        type="leave.approved",
+        channel="email",
+        payload={},
+        deep_link="/leave/me",
+        priority="normal",
+    )
+    subject, text, html = render_notification_email(n)
+    assert "Custom notification subject" in subject, (
+        "Per-org EmailTemplate override subject must be used when org_id is threaded through"
+    )
+    assert "Custom HTML override for org" in html, (
+        "Per-org EmailTemplate override html_body must appear in rendered html"
+    )

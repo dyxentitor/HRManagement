@@ -1,7 +1,7 @@
-<p>Employee <strong>{{ name }}</strong> (<code>{{ employee_code }}</code>) changed their bank info via self-service.</p>
+{% extends "email/base.html" %}{% block body %}<p>Employee <strong>{{ name }}</strong> (<code>{{ employee_code }}</code>) changed their bank info via self-service.</p>
 <table style="border-collapse:collapse;margin:16px 0;font-size:14px">
   <tr><td style="padding:4px 12px 4px 0;color:#6b6b80">Bank</td><td style="padding:4px 0">{{ bank_name }}</td></tr>
   <tr><td style="padding:4px 12px 4px 0;color:#6b6b80">Last 4 digits</td><td style="padding:4px 0">{{ last4 }}</td></tr>
   <tr><td style="padding:4px 12px 4px 0;color:#6b6b80">Changed by</td><td style="padding:4px 0">{{ email }}</td></tr>
   <tr><td style="padding:4px 12px 4px 0;color:#6b6b80">Time</td><td style="padding:4px 0">{{ timestamp }}</td></tr>
-</table>
+</table>{% endblock %}
