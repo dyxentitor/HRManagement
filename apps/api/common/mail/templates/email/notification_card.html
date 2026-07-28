@@ -1,0 +1,5 @@
+{% extends "email/base.html" %}{% block body %}<p>Hi {{ greeting_name }},</p>
+<p style="font-size:16px;font-weight:600">{{ headline }}</p>
+{% if rows %}<table style="border-collapse:collapse;margin:16px 0;font-size:14px">{% for r in rows %}<tr><td style="padding:4px 16px 4px 0;color:#6b6b80;white-space:nowrap">{{ r.label }}</td><td style="padding:4px 0">{{ r.value }}</td></tr>{% endfor %}</table>{% endif %}
+<p style="margin:24px 0"><a href="{{ cta_url }}" style="background:#7c5cff;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600;display:inline-block">{{ cta_label }} →</a></p>
+{% if whats_next %}<p style="color:#6b6b80;font-size:13px">{{ whats_next }}</p>{% endif %}{% endblock %}

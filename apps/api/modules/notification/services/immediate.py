@@ -80,5 +80,8 @@ def render_notification_email(n: Notification) -> tuple[str, str, str]:
     if n.type in SECURITY_TYPES:
         subject, message, warn = _security_copy(n)
         return render_email("security", {"subject": subject, "message": message, "warn": warn}, org_id=n.org_id)
-    label = label_for(n.type)
-    return render_email("notification", {"label": label, "link": _abs_link(n.deep_link)}, org_id=n.org_id)
+    from modules.notification.services.cards import build_card
+
+    card = build_card(n)
+    ctx = {**card.as_context(), "subject": f"[HRMS] {label_for(n.type)}"}
+    return render_email("notification_card", ctx, org_id=n.org_id)

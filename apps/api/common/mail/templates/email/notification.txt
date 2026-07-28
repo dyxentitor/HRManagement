@@ -1,3 +1,0 @@
-{% autoescape off %}{{ label }}.
-
-Open in HRMS: {{ link }}{% endautoescape %}

@@ -203,6 +203,25 @@ def test_override_html_escapes_token_values():
     assert "&lt;script&gt;" in html
 
 
+# ── Task 2: notification_card template ───────────────────────────────────────
+
+
+@pytest.mark.django_db
+def test_notification_card_renders_greeting_rows_cta():
+    ctx = {
+        "greeting_name": "Jane",
+        "headline": "Your leave request has been approved ✅",
+        "rows": [{"label": "Type", "value": "Annual Leave"}, {"label": "Days", "value": "3"}],
+        "cta_label": "View request",
+        "cta_url": "https://x/leave/me",
+        "whats_next": "A calendar hold will be added.",
+    }
+    subject, text, html = render_email("notification_card", ctx)
+    for probe in ("Jane", "approved", "Annual Leave", "View request", "https://x/leave/me", "calendar hold"):
+        assert probe in text, f"probe {probe!r} missing from text"
+        assert probe in html, f"probe {probe!r} missing from html"
+
+
 # ── Task 16: branding shell is live + notification org_id threads through ─────
 
 
@@ -230,7 +249,12 @@ def test_branding_accent_appears_in_rendered_html():
 
 @pytest.mark.django_db
 def test_notification_render_applies_org_override():
-    """render_notification_email must pass org_id so EmailTemplate overrides are applied."""
+    """render_notification_email must pass org_id so EmailTemplate overrides are applied.
+
+    Updated in Task 2: render_notification_email now uses key="notification_card"
+    (card-enriched template) instead of the old bare "notification" key. The
+    EmailTemplate override must be registered under the new key to be applied.
+    """
     import uuid
 
     from common.mail.models import EmailTemplate
@@ -242,8 +266,8 @@ def test_notification_render_applies_org_override():
     org_id = uuid.uuid4()
     EmailTemplate.objects.create(
         org_id=org_id,
-        key="notification",
-        subject="Custom notification subject",
+        key="notification_card",
+        subject="Custom notification_card subject",
         text_body="Custom text body for org",
         html_body="<p>Custom HTML override for org</p>",
     )
@@ -263,7 +287,7 @@ def test_notification_render_applies_org_override():
         priority="normal",
     )
     subject, text, html = render_notification_email(n)
-    assert "Custom notification subject" in subject, (
+    assert "Custom notification_card subject" in subject, (
         "Per-org EmailTemplate override subject must be used when org_id is threaded through"
     )
     assert "Custom HTML override for org" in html, (
