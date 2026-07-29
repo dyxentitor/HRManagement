@@ -523,4 +523,16 @@ class BondViewSet(viewsets.ModelViewSet):
         if bond.accepted_at is None:
             bond.accepted_at = timezone.now()
             bond.save(update_fields=["accepted_at", "updated_at"])
+            _audit(
+                request,
+                "incentive.bond.accepted",
+                "incentive_bond",
+                bond.id,
+                after={
+                    "employee_id": str(bond.employee_id),
+                    "terms_version": bond.terms_version,
+                    "accepted_at": str(bond.accepted_at),
+                    "accepted_by_user": str(request.user.id),
+                },
+            )
         return Response(BondSerializer(bond).data)

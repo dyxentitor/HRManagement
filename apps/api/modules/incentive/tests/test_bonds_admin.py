@@ -264,3 +264,38 @@ def test_bond_cud_writes_audit(admin_client, org, make_employee):
     revoked = AuditLog.objects.filter(entity="incentive_bond", action="incentive.bond.revoked").first()
     assert revoked.after["employee_id"] == str(emp.id)
     assert revoked.after["period_start"] == str(today)
+
+
+@pytest.mark.django_db
+def test_accept_writes_audit_with_actor_info(org, dept, make_employee):
+    # employee with a linked user accepts their own bond
+    emp = make_employee("Acceptor")
+    u = User.objects.create_user(email="acceptor@bonds.com", password="x", org_id=org.id)
+    emp.user = u
+    emp.save(update_fields=["user"])
+    role = Role.objects.create(org_id=org.id, code="bond_self", name="Bond Self", is_system=False)
+    _grant(role, "incentive:claim")
+    UserRole.objects.create(user=u, role=role)
+    today = timezone.localdate()
+    bond = _mk_bond(org, emp, start=today, end=today + dt.timedelta(days=90), accepted=False)
+
+    c = _client(u)
+    r = c.post(f"{BONDS}{bond.id}/accept/")
+    assert r.status_code == 200
+    bond.refresh_from_db()
+    assert bond.accepted_at is not None
+
+    row = AuditLog.objects.filter(
+        entity="incentive_bond", action="incentive.bond.accepted"
+    ).first()
+    assert row is not None
+    assert row.after["employee_id"] == str(emp.id)
+    assert row.after["terms_version"] == bond.terms_version
+    assert row.after["accepted_at"]  # timestamp recorded
+
+    # idempotent: second accept doesn't double-audit
+    c.post(f"{BONDS}{bond.id}/accept/")
+    assert (
+        AuditLog.objects.filter(entity="incentive_bond", action="incentive.bond.accepted").count()
+        == 1
+    )

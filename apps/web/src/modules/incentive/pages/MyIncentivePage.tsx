@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { type Claim, type MeSummary, incentiveApi } from "../api";
+import { BondAcceptModal } from "../components/BondAcceptModal";
 import { ClaimComposer, type ComposerInitial, type ComposerMode } from "../components/ClaimComposer";
 import { IncentiveHero } from "../components/IncentiveHero";
 import { MandayKpis } from "../components/MandayKpis";
@@ -23,6 +24,7 @@ interface ComposerState {
 export default function MyIncentivePage() {
 	const [summary, setSummary] = useState<MeSummary | null>(null);
 	const [composer, setComposer] = useState<ComposerState | null>(null);
+	const [acceptOpen, setAcceptOpen] = useState(false);
 
 	const load = useCallback(async () => {
 		setSummary(await incentiveApi.me().catch(() => null));
@@ -40,6 +42,7 @@ export default function MyIncentivePage() {
 			void load();
 		} catch (e) {
 			toast.error(e instanceof Error ? e.message : "Could not accept bond.");
+			throw e; // keep the confirmation dialog open on failure
 		}
 	}
 
@@ -116,7 +119,7 @@ export default function MyIncentivePage() {
 				rate={summary.rate}
 				projectCount={summary.my_projects.length}
 				onLogClaim={() => openCreate()}
-				onAccept={acceptBond}
+				onAccept={() => setAcceptOpen(true)}
 			/>
 
 			{!summary.has_employee && (
@@ -173,7 +176,7 @@ export default function MyIncentivePage() {
 				</div>
 
 				<div className="space-y-4">
-					<EligibilityCard eligibility={summary.eligibility} onAccept={acceptBond} />
+					<EligibilityCard eligibility={summary.eligibility} onAccept={() => setAcceptOpen(true)} />
 					<EarningTrend trend={summary.trend} />
 					<MyProjectsCard
 						mine={summary.my_projects}
@@ -183,6 +186,13 @@ export default function MyIncentivePage() {
 					<PayoutCard payout={summary.payout} />
 				</div>
 			</div>
+
+			<BondAcceptModal
+				eligibility={summary.eligibility}
+				open={acceptOpen}
+				onOpenChange={setAcceptOpen}
+				onConfirm={acceptBond}
+			/>
 		</div>
 	);
 }
