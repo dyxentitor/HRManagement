@@ -2,6 +2,27 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.75.0] — 2026-07-29 — Bond management (People → Bonds)
+
+Gives HR a UI to manage mandays incentive bonds — previously the backend CRUD existed but bonds could only be created via raw API calls. Employee-side accept flow unchanged.
+
+### Added
+- **People → Bonds page** (`/admin/people/bonds`, new sidebar item, `incentive:admin` — held by org_admin + hr_manager): summary chips (Active / Awaiting acceptance / Expired / No bond, click-to-filter) above an **employee coverage table** — one row per active employee joined with their bond, with search, sortable Employee/Status columns, pagination, skeleton/empty states, and status pills. Row actions: **Create bond** on unbonded rows; **Edit** and **Revoke** (danger confirm) on bonded rows. One `BondModal` for create+edit with an inline "requires re-accept" hint when terms change.
+- **`GET /api/v1/incentive/bonds/coverage/`** (admin-only) — the employee×bond join with status derivation (`none`/`pending`/`active`/`expired`) and name/code enrichment.
+- **Audit logging for bond CUD** — `incentive.bond.{created,updated,revoked}`; revoke snapshots the full bond (employee, period, terms, accepted_at) before the hard delete, so acceptance history survives.
+- **Validation guards** — one bond per employee (clean 400 mirroring the DB constraint), `period_end` must be after `period_start`, employee immutable on update.
+
+### Changed
+- **Editing `terms_version` clears `accepted_at`** — the employee must re-accept the new terms (their existing My Incentive accept flow handles this automatically). Period-only edits keep the acceptance.
+
+### Migrations
+- None. No new permission codes. Revoke remains a hard delete (claims don't reference bonds) — now with an audit snapshot.
+
+### Notes
+- Backend: **1224 passed, 3 skipped** (0 failed; +7 bond tests). Frontend: **680 passed** (0 failed; +8 BondsPage tests).
+- Contracts: +52 lines (the new coverage action), additive.
+- DEV-only — built and tagged locally; not deployed.
+
 ## [1.74.0] — 2026-07-29 — Incentive admin CRUD
 
 Completes CRUD for the Incentive admin area (`/admin/incentive`). Previously customers/projects could only be created; now both are fully manageable with soft, reversible deletes and audit logging. Motivated by the 2026-07-29 incident where two just-created customers had to be removed via a prod shell.

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.74.0
+  version: 1.75.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -3043,6 +3043,21 @@ paths:
             schema:
               $ref: '#/components/schemas/BondRequest'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bond'
+          description: ''
+  /api/v1/incentive/bonds/coverage/:
+    get:
+      operationId: incentive_bonds_coverage_retrieve
+      description: One row per active employee, joined with their bond. Admin-only.
+      tags:
+      - incentive
       security:
       - jwtAuth: []
       responses:

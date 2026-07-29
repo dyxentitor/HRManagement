@@ -1666,6 +1666,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/incentive/bonds/coverage/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One row per active employee, joined with their bond. Admin-only. */
+        get: operations["incentive_bonds_coverage_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/incentive/claims/": {
         parameters: {
             query?: never;
@@ -9835,6 +9852,25 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["BondRequest"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bond"];
+                };
+            };
+        };
+    };
+    incentive_bonds_coverage_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
