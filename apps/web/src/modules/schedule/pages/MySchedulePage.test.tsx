@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { addDaysIso, startOfWeekIsoLocal } from "../lib/local-date";
+import { addDaysIso, startOfWeekIsoLocal, todayIsoLocal } from "../lib/local-date";
 
 const mocks = vi.hoisted(() => ({
 	myAssignments: vi.fn(),
@@ -36,9 +36,14 @@ vi.mock("@/lib/auth", () => ({
 
 import MySchedulePage from "./MySchedulePage";
 
-// Place the holiday inside the week the page will actually render.
+// Place the holiday inside the week the page will actually render — but NOT on
+// today: today's card renders as the hero (no title= attr), so a holiday landing
+// on the current day made this test fail every Wednesday (weekStart+2 == today).
 const weekStart = startOfWeekIsoLocal(new Date());
-const holidayDate = addDaysIso(weekStart, 2);
+const holidayDate =
+	addDaysIso(weekStart, 2) === todayIsoLocal()
+		? addDaysIso(weekStart, 3)
+		: addDaysIso(weekStart, 2);
 // ~2 months out — guaranteed a different calendar month than the viewed week.
 const outOfMonthDate = addDaysIso(weekStart, 60);
 
