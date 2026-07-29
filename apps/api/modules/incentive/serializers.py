@@ -60,6 +60,26 @@ class ProjectSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "created_at", "manager_id")
 
+    def validate(self, attrs):
+        if self.instance is not None:
+            # customer is immutable after creation — silently drop any attempt to change it
+            attrs.pop("customer", None)
+
+            # budget cannot be lowered below what has already been consumed
+            if "budget_mandays" in attrs:
+                from .services.ledger import project_consumed
+
+                consumed = project_consumed(self.instance.id)
+                if attrs["budget_mandays"] < consumed:
+                    raise serializers.ValidationError(
+                        {
+                            "budget_mandays": (
+                                f"Budget cannot be below the {consumed} mandays already consumed."
+                            )
+                        }
+                    )
+        return attrs
+
 
 class ClaimSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source="project.name", read_only=True)

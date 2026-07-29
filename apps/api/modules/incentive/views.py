@@ -179,20 +179,47 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         self._gate_write()
         emp = _employee(self.request)
-        serializer.save(
+        obj = serializer.save(
             org_id=self.request.user.org_id,
             manager_id=emp.id if emp else None,
             created_by=self.request.user.id,
         )
+        _audit(
+            self.request,
+            "incentive.project.created",
+            "incentive_project",
+            obj.id,
+            after={"name": obj.name, "customer": str(obj.customer_id)},
+        )
 
     def perform_update(self, serializer):
         self._gate_write()
-        serializer.save()
+        # Capture before-values for the fields that are changing
+        before = {f: str(getattr(serializer.instance, f)) for f in serializer.validated_data}
+        was_closed = serializer.instance.status == "closed"
+        obj = serializer.save()
+        flipped_to_open = was_closed and obj.status == "open"
+        action = "incentive.project.reopened" if flipped_to_open else "incentive.project.updated"
+        _audit(
+            self.request,
+            action,
+            "incentive_project",
+            obj.id,
+            before=before,
+            after={f: str(getattr(obj, f)) for f in serializer.validated_data},
+        )
 
     def perform_destroy(self, instance):
         self._gate_write()
         instance.status = "closed"
         instance.save(update_fields=["status", "updated_at"])
+        _audit(
+            self.request,
+            "incentive.project.closed",
+            "incentive_project",
+            instance.id,
+            after={"name": instance.name, "status": "closed"},
+        )
 
 
 @requires_feature("incentive")
