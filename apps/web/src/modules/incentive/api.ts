@@ -125,6 +125,16 @@ export interface Bond {
 	created_at: string;
 }
 
+export type BondCoverageStatus = "none" | "pending" | "active" | "expired";
+
+export interface BondCoverageRow {
+	employee_id: string;
+	employee_name: string;
+	employee_code: string;
+	bond: Bond | null;
+	status: BondCoverageStatus;
+}
+
 // --- employee "My Mandays" summary ---
 export interface MeEligibility {
 	has_bond: boolean;
@@ -275,5 +285,17 @@ export const incentiveApi = {
 	bonds: {
 		list: () => _get<{ results?: Bond[] } | Bond[]>(`${BASE}/bonds/`).then(unwrap),
 		accept: (id: string) => _post<Bond>(`${BASE}/bonds/${id}/accept/`),
+		coverage: () => _get<BondCoverageRow[]>(`${BASE}/bonds/coverage/`),
+		create: (body: {
+			employee_id: string;
+			period_start: string;
+			period_end: string;
+			terms_version?: string;
+		}) => _post<Bond>(`${BASE}/bonds/`, body),
+		update: (
+			id: string,
+			body: { period_start?: string; period_end?: string; terms_version?: string },
+		) => _patch<Bond>(`${BASE}/bonds/${id}/`, body),
+		revoke: (id: string) => _del(`${BASE}/bonds/${id}/`),
 	},
 };
