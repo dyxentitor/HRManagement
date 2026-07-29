@@ -22,6 +22,19 @@ class CustomerSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "created_at")
 
+    def validate_name(self, value):
+        request = self.context.get("request")
+        qs = Customer.objects.filter(
+            org_id=request.user.org_id,
+            is_active=True,
+            name__iexact=value.strip(),
+        )
+        if self.instance is not None:
+            qs = qs.exclude(id=self.instance.id)
+        if qs.exists():
+            raise serializers.ValidationError(f"A customer named '{value.strip()}' already exists.")
+        return value.strip()
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source="customer.name", read_only=True)

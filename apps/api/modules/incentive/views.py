@@ -32,6 +32,20 @@ OVERVIEW_PERMS = {"incentive:admin", "incentive:project:write"}
 _log = logging.getLogger(__name__)
 
 
+def _audit(request, action, entity, entity_id, *, before=None, after=None):
+    """Write a Tier-1 audit row for incentive customer CUD operations."""
+    from common.audit.service import append
+
+    append(
+        org_id=request.user.org_id,
+        action=action,
+        entity=entity,
+        entity_id=entity_id,
+        before=before,
+        after=after,
+    )
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def overview_view(request):
@@ -71,10 +85,54 @@ class CustomerViewSet(viewsets.ModelViewSet):
     required_perms: ClassVar = [ADMIN]
 
     def get_queryset(self):
-        return Customer.objects.filter(org_id=self.request.user.org_id).order_by("name")
+        qs = Customer.objects.filter(org_id=self.request.user.org_id).order_by("name")
+        # Always include all rows for detail actions so admins can retrieve/update inactive
+        # customers (e.g. PATCH is_active=True to reactivate). For list, filter by is_active
+        # unless the caller explicitly opts in.
+        if self.action in ("retrieve", "update", "partial_update", "destroy"):
+            return qs
+        if self.request.query_params.get("include_inactive") not in ("1", "true"):
+            qs = qs.filter(is_active=True)
+        return qs
 
     def perform_create(self, serializer):
-        serializer.save(org_id=self.request.user.org_id, created_by=self.request.user.id)
+        obj = serializer.save(org_id=self.request.user.org_id, created_by=self.request.user.id)
+        _audit(
+            self.request,
+            "incentive.customer.created",
+            "incentive_customer",
+            obj.id,
+            after={"name": obj.name},
+        )
+
+    def perform_update(self, serializer):
+        before = {f: getattr(serializer.instance, f) for f in serializer.validated_data}
+        was_active = serializer.instance.is_active
+        obj = serializer.save()
+        action = (
+            "incentive.customer.reactivated"
+            if not was_active and obj.is_active
+            else "incentive.customer.updated"
+        )
+        _audit(
+            self.request,
+            action,
+            "incentive_customer",
+            obj.id,
+            before={k: str(v) for k, v in before.items()},
+            after={k: str(getattr(obj, k)) for k in before},
+        )
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=["is_active", "updated_at"])
+        _audit(
+            self.request,
+            "incentive.customer.deactivated",
+            "incentive_customer",
+            instance.id,
+            after={"name": instance.name, "is_active": False},
+        )
 
     @action(detail=True, methods=["post"])
     def top_up(self, request, pk=None):
