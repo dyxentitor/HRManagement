@@ -219,6 +219,10 @@ async function _patch<T>(url: string, body: unknown): Promise<T> {
 	if (error) throw new Error(_msg(error, `PATCH ${url} failed`));
 	return data as T;
 }
+async function _del(url: string): Promise<void> {
+	const { error } = await api.DELETE(url as never);
+	if (error) throw new Error(_msg(error, `DELETE ${url} failed`));
+}
 
 const unwrap = <T>(d: { results?: T[] } | T[]): T[] => (Array.isArray(d) ? d : (d.results ?? []));
 
@@ -226,10 +230,17 @@ const BASE = "/api/v1/incentive";
 
 export const incentiveApi = {
 	customers: {
-		list: () => _get<{ results?: Customer[] } | Customer[]>(`${BASE}/customers/`).then(unwrap),
+		list: (opts?: { includeInactive?: boolean }) => {
+			const query = opts?.includeInactive ? "?include_inactive=1" : "";
+			return _get<{ results?: Customer[] } | Customer[]>(`${BASE}/customers/${query}`).then(unwrap);
+		},
 		create: (body: { name: string; notes?: string }) => _post<Customer>(`${BASE}/customers/`, body),
 		topUp: (id: string, mandays: string, note = "") =>
 			_post<Customer>(`${BASE}/customers/${id}/top_up/`, { mandays, note }),
+		update: (id: string, body: { name?: string; notes?: string; is_active?: boolean }) =>
+			_patch<Customer>(`${BASE}/customers/${id}/`, body),
+		deactivate: (id: string) => _del(`${BASE}/customers/${id}/`),
+		reactivate: (id: string) => _patch<Customer>(`${BASE}/customers/${id}/`, { is_active: true }),
 	},
 	overview: () => _get<Overview>(`${BASE}/overview/`),
 	me: () => _get<MeSummary>(`${BASE}/me/`),
@@ -243,8 +254,10 @@ export const incentiveApi = {
 			include_soc?: boolean;
 			deadline?: string | null;
 		}) => _post<Project>(`${BASE}/projects/`, body),
-		update: (id: string, body: Partial<Pick<Project, "include_soc" | "name" | "description">>) =>
+		update: (id: string, body: { name?: string; description?: string; budget_mandays?: string; deadline?: string | null; include_soc?: boolean; status?: ProjectStatus }) =>
 			_patch<Project>(`${BASE}/projects/${id}/`, body),
+		close: (id: string) => _del(`${BASE}/projects/${id}/`),
+		reopen: (id: string) => _patch<Project>(`${BASE}/projects/${id}/`, { status: "open" }),
 	},
 	claims: {
 		list: () => _get<{ results?: Claim[] } | Claim[]>(`${BASE}/claims/`).then(unwrap),
