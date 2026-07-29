@@ -10,7 +10,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 
-import { type Customer, type OverviewPool, incentiveApi } from "../api";
+import { type Customer, type OverviewPool, type Project, incentiveApi } from "../api";
 
 const field =
 	"w-full bg-canvas border border-border-subtle rounded-md px-3 py-2 text-body focus:outline-none focus:border-accent-500/50";
@@ -193,6 +193,133 @@ export function TopUpModal({
 					</Button>
 					<Button onClick={save} disabled={busy} className="bg-accent-500 text-white">
 						Top up
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+export function EditProjectModal({
+	open,
+	onOpenChange,
+	onDone,
+	project,
+}: DialogBase & { project: Project | null }) {
+	const [name, setName] = useState("");
+	const [description, setDescription] = useState("");
+	const [budget, setBudget] = useState("");
+	const [deadline, setDeadline] = useState("");
+	const [includeSoc, setIncludeSoc] = useState(false);
+	const [busy, setBusy] = useState(false);
+
+	useEffect(() => {
+		if (project) {
+			setName(project.name);
+			setDescription(project.description ?? "");
+			setBudget(project.budget_mandays);
+			setDeadline(project.deadline ?? "");
+			setIncludeSoc(project.include_soc);
+		}
+	}, [project]);
+
+	async function save() {
+		if (!name.trim()) {
+			toast.error("Project name is required.");
+			return;
+		}
+		const budgetNum = Number(budget);
+		if (!budget || budgetNum <= 0) {
+			toast.error("Budget must be greater than 0.");
+			return;
+		}
+		if (!project) return;
+		setBusy(true);
+		try {
+			await incentiveApi.projects.update(project.id, {
+				name: name.trim(),
+				description,
+				budget_mandays: budget,
+				deadline: deadline || null,
+				include_soc: includeSoc,
+			});
+			toast.success("Project updated.");
+			onDone();
+			onOpenChange(false);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Could not update project.");
+		} finally {
+			setBusy(false);
+		}
+	}
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Edit project</DialogTitle>
+				</DialogHeader>
+				<div className="space-y-3">
+					{/* Customer shown read-only */}
+					{project && (
+						<div className="text-small text-text-tertiary">
+							Customer: <span className="text-text-secondary font-medium">{project.customer_name}</span>
+						</div>
+					)}
+					<input
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						placeholder="Project name"
+						aria-label="Project name"
+						className={field}
+					/>
+					<textarea
+						value={description}
+						onChange={(e) => setDescription(e.target.value)}
+						placeholder="Description (optional)"
+						aria-label="Description"
+						rows={3}
+						className={`${field} resize-none`}
+					/>
+					<div className="grid grid-cols-2 gap-3">
+						<label className="block">
+							<span className="text-small text-text-tertiary">Budget (mandays)</span>
+							<input
+								type="number"
+								min="0"
+								step="0.25"
+								value={budget}
+								onChange={(e) => setBudget(e.target.value)}
+								aria-label="Budget mandays"
+								className={field}
+							/>
+						</label>
+						<label className="block">
+							<span className="text-small text-text-tertiary">Deadline (optional)</span>
+							<input
+								type="date"
+								value={deadline}
+								onChange={(e) => setDeadline(e.target.value)}
+								aria-label="Deadline"
+								className={field}
+							/>
+						</label>
+					</div>
+					<label className="flex items-center gap-2 text-small text-text-secondary">
+						<input
+							type="checkbox"
+							checked={includeSoc}
+							onChange={(e) => setIncludeSoc(e.target.checked)}
+						/>
+						Visible to the SOC team
+					</label>
+				</div>
+				<DialogFooter>
+					<Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+						Cancel
+					</Button>
+					<Button onClick={save} disabled={busy} className="bg-accent-500 text-white">
+						Save changes
 					</Button>
 				</DialogFooter>
 			</DialogContent>

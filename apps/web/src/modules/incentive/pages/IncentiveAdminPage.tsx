@@ -148,7 +148,7 @@ export default function IncentiveAdminPage() {
 				<div className="space-y-4">
 					<PoolGauges pools={ov.pools} />
 					{canAdmin && <CustomersTable onChanged={load} />}
-					<ProjectsTable projects={ov.projects} />
+					<ProjectsTable projects={ov.projects} onChanged={load} />
 					<ConsumptionChart data={ov.consumption} />
 				</div>
 				<div className="space-y-4">

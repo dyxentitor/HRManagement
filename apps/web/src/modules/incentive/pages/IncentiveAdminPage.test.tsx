@@ -16,7 +16,13 @@ vi.mock("../api", () => ({
 			deactivate: vi.fn(),
 			reactivate: vi.fn(),
 		},
-		projects: { create: vi.fn() },
+		projects: {
+			list: vi.fn().mockResolvedValue([]),
+			create: vi.fn(),
+			update: vi.fn(),
+			close: vi.fn(),
+			reopen: vi.fn(),
+		},
 	},
 }));
 
