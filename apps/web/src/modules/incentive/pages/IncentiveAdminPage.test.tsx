@@ -3,14 +3,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const overview = vi.hoisted(() => vi.fn());
 const claimsList = vi.hoisted(() => vi.fn());
+const customersList = vi.hoisted(() => vi.fn());
 vi.mock("../api", () => ({
 	incentiveApi: {
 		overview,
 		claims: { list: claimsList, approve: vi.fn(), reject: vi.fn() },
-		customers: { create: vi.fn(), topUp: vi.fn() },
+		customers: {
+			list: customersList,
+			create: vi.fn(),
+			topUp: vi.fn(),
+			update: vi.fn(),
+			deactivate: vi.fn(),
+			reactivate: vi.fn(),
+		},
 		projects: { create: vi.fn() },
 	},
 }));
+
+const useCan = vi.hoisted(() => vi.fn(() => true));
+vi.mock("@/lib/perm", () => ({ useCan }));
 
 import IncentiveAdminPage from "./IncentiveAdminPage";
 
@@ -75,6 +86,7 @@ const OV = {
 beforeEach(() => {
 	overview.mockReset().mockResolvedValue(OV);
 	claimsList.mockReset().mockResolvedValue([]);
+	customersList.mockReset().mockResolvedValue([]);
 });
 
 describe("IncentiveAdminPage (command center)", () => {

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 
 import {
@@ -14,6 +15,7 @@ import {
 	incentiveApi,
 } from "../api";
 import { ApprovalQueue } from "../components/ApprovalQueue";
+import { CustomersTable } from "../components/CustomersTable";
 import { NewCustomerModal, NewProjectModal, TopUpModal } from "../components/IncentiveModals";
 import { ProjectsTable } from "../components/ProjectsTable";
 
@@ -23,6 +25,7 @@ const md = (v: string) => Number(v).toLocaleString("en-MY", { maximumFractionDig
 export default function IncentiveAdminPage() {
 	const [ov, setOv] = useState<Overview | null>(null);
 	const [modal, setModal] = useState<"project" | "customer" | "topup" | null>(null);
+	const canAdmin = useCan("incentive:admin");
 
 	const load = useCallback(async () => {
 		setOv(await incentiveApi.overview().catch(() => null));
@@ -144,6 +147,7 @@ export default function IncentiveAdminPage() {
 			<div className="grid lg:grid-cols-[1.7fr_1fr] gap-4 items-start">
 				<div className="space-y-4">
 					<PoolGauges pools={ov.pools} />
+					{canAdmin && <CustomersTable onChanged={load} />}
 					<ProjectsTable projects={ov.projects} />
 					<ConsumptionChart data={ov.consumption} />
 				</div>

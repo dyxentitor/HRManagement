@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 
-import { type OverviewPool, incentiveApi } from "../api";
+import { type Customer, type OverviewPool, incentiveApi } from "../api";
 
 const field =
 	"w-full bg-canvas border border-border-subtle rounded-md px-3 py-2 text-body focus:outline-none focus:border-accent-500/50";
@@ -19,6 +19,74 @@ interface DialogBase {
 	open: boolean;
 	onOpenChange: (o: boolean) => void;
 	onDone: () => void;
+}
+
+export function EditCustomerModal({
+	open,
+	onOpenChange,
+	onDone,
+	customer,
+}: DialogBase & { customer: Customer | null }) {
+	const [name, setName] = useState("");
+	const [notes, setNotes] = useState("");
+	const [busy, setBusy] = useState(false);
+
+	useEffect(() => {
+		if (customer) {
+			setName(customer.name);
+			setNotes(customer.notes ?? "");
+		}
+	}, [customer]);
+
+	async function save() {
+		if (!name.trim() || !customer) return;
+		setBusy(true);
+		try {
+			await incentiveApi.customers.update(customer.id, { name: name.trim(), notes });
+			toast.success("Customer updated.");
+			onDone();
+			onOpenChange(false);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Failed.");
+		} finally {
+			setBusy(false);
+		}
+	}
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Edit customer</DialogTitle>
+				</DialogHeader>
+				<div className="space-y-3">
+					<input
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						placeholder="Customer name"
+						aria-label="Customer name"
+						className={field}
+					/>
+					<textarea
+						value={notes}
+						onChange={(e) => setNotes(e.target.value)}
+						placeholder="Notes (optional)"
+						aria-label="Notes"
+						rows={3}
+						className={`${field} resize-none`}
+					/>
+				</div>
+				<DialogFooter>
+					<Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
+						Cancel
+					</Button>
+					<Button onClick={save} disabled={busy} className="bg-accent-500 text-white">
+						Save changes
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
 }
 
 export function NewCustomerModal({ open, onOpenChange, onDone }: DialogBase) {
