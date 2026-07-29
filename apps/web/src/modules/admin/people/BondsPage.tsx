@@ -155,7 +155,9 @@ export default function BondsPage() {
       header: "Status",
       sortable: true,
       sortValue: (r) => STATUS_ORDER[r.status],
-      render: (r) => <StatusPill tone={STATUS_META[r.status].tone} label={STATUS_META[r.status].label} />,
+      render: (r) => (
+        <StatusPill tone={STATUS_META[r.status].tone} label={STATUS_META[r.status].label} />
+      ),
     },
     {
       key: "actions",
