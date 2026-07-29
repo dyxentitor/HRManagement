@@ -27,8 +27,32 @@ logger = logging.getLogger(__name__)
 class FeedbackAttachmentService:
     MAX_SIZE_BYTES: ClassVar[int] = 25 * 1024 * 1024  # 25 MB
 
+    # Allowlist of storable content types. Deliberately excludes image/svg+xml
+    # and text/html — those execute as scripts when opened from the storage
+    # origin (stored-XSS vector). Covers the product's advertised set:
+    # images, PDF, video, plus plain text.
+    ALLOWED_CONTENT_TYPES: ClassVar[frozenset[str]] = frozenset(
+        {
+            "image/png",
+            "image/jpeg",
+            "image/gif",
+            "image/webp",
+            "application/pdf",
+            "video/mp4",
+            "video/quicktime",
+            "video/webm",
+            "text/plain",
+        }
+    )
+
+    @classmethod
+    def _validate_content_type(cls, content_type: str) -> None:
+        if content_type not in cls.ALLOWED_CONTENT_TYPES:
+            raise ValidationError({"content_type": f"Unsupported file type '{content_type}'."})
+
     @staticmethod
     def presigned_upload(feedback: Feedback, filename: str, content_type: str) -> dict[str, Any]:
+        FeedbackAttachmentService._validate_content_type(content_type)
         s3_key = f"feedback/{feedback.id}/{uuid.uuid4()}_{filename}"
         url = public_s3_client().generate_presigned_url(
             "put_object",
@@ -56,6 +80,12 @@ class FeedbackAttachmentService:
     ) -> FeedbackAttachment:
         if size_bytes > FeedbackAttachmentService.MAX_SIZE_BYTES:
             raise ValidationError({"size_bytes": "File exceeds 25 MB."})
+        FeedbackAttachmentService._validate_content_type(content_type)
+        # Bind the attachment to THIS feedback's key namespace. Without this a
+        # client could register an arbitrary key (e.g. employees/…/photo.webp)
+        # and then obtain a presigned GET for any object in the shared bucket.
+        if not s3_key.startswith(f"feedback/{feedback.id}/"):
+            raise ValidationError({"s3_key": "Invalid attachment key for this feedback."})
         return FeedbackAttachment.objects.create(
             feedback=feedback,
             filename=filename,

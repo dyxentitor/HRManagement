@@ -6,6 +6,7 @@ import logging
 from typing import ClassVar
 
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import status as drf_status
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -70,7 +71,11 @@ class FeedbackViewSet(viewsets.ModelViewSet):
     # ------------------------------------------------------------------
 
     def get_queryset(self):
-        qs = Feedback.objects.filter(org_id=self.request.user.org_id)
+        qs = (
+            Feedback.objects.filter(org_id=self.request.user.org_id)
+            .select_related("reporter", "assignee")
+            .prefetch_related("attachments", "notes")
+        )
         if self.action == "list" and self.request.query_params.get("scope") == "org":
             for field in ("status", "category"):
                 val = self.request.query_params.get(field)
@@ -81,7 +86,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(assignee_id=assignee)
             q = self.request.query_params.get("q")
             if q:
-                qs = qs.filter(title__icontains=q)
+                qs = qs.filter(Q(title__icontains=q) | Q(description__icontains=q))
             return qs.order_by("-created_at")
         return qs.filter(reporter=self.request.user).order_by("-created_at")
 
@@ -176,7 +181,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                     assignee = User.objects.filter(id=aid, org_id=obj.org_id).first()
                     if assignee is None or "feedback:manage:org" not in get_user_perms(assignee):
                         raise ValidationError({"assignee_id": "Must be an admin in this org."})
-                old_assignee = str(obj.assignee_id)
+                old_assignee = str(obj.assignee_id) if obj.assignee_id else None
                 obj.assignee_id = aid
                 obj.save(update_fields=["assignee_id", "updated_at"])
                 audit_append(
@@ -185,7 +190,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                     entity="feedback",
                     entity_id=obj.id,
                     before={"assignee": old_assignee},
-                    after={"assignee": str(aid)},
+                    after={"assignee": str(aid) if aid else None},
                     actor_id=request.user.id,
                 )
 
@@ -231,6 +236,14 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 author_id=request.user.id,
                 body=ser.validated_data["body"],
             )
+            audit_append(
+                org_id=obj.org_id,
+                action="feedback.note.added",
+                entity="feedback",
+                entity_id=obj.id,
+                after={"note_id": str(note.id)},
+                actor_id=request.user.id,
+            )
             return Response(FeedbackNoteSerializer(note).data, status=drf_status.HTTP_201_CREATED)
         return Response(FeedbackNoteSerializer(obj.notes.order_by("created_at"), many=True).data)
 
@@ -269,6 +282,14 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             size_bytes=ser.validated_data["size_bytes"],
             s3_key=ser.validated_data["s3_key"],
             uploaded_by=request.user.id,
+        )
+        audit_append(
+            org_id=obj.org_id,
+            action="feedback.attachment.registered",
+            entity="feedback",
+            entity_id=obj.id,
+            after={"attachment_id": att.id, "filename": att.filename},
+            actor_id=request.user.id,
         )
         return Response(FeedbackAttachmentSerializer(att).data, status=drf_status.HTTP_201_CREATED)
 

@@ -15,6 +15,7 @@ from .models import (
     FeedbackAttachment,
     FeedbackNote,
 )
+from .services.attachment import FeedbackAttachmentService
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -50,7 +51,6 @@ class FeedbackAttachmentSerializer(serializers.ModelSerializer):
             "filename",
             "content_type",
             "size_bytes",
-            "s3_key",
             "uploaded_at",
         )
         read_only_fields: ClassVar[tuple[str, ...]] = (
@@ -163,7 +163,7 @@ class FeedbackAdminSerializer(FeedbackSerializer):
 class FeedbackCreateSerializer(serializers.Serializer):
     category = serializers.ChoiceField(choices=[c[0] for c in Feedback.category.field.choices])
     title = serializers.CharField(max_length=200)
-    description = serializers.CharField()
+    description = serializers.CharField(max_length=10_000)
     affected_module = serializers.CharField(max_length=64, required=False, default="")
 
 
@@ -188,9 +188,11 @@ class PresignedUploadSerializer(serializers.Serializer):
 class RegisterAttachmentSerializer(serializers.Serializer):
     filename = serializers.CharField(max_length=255)
     content_type = serializers.CharField(max_length=100)
-    size_bytes = serializers.IntegerField(min_value=1)
+    size_bytes = serializers.IntegerField(
+        min_value=1, max_value=FeedbackAttachmentService.MAX_SIZE_BYTES
+    )
     s3_key = serializers.CharField(max_length=500)
 
 
 class FeedbackNoteWriteSerializer(serializers.Serializer):
-    body = serializers.CharField(min_length=1)
+    body = serializers.CharField(min_length=1, max_length=10_000)
