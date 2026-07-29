@@ -423,7 +423,94 @@ class BondViewSet(viewsets.ModelViewSet):
         return qs.filter(employee_id=emp.id if emp else None)
 
     def perform_create(self, serializer):
-        serializer.save(org_id=self.request.user.org_id, created_by=self.request.user.id)
+        obj = serializer.save(org_id=self.request.user.org_id, created_by=self.request.user.id)
+        _audit(
+            self.request,
+            "incentive.bond.created",
+            "incentive_bond",
+            obj.id,
+            after={
+                "employee_id": str(obj.employee_id),
+                "period_start": str(obj.period_start),
+                "period_end": str(obj.period_end),
+                "terms_version": obj.terms_version,
+            },
+        )
+
+    def perform_update(self, serializer):
+        before = {f: str(getattr(serializer.instance, f)) for f in serializer.validated_data}
+        old_terms = serializer.instance.terms_version
+        obj = serializer.save()
+        after = {f: str(getattr(obj, f)) for f in before}
+        # Re-consent: changing the terms means the employee must accept them again.
+        if obj.terms_version != old_terms and obj.accepted_at is not None:
+            before["accepted_at"] = str(obj.accepted_at)
+            obj.accepted_at = None
+            obj.save(update_fields=["accepted_at", "updated_at"])
+            after["accepted_at"] = "None"
+        _audit(
+            self.request,
+            "incentive.bond.updated",
+            "incentive_bond",
+            obj.id,
+            before=before,
+            after=after,
+        )
+
+    def perform_destroy(self, instance):
+        # Hard delete (claims don't reference bonds) — but snapshot to the audit log first.
+        _audit(
+            self.request,
+            "incentive.bond.revoked",
+            "incentive_bond",
+            instance.id,
+            after={
+                "employee_id": str(instance.employee_id),
+                "period_start": str(instance.period_start),
+                "period_end": str(instance.period_end),
+                "terms_version": instance.terms_version,
+                "accepted_at": str(instance.accepted_at) if instance.accepted_at else None,
+            },
+        )
+        instance.delete()
+
+    @action(detail=False, methods=["get"])
+    def coverage(self, request):
+        """One row per active employee, joined with their bond. Admin-only."""
+        if ADMIN not in get_user_perms(request.user):
+            raise PermissionDenied("Bond coverage is management-only.")
+        from django.utils import timezone
+
+        from modules.employee.models import Employee
+
+        org_id = request.user.org_id
+        today = timezone.localdate()
+        employees = Employee.all_objects.filter(
+            org_id=org_id, deleted_at__isnull=True, status="active"
+        ).order_by("first_name", "last_name")
+        bonds = {b.employee_id: b for b in EmployeeBond.objects.filter(org_id=org_id)}
+
+        rows = []
+        for emp in employees:
+            bond = bonds.get(emp.id)
+            if bond is None:
+                status = "none"
+            elif bond.accepted_at is None and today <= bond.period_end:
+                status = "pending"
+            elif bond.is_active(today):
+                status = "active"
+            else:
+                status = "expired"
+            rows.append(
+                {
+                    "employee_id": str(emp.id),
+                    "employee_name": f"{emp.first_name} {emp.last_name}".strip(),
+                    "employee_code": emp.employee_code,
+                    "bond": BondSerializer(bond).data if bond else None,
+                    "status": status,
+                }
+            )
+        return Response(rows)
 
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):

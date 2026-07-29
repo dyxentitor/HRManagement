@@ -133,3 +133,28 @@ class BondSerializer(serializers.ModelSerializer):
 
     def get_is_active(self, obj) -> bool:
         return obj.is_active()
+
+    def validate(self, attrs):
+        start = attrs.get("period_start", getattr(self.instance, "period_start", None))
+        end = attrs.get("period_end", getattr(self.instance, "period_end", None))
+        if start and end and end <= start:
+            raise serializers.ValidationError(
+                {"period_end": "Period end must be after period start."}
+            )
+        if self.instance is None:
+            # One bond per employee (mirrors the DB unique constraint with a clean 400).
+            request = self.context.get("request")
+            employee_id = attrs.get("employee_id")
+            if (
+                request is not None
+                and employee_id is not None
+                and EmployeeBond.objects.filter(
+                    org_id=request.user.org_id, employee_id=employee_id
+                ).exists()
+            ):
+                raise serializers.ValidationError(
+                    {"employee_id": "This employee already has a bond."}
+                )
+        else:
+            attrs.pop("employee_id", None)  # bond stays with its employee
+        return attrs
