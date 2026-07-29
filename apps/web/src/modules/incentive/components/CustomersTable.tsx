@@ -161,24 +161,22 @@ export function CustomersTable({ onChanged }: Props) {
 					<table className="w-full text-small">
 						<thead>
 							<tr className="text-label text-text-tertiary">
-								<th className="text-left font-medium pb-2">
+								<th className="text-left font-medium pb-2" aria-sort={sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
 									<button
 										type="button"
 										className={thBtn}
 										onClick={() => toggleSort("name")}
-										aria-sort={sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
 									>
 										Name
 										<SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
 									</button>
 								</th>
 								<th className="text-left font-medium pb-2">Pool</th>
-								<th className="text-left font-medium pb-2">
+								<th className="text-left font-medium pb-2" aria-sort={sortKey === "status" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
 									<button
 										type="button"
 										className={thBtn}
 										onClick={() => toggleSort("status")}
-										aria-sort={sortKey === "status" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
 									>
 										Status
 										<SortIcon col="status" sortKey={sortKey} sortDir={sortDir} />
