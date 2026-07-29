@@ -65,6 +65,10 @@ const ROWS: BondCoverageRow[] = [
   row("Sam Lee", "E004", "none", null),
 ]
 
+async function openMenu(name: string) {
+  await userEvent.click(screen.getByRole("button", { name: `Actions for ${name}` }))
+}
+
 beforeEach(() => {
   mocks.useCan.mockReturnValue(true)
   mocks.coverage.mockResolvedValue(ROWS)
@@ -72,25 +76,21 @@ beforeEach(() => {
 afterEach(() => vi.clearAllMocks())
 
 describe("BondsPage", () => {
-  it("renders coverage rows with status pills and chip counts", async () => {
+  it("renders coverage rows with status pills and filter-pill counts", async () => {
     render(<BondsPage />)
     expect(await screen.findByText("Aisha Rahman")).toBeInTheDocument()
     expect(screen.getByText("Sam Lee")).toBeInTheDocument()
-    // chips show counts of 1 each
-    const chips = screen.getAllByRole("button", { pressed: false })
-    expect(chips.length).toBeGreaterThanOrEqual(4)
-    expect(screen.getAllByText("Active").length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText("No bond").length).toBeGreaterThanOrEqual(1)
+    // filter pills show per-status counts of 1
+    const noBondPill = screen.getByRole("button", { name: /No bond/ })
+    expect(within(noBondPill).getByText("1")).toBeInTheDocument()
+    // table shows StatusPill labels
+    expect(screen.getByText("Awaiting acceptance")).toBeInTheDocument()
   })
 
-  it("chip click filters the table to that status", async () => {
+  it("filter pill filters the table to that status", async () => {
     render(<BondsPage />)
     await screen.findByText("Aisha Rahman")
-    const noBondChip = screen
-      .getAllByRole("button")
-      .find((b) => within(b).queryByText("No bond") !== null)
-    expect(noBondChip).toBeTruthy()
-    await userEvent.click(noBondChip as HTMLElement)
+    await userEvent.click(screen.getByRole("button", { name: /No bond/ }))
     expect(screen.getByText("Sam Lee")).toBeInTheDocument()
     expect(screen.queryByText("Aisha Rahman")).toBeNull()
   })
@@ -103,25 +103,26 @@ describe("BondsPage", () => {
     expect(screen.queryByText("Aisha Rahman")).toBeNull()
   })
 
-  it("unbonded rows get Create bond; bonded rows get Edit + Revoke", async () => {
+  it("kebab menu offers Create bond for unbonded, Edit/Revoke for bonded", async () => {
     render(<BondsPage />)
     await screen.findByText("Sam Lee")
-    const samRow = screen.getByText("Sam Lee").closest("tr") as HTMLElement
-    expect(within(samRow).getByRole("button", { name: /Create bond/i })).toBeInTheDocument()
-    const aishaRow = screen.getByText("Aisha Rahman").closest("tr") as HTMLElement
-    expect(within(aishaRow).getByRole("button", { name: /Edit/i })).toBeInTheDocument()
-    expect(within(aishaRow).getByRole("button", { name: /Revoke/i })).toBeInTheDocument()
-    expect(within(aishaRow).queryByRole("button", { name: /Create bond/i })).toBeNull()
+    await openMenu("Sam Lee")
+    expect(await screen.findByRole("menuitem", { name: /Create bond/i })).toBeInTheDocument()
+    expect(screen.queryByRole("menuitem", { name: /Revoke/i })).toBeNull()
+    await userEvent.keyboard("{Escape}")
+    await openMenu("Aisha Rahman")
+    expect(await screen.findByRole("menuitem", { name: /Edit bond/i })).toBeInTheDocument()
+    expect(screen.getByRole("menuitem", { name: /Revoke/i })).toBeInTheDocument()
+    expect(screen.queryByRole("menuitem", { name: /Create bond/i })).toBeNull()
   })
 
   it("create flow posts the bond and refetches", async () => {
     mocks.create.mockResolvedValue({})
     render(<BondsPage />)
     await screen.findByText("Sam Lee")
-    const samRow = screen.getByText("Sam Lee").closest("tr") as HTMLElement
-    await userEvent.click(within(samRow).getByRole("button", { name: /Create bond/i }))
-    await screen.findByText("Create bond", { selector: "h2, [role=heading], div" })
-    await userEvent.type(screen.getByLabelText("Period start"), "2026-08-01")
+    await openMenu("Sam Lee")
+    await userEvent.click(await screen.findByRole("menuitem", { name: /Create bond/i }))
+    await userEvent.type(await screen.findByLabelText("Period start"), "2026-08-01")
     await userEvent.type(screen.getByLabelText("Period end"), "2027-07-31")
     await userEvent.click(screen.getByRole("button", { name: /^Create bond$/i }))
     await waitFor(() =>
@@ -138,8 +139,8 @@ describe("BondsPage", () => {
   it("edit shows the re-accept hint when terms change", async () => {
     render(<BondsPage />)
     await screen.findByText("Aisha Rahman")
-    const aishaRow = screen.getByText("Aisha Rahman").closest("tr") as HTMLElement
-    await userEvent.click(within(aishaRow).getByRole("button", { name: /Edit/i }))
+    await openMenu("Aisha Rahman")
+    await userEvent.click(await screen.findByRole("menuitem", { name: /Edit bond/i }))
     const terms = await screen.findByLabelText("Terms version")
     await userEvent.clear(terms)
     await userEvent.type(terms, "v2")
@@ -150,8 +151,8 @@ describe("BondsPage", () => {
     mocks.revoke.mockResolvedValue(undefined)
     render(<BondsPage />)
     await screen.findByText("Aisha Rahman")
-    const aishaRow = screen.getByText("Aisha Rahman").closest("tr") as HTMLElement
-    await userEvent.click(within(aishaRow).getByRole("button", { name: /Revoke/i }))
+    await openMenu("Aisha Rahman")
+    await userEvent.click(await screen.findByRole("menuitem", { name: /Revoke/i }))
     expect(await screen.findByText(/Revoke Aisha Rahman's bond\?/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole("button", { name: /^Revoke$|^Confirm$/i }))
     await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith("bond-E001"))

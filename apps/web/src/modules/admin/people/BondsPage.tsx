@@ -1,11 +1,19 @@
-import { Ban, ChevronDown, ChevronUp, ChevronsUpDown, Pencil, Plus, Search } from "lucide-react"
+import { Ban, MoreHorizontal, Pencil, Plus, UserRound } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { StatusPill } from "@/components/hrms"
+import { DataTable, StatusPill } from "@/components/hrms"
+import type { Column } from "@/components/hrms/DataTable"
 import { PageHeader } from "@/components/shell/PageHeader"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCan } from "@/lib/perm"
 import { cn } from "@/lib/utils"
@@ -17,10 +25,6 @@ import {
 
 import { BondModal } from "./BondModal"
 
-const PAGE_SIZE = 10
-
-type SortKey = "name" | "status"
-type SortDir = "asc" | "desc"
 type ChipFilter = BondCoverageStatus | "all"
 
 const STATUS_META: Record<
@@ -40,18 +44,17 @@ const STATUS_ORDER: Record<BondCoverageStatus, number> = {
   none: 3,
 }
 
+const FILTERS: { key: ChipFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "active", label: "Active" },
+  { key: "pending", label: "Awaiting" },
+  { key: "expired", label: "Expired" },
+  { key: "none", label: "No bond" },
+]
+
 function fmtPeriod(row: BondCoverageRow): string {
   if (!row.bond) return "—"
   return `${row.bond.period_start} → ${row.bond.period_end}`
-}
-
-function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
-  if (col !== sortKey) return <ChevronsUpDown className="size-3 text-text-tertiary ml-1" />
-  return sortDir === "asc" ? (
-    <ChevronUp className="size-3 text-accent-200 ml-1" />
-  ) : (
-    <ChevronDown className="size-3 text-accent-200 ml-1" />
-  )
 }
 
 export default function BondsPage() {
@@ -59,21 +62,20 @@ export default function BondsPage() {
 
   const [rows, setRows] = useState<BondCoverageRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState("")
-  const [chip, setChip] = useState<ChipFilter>("all")
-  const [sortKey, setSortKey] = useState<SortKey>("name")
-  const [sortDir, setSortDir] = useState<SortDir>("asc")
-  const [page, setPage] = useState(1)
+  const [filter, setFilter] = useState<ChipFilter>("all")
 
   const [modalRow, setModalRow] = useState<BondCoverageRow | null>(null)
   const [revokeRow, setRevokeRow] = useState<BondCoverageRow | null>(null)
 
   const fetchRows = useCallback(async () => {
     setLoading(true)
+    setFailed(false)
     try {
       setRows(await incentiveApi.bonds.coverage())
     } catch {
-      toast.error("Failed to load bond coverage.")
+      setFailed(true)
     } finally {
       setLoading(false)
     }
@@ -89,40 +91,16 @@ export default function BondsPage() {
     return c
   }, [rows])
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase()
-    return rows
-      .filter(
-        (r) =>
-          (chip === "all" || r.status === chip) &&
-          (!q ||
-            r.employee_name.toLowerCase().includes(q) ||
-            r.employee_code.toLowerCase().includes(q)),
-      )
-      .sort((a, b) => {
-        const cmp =
-          sortKey === "name"
-            ? a.employee_name.localeCompare(b.employee_name)
-            : STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
-        return sortDir === "asc" ? cmp : -cmp
-      })
-  }, [rows, query, chip, sortKey, sortDir])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-  const rangeStart = filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1
-  const rangeEnd = Math.min(safePage * PAGE_SIZE, filtered.length)
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
-    } else {
-      setSortKey(key)
-      setSortDir("asc")
-    }
-    setPage(1)
-  }
+  const visible = useMemo(() => {
+    const term = query.trim().toLowerCase()
+    return rows.filter(
+      (r) =>
+        (filter === "all" || r.status === filter) &&
+        (!term ||
+          r.employee_name.toLowerCase().includes(term) ||
+          r.employee_code.toLowerCase().includes(term)),
+    )
+  }, [rows, query, filter])
 
   async function handleRevoke() {
     if (!revokeRow?.bond) return
@@ -137,6 +115,88 @@ export default function BondsPage() {
     }
   }
 
+  const columns: Column<BondCoverageRow>[] = [
+    {
+      key: "employee",
+      header: "Employee",
+      sortable: true,
+      sortValue: (r) => r.employee_name.toLowerCase(),
+      render: (r) => (
+        <div className="flex items-center gap-2.5">
+          <span className="size-7 rounded-lg grid place-items-center bg-lavender/20 text-lavender shrink-0">
+            <UserRound className="size-4" />
+          </span>
+          <span className="text-text-primary">{r.employee_name}</span>
+          <span className="text-text-tertiary">· {r.employee_code}</span>
+        </div>
+      ),
+    },
+    {
+      key: "period",
+      header: "Bond period",
+      sortable: true,
+      sortValue: (r) => r.bond?.period_start ?? "9999",
+      render: (r) => <span className="text-text-secondary">{fmtPeriod(r)}</span>,
+    },
+    {
+      key: "terms",
+      header: "Terms",
+      render: (r) =>
+        r.bond ? (
+          <span className="text-[10px] rounded-md bg-surface-elevated/60 px-1.5 py-0.5 text-text-secondary">
+            {r.bond.terms_version}
+          </span>
+        ) : (
+          <span className="text-text-tertiary">—</span>
+        ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      sortValue: (r) => STATUS_ORDER[r.status],
+      render: (r) => <StatusPill tone={STATUS_META[r.status].tone} label={STATUS_META[r.status].label} />,
+    },
+    {
+      key: "actions",
+      header: "",
+      align: "right",
+      render: (r) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Actions for ${r.employee_name}`}
+              className="size-7 grid place-items-center rounded-lg text-text-tertiary hover:bg-surface-elevated/60"
+            >
+              <MoreHorizontal className="size-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {r.bond === null ? (
+              <DropdownMenuItem onClick={() => setModalRow(r)}>
+                <Plus className="size-4 mr-2" /> Create bond
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem onClick={() => setModalRow(r)}>
+                  <Pencil className="size-4 mr-2" /> Edit bond
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setRevokeRow(r)}
+                  className="text-coral focus:text-coral"
+                >
+                  <Ban className="size-4 mr-2" /> Revoke
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ]
+
   if (!canAdmin) {
     return (
       <div className="flex flex-col gap-4">
@@ -146,180 +206,63 @@ export default function BondsPage() {
     )
   }
 
-  const thBtn =
-    "flex items-center text-left font-medium text-text-tertiary text-label pb-2 hover:text-text-secondary transition-colors"
-
   return (
     <div className="flex flex-col gap-4">
       <PageHeader title="Bonds" subtitle="Mandays incentive bonds — eligibility for claiming." />
 
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(STATUS_META) as BondCoverageStatus[]).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => {
-              setChip((c) => (c === s ? "all" : s))
-              setPage(1)
-            }}
-            aria-pressed={chip === s}
-            className={cn(
-              "flex items-center gap-2 rounded-xl border px-3 py-1.5 text-small transition-colors",
-              chip === s
-                ? "border-accent-400 bg-accent-500/15 text-text-primary"
-                : "border-border-subtle text-text-secondary hover:bg-surface-hover",
-            )}
-          >
-            <StatusPill tone={STATUS_META[s].tone} label={STATUS_META[s].label} />
-            <span className="font-semibold">{counts[s]}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="glass-surface rounded-2xl p-4">
-        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-          <h3 className="text-body font-semibold">Employees</h3>
-          <div className="flex items-center gap-1.5 bg-canvas border border-border-subtle rounded-md px-2.5 py-1.5">
-            <Search className="size-3.5 text-text-tertiary" />
-            <input
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value)
-                setPage(1)
-              }}
-              placeholder="Search…"
-              aria-label="Search employees"
-              className="bg-transparent text-small focus:outline-none w-32"
-            />
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex flex-wrap rounded-xl bg-surface-elevated/60 p-0.5">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              className={cn(
+                "text-small rounded-lg px-3 py-1.5 transition-colors",
+                filter === f.key
+                  ? "bg-accent-500/20 text-accent-100"
+                  : "text-text-secondary hover:text-text-primary",
+              )}
+            >
+              {f.label}
+              {f.key !== "all" && (
+                <span className="ml-1.5 text-[10px] text-text-tertiary">
+                  {counts[f.key as BondCoverageStatus]}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
-
-        {loading ? (
-          <div className="space-y-2" aria-label="Loading bond coverage">
-            <Skeleton className="h-9 rounded-md" />
-            <Skeleton className="h-9 rounded-md" />
-            <Skeleton className="h-9 rounded-md" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <p className="text-small text-text-tertiary py-6 text-center">
-            {rows.length === 0 ? "No active employees." : "No employees match this filter."}
-          </p>
-        ) : (
-          <>
-            <table className="w-full text-small">
-              <thead>
-                <tr className="text-label text-text-tertiary">
-                  <th
-                    className="text-left font-medium pb-2"
-                    aria-sort={
-                      sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"
-                    }
-                  >
-                    <button type="button" className={thBtn} onClick={() => toggleSort("name")}>
-                      Employee
-                      <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
-                    </button>
-                  </th>
-                  <th className="text-left font-medium pb-2">Bond period</th>
-                  <th className="text-left font-medium pb-2">Terms</th>
-                  <th
-                    className="text-left font-medium pb-2"
-                    aria-sort={
-                      sortKey === "status"
-                        ? sortDir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <button type="button" className={thBtn} onClick={() => toggleSort("status")}>
-                      Status
-                      <SortIcon col="status" sortKey={sortKey} sortDir={sortDir} />
-                    </button>
-                  </th>
-                  <th className="text-left font-medium pb-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.map((r) => (
-                  <tr key={r.employee_id} className="border-t border-border-subtle">
-                    <td className="py-2.5">
-                      <span className="font-medium text-text-primary">{r.employee_name}</span>{" "}
-                      <span className="text-text-tertiary text-[11px]">{r.employee_code}</span>
-                    </td>
-                    <td className="py-2.5 text-text-secondary">{fmtPeriod(r)}</td>
-                    <td className="py-2.5 text-text-secondary">{r.bond?.terms_version ?? "—"}</td>
-                    <td className="py-2.5">
-                      <StatusPill
-                        tone={STATUS_META[r.status].tone}
-                        label={STATUS_META[r.status].label}
-                      />
-                    </td>
-                    <td className="py-2.5">
-                      <div className="flex items-center gap-1">
-                        {r.bond === null ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setModalRow(r)}
-                            className="h-7 px-2 gap-1 text-[11px] [&_svg]:size-3.5 text-accent-300 hover:text-accent-200"
-                          >
-                            <Plus /> Create bond
-                          </Button>
-                        ) : (
-                          <>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => setModalRow(r)}
-                              className="h-7 px-2 gap-1 text-[11px] [&_svg]:size-3.5 text-accent-300 hover:text-accent-200"
-                            >
-                              <Pencil /> Edit
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => setRevokeRow(r)}
-                              className="h-7 px-2 gap-1 text-[11px] [&_svg]:size-3.5 text-coral hover:text-coral/80"
-                            >
-                              <Ban /> Revoke
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="flex items-center justify-between mt-3 text-small text-text-tertiary">
-              <span>
-                {rangeStart}–{rangeEnd} of {filtered.length}
-              </span>
-              <div className="flex gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={safePage <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="h-7 px-2 text-[11px]"
-                >
-                  Prev
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={safePage >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="h-7 px-2 text-[11px]"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search employee or code…"
+          aria-label="Search employees"
+          className="h-8 min-w-[200px] flex-1 max-w-xs rounded-lg bg-surface-elevated/60 border border-border-subtle px-3 text-small text-text-primary"
+        />
       </div>
+
+      {loading ? (
+        <Skeleton className="h-64 rounded-2xl" />
+      ) : failed ? (
+        <div className="glass-surface rounded-2xl p-8 text-center">
+          <p className="text-text-secondary">Couldn't load bond coverage.</p>
+          <Button type="button" onClick={() => void fetchRows()} className="mt-3">
+            Try again
+          </Button>
+        </div>
+      ) : (
+        <DataTable<BondCoverageRow>
+          rows={visible}
+          columns={columns}
+          rowKey={(r) => r.employee_id}
+          emptyState={
+            <p className="text-text-tertiary text-center py-8">
+              {rows.length === 0 ? "No active employees." : "No employees match this filter."}
+            </p>
+          }
+        />
+      )}
 
       <BondModal
         row={modalRow}
