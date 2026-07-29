@@ -2,6 +2,30 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.74.0] — 2026-07-29 — Incentive admin CRUD
+
+Completes CRUD for the Incentive admin area (`/admin/incentive`). Previously customers/projects could only be created; now both are fully manageable with soft, reversible deletes and audit logging. Motivated by the 2026-07-29 incident where two just-created customers had to be removed via a prod shell.
+
+### Added
+- **Customers management table** (new — customers previously had no list/edit/delete UI at all): search, sortable Name/Status columns, pagination (10/page), loading skeletons, empty state, Active/Inactive status pills, "Show inactive" toggle, and row actions — **Edit** (pre-filled modal), **Top up** (reuses the pool top-up), **Deactivate ↔ Reactivate** behind confirmation dialogs. Gated on `incentive:admin`.
+- **Projects table row actions** — **Edit** (pre-filled modal: name, description, budget, deadline, SOC visibility; customer immutable) and **Close ↔ Reopen** behind confirmation dialogs; plus column sorting (Project/Budget/Deadline/Status, deadline nulls last) and pagination on top of the existing search/status/customer filters. Gated on `incentive:admin` or `incentive:project:write`.
+- **Audit logging for incentive CUD** — `incentive.customer.{created,updated,deactivated,reactivated}` and `incentive.project.{created,updated,closed,reopened}` rows via `common.audit`, with before/after change details on updates.
+- **Validation guards** — case-insensitive duplicate active-customer-name rejection (org-scoped, excludes self); project budget cannot be lowered below already-consumed mandays; project customer is immutable after creation.
+
+### Changed
+- **Customer `DELETE` now soft-deactivates** (`is_active=False`) instead of attempting a hard delete — removes the `PROTECT`-FK 500 class entirely and preserves history. Default customer list hides inactive rows; `?include_inactive=1` shows them. Project `DELETE` keeps its existing soft-close behavior, now audited, and closed projects can be reopened via PATCH.
+
+### Fixed
+- Date-sensitive schedule test that failed every Wednesday (holiday fixture collided with "today", whose card renders as the hero without a `title=` attribute). Pre-existing §3.9-class flake, unrelated to this feature.
+
+### Migrations
+- None. Soft-delete uses the existing `Customer.is_active` / `Project.status` fields; guards are serializer-level. No new permission codes.
+
+### Notes
+- Backend: **1217 passed, 3 skipped** (0 failed; +11 admin-CRUD tests). Frontend: **672 passed** (0 failed; +23: CustomersTable 12, ProjectsTable 8, page-mock updates).
+- Contracts: only the `version:` line changed.
+- DEV-only — built and tagged locally; not deployed.
+
 ## [1.73.0] — 2026-07-28 — Email Configuration consolidation
 
 Consolidates the two separate Settings pages — **Email Notifications** and **Email Templates** — into a single **Email Configuration** page with a tabbed interface. Frontend-only: no backend, API, permission, or schema changes.
