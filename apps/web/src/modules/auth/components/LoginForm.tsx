@@ -237,7 +237,7 @@ export function LoginForm() {
 						Contact your HR administrator
 					</p>
 					<p className="truncate text-small text-text-tertiary">
-						support@provintell.local · +60 3-1234 5678
+						hr@provintell.com
 					</p>
 				</div>
 			</div>

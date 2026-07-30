@@ -71,7 +71,8 @@ export default function LoginPage() {
             </div>
 
             <p className="text-small text-text-tertiary">
-              © {new Date().getFullYear()} Provintell Sdn. Bhd. All rights reserved.
+              © {new Date().getFullYear()} All Rights Reserved, By Provintell Technologies Sdn.
+              Bhd.
             </p>
           </div>
         </aside>
@@ -87,7 +88,9 @@ export default function LoginPage() {
           </div>
 
           <footer className="mt-10 flex flex-col items-center gap-2 text-small text-text-tertiary sm:flex-row sm:justify-end">
-            <span className="lg:hidden">© {new Date().getFullYear()} Provintell Sdn. Bhd.</span>
+            <span className="lg:hidden">
+              © {new Date().getFullYear()} All Rights Reserved, By Provintell Technologies Sdn. Bhd.
+            </span>
             <nav className="flex items-center gap-4">
               <Link to="/legal/privacy" className="transition-colors hover:text-text-secondary">
                 Privacy Policy
