@@ -193,6 +193,12 @@ class Command(BaseCommand):
         )
         call_command("seed_leave_types_from_country", "--org-id", str(org.id))
 
+        # 4b. Standard claim categories (TRAVEL / MEALS / MISC). Without this a
+        # fresh org has none, so the Claim Category dropdown + dashboard cards
+        # render empty. Idempotent (create-if-absent).
+        self.stdout.write("Seeding claim categories...")
+        call_command("seed_claim_categories", "--org-slug", org.slug)
+
         # 5. Demo users (skipped in --prod)
         if not is_prod:
             self.stdout.write("Creating demo accounts...")
