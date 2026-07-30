@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -163,6 +163,27 @@ describe("MyProfilePage", () => {
 		await user.type(bankInput, "NewBank");
 		await user.click(screen.getByRole("button", { name: /^save$/i }));
 		expect(await screen.findByRole("dialog", { name: /mfa required/i })).toBeInTheDocument();
+	});
+
+	it("Banking exposes an account-number field; entering one triggers MFA and sends it", async () => {
+		const user = userEvent.setup();
+		renderPage();
+		await ready();
+		await user.click(screen.getAllByRole("button", { name: /^edit$/i })[3]);
+		const acct = screen.getByLabelText(/account number/i);
+		await user.type(acct, "555566667777");
+		await user.click(screen.getByRole("button", { name: /^save$/i }));
+		const dialog = await screen.findByRole("dialog", { name: /mfa required/i });
+		expect(dialog).toBeInTheDocument();
+		await user.type(within(dialog).getByLabelText(/mfa code/i), "123456");
+		await user.click(within(dialog).getByRole("button", { name: /^submit$/i }));
+		await waitFor(() => expect(mocks.updateMe).toHaveBeenCalled());
+		const [payload, code] = mocks.updateMe.mock.calls.at(-1) as [
+			Record<string, unknown>,
+			string,
+		];
+		expect(payload.bank_account_number).toBe("555566667777");
+		expect(code).toBe("123456");
 	});
 
 	it("read-only sections have no Edit button (5 editable sections)", async () => {

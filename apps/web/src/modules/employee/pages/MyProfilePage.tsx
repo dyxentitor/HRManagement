@@ -183,7 +183,7 @@ export default function MyProfilePage() {
 			details: ["date_of_birth", "gender", "nationality", "marital_status"],
 			personal: ["phone", "alt_phone", "personal_email", "preferred_name"],
 			address: ["address_line1", "address_line2", "city", "state", "postcode", "country_code"],
-			banking: ["bank_name"],
+			banking: ["bank_name", "bank_account_number"],
 			emergency: [
 				"emergency_contact_name",
 				"emergency_contact_phone",
@@ -199,7 +199,16 @@ export default function MyProfilePage() {
 			delete (payload as Record<string, unknown>).date_of_birth;
 		}
 
-		if (section === "banking" && profile && draft.bank_name !== profile.bank_name) {
+		// Bank account number is a write-only "replace" field: only send it when
+		// the user actually typed a new value, so a blank input never wipes it.
+		if (section === "banking" && !draft.bank_account_number) {
+			delete (payload as Record<string, unknown>).bank_account_number;
+		}
+
+		// A change to either bank field needs fresh MFA (enforced backend-side too).
+		const bankChanged =
+			draft.bank_name !== profile?.bank_name || Boolean(draft.bank_account_number);
+		if (section === "banking" && profile && bankChanged) {
 			setPendingMfa(payload);
 			return;
 		}
@@ -464,6 +473,15 @@ export default function MyProfilePage() {
 									label="Bank name"
 									value={draft.bank_name ?? ""}
 									onChange={(v) => setField("bank_name", v)}
+								/>
+								<LabeledInput
+									label={
+										profile.bank_account_last4
+											? `New account number (current •••• ${profile.bank_account_last4})`
+											: "Account number"
+									}
+									value={draft.bank_account_number ?? ""}
+									onChange={(v) => setField("bank_account_number", v)}
 								/>
 							</div>
 						}
