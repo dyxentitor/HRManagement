@@ -7,6 +7,7 @@ from rest_framework import serializers
 from modules.employee.models import Employee
 
 from .models import Invitation
+from .serializers import validate_password_strength
 
 
 def _emp_for_user(user_id):
@@ -63,7 +64,10 @@ class InvitationSerializer(serializers.ModelSerializer):
 
 class InvitationActivateSerializer(serializers.Serializer):
     token = serializers.CharField()
-    password = serializers.CharField(min_length=8, write_only=True)
+    password = serializers.CharField(min_length=10, write_only=True)
+
+    def validate_password(self, value: str) -> str:
+        return validate_password_strength(value)
 
 
 class InvitationExtendSerializer(serializers.Serializer):

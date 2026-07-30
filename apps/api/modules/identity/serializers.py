@@ -4,9 +4,25 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from .models import Role, User, UserRole
+
+
+def validate_password_strength(value: str) -> str:
+    """Run Django's AUTH_PASSWORD_VALIDATORS, re-raising as a DRF error.
+
+    Django's ``User.set_password`` does not invoke the configured validators;
+    every serializer that accepts a user-chosen password must call this so the
+    policy is actually enforced.
+    """
+    try:
+        validate_password(value)
+    except DjangoValidationError as exc:
+        raise serializers.ValidationError(list(exc.messages)) from exc
+    return value
 
 
 class LoginSerializer(serializers.Serializer):
@@ -93,11 +109,17 @@ class PasswordForgotSerializer(serializers.Serializer):
 
 class PasswordResetSerializer(serializers.Serializer):
     token = serializers.CharField()
-    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password = serializers.CharField(write_only=True, min_length=10)
+
+    def validate_new_password(self, value: str) -> str:
+        return validate_password_strength(value)
 
 
 class PasswordChangeSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password = serializers.CharField(write_only=True, min_length=10)
+
+    def validate_new_password(self, value: str) -> str:
+        return validate_password_strength(value)
 
 
 class MFAConfirmSerializer(serializers.Serializer):

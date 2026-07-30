@@ -216,6 +216,20 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
 ]
 
+# Password strength policy. Enforced on every user-facing set/reset/change/
+# invite-activate path via serializers.validate_password_strength (Django's
+# validate_password is NOT called by set_password on its own). Existing
+# passwords keep working until the user next changes one.
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 10},
+    },
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
 # Explicit logging so prod doesn't fall back to Django's mail-admins default
 # (which silently loses errors). Level is env-tunable; prod raises it via env.
 LOG_LEVEL = env("DJANGO_LOG_LEVEL", default="INFO")
