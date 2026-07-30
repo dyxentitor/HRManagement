@@ -1,6 +1,7 @@
 import { ClaimReviewDrawer } from "@/modules/approvals/components/ClaimReviewDrawer"
 
 import type { InboxItem } from "../../api"
+import { IncentiveReviewDrawer } from "./IncentiveReviewDrawer"
 import { KpiReviewDrawer } from "./KpiReviewDrawer"
 import { LeaveReviewDrawer } from "./LeaveReviewDrawer"
 
@@ -20,5 +21,7 @@ export function InboxReviewDrawer({
     return <LeaveReviewDrawer item={item} onClose={onClose} onActed={onActed} />
   if (item?.kind === "kpi")
     return <KpiReviewDrawer item={item} onClose={onClose} onActed={onActed} />
+  if (item?.kind === "incentive")
+    return <IncentiveReviewDrawer item={item} onClose={onClose} onActed={onActed} />
   return null
 }

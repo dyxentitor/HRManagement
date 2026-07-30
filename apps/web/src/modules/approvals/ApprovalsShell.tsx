@@ -14,6 +14,7 @@ export default function ApprovalsShell() {
     claim: inbox.items.filter((i) => i.kind === "claim").length,
     leave: inbox.items.filter((i) => i.kind === "leave").length,
     kpi: inbox.items.filter((i) => i.kind === "kpi").length,
+    incentive: inbox.items.filter((i) => i.kind === "incentive").length,
   }
   return (
     <div className="flex flex-col md:flex-row gap-3 min-h-[calc(100vh-32px)]">

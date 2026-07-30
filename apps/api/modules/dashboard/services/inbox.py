@@ -24,7 +24,7 @@ def _emp_dept(emp) -> str:
 
 @dataclass
 class InboxItem:
-    kind: str  # 'leave', 'claim', or 'kpi'
+    kind: str  # 'leave', 'claim', 'kpi', or 'incentive'
     id: str  # request id
     employee_code: str
     summary: str  # human-readable summary
@@ -190,6 +190,61 @@ def get_inbox(*, user: User) -> list[InboxItem]:
         import logging
 
         logging.getLogger(__name__).exception("Failed to load KPI inbox items")
+
+    # Incentive (mandays) claims the current user can review. Admins see every
+    # pending claim in the org; a project owner sees pending claims on the
+    # projects they manage. Mirrors ClaimViewSet._can_review / get_queryset.
+    try:
+        from modules.identity.services.permissions import get_user_perms
+        from modules.incentive.models import Claim as _IncClaim
+        from modules.incentive.models import Project as _IncProject
+
+        inc_perms = get_user_perms(user)
+        pending_claims = None
+        if "incentive:admin" in inc_perms:
+            pending_claims = _IncClaim.objects.filter(org_id=user.org_id, status="pending")
+        elif "incentive:project:write" in inc_perms:
+            mgr_emp = _Employee.all_objects.filter(user=user, deleted_at__isnull=True).first()
+            if mgr_emp is not None:
+                owned = _IncProject.objects.filter(
+                    org_id=user.org_id, manager_id=mgr_emp.id
+                ).values_list("id", flat=True)
+                pending_claims = _IncClaim.objects.filter(
+                    org_id=user.org_id, status="pending", project_id__in=list(owned)
+                )
+
+        if pending_claims is not None:
+            for c in pending_claims.select_related("project", "project__customer"):
+                emp = (
+                    _Employee.all_objects.filter(id=c.employee_id, deleted_at__isnull=True)
+                    .select_related("department")
+                    .first()
+                )
+                emp_code = emp.employee_code if emp else str(c.employee_id)
+                items.append(
+                    InboxItem(
+                        kind="incentive",
+                        id=str(c.id),
+                        employee_code=emp_code,
+                        summary=f"{c.mandays} manday(s) — {c.project.name}",
+                        submitted_at=c.created_at,
+                        deep_link=f"/approvals?focus={c.id}",
+                        employee_id=str(c.employee_id),
+                        name=_emp_name(emp) or emp_code,
+                        department=_emp_dept(emp),
+                        type_code="MANDAY",
+                        detail={
+                            "mandays": str(c.mandays),
+                            "project": c.project.name,
+                            "customer": c.project.customer.name,
+                            "note": c.note,
+                        },
+                    )
+                )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Failed to load incentive inbox items")
 
     items.sort(key=lambda i: i.submitted_at or datetime.min, reverse=True)
     return items

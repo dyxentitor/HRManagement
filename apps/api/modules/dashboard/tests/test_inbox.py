@@ -348,6 +348,72 @@ def test_kpi_not_in_inbox_when_cycle_not_in_manager_review(stack):
 
 
 @pytest.mark.django_db
+def test_project_owner_sees_pending_manday_claim(stack):
+    """A project owner (incentive:project:write) sees pending claims on their project."""
+    from modules.dashboard.services.inbox import get_inbox
+    from modules.incentive.models import Claim, Customer, Project
+
+    org, mgr_user, _emp_user, mgr_emp, emp_emp, _, _ = stack
+    _grant(mgr_user, "incentive:project:write")
+
+    customer = Customer.objects.create(org_id=org.id, name="Acme")
+    project = Project.objects.create(
+        org_id=org.id,
+        customer=customer,
+        name="Rollout",
+        budget_mandays=Decimal("100"),
+        manager_id=mgr_emp.id,
+    )
+    claim = Claim.objects.create(
+        org_id=org.id,
+        project=project,
+        employee_id=emp_emp.id,
+        mandays=Decimal("3"),
+        note="Onsite",
+        status="pending",
+    )
+
+    items = get_inbox(user=mgr_user)
+    inc = [i for i in items if i.kind == "incentive"]
+    assert len(inc) == 1
+    assert inc[0].id == str(claim.id)
+    assert inc[0].employee_code == "EMP001"
+    assert inc[0].detail["project"] == "Rollout"
+    assert inc[0].detail["customer"] == "Acme"
+    assert inc[0].detail["mandays"] == "3.00"
+
+
+@pytest.mark.django_db
+def test_manday_claim_not_seen_by_non_owner(stack):
+    """A manager who doesn't own the project (and isn't admin) doesn't see its claims."""
+    from modules.dashboard.services.inbox import get_inbox
+    from modules.incentive.models import Claim, Customer, Project
+
+    org, mgr_user, _emp_user, _mgr_emp, emp_emp, _, _ = stack
+    _grant(mgr_user, "incentive:project:write")
+
+    customer = Customer.objects.create(org_id=org.id, name="Acme")
+    # Project owned by someone else (random manager id)
+    project = Project.objects.create(
+        org_id=org.id,
+        customer=customer,
+        name="Other",
+        budget_mandays=Decimal("50"),
+        manager_id=uuid.uuid4(),
+    )
+    Claim.objects.create(
+        org_id=org.id,
+        project=project,
+        employee_id=emp_emp.id,
+        mandays=Decimal("2"),
+        status="pending",
+    )
+
+    items = get_inbox(user=mgr_user)
+    assert [i for i in items if i.kind == "incentive"] == []
+
+
+@pytest.mark.django_db
 def test_inbox_endpoint_returns_items_for_authorized_user(stack):
     """GET /api/v1/approvals/inbox returns items when user has the permission."""
     org, mgr_user, emp_user, mgr_emp, emp_emp, leave_type, _ = stack

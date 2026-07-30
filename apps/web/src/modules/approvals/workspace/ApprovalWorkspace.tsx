@@ -54,6 +54,7 @@ const TYPE_OPTS = [
   { value: "claim", label: "Claims" },
   { value: "leave", label: "Leave" },
   { value: "kpi", label: "KPI" },
+  { value: "incentive", label: "Mandays" },
 ]
 
 export function ApprovalWorkspace({

@@ -10,7 +10,7 @@ export default function AllApprovalsPage() {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Approvals"
-        subtitle="Everything awaiting your review — across claims, leave and KPI."
+        subtitle="Everything awaiting your review — across claims, leave, KPI and mandays."
       />
       <ApprovalWorkspace inbox={inbox} descriptor={allDescriptor} />
     </div>

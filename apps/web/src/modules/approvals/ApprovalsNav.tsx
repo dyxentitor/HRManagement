@@ -21,6 +21,7 @@ export function ApprovalsNav({ counts }: { counts: Record<ApprovalsCountKey, num
     claim: canClaimTeam || canClaimFinance,
     leave: canLeave,
     kpi: false, // KPI has no dedicated perm — visible only when items exist
+    incentive: false, // surfaced inside "All"; visible only when items exist
   }
 
   const visible = APPROVALS_NAV_ITEMS.filter(

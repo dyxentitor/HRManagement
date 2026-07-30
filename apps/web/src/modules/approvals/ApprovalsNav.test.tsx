@@ -8,7 +8,13 @@ vi.mock("@/lib/perm", () => ({ useCan: (p: string) => mocks.can(p) }))
 import { ApprovalsNav } from "./ApprovalsNav"
 import type { ApprovalsCountKey } from "./approvals-nav-config"
 
-const ZERO: Record<ApprovalsCountKey, number> = { all: 0, claim: 0, leave: 0, kpi: 0 }
+const ZERO: Record<ApprovalsCountKey, number> = {
+  all: 0,
+  claim: 0,
+  leave: 0,
+  kpi: 0,
+  incentive: 0,
+}
 
 function wrap(counts: Record<ApprovalsCountKey, number>, path = "/approvals") {
   return render(
