@@ -35,6 +35,16 @@ from .services.attachment import FeedbackAttachmentService
 
 logger = logging.getLogger(__name__)
 
+# Permissive status state machine. Blocks nonsensical jumps (e.g. closed→new,
+# resolved→new) while still allowing an admin to reopen a resolved/closed item
+# back into review. Adjust the sets here if the workflow needs more paths.
+STATUS_TRANSITIONS: dict[str, set[str]] = {
+    "new": {"in_review", "resolved", "closed"},
+    "in_review": {"new", "resolved", "closed"},
+    "resolved": {"in_review", "closed"},
+    "closed": {"in_review"},
+}
+
 
 @requires_feature("feedback")
 class FeedbackViewSet(viewsets.ModelViewSet):
@@ -163,7 +173,12 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             if "status" in validated and validated["status"] != obj.status:
                 old_status = obj.status
-                obj.status = validated["status"]
+                new_status = validated["status"]
+                if new_status not in STATUS_TRANSITIONS.get(old_status, set()):
+                    raise ValidationError(
+                        {"status": f"Cannot change status from '{old_status}' to '{new_status}'."}
+                    )
+                obj.status = new_status
                 obj.save(update_fields=["status", "updated_at"])
                 audit_append(
                     org_id=obj.org_id,

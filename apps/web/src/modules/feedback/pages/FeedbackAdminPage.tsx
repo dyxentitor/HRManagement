@@ -225,8 +225,8 @@ export default function FeedbackAdminPage() {
               aria-label="Search feedback"
             />
 
-            {/* Status chips */}
-            <div className="flex flex-wrap gap-1">
+            {/* Status filter — segmented control (matches Accounts / Bonds) */}
+            <div className="inline-flex flex-wrap rounded-xl bg-surface-elevated/60 p-0.5">
               {STATUS_CHIPS.map(([value, label]) => (
                 <button
                   key={value}
@@ -234,8 +234,8 @@ export default function FeedbackAdminPage() {
                   onClick={() => setStatusFilter(value)}
                   className={
                     statusFilter === value
-                      ? "rounded-full px-2.5 py-0.5 text-label bg-accent-500/15 text-text-primary"
-                      : "rounded-full px-2.5 py-0.5 text-label text-text-secondary hover:bg-surface-hover"
+                      ? "rounded-lg px-2.5 py-1 text-small bg-accent-500/20 text-accent-100"
+                      : "rounded-lg px-2.5 py-1 text-small text-text-secondary hover:text-text-primary"
                   }
                 >
                   {label}

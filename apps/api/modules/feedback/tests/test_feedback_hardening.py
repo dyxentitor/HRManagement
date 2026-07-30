@@ -197,3 +197,33 @@ def test_attachment_register_writes_audit(emp_client):
     assert AuditLog.objects.filter(
         entity="feedback", action="feedback.attachment.registered", entity_id=fid
     ).exists()
+
+
+# --- status transition guard -----------------------------------------------
+
+
+def _set_status(admin_client, fid, value):
+    return admin_client.patch(f"/api/v1/feedback/{fid}/", {"status": value}, format="json")
+
+
+def test_transition_blocks_closed_to_new(admin_client):
+    fid = _new_feedback(admin_client)
+    _set_status(admin_client, fid, "resolved")
+    _set_status(admin_client, fid, "closed")
+    r = _set_status(admin_client, fid, "new")  # nonsensical reopen
+    assert r.status_code == 400
+    assert "status" in str(r.json()).lower()
+
+
+def test_transition_allows_reopen_resolved_to_in_review(admin_client):
+    fid = _new_feedback(admin_client)
+    _set_status(admin_client, fid, "resolved")
+    r = _set_status(admin_client, fid, "in_review")  # legitimate reopen
+    assert r.status_code == 200
+
+
+def test_transition_allows_forward_paths(admin_client):
+    fid = _new_feedback(admin_client)
+    assert _set_status(admin_client, fid, "in_review").status_code == 200
+    assert _set_status(admin_client, fid, "resolved").status_code == 200
+    assert _set_status(admin_client, fid, "closed").status_code == 200
