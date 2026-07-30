@@ -2,6 +2,64 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.76.0] — 2026-07-30 — Production feedback sweep + Claims categories restore
+
+Resolves a batch of production feedback: a P1 password-strength gap, empty
+Claim Category dropdown/cards in prod, three login-footer 404s, self-service
+PII gaps, and mandays approvals not surfacing for managers. Plus the feedback
+module hardening carried from the prior session.
+
+### Added
+- **Claim categories seeder** — new idempotent `seed_claim_categories`
+  management command (`get_or_create`, admin edits survive re-runs) seeding the
+  canonical TRAVEL / MEALS / MISC set, now wired into `seed_provintell`. Root
+  cause: `seed_provintell` never seeded categories, so a freshly provisioned org
+  had none and the Claim Category dropdown (`ClaimSubmitPage`) + category cards
+  (`ClaimCategoryGrid`) rendered empty. **Post-deploy step required:** run
+  `python manage.py seed_claim_categories --org-slug provintell` to backfill the
+  existing prod org (see Notes).
+- **Password strength policy** — `AUTH_PASSWORD_VALIDATORS`
+  (UserAttributeSimilarity, MinimumLength=10, CommonPassword, NumericPassword)
+  wired into every user-facing password path via a shared
+  `validate_password_strength` (Django's `set_password` never runs the
+  validators on its own). Existing passwords keep working until next change.
+- **`/legal/{privacy,terms,security}` routes** — a small `legal` module with a
+  shared stub page (professional placeholder, links back to sign-in). The login
+  footer previously linked to non-existent pages (three 404s).
+- **Self-service PII on `/me/profile`** — employees can now fill in their own
+  **bank account number** (MFA-gated; backend already allowed it) and **IC
+  number** (added to `SELF_EDIT_WHITELIST`, no MFA per decision). The self-edit
+  path now recomputes `ic_last4` (previously only `bank_account_last4`).
+- **Mandays claims in the unified Approvals Inbox** — `get_inbox()` now includes
+  pending incentive claims the user can review (`incentive:admin` sees all; a
+  project owner sees claims on projects they manage). New "Mandays" kind renders
+  in the All Approvals workspace with inline approve + a review drawer wired to
+  the incentive approve/reject endpoints.
+
+### Changed
+- **Login footer copy** — company name → "All Rights Reserved, By Provintell
+  Technologies Sdn. Bhd." (year kept dynamic); "Need help?" contact →
+  `hr@provintell.com` (removed the placeholder phone).
+- **Feedback module hardening** (carried from prior session) — attachment
+  content-type allowlist + own-prefix `s3_key` binding, `s3_key` no longer
+  exposed in output, description/note length caps, status-transition guard,
+  audit on note-add + attachment-register, N+1 fixes, upload robustness, and
+  admin inbox polish (PageHeader, segmented filters, stale-pane fix).
+
+### Migrations
+- None. No new permission codes.
+
+### Notes
+- Backend: **1250 passed, 3 skipped** (0 failed). Frontend: **691 passed**
+  (0 failed).
+- **Deploy is data-safe (no migrations), but the prod org needs the categories
+  backfilled** after the new image is live:
+  `docker compose -f docker-compose.prod.yml exec api python manage.py seed_claim_categories --org-slug provintell`
+  (idempotent — safe to re-run; reports "3 created" on the first run).
+- Dev carries a `SEED_APPROVALS` test category (from `seed_approvals_demo`) that
+  is intentionally excluded from the canonical prod set.
+- DEV-only — built and tagged locally; not deployed.
+
 ## [1.75.0] — 2026-07-29 — Bond management (People → Bonds)
 
 Gives HR a UI to manage mandays incentive bonds — previously the backend CRUD existed but bonds could only be created via raw API calls. Employee-side accept flow unchanged.
