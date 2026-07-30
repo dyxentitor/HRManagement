@@ -191,6 +191,23 @@ def test_patch_me_can_edit_personal_details(employee_with_user) -> None:
 
 
 @pytest.mark.django_db
+def test_patch_me_can_set_own_ic_without_mfa(employee_with_user) -> None:
+    """IC is self-editable (no MFA gate) so employees can complete their own IC."""
+    _, emp, client = employee_with_user
+    resp = client.patch(
+        "/api/v1/employees/me/",
+        {"ic_number": "900101-14-5523"},
+        format="json",
+    )
+    assert resp.status_code == 200, resp.content
+    emp.refresh_from_db()
+    assert emp.ic_number == "900101-14-5523"
+    # last-4 surfaces in the read view; the raw number stays write-only
+    assert resp.json()["ic_last4"] == "5523"
+    assert "ic_number" not in resp.json()
+
+
+@pytest.mark.django_db
 def test_patch_me_rejects_invalid_gender(employee_with_user) -> None:
     """Model choices still validate — a bad gender is a 400, not a silent write."""
     _, emp, client = employee_with_user

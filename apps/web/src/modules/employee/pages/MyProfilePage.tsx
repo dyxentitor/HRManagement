@@ -180,7 +180,7 @@ export default function MyProfilePage() {
 
 	function saveSection(section: SectionId) {
 		const fieldsBySection: Record<SectionId, (keyof EmployeeWritePayload)[]> = {
-			details: ["date_of_birth", "gender", "nationality", "marital_status"],
+			details: ["date_of_birth", "gender", "nationality", "marital_status", "ic_number"],
 			personal: ["phone", "alt_phone", "personal_email", "preferred_name"],
 			address: ["address_line1", "address_line2", "city", "state", "postcode", "country_code"],
 			banking: ["bank_name", "bank_account_number"],
@@ -197,6 +197,12 @@ export default function MyProfilePage() {
 
 		if (section === "details" && payload.date_of_birth === "") {
 			delete (payload as Record<string, unknown>).date_of_birth;
+		}
+
+		// IC is a write-only "replace" field: only send it when the user typed a
+		// new value, so a blank input never wipes the stored (encrypted) IC.
+		if (section === "details" && !draft.ic_number) {
+			delete (payload as Record<string, unknown>).ic_number;
 		}
 
 		// Bank account number is a write-only "replace" field: only send it when
@@ -333,6 +339,15 @@ export default function MyProfilePage() {
 									value={draft.marital_status ?? ""}
 									onChange={(v) => setField("marital_status", v)}
 									options={MARITAL_OPTIONS}
+								/>
+								<LabeledInput
+									label={
+										profile.ic_last4
+											? `New IC number (current •••• ${profile.ic_last4})`
+											: "IC number"
+									}
+									value={draft.ic_number ?? ""}
+									onChange={(v) => setField("ic_number", v)}
 								/>
 							</div>
 						}

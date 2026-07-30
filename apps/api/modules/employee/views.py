@@ -230,10 +230,17 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         ser.is_valid(raise_exception=True)
         ser.save()
 
-        # Recompute bank_account_last4 if bank_account_number was supplied
+        # Recompute the last-4 mirrors for any encrypted field that was supplied
+        # (the HR path does this in EmployeeService; self-edit must mirror it).
+        last4_updates: list[str] = []
         if request.data.get("bank_account_number"):
             emp.bank_account_last4 = request.data["bank_account_number"][-4:]
-            emp.save(update_fields=["bank_account_last4", "updated_at"])
+            last4_updates.append("bank_account_last4")
+        if request.data.get("ic_number"):
+            emp.ic_last4 = request.data["ic_number"][-4:]
+            last4_updates.append("ic_last4")
+        if last4_updates:
+            emp.save(update_fields=[*last4_updates, "updated_at"])
 
         # Notify HR if any bank field changed
         if any(k in self.BANK_FIELDS for k in request.data.keys()):

@@ -29,6 +29,7 @@ SELF_EDIT_WHITELIST = frozenset(
         "emergency_contact_relationship",
         "emergency_contact_phone",
         "preferred_name",
+        "ic_number",  # self-serviceable so employees can complete their own IC; no MFA gate
         "bank_name",
         "bank_account_number",  # bank-change still requires re-MFA — enforced in M2b
     }
