@@ -2,6 +2,61 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.77.0] — 2026-08-01 — Claim category taxonomy (7 categories)
+
+Replaces the 3-category claim taxonomy with the business set requested for
+production. Superseded categories are retired, not deleted, so historical
+claims keep rendering.
+
+### Added
+- **New claim categories** — `TRANSPORT` Transportation, `MEDICAL` Medical &
+  Healthcare, `OFFICE` Office & Work Supplies, `IT_SOFTWARE` IT & Software,
+  `TRAINING` Training & Certification, `WELFARE` Employee Welfare. `MISC`
+  Miscellaneous is kept as-is. All carry the existing defaults
+  (`requires_attachment=True`, RM2000 cap, MYR).
+- **Category retirement** — `seed_claim_categories` gained
+  `RETIRED_CLAIM_CATEGORY_CODES` and an idempotent retire pass that
+  **soft-deletes** TRAVEL and MEALS. `seed_default_claim_categories()` now
+  returns `(created, present, retired)`.
+- **Frontend category rules** — icon/tone/copy entries so Office & Work
+  Supplies, IT & Software and Employee Welfare render distinctly instead of the
+  generic receipt fallback; Transportation now uses a car rather than a plane.
+
+### Changed
+- **`seed_demo_data` delegates to the canonical seeder** — it previously
+  re-created TRAVEL/MEALS via `update_or_create` on `all_objects`, which would
+  match their tombstones and file demo claims against retired categories. Its
+  two demo archetypes now point at `TRANSPORT` (Grab ride) and `WELFARE` (team
+  lunch).
+
+### Migrations
+- None. Retirement is a data operation on the existing `deleted_at` column, run
+  through the idempotent management command (CLAUDE.md §3.6). No new permission
+  codes.
+
+### Notes
+- **Why soft-delete:** `ClaimRequest.category` is `on_delete=PROTECT` and
+  historical claims reference TRAVEL/MEALS (1 in prod, 31 in dev). Soft-deleting
+  keeps the row so those claims still resolve their category name, while
+  `ClaimCategoryViewSet` (filtering `deleted_at__isnull=True`) stops offering
+  them in the dropdown and dashboard cards. Verified end-to-end on dev:
+  `/claims/categories/` returns the new set and `/claims/?scope=org` still
+  renders all 19 Meals + 12 Travel historical claims.
+- A regression test pins this contract — `ClaimCategory` deliberately has **no**
+  `Meta.base_manager_name`, so Django uses a plain manager for forward-FK
+  traversal and soft-deleted categories stay reachable. Setting it to the
+  tenant-scoped manager would 500 every historical claim; the test fails loudly
+  if that changes.
+- **Post-deploy step required:**
+  `python manage.py seed_claim_categories --org-slug provintell` (idempotent;
+  reports `6 created, 1 already present, 2 retired` on the first prod run).
+- Backend: **1255 passed, 3 skipped** (+5). Frontend: **694 passed** (+3).
+- Category ordering stays alphabetical by code (no `sort_order` column) and all
+  seven keep the uniform RM2000 / receipt-required defaults — both confirmed
+  decisions, so no schema change ships with this release.
+- Dev additionally shows a `SEED_APPROVALS` category from `seed_approvals_demo`;
+  it is a dev-only demo artifact and is not part of the canonical set.
+
 ## [1.76.0] — 2026-07-30 — Production feedback sweep + Claims categories restore
 
 Resolves a batch of production feedback: a P1 password-strength gap, empty
