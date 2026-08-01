@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import type { ClaimRequest } from "../api";
-import { bucketOf, displayStatus, stageStates, summarise } from "./claim-ui";
+import {
+	bucketOf,
+	categoryCopy,
+	categoryMeta,
+	displayStatus,
+	stageStates,
+	summarise,
+} from "./claim-ui";
 
 function claim(over: Partial<ClaimRequest>): ClaimRequest {
 	return {
@@ -65,5 +72,40 @@ describe("claim-ui", () => {
 		expect(stageStates("submitted")).toEqual(["done", "current", "upcoming", "upcoming"]);
 		expect(stageStates("finance_approved")).toEqual(["done", "done", "done", "current"]);
 		expect(stageStates("reimbursed")).toEqual(["done", "done", "done", "done"]);
+	});
+
+	// Every canonical category must resolve to a distinct, non-fallback icon so
+	// the dropdown + dashboard cards don't render as a wall of generic receipts.
+	// MISC is intentionally the fallback.
+	const CANONICAL = [
+		"TRANSPORT Transportation",
+		"MEDICAL Medical & Healthcare",
+		"OFFICE Office & Work Supplies",
+		"IT_SOFTWARE IT & Software",
+		"TRAINING Training & Certification",
+		"WELFARE Employee Welfare",
+	];
+
+	it("gives every canonical category a specific icon (MISC falls back)", () => {
+		const fallback = categoryMeta("__nothing_matches__");
+		for (const key of CANONICAL) {
+			expect(categoryMeta(key).icon, `${key} should not use the fallback icon`).not.toBe(
+				fallback.icon,
+			);
+		}
+		expect(categoryMeta("MISC Miscellaneous").icon).toBe(fallback.icon);
+	});
+
+	it("gives each canonical category distinct explainer copy", () => {
+		const generic = categoryCopy("__nothing_matches__", true);
+		for (const key of CANONICAL) {
+			expect(categoryCopy(key, true), `${key} should have specific copy`).not.toBe(generic);
+		}
+	});
+
+	it("uses a ground-transport icon for Transportation, not the flight icon", () => {
+		expect(categoryMeta("TRANSPORT Transportation").icon).not.toBe(
+			categoryMeta("TRAVEL Travel").icon,
+		);
 	});
 });

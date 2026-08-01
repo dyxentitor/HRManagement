@@ -1,4 +1,14 @@
-import { GraduationCap, HeartPulse, Laptop, Plane, Receipt, UtensilsCrossed } from "lucide-react";
+import {
+	Boxes,
+	Car,
+	GraduationCap,
+	HeartHandshake,
+	HeartPulse,
+	Laptop,
+	Plane,
+	Receipt,
+	UtensilsCrossed,
+} from "lucide-react";
 import type { ComponentType } from "react";
 
 import type { ClaimRequest, ClaimStatus } from "../api";
@@ -46,11 +56,17 @@ interface CatMeta {
 	tone: Tone;
 }
 
+// First match wins — order matters. Ground transport is checked before the
+// broader travel rule so "Transportation" gets a car rather than a plane.
 const CAT_RULES: { match: RegExp; meta: CatMeta }[] = [
 	{ match: /medic|health|clinic|hospital|dental/i, meta: { icon: HeartPulse, tone: "coral" } },
-	{ match: /travel|trip|transport|mileage|flight|taxi/i, meta: { icon: Plane, tone: "sky" } },
+	{ match: /transport|mileage|taxi|grab|commut/i, meta: { icon: Car, tone: "sky" } },
+	{ match: /travel|trip|flight/i, meta: { icon: Plane, tone: "sky" } },
+	{ match: /software|saas|licen[cs]e|subscription/i, meta: { icon: Laptop, tone: "lavender" } },
 	{ match: /equip|asset|device|laptop|hardware|tool/i, meta: { icon: Laptop, tone: "lavender" } },
 	{ match: /train|course|educat|cert|learn|book/i, meta: { icon: GraduationCap, tone: "mint" } },
+	{ match: /office|supplies|stationery|printer|paper/i, meta: { icon: Boxes, tone: "yellow" } },
+	{ match: /welfare|wellbeing|wellness|morale|team building/i, meta: { icon: HeartHandshake, tone: "peach" } },
 	{ match: /meal|food|entertain|dining/i, meta: { icon: UtensilsCrossed, tone: "yellow" } },
 ];
 
@@ -182,8 +198,16 @@ const CAT_COPY: { match: RegExp; copy: string }[] = [
 		copy: "Clinic visits, prescriptions and dental. Receipt required — usually paid within a week.",
 	},
 	{
-		match: /travel|trip|transport|mileage|flight|taxi/i,
-		copy: "Flights, taxis, mileage and accommodation for work trips. Itemised receipts speed approval.",
+		match: /transport|mileage|taxi|grab|commut/i,
+		copy: "Taxis, e-hailing, mileage and parking for work trips. Itemised receipts speed approval.",
+	},
+	{
+		match: /travel|trip|flight/i,
+		copy: "Flights and accommodation for work trips. Itemised receipts speed approval.",
+	},
+	{
+		match: /software|saas|licen[cs]e|subscription/i,
+		copy: "Software licences, SaaS subscriptions and developer tools. Larger renewals may need pre-approval.",
 	},
 	{
 		match: /equip|asset|device|laptop|hardware|tool/i,
@@ -192,6 +216,14 @@ const CAT_COPY: { match: RegExp; copy: string }[] = [
 	{
 		match: /train|course|educat|cert|learn|book/i,
 		copy: "Courses, books and certifications that grow your skills.",
+	},
+	{
+		match: /office|supplies|stationery|printer|paper/i,
+		copy: "Stationery, printing and everyday supplies for the office.",
+	},
+	{
+		match: /welfare|wellbeing|wellness|morale|team building/i,
+		copy: "Team meals, wellbeing and staff engagement activities on approved occasions.",
 	},
 	{ match: /meal|food|entertain|dining/i, copy: "Client and team meals on approved occasions." },
 ];

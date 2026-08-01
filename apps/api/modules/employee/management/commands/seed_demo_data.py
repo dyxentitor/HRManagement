@@ -721,20 +721,19 @@ def _seed_claims(
     """2 ClaimRequests per employee: 1 approved+reimbursed, 1 pending.
     At least 3 with a ClaimAttachment stub.
     """
-    # Ensure 3 ClaimCategory rows
-    categories = {}
-    for code, name in [("TRAVEL", "Travel"), ("MEALS", "Meals"), ("MISC", "Miscellaneous")]:
-        cat, _ = ClaimCategory.all_objects.update_or_create(
-            org_id=org.id,
-            code=code,
-            defaults={
-                "name": name,
-                "requires_attachment": True,
-                "max_amount_per_claim": Decimal("2000"),
-                "currency_code": "MYR",
-            },
-        )
-        categories[code] = cat
+    # Reconcile to the canonical category set (also retires superseded codes).
+    # Delegating keeps demo data in step with the real seeder — hardcoding codes
+    # here previously re-created TRAVEL / MEALS on every run, which would
+    # resurrect their tombstones and file demo claims against retired rows.
+    from modules.claims.management.commands.seed_claim_categories import (
+        seed_default_claim_categories,
+    )
+
+    seed_default_claim_categories(org)
+    categories = {
+        c.code: c
+        for c in ClaimCategory.all_objects.filter(org_id=org.id, deleted_at__isnull=True)
+    }
 
     today = timezone.localdate()
     n_created = 0
@@ -750,14 +749,14 @@ def _seed_claims(
         existing_approved = ClaimRequest.all_objects.filter(
             org_id=org.id,
             employee=emp,
-            category=categories["MEALS"],
+            category=categories["WELFARE"],
             expense_date=expense_date_approved,
         ).first()
         if not existing_approved:
             claim_approved = ClaimRequest.all_objects.create(
                 org_id=org.id,
                 employee=emp,
-                category=categories["MEALS"],
+                category=categories["WELFARE"],
                 amount=amount_approved,
                 currency_code="MYR",
                 expense_date=expense_date_approved,
@@ -836,14 +835,14 @@ def _seed_claims(
         existing_pending = ClaimRequest.all_objects.filter(
             org_id=org.id,
             employee=emp,
-            category=categories["TRAVEL"],
+            category=categories["TRANSPORT"],
             expense_date=expense_date_pending,
         ).first()
         if not existing_pending:
             claim_pending = ClaimRequest.all_objects.create(
                 org_id=org.id,
                 employee=emp,
-                category=categories["TRAVEL"],
+                category=categories["TRANSPORT"],
                 amount=amount_pending,
                 currency_code="MYR",
                 expense_date=expense_date_pending,
