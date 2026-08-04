@@ -2,6 +2,37 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.78.0] — 2026-08-04 — 2026 leave-balance migration
+
+Loads the HR-maintained `Leave 2026.xlsx` balances into the leave module for
+the 11 employees carrying leave data.
+
+### Added
+- **`migrate_leave_balances_2026` management command** — idempotent, single
+  transaction, `--dry-run` preview. Writes `entitled`, `accrued`,
+  `carried_forward` and `taken` per employee per leave type, with a full ledger
+  audit trail (`accrual`, `carry_forward`, `manual_adjustment`) keyed on
+  deterministic references so a re-run is a no-op.
+
+### Notes
+- **Confirmed mappings** (agreed with the business owner before implementation):
+  `AL`→ANNUAL, `ML`→MEDICAL (Sick Leave), `HL`→HOSPITALIZATION,
+  `BL`→COMPASSIONATE (bereavement, 1 day). The single "2025 (Carried forward)"
+  column applies to **ANNUAL only**; carry-forward has **no expiry**.
+- The workbook's "Leave Taken" columns held free text (`4&5&6 Feb 26`,
+  `8 May, 7 June(0.5)`) rather than day counts. The parsed figures were reviewed
+  line by line and are embedded as reviewed constants, so migrated values are
+  auditable in git rather than re-derived at run time.
+- **Scope:** 11 employees, 44 balance rows — 735 entitled, 113 carried-forward,
+  23 taken days. Four workbook rows are deliberately excluded (Ng Eick Khiam and
+  Yap Mee Ling have no employee record; Pang Yat Ming and Ahmad Arif Aiman have
+  no leave data). Syafiq maps to the active `EMP-2026-0002`, not the archived
+  duplicate `EMP-2026-0001`.
+- **Post-deploy step:** `python manage.py migrate_leave_balances_2026 --dry-run`
+  to confirm, then without the flag to execute.
+- No schema migrations. No new permission codes. Backend +7 tests (leave module
+  131 passed).
+
 ## [1.77.0] — 2026-08-01 — Claim category taxonomy (7 categories)
 
 Replaces the 3-category claim taxonomy with the business set requested for
