@@ -2,6 +2,47 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.79.0] — 2026-08-06 — Top-of-chain manager self-approval (claims)
+
+Managers with nobody above them could not file an expense claim **at all**:
+every claim chain starts at `DirectManagerResolver`, which resolved to `None`,
+and `engine.submit` raises `NoApproverFound`. Three people in production were
+affected (2 managers + 1 org_admin with no manager assigned).
+
+### Added
+- **`DirectManagerResolver(allow_self_approval=...)`** — opt-in flag. When set, a
+  requester holding the `manager` role resolves to *themselves* if nobody sits
+  above them. Enabled on the three claim chains only.
+- **9 tests** — 6 covering the claims capability and its boundaries, 3
+  documenting the mandays policy (below).
+
+### Changed
+- **Engine self-approval guard narrowed, not removed.** It now permits a
+  self-match only when the resolver for that level *explicitly declares* the
+  opt-in **and** actually routes to the acting user. A resolver that names the
+  requester through data drift is still refused, preserving the v1.10.1
+  defence-in-depth property (`test_act_blocks_self_approval` still passes).
+
+### Notes
+- **Finance still gates the money.** All three claim chains end at a Finance
+  stage, so a manager clearing level 1 *advances* the claim — it never pays one
+  out.
+- **Leave deliberately excluded.** `DirectManagerResolver` is shared with the
+  leave chain, which is a *single step* — self-approval there would be a fully
+  self-granted absence with no second pair of eyes. Leave already handles the
+  missing-manager case correctly via `FallbackResolver`
+  (manager → dept head → hr_manager).
+- **Mandays/incentive self-approval documented as intended policy** (owner
+  decision, 2026-08-06): a project owner may approve their own manday claim.
+  Tests make the consequence explicit — unlike expense claims, `approve` mints
+  the payout immediately with **no later gate** — so the policy is reviewable
+  rather than an accident of `_can_review` omitting a claimant check.
+- **Recommended follow-up (not code):** assign managers above the three
+  affected employees in the org chart. Self-approval is a fallback; with a real
+  approver above them it never triggers.
+- No migrations. No new permission codes. Backend: **291 passed** across
+  workflow + claims + leave + incentive.
+
 ## [1.78.0] — 2026-08-04 — 2026 leave-balance migration
 
 Loads the HR-maintained `Leave 2026.xlsx` balances into the leave module for
