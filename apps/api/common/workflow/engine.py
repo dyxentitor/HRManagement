@@ -105,14 +105,29 @@ class WorkflowEngine:
         if subject.status != "submitted":
             raise InvalidTransition(f"Cannot act on status='{subject.status}'")
 
-        # Defence-in-depth: even if a resolver picks the requester themselves
-        # (data drift, edge-case fixture), refuse self-approval here.
+        # Defence-in-depth: refuse self-approval unless the resolver for THIS
+        # level deliberately routed back to the requester (see
+        # DirectManagerResolver(allow_self_approval=True) — a top-of-chain
+        # manager clearing their own first stage). Every other resolver drops
+        # the requester from its candidate pool, so a self-match arising from
+        # data drift still fails here.
         requester_user_id = getattr(getattr(subject, "employee", None), "user_id", None)
         if requester_user_id is not None and actor.id == requester_user_id:
-            raise NotAuthorizedToAct(
-                f"User {actor.id} cannot approve their own request "
-                f"(chain={chain.code} level={subject.current_level})"
-            )
+            step_for_self = chain.get_step(subject.current_level)
+            resolver = getattr(step_for_self, "resolver", None)
+            # Opt-in intent must be declared on the resolver AND that resolver
+            # must actually route to this actor. An accidental self-match (a
+            # resolver that names the requester through data drift) carries no
+            # flag and is still refused.
+            permitted = getattr(resolver, "allow_self_approval", False)
+            if permitted:
+                routed = self._resolve_step(subject, chain, level=subject.current_level)
+                permitted = routed is not None and routed.id == actor.id
+            if not permitted:
+                raise NotAuthorizedToAct(
+                    f"User {actor.id} cannot approve their own request "
+                    f"(chain={chain.code} level={subject.current_level})"
+                )
 
         step = chain.get_step(subject.current_level)
         if step is not None and step.routing is not None and authorizer is not None:
