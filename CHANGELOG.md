@@ -2,6 +2,46 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.80.0] — 2026-08-08 — Approvals select-all + receipt attachment fix
+
+Two production-reported frontend issues. No backend or schema changes.
+
+### Added
+- **Select-all in the approvals workspace** (prod feedback `de9b6645`) — a
+  tri-state header checkbox above the row list. One click selects every row
+  matching the *current* filters, across pages (selection is keyed by id and
+  already survived paging). Skips rows with `actionable=false` (the queue
+  history tabs), so a select-all can never load the bulk bar with rows that
+  cannot be approved. Shows an indeterminate state on a partial selection and
+  flips to "Deselect all N" once everything is picked.
+- `useApprovalInbox.selectMany` / `deselectMany` — one state update for a bulk
+  selection instead of N toggles; queue mode gets the equivalent via `setQSel`.
+
+### Fixed
+- **Same-named receipts were silently discarded** — `ReceiptDropzone`
+  de-duplicated picked files by filename alone, so a second receipt called
+  `Receipt.pdf` (bank exports, scanner defaults) vanished with no feedback and
+  users believed two files were attached when only one was. Identity is now
+  name + size + lastModified. The React list key and `remove()` handler were
+  *also* name-keyed — left unfixed, two same-named files would have collided in
+  reconciliation and Remove would have deleted both; all three now share one
+  `fileKey()` helper. Skipped files surface a `role="status"` line, and the
+  input value resets so re-picking a removed file fires a change event.
+
+### Notes
+- **Claim submission is unrelated to attachment count.** A prod 400 was
+  attributed to attaching two PDFs; investigation showed the same user failed
+  6/6 times with *one* attachment too, while a colleague who has a manager
+  assigned submitted fine. The cause was `NoApproverFound` (fixed in v1.79.0).
+  `submit()` performs no attachment validation at all — now pinned by
+  parametrised tests over 0/1/2/5 attachments.
+- **Known limitation:** on the mixed-kind "All Approvals" view, select-all
+  leaves bulk approve disabled with the existing "Select one type to
+  bulk-approve" hint, because each kind approves through a different endpoint.
+  Filtering by type first makes it work.
+- Frontend: **43/43** approvals tests, **33/33** claims tests, tsc clean. The
+  workspace change is purely additive (132 insertions, 0 deletions).
+
 ## [1.79.0] — 2026-08-06 — Top-of-chain manager self-approval (claims)
 
 Managers with nobody above them could not file an expense claim **at all**:
