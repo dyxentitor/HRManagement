@@ -37,6 +37,8 @@ function fakeInbox(items: InboxItem[], selected = new Set<string>()): UseApprova
     approveIds: vi.fn(),
     toggle: vi.fn(),
     clearSelection: vi.fn(),
+    selectMany: vi.fn(),
+    deselectMany: vi.fn(),
   } as unknown as UseApprovalInbox
 }
 
@@ -88,6 +90,63 @@ describe("ApprovalWorkspace", () => {
     )
     expect(screen.getByText(/select one type/i)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /approve selected/i })).toBeDisabled()
+  })
+
+  // --- prod feedback de9b6645 "Request Select All and Approve" ---
+
+  it("select-all picks every row matching the current filters in one click", () => {
+    const inbox = fakeInbox([item({ id: "a" }), item({ id: "b" }), item({ id: "c" })])
+    render(<ApprovalWorkspace inbox={inbox} filterKind="leave" descriptor={descriptor} />)
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /select all 3/i }))
+    expect(inbox.selectMany).toHaveBeenCalledWith(["a", "b", "c"])
+  })
+
+  it("select-all respects the active search filter", () => {
+    const inbox = fakeInbox([item({ id: "a", name: "Alex" }), item({ id: "b", name: "Bea" })])
+    render(<ApprovalWorkspace inbox={inbox} filterKind="leave" descriptor={descriptor} />)
+    fireEvent.change(screen.getByLabelText("Search approvals"), { target: { value: "alex" } })
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /select all 1/i }))
+    expect(inbox.selectMany).toHaveBeenCalledWith(["a"])
+  })
+
+  it("select-all skips non-actionable history rows", () => {
+    const inbox = fakeInbox([
+      item({ id: "a", actionable: true } as never),
+      item({ id: "done", actionable: false } as never),
+    ])
+    render(<ApprovalWorkspace inbox={inbox} filterKind="leave" descriptor={descriptor} />)
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /select all 1/i }))
+    expect(inbox.selectMany).toHaveBeenCalledWith(["a"])
+  })
+
+  it("toggles back to deselect when everything is already selected", () => {
+    const inbox = fakeInbox([item({ id: "a" }), item({ id: "b" })], new Set(["a", "b"]))
+    render(<ApprovalWorkspace inbox={inbox} filterKind="leave" descriptor={descriptor} />)
+
+    const box = screen.getByRole("checkbox", { name: /deselect all 2/i }) as HTMLInputElement
+    expect(box.checked).toBe(true)
+    fireEvent.click(box)
+    expect(inbox.deselectMany).toHaveBeenCalledWith(["a", "b"])
+  })
+
+  it("shows an indeterminate box on a partial selection", () => {
+    const inbox = fakeInbox([item({ id: "a" }), item({ id: "b" })], new Set(["a"]))
+    render(<ApprovalWorkspace inbox={inbox} filterKind="leave" descriptor={descriptor} />)
+
+    const box = screen.getByRole("checkbox", { name: /select all 2/i }) as HTMLInputElement
+    expect(box.checked).toBe(false)
+    expect(box.indeterminate).toBe(true)
+  })
+
+  it("select-all then bulk-approve sends every selected id", () => {
+    const inbox = fakeInbox([item({ id: "a" }), item({ id: "b" })], new Set(["a", "b"]))
+    render(<ApprovalWorkspace inbox={inbox} filterKind="leave" descriptor={descriptor} />)
+
+    fireEvent.click(screen.getByRole("button", { name: /approve selected/i }))
+    expect(inbox.approveIds).toHaveBeenCalledWith(["a", "b"])
   })
 
   it("queue mode renders tabs, fetches on switch, hides action on history rows", async () => {

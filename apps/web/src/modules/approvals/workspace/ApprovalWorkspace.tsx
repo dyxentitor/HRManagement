@@ -122,6 +122,20 @@ export function ApprovalWorkspace({
   }
   const clearSel = queue ? () => setQSel(new Set()) : () => inbox?.clearSelection()
 
+  function setManySel(ids: string[], picked: boolean) {
+    if (queue) {
+      setQSel((s) => {
+        const next = new Set(s)
+        for (const id of ids) {
+          if (picked) next.add(id)
+          else next.delete(id)
+        }
+        return next
+      })
+    } else if (picked) inbox?.selectMany(ids)
+    else inbox?.deselectMany(ids)
+  }
+
   async function approveOne(item: WorkspaceRow) {
     if (actingId) return // one action in flight at a time
     setActingId(item.id)
@@ -184,6 +198,16 @@ export function ApprovalWorkspace({
   const selectedItems = base.filter((i) => selected.has(i.id))
   const singleKind = new Set(selectedItems.map((i) => i.kind)).size === 1
   const bulkAllowed = selectedItems.length > 0 && singleKind
+
+  // "Select all" spans every row matching the CURRENT filters (not just this
+  // page) — selection is already keyed by id and survives paging. History rows
+  // in the queue tabs carry actionable=false and are skipped, so a select-all
+  // can never load the bulk bar with rows that cannot be approved.
+  const selectableRows = filtered.filter((i) => i.actionable ?? true)
+  const selectableIds = selectableRows.map((i) => i.id)
+  const selectedVisible = selectableIds.filter((id) => selected.has(id)).length
+  const allVisibleSelected = selectableIds.length > 0 && selectedVisible === selectableIds.length
+  const someVisibleSelected = selectedVisible > 0 && !allVisibleSelected
 
   const awaitingCount = queue ? (qSummary.awaiting_count ?? base.length) : base.length
   const openItem = openId ? (allItems.find((i) => i.id === openId) ?? null) : null
@@ -248,6 +272,40 @@ export function ApprovalWorkspace({
           </div>
         ) : (
           <>
+            {selectableIds.length > 0 && (
+              <div className="flex items-center gap-2.5 px-3">
+                <input
+                  type="checkbox"
+                  className="shrink-0"
+                  checked={allVisibleSelected}
+                  ref={(el) => {
+                    // Indeterminate is DOM-only — React has no prop for it.
+                    if (el) el.indeterminate = someVisibleSelected
+                  }}
+                  onChange={(e) => setManySel(selectableIds, e.target.checked)}
+                  aria-label={
+                    allVisibleSelected
+                      ? `Deselect all ${selectableIds.length}`
+                      : `Select all ${selectableIds.length}`
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => setManySel(selectableIds, !allVisibleSelected)}
+                  className="text-[11px] text-text-tertiary hover:text-text-primary"
+                >
+                  {allVisibleSelected
+                    ? `Deselect all ${selectableIds.length}`
+                    : `Select all ${selectableIds.length}`}
+                </button>
+                {selectedVisible > 0 && (
+                  <span className="text-[11px] text-text-tertiary tabular-nums">
+                    {selectedVisible} selected
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               {pageRows.map((item) => (
                 <ApprovalRow

@@ -94,6 +94,19 @@ export function useApprovalInbox() {
 
   const clearSelection = useCallback(() => setSelected(new Set()), [])
 
+  /** Add every id in ``ids`` to the selection, keeping anything already picked. */
+  const selectMany = useCallback((ids: string[]) => {
+    setSelected((s) => new Set([...s, ...ids]))
+  }, [])
+
+  /** Drop every id in ``ids`` from the selection, leaving the rest untouched. */
+  const deselectMany = useCallback((ids: string[]) => {
+    setSelected((s) => {
+      const drop = new Set(ids)
+      return new Set([...s].filter((id) => !drop.has(id)))
+    })
+  }, [])
+
   return {
     items,
     clashes,
@@ -106,6 +119,8 @@ export function useApprovalInbox() {
     approveIds,
     toggle,
     clearSelection,
+    selectMany,
+    deselectMany,
   }
 }
 
