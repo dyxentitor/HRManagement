@@ -39,6 +39,13 @@ def test_request_perm_on_every_shift_holding_role():
 
 def test_approve_perm_only_on_approver_roles():
     roles = _roles()
-    for code in ("manager", "team_lead", "hr_manager", "org_admin"):
+    approvers = {"manager", "team_lead", "hr_manager", "org_admin"}
+    for code in approvers:
         assert APPROVE in roles[code]["permissions"], f"{code} missing {APPROVE}"
-    assert APPROVE not in roles["employee"]["permissions"]
+    # Exhaustive negative: any role added later that is not an approver must
+    # not gain the approve perm without this test being updated deliberately.
+    for code, role in roles.items():
+        if code not in approvers:
+            assert APPROVE not in role["permissions"], (
+                f"{code} must not hold {APPROVE}"
+            )
