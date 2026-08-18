@@ -16,12 +16,16 @@ export type SwapCandidate = {
 
 export type SwapRequest = {
 	id: string;
+	requester: string;
 	requester_assignment: SwapCandidate;
-	counterparty_assignment: SwapCandidate;
 	requester_name: string;
+	counterparty: string;
+	counterparty_assignment: SwapCandidate;
 	counterparty_name: string;
 	reason: string;
 	status: "pending" | "approved" | "rejected" | "cancelled";
+	decided_by: string | null;
+	decided_at: string | null;
 	decision_note: string;
 	created_at: string;
 };
@@ -71,7 +75,7 @@ export async function createSwapRequest(input: {
 }
 
 export async function cancelSwapRequest(id: string): Promise<void> {
-	const resp = await authedFetch(`${ROOT}${id}/cancel/`, {
+	const resp = await authedFetch(`${ROOT}${encodeURIComponent(id)}/cancel/`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({}),

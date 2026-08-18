@@ -49,4 +49,24 @@ describe("swap-api", () => {
 			}),
 		).rejects.toThrow(/already rostered on 2026-09-03/);
 	});
+
+	it("sends POST with snake_case body", async () => {
+		mocks.authedFetch.mockResolvedValueOnce(jsonResp({ id: "sr1", status: "pending" }));
+
+		await createSwapRequest({
+			requesterAssignmentId: "assign-aaa",
+			counterpartyAssignmentId: "assign-bbb",
+			reason: "covering for leave",
+		});
+
+		const [calledUrl, calledInit] = mocks.authedFetch.mock.calls[0] as [string, RequestInit];
+		expect(calledUrl).toBe(`${import.meta.env.VITE_API_BASE_URL ?? ""}/api/v1/schedule/swap-requests/`);
+		expect(calledInit.method).toBe("POST");
+		const body = JSON.parse(calledInit.body as string);
+		expect(body).toEqual({
+			requester_assignment: "assign-aaa",
+			counterparty_assignment: "assign-bbb",
+			reason: "covering for leave",
+		});
+	});
 });
