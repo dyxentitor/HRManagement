@@ -27,3 +27,25 @@ def test_never_returns_the_requester(swap_env):
     e = swap_env
     approvers = resolve_approvers(requester=e.mgr_emp)
     assert e.user_mgr.id not in [u.id for u in approvers]
+
+
+def test_falls_back_to_pool_when_manager_lacks_the_approve_perm(swap_env):
+    """A manager without the approve perm must not short-circuit the pool."""
+    from modules.identity.models import User
+
+    e = swap_env
+    # Create a fresh user+employee who is emp_b's manager but holds NO perms.
+    user_no_perm = User.objects.create_user(
+        email="noperm@test.com", password="p!", org_id=e.org.id
+    )
+    mgr_no_perm = e.emp_c  # emp_c has no linked user — attach the new one
+    mgr_no_perm.user = user_no_perm
+    mgr_no_perm.save(update_fields=["user"])
+
+    e.emp_b.manager = mgr_no_perm
+    e.emp_b.save(update_fields=["manager"])
+
+    approvers = resolve_approvers(requester=e.emp_b)
+
+    # Fell through to the pool, which contains the perm-holding user_mgr.
+    assert e.user_mgr.id in [u.id for u in approvers]

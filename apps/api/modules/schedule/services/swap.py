@@ -185,9 +185,9 @@ def resolve_approvers(*, requester) -> list:
 
     requester_user_id = requester.user_id
 
-    mgr = getattr(requester, "manager", None)
+    mgr = requester.manager
     if mgr is not None and mgr.user_id and mgr.user_id != requester_user_id:
-        mgr_user = User.objects.filter(id=mgr.user_id, org_id=requester.org_id).first()
+        mgr_user = User.objects.filter(id=mgr.user_id, org_id=requester.org_id, is_active=True).first()
         if mgr_user is not None and APPROVE_PERM in get_user_perms(mgr_user):
             return [mgr_user]
 
