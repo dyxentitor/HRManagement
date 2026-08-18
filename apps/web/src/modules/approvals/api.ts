@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 const authFetch = authedFetch;
 
 export type InboxItem = {
-	kind: "leave" | "claim" | "kpi" | "incentive";
+	kind: "leave" | "claim" | "kpi" | "incentive" | "shift_swap";
 	id: string;
 	employee_code: string;
 	summary: string;
@@ -65,6 +65,16 @@ export async function approveItem(
 			body: JSON.stringify({}),
 		});
 		if (!resp.ok) throw new Error(`Approve failed (${resp.status})`);
+	} else if (kind === "shift_swap") {
+		const resp = await authFetch(
+			`${BASE_URL}/api/v1/schedule/swap-requests/${id}/approve/`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ note: comment }),
+			},
+		);
+		if (!resp.ok) throw new Error(`Approve failed (${resp.status})`);
 	} else {
 		throw new Error(`Unsupported approval kind: ${kind}`);
 	}
@@ -107,6 +117,16 @@ export async function rejectItem(
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ reason: comment }),
 		});
+		if (!resp.ok) throw new Error(`Reject failed (${resp.status})`);
+	} else if (kind === "shift_swap") {
+		const resp = await authFetch(
+			`${BASE_URL}/api/v1/schedule/swap-requests/${id}/reject/`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ note: comment }),
+			},
+		);
 		if (!resp.ok) throw new Error(`Reject failed (${resp.status})`);
 	} else {
 		throw new Error(`Unsupported approval kind: ${kind}`);

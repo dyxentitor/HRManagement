@@ -16,8 +16,8 @@ import type { InboxItem } from "../api"
 import { isInboxOverdue } from "../lib/inbox-filter"
 import type { Clash } from "../useApprovalInbox"
 
-const KIND_LABEL = { claim: "Claim", leave: "Leave", kpi: "KPI", incentive: "Mandays" } as const
-const KIND_TONE = { claim: "peach", leave: "yellow", kpi: "sky", incentive: "mint" } as const
+const KIND_LABEL = { claim: "Claim", leave: "Leave", kpi: "KPI", incentive: "Mandays", shift_swap: "Swap" } as const
+const KIND_TONE = { claim: "peach", leave: "yellow", kpi: "sky", incentive: "mint", shift_swap: "lavender" } as const
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : String(v ?? "")
@@ -38,6 +38,7 @@ function focal(item: InboxItem): string {
   if (item.kind === "claim") return `${str(d.currency_code)} ${str(d.amount)}`
   if (item.kind === "leave") return `${str(d.total_days)} days`
   if (item.kind === "incentive") return `${str(d.mandays)} md`
+  if (item.kind === "shift_swap") return "Swap"
   return "Self-review"
 }
 
@@ -64,6 +65,9 @@ function context(item: InboxItem, clash?: Clash): string {
   if (item.kind === "incentive") {
     return [str(d.project), str(d.customer), age].filter(Boolean).join(" · ")
   }
+  if (item.kind === "shift_swap") {
+    return [`with ${str(d.counterparty_name)}`, age].filter(Boolean).join(" · ")
+  }
   // claim (only surfaces in the "all" variant)
   return [item.type_code, str(d.merchant), age].filter(Boolean).join(" · ")
 }
@@ -88,6 +92,14 @@ function allSummary(item: InboxItem, clash?: Clash): string {
   }
   if (item.kind === "incentive")
     return [`${str(d.mandays)} mandays`, str(d.project), str(d.customer)]
+      .filter(Boolean)
+      .join(" · ")
+  if (item.kind === "shift_swap")
+    return [
+      `${str(d.requester_date)} ${str(d.requester_shift)}`,
+      `${str(d.counterparty_date)} ${str(d.counterparty_shift)}`,
+      str(d.counterparty_name),
+    ]
       .filter(Boolean)
       .join(" · ")
   return [`${str(d.cycle)} cycle`, "self-review ready"].filter(Boolean).join(" · ")

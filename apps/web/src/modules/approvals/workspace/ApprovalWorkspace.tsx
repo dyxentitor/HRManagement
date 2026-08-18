@@ -55,6 +55,7 @@ const TYPE_OPTS = [
   { value: "leave", label: "Leave" },
   { value: "kpi", label: "KPI" },
   { value: "incentive", label: "Mandays" },
+  { value: "shift_swap", label: "Swap" },
 ]
 
 export function ApprovalWorkspace({

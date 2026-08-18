@@ -4,6 +4,7 @@ import type { InboxItem } from "../../api"
 import { IncentiveReviewDrawer } from "./IncentiveReviewDrawer"
 import { KpiReviewDrawer } from "./KpiReviewDrawer"
 import { LeaveReviewDrawer } from "./LeaveReviewDrawer"
+import { ShiftSwapReviewDrawer } from "./ShiftSwapReviewDrawer"
 
 /** Opens the right review drawer for a cross-type ("All") row, by kind. */
 export function InboxReviewDrawer({
@@ -23,5 +24,7 @@ export function InboxReviewDrawer({
     return <KpiReviewDrawer item={item} onClose={onClose} onActed={onActed} />
   if (item?.kind === "incentive")
     return <IncentiveReviewDrawer item={item} onClose={onClose} onActed={onActed} />
+  if (item?.kind === "shift_swap")
+    return <ShiftSwapReviewDrawer item={item} onClose={onClose} onActed={onActed} />
   return null
 }

@@ -1,7 +1,7 @@
 import { Inbox, Palmtree, ReceiptText, Target } from "lucide-react"
 import type { ComponentType } from "react"
 
-export type ApprovalsCountKey = "all" | "claim" | "leave" | "kpi" | "incentive"
+export type ApprovalsCountKey = "all" | "claim" | "leave" | "kpi" | "incentive" | "shift_swap"
 
 export interface ApprovalsNavItem {
   to: string
