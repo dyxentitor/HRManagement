@@ -168,3 +168,32 @@ def execute_swap(*, swap_request, actor_id, note: str = ""):
         swap_request.decision_note = locked_request.decision_note
 
     return swap_request
+
+
+APPROVE_PERM = "schedule:swap:approve:team"
+
+
+def resolve_approvers(*, requester) -> list:
+    """Users who may act on this requester's swap. Spec §7.
+
+    Primary: the requester's Employee.manager, via their linked User.
+    Fallback: every user in the org holding APPROVE_PERM. Mirrors the claims
+    permission-pool pattern in modules/claims/services/approver_scope.py.
+    """
+    from modules.identity.models import User
+    from modules.identity.services.permissions import get_user_perms
+
+    requester_user_id = requester.user_id
+
+    mgr = getattr(requester, "manager", None)
+    if mgr is not None and mgr.user_id and mgr.user_id != requester_user_id:
+        mgr_user = User.objects.filter(id=mgr.user_id, org_id=requester.org_id).first()
+        if mgr_user is not None and APPROVE_PERM in get_user_perms(mgr_user):
+            return [mgr_user]
+
+    pool = [
+        u
+        for u in User.objects.filter(org_id=requester.org_id, is_active=True)
+        if u.id != requester_user_id and APPROVE_PERM in get_user_perms(u)
+    ]
+    return pool
