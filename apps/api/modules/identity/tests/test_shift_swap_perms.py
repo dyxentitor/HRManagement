@@ -32,8 +32,15 @@ def test_both_codes_are_in_the_catalogue():
 
 def test_request_perm_on_every_shift_holding_role():
     roles = _roles()
-    for code in ("employee", "team_lead", "manager", "finance", "auditor",
-                 "hr_manager", "org_admin"):
+    for code in (
+        "employee",
+        "team_lead",
+        "manager",
+        "finance",
+        "auditor",
+        "hr_manager",
+        "org_admin",
+    ):
         assert REQUEST in roles[code]["permissions"], f"{code} missing {REQUEST}"
 
 
@@ -46,6 +53,4 @@ def test_approve_perm_only_on_approver_roles():
     # not gain the approve perm without this test being updated deliberately.
     for code, role in roles.items():
         if code not in approvers:
-            assert APPROVE not in role["permissions"], (
-                f"{code} must not hold {APPROVE}"
-            )
+            assert APPROVE not in role["permissions"], f"{code} must not hold {APPROVE}"

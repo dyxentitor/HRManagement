@@ -16,8 +16,20 @@ import type { InboxItem } from "../api"
 import { isInboxOverdue } from "../lib/inbox-filter"
 import type { Clash } from "../useApprovalInbox"
 
-const KIND_LABEL = { claim: "Claim", leave: "Leave", kpi: "KPI", incentive: "Mandays", shift_swap: "Swap" } as const
-const KIND_TONE = { claim: "peach", leave: "yellow", kpi: "sky", incentive: "mint", shift_swap: "lavender" } as const
+const KIND_LABEL = {
+  claim: "Claim",
+  leave: "Leave",
+  kpi: "KPI",
+  incentive: "Mandays",
+  shift_swap: "Swap",
+} as const
+const KIND_TONE = {
+  claim: "peach",
+  leave: "yellow",
+  kpi: "sky",
+  incentive: "mint",
+  shift_swap: "lavender",
+} as const
 
 function str(v: unknown): string {
   return typeof v === "string" ? v : String(v ?? "")
@@ -52,7 +64,7 @@ function pill(item: InboxItem): { tone: "sky" | "lavender"; label: string } {
 /** The muted context line under the name. */
 function context(item: InboxItem, clash?: Clash): string {
   const d = item.detail
-  const age = isInboxOverdue(item) ? `overdue` : timeAgo(item.submitted_at)
+  const age = isInboxOverdue(item) ? "overdue" : timeAgo(item.submitted_at)
   if (item.kind === "leave") {
     const cov = (clash?.count ?? 0) > 0 ? `⚠ ${clash?.count} off` : "no clash ✓"
     return [item.type_code, formatRange(str(d.start_date), str(d.end_date)), cov, age]

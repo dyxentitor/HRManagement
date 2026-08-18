@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -159,7 +159,7 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
         created = 0
         updated = 0
         for c in ser.validated_data["cells"]:
-            obj, was_created = ShiftAssignment.all_objects.update_or_create(
+            _obj, was_created = ShiftAssignment.all_objects.update_or_create(
                 org_id=org_id,
                 employee_id=c["employee_id"],
                 work_date=c["work_date"],
@@ -312,9 +312,12 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
         qs = ShiftSwapRequest.all_objects.filter(
             org_id=self.request.user.org_id, deleted_at__isnull=True
         ).select_related(
-            "requester", "counterparty",
-            "requester_assignment__shift", "requester_assignment__employee",
-            "counterparty_assignment__shift", "counterparty_assignment__employee",
+            "requester",
+            "counterparty",
+            "requester_assignment__shift",
+            "requester_assignment__employee",
+            "counterparty_assignment__shift",
+            "counterparty_assignment__employee",
         )
         if self.action == "list" and self.request.query_params.get("scope") == "team":
             return qs.filter(status="pending").order_by("-created_at")
@@ -325,15 +328,22 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
 
     def get_object(self):
         if self.action in ("approve", "reject", "cancel"):
-            obj = ShiftSwapRequest.all_objects.filter(
-                org_id=self.request.user.org_id,
-                pk=self.kwargs["pk"],
-                deleted_at__isnull=True,
-            ).select_related(
-                "requester", "counterparty",
-                "requester_assignment__shift", "requester_assignment__employee",
-                "counterparty_assignment__shift", "counterparty_assignment__employee",
-            ).first()
+            obj = (
+                ShiftSwapRequest.all_objects.filter(
+                    org_id=self.request.user.org_id,
+                    pk=self.kwargs["pk"],
+                    deleted_at__isnull=True,
+                )
+                .select_related(
+                    "requester",
+                    "counterparty",
+                    "requester_assignment__shift",
+                    "requester_assignment__employee",
+                    "counterparty_assignment__shift",
+                    "counterparty_assignment__employee",
+                )
+                .first()
+            )
             if obj is None:
                 raise NotFound("Swap request not found.")
             return obj
@@ -350,7 +360,8 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
 
         org_id = request.user.org_id
         rows = ShiftAssignment.all_objects.filter(
-            org_id=org_id, deleted_at__isnull=True,
+            org_id=org_id,
+            deleted_at__isnull=True,
             id__in=(
                 ser.validated_data["requester_assignment"],
                 ser.validated_data["counterparty_assignment"],
@@ -375,9 +386,7 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
             counterparty=a2.employee,
             reason=ser.validated_data.get("reason", ""),
         )
-        return Response(
-            self.get_serializer(req).data, status=status.HTTP_201_CREATED
-        )
+        return Response(self.get_serializer(req).data, status=status.HTTP_201_CREATED)
 
     def _assert_is_approver(self, req):
         """Holding the perm is not enough — the actor must be THIS requester's
@@ -471,8 +480,8 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
                 .select_related("shift")
                 .first()
             )
-        except DjangoValidationError:
-            raise ValidationError({"assignment_id": "Not one of your shift assignments."})
+        except DjangoValidationError as exc:
+            raise ValidationError({"assignment_id": "Not one of your shift assignments."}) from exc
         if own is None:
             raise ValidationError({"assignment_id": "Not one of your shift assignments."})
 

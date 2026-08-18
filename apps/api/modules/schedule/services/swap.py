@@ -109,9 +109,7 @@ def execute_swap(*, swap_request, actor_id, note: str = ""):
         # concurrent double-approval (two approvers / double-click both passing
         # the pre-flight check above and then both entering the transaction).
         locked_request = (
-            ShiftSwapRequest.all_objects.select_for_update()
-            .filter(id=swap_request.id)
-            .first()
+            ShiftSwapRequest.all_objects.select_for_update().filter(id=swap_request.id).first()
         )
         if locked_request is None or locked_request.status != "pending":
             raise SwapValidationError("Only a pending swap can be approved.")
@@ -187,7 +185,9 @@ def resolve_approvers(*, requester) -> list:
 
     mgr = requester.manager
     if mgr is not None and mgr.user_id and mgr.user_id != requester_user_id:
-        mgr_user = User.objects.filter(id=mgr.user_id, org_id=requester.org_id, is_active=True).first()
+        mgr_user = User.objects.filter(
+            id=mgr.user_id, org_id=requester.org_id, is_active=True
+        ).first()
         if mgr_user is not None and APPROVE_PERM in get_user_perms(mgr_user):
             return [mgr_user]
 

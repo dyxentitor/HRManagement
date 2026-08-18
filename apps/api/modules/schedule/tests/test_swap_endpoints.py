@@ -31,8 +31,11 @@ def test_employee_can_create_a_swap_request(swap_env):
 
     resp = _client(e.user_a).post(
         BASE,
-        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id),
-         "reason": "family"},
+        {
+            "requester_assignment": str(a1.id),
+            "counterparty_assignment": str(a2.id),
+            "reason": "family",
+        },
         format="json",
     )
 
@@ -79,7 +82,8 @@ def test_list_returns_only_my_requests(swap_env):
     a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     _client(e.user_a).post(
-        BASE, {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
         format="json",
     )
 
@@ -96,7 +100,8 @@ def test_manager_approve_applies_the_swap(swap_env):
     a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     created = _client(e.user_a).post(
-        BASE, {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
         format="json",
     )
     rid = created.data["id"]
@@ -116,7 +121,8 @@ def test_employee_cannot_approve(swap_env):
     a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     created = _client(e.user_a).post(
-        BASE, {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
         format="json",
     )
 
@@ -129,7 +135,8 @@ def test_reject_records_the_note(swap_env):
     a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     created = _client(e.user_a).post(
-        BASE, {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
         format="json",
     )
 
@@ -150,7 +157,8 @@ def test_requester_can_cancel_own_pending_request(swap_env):
     a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     created = _client(e.user_a).post(
-        BASE, {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
         format="json",
     )
 
@@ -165,7 +173,8 @@ def test_perm_holder_who_is_not_this_requesters_approver_gets_403(swap_env):
     a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     created = _client(e.user_a).post(
-        BASE, {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
         format="json",
     )
 
@@ -198,7 +207,8 @@ def test_manager_cannot_approve_their_own_swap(swap_env):
     a1 = e.make_assignment(e.mgr_emp, D1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     created = _client(e.user_mgr).post(
-        BASE, {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
         format="json",
     )
     assert created.status_code == 201
@@ -215,7 +225,8 @@ def test_other_employee_cannot_cancel(swap_env):
     a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     created = _client(e.user_a).post(
-        BASE, {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
         format="json",
     )
 

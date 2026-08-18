@@ -185,8 +185,7 @@ class ShiftSwapRequest(TenantBaseModel):
 
     def __str__(self) -> str:
         return (
-            f"{self.requester.employee_code} <-> "
-            f"{self.counterparty.employee_code} ({self.status})"
+            f"{self.requester.employee_code} <-> {self.counterparty.employee_code} ({self.status})"
         )
 
 

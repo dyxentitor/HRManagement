@@ -92,8 +92,14 @@ class ShiftSwapAssignmentBriefSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShiftAssignment
         fields = (
-            "id", "employee", "employee_code", "employee_name",
-            "shift", "shift_name", "shift_code", "work_date",
+            "id",
+            "employee",
+            "employee_code",
+            "employee_name",
+            "shift",
+            "shift_name",
+            "shift_code",
+            "work_date",
         )
 
 
@@ -106,9 +112,18 @@ class ShiftSwapRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShiftSwapRequest
         fields = (
-            "id", "requester_assignment", "counterparty_assignment",
-            "requester", "requester_name", "counterparty", "counterparty_name",
-            "reason", "status", "decided_by", "decided_at", "decision_note",
+            "id",
+            "requester_assignment",
+            "counterparty_assignment",
+            "requester",
+            "requester_name",
+            "counterparty",
+            "counterparty_name",
+            "reason",
+            "status",
+            "decided_by",
+            "decided_at",
+            "decision_note",
             "created_at",
         )
         read_only_fields = fields

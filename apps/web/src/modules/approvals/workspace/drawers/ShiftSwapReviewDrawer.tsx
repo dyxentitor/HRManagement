@@ -26,6 +26,7 @@ export function ShiftSwapReviewDrawer({
 
   if (!item) return null
   const d = item.detail
+  const itemId = item.id
 
   async function act(kind: "approve" | "reject") {
     if (kind === "reject" && !comment.trim()) {
@@ -34,8 +35,8 @@ export function ShiftSwapReviewDrawer({
     }
     setBusy(true)
     try {
-      if (kind === "approve") await approveItem("shift_swap", item!.id, comment)
-      else await rejectItem("shift_swap", item!.id, comment)
+      if (kind === "approve") await approveItem("shift_swap", itemId, comment)
+      else await rejectItem("shift_swap", itemId, comment)
       toast.success(kind === "approve" ? "Swap approved" : "Swap rejected")
       onActed()
     } catch (e) {
@@ -69,9 +70,7 @@ export function ShiftSwapReviewDrawer({
           {str(d.counterparty_name)} gives up {str(d.counterparty_date)} ·{" "}
           {str(d.counterparty_shift)}
         </p>
-        {str(d.reason) && (
-          <p className="text-text-secondary">Reason: {str(d.reason)}</p>
-        )}
+        {str(d.reason) && <p className="text-text-secondary">Reason: {str(d.reason)}</p>}
         <div>
           <label
             htmlFor="swap-decision-note"

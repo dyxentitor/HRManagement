@@ -38,9 +38,7 @@ def _submit(e):
 def test_submit_does_not_notify_the_counterparty(swap_env):
     e = swap_env
     _submit(e)
-    assert not Notification.objects.filter(
-        user=e.user_b, type__startswith="schedule.swap"
-    ).exists()
+    assert not Notification.objects.filter(user=e.user_b, type__startswith="schedule.swap").exists()
 
 
 def test_approve_notifies_both_parties(swap_env):
@@ -49,9 +47,9 @@ def test_approve_notifies_both_parties(swap_env):
     _client(e.user_mgr).post(f"{BASE}{rid}/approve/", {}, format="json")
 
     for user in (e.user_a, e.user_b):
-        assert Notification.objects.filter(
-            user=user, type="schedule.swap.approved"
-        ).exists(), f"missing approval notification for {user.email}"
+        assert Notification.objects.filter(user=user, type="schedule.swap.approved").exists(), (
+            f"missing approval notification for {user.email}"
+        )
 
 
 def test_reject_notifies_only_the_requester(swap_env):
@@ -60,6 +58,4 @@ def test_reject_notifies_only_the_requester(swap_env):
     _client(e.user_mgr).post(f"{BASE}{rid}/reject/", {"note": "no"}, format="json")
 
     assert Notification.objects.filter(user=e.user_a, type="schedule.swap.rejected").exists()
-    assert not Notification.objects.filter(
-        user=e.user_b, type="schedule.swap.rejected"
-    ).exists()
+    assert not Notification.objects.filter(user=e.user_b, type="schedule.swap.rejected").exists()

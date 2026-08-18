@@ -35,9 +35,7 @@ def test_falls_back_to_pool_when_manager_lacks_the_approve_perm(swap_env):
 
     e = swap_env
     # Create a fresh user+employee who is emp_b's manager but holds NO perms.
-    user_no_perm = User.objects.create_user(
-        email="noperm@test.com", password="p!", org_id=e.org.id
-    )
+    user_no_perm = User.objects.create_user(email="noperm@test.com", password="p!", org_id=e.org.id)
     mgr_no_perm = e.emp_c  # emp_c has no linked user — attach the new one
     mgr_no_perm.user = user_no_perm
     mgr_no_perm.save(update_fields=["user"])
