@@ -97,8 +97,11 @@ def test_rejects_conflict_on_counterparty_side(swap_env):
     a1 = e.make_assignment(e.emp_a, FUTURE_1, e.shift_night)
     a2 = e.make_assignment(e.emp_b, FUTURE_2, e.shift_day)
     e.make_assignment(e.emp_b, FUTURE_1, e.shift_day)  # blocker on B's side
-    with pytest.raises(SwapValidationError, match="E2"):
+    with pytest.raises(SwapValidationError) as exc:
         validate_pair(requester_assignment=a1, counterparty_assignment=a2, requester=e.emp_a)
+    assert "E2" in exc.value.message
+    assert "2026-09-01" in exc.value.message
+    assert "Day" in exc.value.message
 
 
 def test_rejects_duplicate_pending_request(swap_env):
@@ -111,6 +114,7 @@ def test_rejects_duplicate_pending_request(swap_env):
         counterparty_assignment=a2,
         requester=e.emp_a,
         counterparty=e.emp_b,
+        status="pending",
     )
     with pytest.raises(SwapValidationError, match="pending swap"):
         validate_pair(requester_assignment=a1, counterparty_assignment=a2, requester=e.emp_a)
