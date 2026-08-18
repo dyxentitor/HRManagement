@@ -7,6 +7,8 @@ import { ShiftSwapReviewDrawer } from "./ShiftSwapReviewDrawer"
 const mocks = vi.hoisted(() => ({
   approveItem: vi.fn(),
   rejectItem: vi.fn(),
+  toastError: vi.fn(),
+  toastSuccess: vi.fn(),
 }))
 
 vi.mock("../../api", async (importOriginal) => ({
@@ -14,6 +16,8 @@ vi.mock("../../api", async (importOriginal) => ({
   approveItem: mocks.approveItem,
   rejectItem: mocks.rejectItem,
 }))
+
+vi.mock("sonner", () => ({ toast: { error: mocks.toastError, success: mocks.toastSuccess } }))
 
 const ITEM = {
   kind: "shift_swap" as const,
@@ -40,6 +44,8 @@ describe("ShiftSwapReviewDrawer", () => {
   beforeEach(() => {
     mocks.approveItem.mockReset().mockResolvedValue(undefined)
     mocks.rejectItem.mockReset().mockResolvedValue(undefined)
+    mocks.toastError.mockReset()
+    mocks.toastSuccess.mockReset()
   })
 
   it("shows both sides of the swap", () => {
@@ -57,5 +63,25 @@ describe("ShiftSwapReviewDrawer", () => {
     await userEvent.click(screen.getByRole("button", { name: /approve/i }))
     await waitFor(() => expect(mocks.approveItem).toHaveBeenCalledWith("shift_swap", "r1", ""))
     expect(onActed).toHaveBeenCalled()
+  })
+
+  it("rejects with the entered note", async () => {
+    const onActed = vi.fn()
+    render(<ShiftSwapReviewDrawer item={ITEM} onClose={vi.fn()} onActed={onActed} />)
+    await userEvent.type(screen.getByLabelText(/note/i), "approved by manager")
+    await userEvent.click(screen.getByRole("button", { name: /reject/i }))
+    await waitFor(() =>
+      expect(mocks.rejectItem).toHaveBeenCalledWith("shift_swap", "r1", "approved by manager"),
+    )
+    expect(onActed).toHaveBeenCalled()
+  })
+
+  it("refuses to reject without a reason", async () => {
+    const onActed = vi.fn()
+    render(<ShiftSwapReviewDrawer item={ITEM} onClose={vi.fn()} onActed={onActed} />)
+    await userEvent.click(screen.getByRole("button", { name: /reject/i }))
+    expect(mocks.rejectItem).not.toHaveBeenCalled()
+    expect(onActed).not.toHaveBeenCalled()
+    expect(mocks.toastError).toHaveBeenCalledWith("A reason is required to reject")
   })
 })
