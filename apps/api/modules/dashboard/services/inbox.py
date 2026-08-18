@@ -24,7 +24,7 @@ def _emp_dept(emp) -> str:
 
 @dataclass
 class InboxItem:
-    kind: str  # 'leave', 'claim', 'kpi', or 'incentive'
+    kind: str  # 'leave', 'claim', 'kpi', 'incentive', or 'shift_swap'
     id: str  # request id
     employee_code: str
     summary: str  # human-readable summary
@@ -245,6 +245,58 @@ def get_inbox(*, user: User) -> list[InboxItem]:
         import logging
 
         logging.getLogger(__name__).exception("Failed to load incentive inbox items")
+
+    # Pending shift swaps this user can decide. Routing mirrors
+    # modules.schedule.services.swap.resolve_approvers: the requester's
+    # manager, else anyone holding schedule:swap:approve:team.
+    try:
+        from modules.schedule.models import ShiftSwapRequest
+        from modules.schedule.services.swap import resolve_approvers
+
+        pending_swaps = ShiftSwapRequest.all_objects.filter(
+            org_id=user.org_id,
+            status="pending",
+            deleted_at__isnull=True,
+        ).select_related(
+            "requester__department",
+            "counterparty",
+            "requester_assignment__shift",
+            "counterparty_assignment__shift",
+        )
+        for s in pending_swaps:
+            if user.id not in {u.id for u in resolve_approvers(requester=s.requester)}:
+                continue
+            ra = s.requester_assignment
+            ca = s.counterparty_assignment
+            items.append(
+                InboxItem(
+                    kind="shift_swap",
+                    id=str(s.id),
+                    employee_code=s.requester.employee_code,
+                    summary=(
+                        f"{ra.work_date} {ra.shift.code} <-> "
+                        f"{ca.work_date} {ca.shift.code} with {s.counterparty.full_name}"
+                    ),
+                    submitted_at=s.created_at,
+                    deep_link=f"/approvals?focus={s.id}",
+                    employee_id=str(s.requester_id),
+                    name=s.requester.full_name or s.requester.employee_code,
+                    department=_emp_dept(s.requester),
+                    type_code="SWAP",
+                    detail={
+                        "requester_date": ra.work_date.isoformat(),
+                        "requester_shift": ra.shift.name,
+                        "counterparty_name": s.counterparty.full_name,
+                        "counterparty_date": ca.work_date.isoformat(),
+                        "counterparty_shift": ca.shift.name,
+                        "reason": s.reason,
+                    },
+                )
+            )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Failed to load shift-swap inbox items")
 
     items.sort(key=lambda i: i.submitted_at or datetime.min, reverse=True)
     return items
