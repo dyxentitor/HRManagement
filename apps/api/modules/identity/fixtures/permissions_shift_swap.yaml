@@ -1,0 +1,2 @@
+- { code: "schedule:swap:request:self", description: Request a shift swap with a teammate }
+- { code: "schedule:swap:approve:team", description: Approve or reject team shift-swap requests }
