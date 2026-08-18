@@ -20,6 +20,7 @@ import {
 import { HolidayCard } from "../components/HolidayCard";
 import { ScheduleDayCard, type DayShift } from "../components/ScheduleDayCard";
 import { ScheduleTodayHero } from "../components/ScheduleTodayHero";
+import { SwapRequestDrawer } from "../components/SwapRequestDrawer";
 import {
 	addDaysIso,
 	startOfWeekIsoLocal,
@@ -76,6 +77,7 @@ export default function MySchedulePage() {
 	const [error, setError] = useState<string | null>(null);
 	const [noEmployee, setNoEmployee] = useState<boolean>(false);
 	const [busy, setBusy] = useState<boolean>(false);
+	const [swapFor, setSwapFor] = useState<string | null>(null);
 
 	const refresh = useCallback(async () => {
 		setError(null);
@@ -189,6 +191,11 @@ export default function MySchedulePage() {
 			isWeekend: isWeekendIso(iso),
 			holidayName: holidayMap.get(iso)?.name ?? null,
 			shift: buildShift(a),
+			// Swappable only when published, scheduled, and strictly in the future.
+			swapAssignmentId:
+				a && a.is_published && a.status === "scheduled" && iso > todayIso
+					? a.id
+					: null,
 		};
 	});
 
@@ -294,9 +301,29 @@ export default function MySchedulePage() {
 							isWeekend={d.isWeekend}
 							holidayName={d.holidayName}
 							shift={d.shift}
+							onRequestSwap={
+								d.swapAssignmentId ? () => setSwapFor(d.swapAssignmentId) : undefined
+							}
 						/>
 					))}
 				</div>
+
+				{swapFor && (
+					<SwapRequestDrawer
+						assignmentId={swapFor}
+						myDateLabel={formatDate(
+							dayModels.find((d) => d.swapAssignmentId === swapFor)?.date ?? "",
+						)}
+						myShiftLabel={
+							dayModels.find((d) => d.swapAssignmentId === swapFor)?.shift?.name ?? ""
+						}
+						onClose={() => setSwapFor(null)}
+						onCreated={() => {
+							setSwapFor(null);
+							refresh();
+						}}
+					/>
+				)}
 
 				<div className="mt-4 border-t border-border-subtle pt-4">
 					<h3 className="text-label uppercase text-text-tertiary mb-2">

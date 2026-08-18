@@ -19,6 +19,8 @@ export interface ScheduleDayCardProps {
 	isWeekend: boolean;
 	holidayName?: string | null;
 	shift?: DayShift | null;
+	/** Supplied only for future, published shifts the viewer owns. */
+	onRequestSwap?: () => void;
 }
 
 export function ScheduleDayCard({
@@ -27,6 +29,7 @@ export function ScheduleDayCard({
 	isWeekend,
 	holidayName = null,
 	shift = null,
+	onRequestSwap,
 }: ScheduleDayCardProps) {
 	const dayNum = new Date(`${date}T00:00:00Z`).getUTCDate();
 	return (
@@ -96,6 +99,16 @@ export function ScheduleDayCard({
 				<span className="text-small text-peach">Public holiday</span>
 			) : (
 				<span className="text-small text-text-tertiary">Off</span>
+			)}
+
+			{shift && onRequestSwap && (
+				<button
+					type="button"
+					onClick={onRequestSwap}
+					className="mt-auto text-left text-label uppercase text-accent-200 hover:text-accent-100"
+				>
+					Request swap
+				</button>
 			)}
 		</div>
 	);

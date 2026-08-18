@@ -33,6 +33,12 @@ vi.mock("../api", () => ({
 vi.mock("@/lib/auth", () => ({
 	useAuth: () => ({ perms: new Set(["attendance:clock:self"]) }),
 }));
+vi.mock("../swap-api", () => ({
+	listSwapCandidates: vi.fn().mockResolvedValue([]),
+	createSwapRequest: vi.fn(),
+	listMySwapRequests: vi.fn().mockResolvedValue([]),
+	cancelSwapRequest: vi.fn(),
+}));
 
 import MySchedulePage from "./MySchedulePage";
 
@@ -131,5 +137,64 @@ describe("MySchedulePage week summary", () => {
 		expect(screen.getByText("Hours")).toBeInTheDocument();
 		expect(screen.getByText("Days off")).toBeInTheDocument();
 		expect(await screen.findByText("09:00–17:00")).toBeInTheDocument();
+	});
+});
+
+describe("MySchedulePage swap action", () => {
+	it("shows Request swap button for a future published scheduled assignment", async () => {
+		// A future date strictly after today.
+		const futureDate = addDaysIso(todayIsoLocal(), 2);
+		mocks.myAssignments.mockResolvedValue([
+			{
+				id: "a-future",
+				employee: "self",
+				employee_code: "",
+				shift: "sh1",
+				shift_name: "Morning",
+				shift_code: "M",
+				covering_for: null,
+				covering_for_name: null,
+				work_date: futureDate,
+				status: "scheduled",
+				published_at: "2026-08-01T00:00:00Z",
+				is_published: true,
+				notes: "",
+			},
+		]);
+		renderPage();
+		// The button must appear on the future card.
+		expect(
+			await screen.findByRole("button", { name: /request swap/i }),
+		).toBeInTheDocument();
+	});
+
+	it("does NOT show Request swap for today's assignment (not strictly future)", async () => {
+		// Today is not strictly in the future (iso > todayIso is false for today).
+		const todayDate = todayIsoLocal();
+		mocks.myAssignments.mockResolvedValue([
+			{
+				id: "a-today",
+				employee: "self",
+				employee_code: "",
+				shift: "sh1",
+				shift_name: "Morning",
+				shift_code: "M",
+				covering_for: null,
+				covering_for_name: null,
+				work_date: todayDate,
+				status: "scheduled",
+				published_at: "2026-08-01T00:00:00Z",
+				is_published: true,
+				notes: "",
+			},
+		]);
+		renderPage();
+		// Wait for the page to render the shift name in the week grid.
+		// (Today's shift also shows in the hero, so "Morning" will appear.)
+		expect(await screen.findByText("Shifts")).toBeInTheDocument();
+		// No swap button — today is not strictly future.
+		expect(
+			screen.queryByRole("button", { name: /request swap/i }),
+		).not.toBeInTheDocument();
 	});
 });

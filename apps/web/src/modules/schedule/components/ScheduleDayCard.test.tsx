@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 import { ScheduleDayCard } from "./ScheduleDayCard";
 
@@ -46,5 +47,34 @@ describe("ScheduleDayCard", () => {
 		);
 		expect(screen.getByText(/Today/i)).toBeInTheDocument();
 		expect(container.firstChild).toHaveClass("border-accent-500");
+	});
+
+	it("shows Request swap only when the handler is supplied", async () => {
+		const onRequestSwap = vi.fn();
+		const nightShift = {
+			name: "Night",
+			tone: "sky" as const,
+			timeRange: "21:00 – 06:00",
+			isCoverUp: false,
+			coveringForName: null,
+			isDraft: false,
+		};
+
+		const { rerender } = render(
+			<ScheduleDayCard date="2026-09-01" isToday={false} isWeekend={false} shift={nightShift} />,
+		);
+		expect(screen.queryByRole("button", { name: /request swap/i })).not.toBeInTheDocument();
+
+		rerender(
+			<ScheduleDayCard
+				date="2026-09-01"
+				isToday={false}
+				isWeekend={false}
+				shift={nightShift}
+				onRequestSwap={onRequestSwap}
+			/>,
+		);
+		await userEvent.click(screen.getByRole("button", { name: /request swap/i }));
+		expect(onRequestSwap).toHaveBeenCalled();
 	});
 });
