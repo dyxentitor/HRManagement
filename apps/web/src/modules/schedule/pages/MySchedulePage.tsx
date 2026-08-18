@@ -18,6 +18,7 @@ import {
 	scheduleApi,
 } from "../api";
 import { HolidayCard } from "../components/HolidayCard";
+import { MySwapRequests } from "../components/MySwapRequests";
 import { ScheduleDayCard, type DayShift } from "../components/ScheduleDayCard";
 import { ScheduleTodayHero } from "../components/ScheduleTodayHero";
 import { SwapRequestDrawer } from "../components/SwapRequestDrawer";
@@ -78,6 +79,7 @@ export default function MySchedulePage() {
 	const [noEmployee, setNoEmployee] = useState<boolean>(false);
 	const [busy, setBusy] = useState<boolean>(false);
 	const [swapFor, setSwapFor] = useState<string | null>(null);
+	const [swapVersion, setSwapVersion] = useState(0);
 
 	const refresh = useCallback(async () => {
 		setError(null);
@@ -321,6 +323,7 @@ export default function MySchedulePage() {
 						onCreated={() => {
 							setSwapFor(null);
 							refresh();
+							setSwapVersion((v) => v + 1);
 						}}
 					/>
 				)}
@@ -342,6 +345,11 @@ export default function MySchedulePage() {
 					)}
 				</div>
 			</section>
+
+			<MySwapRequests
+				refreshKey={swapVersion}
+				onChanged={() => setSwapVersion((v) => v + 1)}
+			/>
 		</div>
 	);
 }
