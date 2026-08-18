@@ -405,6 +405,11 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": exc.message}) from exc
         req.requester_assignment.refresh_from_db()
         req.counterparty_assignment.refresh_from_db()
+        _notify_swap(
+            req,
+            type_code="schedule.swap.approved",
+            users=_users_for(req.requester, req.counterparty),
+        )
         return Response(self.get_serializer(req).data)
 
     @action(detail=True, methods=["post"])
@@ -419,6 +424,11 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
         req.decision_note = request.data.get("note", "")
         req.save(
             update_fields=["status", "decided_by", "decided_at", "decision_note", "updated_at"]
+        )
+        _notify_swap(
+            req,
+            type_code="schedule.swap.rejected",
+            users=_users_for(req.requester),
         )
         return Response(self.get_serializer(req).data)
 
@@ -480,3 +490,35 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
             .order_by("work_date", "employee__employee_code")
         )
         return Response(ShiftSwapAssignmentBriefSerializer(qs, many=True).data)
+
+
+def _notify_swap(swap_request, *, type_code: str, users) -> None:
+    """Best-effort swap notification — never raises into the request cycle."""
+    import logging
+
+    from modules.notification.services.notify import notify
+
+    for user in users:
+        if user is None:
+            continue
+        try:
+            notify(
+                user=user,
+                type=type_code,
+                payload={
+                    "swap_id": str(swap_request.id),
+                    "requester": swap_request.requester.full_name,
+                    "counterparty": swap_request.counterparty.full_name,
+                },
+                deep_link="/schedule",
+                priority="normal",
+            )
+        except Exception:
+            logging.getLogger(__name__).exception("swap notify failed")
+
+
+def _users_for(*employees):
+    from modules.identity.models import User
+
+    ids = [e.user_id for e in employees if e is not None and e.user_id]
+    return list(User.objects.filter(id__in=ids))
