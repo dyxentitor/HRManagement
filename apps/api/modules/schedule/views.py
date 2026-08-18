@@ -314,7 +314,7 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
             "requester_assignment__shift", "requester_assignment__employee",
             "counterparty_assignment__shift", "counterparty_assignment__employee",
         )
-        if self.request.query_params.get("scope") == "team":
+        if self.action == "list" and self.request.query_params.get("scope") == "team":
             return qs.filter(status="pending").order_by("-created_at")
         me = self._me()
         if me is None:
@@ -401,6 +401,8 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
             )
         except SwapValidationError as exc:
             raise ValidationError({"detail": exc.message}) from exc
+        req.requester_assignment.refresh_from_db()
+        req.counterparty_assignment.refresh_from_db()
         return Response(self.get_serializer(req).data)
 
     @action(detail=True, methods=["post"])

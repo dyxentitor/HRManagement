@@ -106,6 +106,9 @@ def test_manager_approve_applies_the_swap(swap_env):
     assert resp.status_code == 200
     a1.refresh_from_db()
     assert (a1.work_date, a1.shift_id) == (D2, e.shift_day.id)
+    # F2: response body must reflect the post-swap state, not the pre-swap state.
+    req_asgn = resp.data["requester_assignment"]
+    assert req_asgn["work_date"] == D2.isoformat()
 
 
 def test_employee_cannot_approve(swap_env):
@@ -218,3 +221,24 @@ def test_other_employee_cannot_cancel(swap_env):
 
     resp = _client(e.user_b).post(f"{BASE}{created.data['id']}/cancel/", {}, format="json")
     assert resp.status_code == 403
+
+
+def test_scope_team_on_retrieve_cannot_leak_another_employees_swap(swap_env):
+    """F1 regression: ?scope=team on a retrieve must not bypass the self-scope
+    gate and return another employee's swap to a user who only holds
+    schedule:swap:request:self (not schedule:swap:approve:team)."""
+    e = swap_env
+    a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
+    a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
+    created = _client(e.user_a).post(
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        format="json",
+    )
+    assert created.status_code == 201
+    swap_id = created.data["id"]
+
+    # user_b holds only schedule:swap:request:self — confirmed by swap_env fixture.
+    resp = _client(e.user_b).get(f"{BASE}{swap_id}/?scope=team")
+
+    assert resp.status_code == 404
