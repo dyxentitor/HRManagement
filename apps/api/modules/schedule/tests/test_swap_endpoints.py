@@ -234,6 +234,35 @@ def test_other_employee_cannot_cancel(swap_env):
     assert resp.status_code == 403
 
 
+# ---------------------------------------------------------------------------
+# F2 regression — cancel must not overwrite an already-committed approve
+# ---------------------------------------------------------------------------
+
+
+def test_cancel_after_approve_returns_4xx_and_leaves_status_approved(swap_env):
+    """F2: a racing cancel that arrives after execute_swap commits must be
+    rejected — the row's status must remain 'approved'."""
+    e = swap_env
+    a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
+    a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
+    created = _client(e.user_a).post(
+        BASE,
+        {"requester_assignment": str(a1.id), "counterparty_assignment": str(a2.id)},
+        format="json",
+    )
+    rid = created.data["id"]
+
+    # Directly set the request to approved (simulates a committed approve).
+    req = ShiftSwapRequest.all_objects.get(id=rid)
+    req.status = "approved"
+    req.save(update_fields=["status"])
+
+    resp = _client(e.user_a).post(f"{BASE}{rid}/cancel/", {}, format="json")
+
+    assert resp.status_code == 400
+    assert ShiftSwapRequest.all_objects.get(id=rid).status == "approved"
+
+
 def test_scope_team_on_retrieve_cannot_leak_another_employees_swap(swap_env):
     """F1 regression: ?scope=team on a retrieve must not bypass the self-scope
     gate and return another employee's swap to a user who only holds

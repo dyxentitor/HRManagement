@@ -54,6 +54,8 @@ REGISTRY: tuple[NotificationType, ...] = (
     NotificationType("kpi.review_submitted_manager", "Manager submitted review", True, True, False),
     NotificationType("cert.expiring_soon", "Certification expiring soon", True, True, False),
     NotificationType("schedule.roster_published", "New roster published", True, True, False),
+    NotificationType("schedule.swap.approved", "Shift swap approved", True, True, False),
+    NotificationType("schedule.swap.rejected", "Shift swap rejected", True, True, False),
     NotificationType("assignment.assigned", "New assignment", True, True, False),
     NotificationType("assignment.reminder", "Assignment due soon", True, True, False),
     NotificationType("assignment.overdue", "Assignment overdue", True, True, False),

@@ -61,12 +61,14 @@ def validate_pair(
         if a.work_date <= today:
             raise SwapValidationError("Only future shifts can be swapped.")
 
-    # published + scheduled
+    # published + scheduled + not soft-deleted
     for a in (a1, a2):
         if a.published_at is None:
             raise SwapValidationError("Only published shifts can be swapped.")
         if a.status != "scheduled":
             raise SwapValidationError("Only scheduled shifts can be swapped.")
+        if a.deleted_at is not None:
+            raise SwapValidationError("Only active shifts can be swapped.")
 
     # no date conflict — same-date swaps are exempt because neither date changes
     if a1.work_date != a2.work_date:
@@ -121,18 +123,30 @@ def execute_swap(*, swap_request, actor_id, note: str = ""):
                 id__in=(
                     swap_request.requester_assignment_id,
                     swap_request.counterparty_assignment_id,
-                )
+                ),
+                deleted_at__isnull=True,
             )
             .select_related("shift", "employee")
         }
+        # If either assignment was soft-deleted after the request was submitted,
+        # raise a clean error rather than letting a KeyError escape as a 500.
+        missing = (
+            swap_request.requester_assignment_id not in rows
+            or swap_request.counterparty_assignment_id not in rows
+        )
+        if missing:
+            raise SwapValidationError("One of the shifts no longer exists.")
         a1 = rows[swap_request.requester_assignment_id]
         a2 = rows[swap_request.counterparty_assignment_id]
 
         # The roster can change between submit and approve — re-check.
+        # Pass swap_request.requester (not a1.employee) so a manager who has
+        # re-pointed a1 to a third employee cannot silently move an uninvolved
+        # party's shift (F3 fix).
         validate_pair(
             requester_assignment=a1,
             counterparty_assignment=a2,
-            requester=a1.employee,
+            requester=swap_request.requester,
             exclude_request_id=swap_request.id,
         )
 

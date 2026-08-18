@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import datetime
 from typing import ClassVar
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -425,15 +427,22 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
     def reject(self, request, pk=None):
         req = self.get_object()
         self._assert_is_approver(req)
-        if req.status != "pending":
-            raise ValidationError({"detail": "Only a pending swap can be rejected."})
-        req.status = "rejected"
-        req.decided_by = request.user.id
-        req.decided_at = timezone.now()
-        req.decision_note = request.data.get("note", "")
-        req.save(
-            update_fields=["status", "decided_by", "decided_at", "decision_note", "updated_at"]
-        )
+        with transaction.atomic():
+            locked = ShiftSwapRequest.all_objects.select_for_update().filter(id=req.id).first()
+            if locked is None or locked.status != "pending":
+                raise ValidationError({"detail": "Only a pending swap can be rejected."})
+            locked.status = "rejected"
+            locked.decided_by = request.user.id
+            locked.decided_at = timezone.now()
+            locked.decision_note = request.data.get("note", "")
+            locked.save(
+                update_fields=["status", "decided_by", "decided_at", "decision_note", "updated_at"]
+            )
+            # Reflect onto the caller's object so the serialiser sees the new state.
+            req.status = locked.status
+            req.decided_by = locked.decided_by
+            req.decided_at = locked.decided_at
+            req.decision_note = locked.decision_note
         _notify_swap(
             req,
             type_code="schedule.swap.rejected",
@@ -447,10 +456,13 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
         me = self._me()
         if me is None or req.requester_id != me.id:
             raise PermissionDenied("You can only cancel your own swap request.")
-        if req.status != "pending":
-            raise ValidationError({"detail": "Only a pending swap can be cancelled."})
-        req.status = "cancelled"
-        req.save(update_fields=["status", "updated_at"])
+        with transaction.atomic():
+            locked = ShiftSwapRequest.all_objects.select_for_update().filter(id=req.id).first()
+            if locked is None or locked.status != "pending":
+                raise ValidationError({"detail": "Only a pending swap can be cancelled."})
+            locked.status = "cancelled"
+            locked.save(update_fields=["status", "updated_at"])
+            req.status = locked.status
         return Response(self.get_serializer(req).data)
 
     @action(detail=False, methods=["get"])
@@ -485,6 +497,9 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
         if own is None:
             raise ValidationError({"assignment_id": "Not one of your shift assignments."})
 
+        # Cap at 60 days ahead to avoid returning an unbounded list when the
+        # roster has been published months in advance.
+        window_end = timezone.localdate() + datetime.timedelta(days=60)
         qs = (
             ShiftAssignment.all_objects.filter(
                 org_id=request.user.org_id,
@@ -492,6 +507,7 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
                 published_at__isnull=False,
                 status="scheduled",
                 work_date__gt=timezone.localdate(),
+                work_date__lte=window_end,
                 employee__status="active",
             )
             .exclude(employee_id=me.id)

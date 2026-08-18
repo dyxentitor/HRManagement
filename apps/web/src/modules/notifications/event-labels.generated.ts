@@ -25,6 +25,8 @@ export const EVENT_LABELS: Record<string, string> = {
   "kpi.review_submitted_manager": "Manager submitted review",
   "cert.expiring_soon": "Certification expiring soon",
   "schedule.roster_published": "New roster published",
+  "schedule.swap.approved": "Shift swap approved",
+  "schedule.swap.rejected": "Shift swap rejected",
   "assignment.assigned": "New assignment",
   "assignment.reminder": "Assignment due soon",
   "assignment.overdue": "Assignment overdue",

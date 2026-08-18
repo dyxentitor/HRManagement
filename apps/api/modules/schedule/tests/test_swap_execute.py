@@ -107,3 +107,58 @@ def test_rejects_non_pending_request(swap_env):
 
     with pytest.raises(SwapValidationError, match="pending"):
         execute_swap(swap_request=req, actor_id=e.user_mgr.id)
+
+
+# ---------------------------------------------------------------------------
+# F1 regression — soft-deleted assignment must block approval
+# ---------------------------------------------------------------------------
+
+
+def test_approve_aborts_when_assignment_soft_deleted_after_submit(swap_env):
+    """F1: soft-deleting one assignment after submit must prevent approval and
+    leave both rows untouched."""
+    from django.utils import timezone as tz
+
+    e = swap_env
+    a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
+    a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
+    req = _request(e, a1, a2)
+
+    # Simulate a manager soft-deleting a2 from the Roster between submit and approve.
+    a2.deleted_at = tz.now()
+    a2.save(update_fields=["deleted_at"])
+
+    with pytest.raises(SwapValidationError, match="no longer exists"):
+        execute_swap(swap_request=req, actor_id=e.user_mgr.id)
+
+    a1.refresh_from_db()
+    assert (a1.work_date, a1.shift_id) == (D1, e.shift_night.id)  # unchanged
+    req.refresh_from_db()
+    assert req.status == "pending"
+
+
+# ---------------------------------------------------------------------------
+# F3 regression — requester re-pointed to a different employee must be caught
+# ---------------------------------------------------------------------------
+
+
+def test_approve_refuses_when_requester_assignment_re_pointed_to_third_party(swap_env):
+    """F3: if a1 is re-pointed to emp_c between submit and approve, the re-check
+    must fail rather than silently moving emp_c's slot."""
+    e = swap_env
+    a1 = e.make_assignment(e.emp_a, D1, e.shift_night)
+    a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
+    req = _request(e, a1, a2)
+
+    # Re-point a1 to emp_c (uninvolved third party) after the request was filed.
+    a1.employee = e.emp_c
+    a1.save(update_fields=["employee"])
+
+    # validate_pair now sees a1.employee == emp_c but requester == emp_a → fail.
+    with pytest.raises(SwapValidationError, match="your own shift"):
+        execute_swap(swap_request=req, actor_id=e.user_mgr.id)
+
+    a1.refresh_from_db()
+    assert a1.employee_id == e.emp_c.id  # row untouched (swap did not apply)
+    req.refresh_from_db()
+    assert req.status == "pending"
