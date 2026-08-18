@@ -12,8 +12,9 @@ from modules.schedule.services.swap import SwapValidationError, validate_pair
 
 pytestmark = pytest.mark.django_db
 
-FUTURE_1 = dt.date(2026, 9, 1)
-FUTURE_2 = dt.date(2026, 9, 3)
+# Relative so the suite never expires — validate_pair rejects past dates.
+FUTURE_1 = timezone.localdate() + dt.timedelta(days=14)
+FUTURE_2 = timezone.localdate() + dt.timedelta(days=16)
 
 
 def test_cross_date_swap_is_valid(swap_env):
@@ -88,7 +89,7 @@ def test_rejects_conflict_naming_the_blocking_date_and_shift(swap_env):
     e.make_assignment(e.emp_a, FUTURE_2, e.shift_day)  # the blocker
     with pytest.raises(SwapValidationError) as exc:
         validate_pair(requester_assignment=a1, counterparty_assignment=a2, requester=e.emp_a)
-    assert "2026-09-03" in exc.value.message
+    assert FUTURE_2.isoformat() in exc.value.message
     assert "Day" in exc.value.message
 
 
@@ -100,7 +101,7 @@ def test_rejects_conflict_on_counterparty_side(swap_env):
     with pytest.raises(SwapValidationError) as exc:
         validate_pair(requester_assignment=a1, counterparty_assignment=a2, requester=e.emp_a)
     assert "E2" in exc.value.message
-    assert "2026-09-01" in exc.value.message
+    assert FUTURE_1.isoformat() in exc.value.message
     assert "Day" in exc.value.message
 
 

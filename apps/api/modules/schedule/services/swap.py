@@ -105,6 +105,17 @@ def execute_swap(*, swap_request, actor_id, note: str = ""):
         raise SwapValidationError("Only a pending swap can be approved.")
 
     with transaction.atomic():
+        # Re-fetch the request under a row lock BEFORE any mutation to prevent
+        # concurrent double-approval (two approvers / double-click both passing
+        # the pre-flight check above and then both entering the transaction).
+        locked_request = (
+            ShiftSwapRequest.all_objects.select_for_update()
+            .filter(id=swap_request.id)
+            .first()
+        )
+        if locked_request is None or locked_request.status != "pending":
+            raise SwapValidationError("Only a pending swap can be approved.")
+
         rows = {
             r.id: r
             for r in ShiftAssignment.all_objects.select_for_update()
@@ -141,12 +152,19 @@ def execute_swap(*, swap_request, actor_id, note: str = ""):
         parts = [note] if note else []
         if cleared:
             parts.append("covering_for cleared on both rows by the swap.")
-        swap_request.status = "approved"
-        swap_request.decided_by = actor_id
-        swap_request.decided_at = timezone.now()
-        swap_request.decision_note = " ".join(parts)
-        swap_request.save(
+        locked_request.status = "approved"
+        locked_request.decided_by = actor_id
+        locked_request.decided_at = timezone.now()
+        locked_request.decision_note = " ".join(parts)
+        locked_request.save(
             update_fields=["status", "decided_by", "decided_at", "decision_note", "updated_at"]
         )
+
+        # Reflect the changes onto the caller's in-memory object so the caller
+        # sees the updated state without needing a separate refresh_from_db().
+        swap_request.status = locked_request.status
+        swap_request.decided_by = locked_request.decided_by
+        swap_request.decided_at = locked_request.decided_at
+        swap_request.decision_note = locked_request.decision_note
 
     return swap_request

@@ -5,14 +5,16 @@ from __future__ import annotations
 import datetime as dt
 
 import pytest
+from django.utils import timezone
 
 from modules.schedule.models import ShiftSwapRequest
 from modules.schedule.services.swap import SwapValidationError, execute_swap
 
 pytestmark = pytest.mark.django_db
 
-D1 = dt.date(2026, 9, 1)
-D2 = dt.date(2026, 9, 3)
+# Relative so the suite never expires — validate_pair rejects past dates.
+D1 = timezone.localdate() + dt.timedelta(days=14)
+D2 = timezone.localdate() + dt.timedelta(days=16)
 
 
 def _request(e, a1, a2):
@@ -65,12 +67,16 @@ def test_swap_clears_covering_for_on_both_rows(swap_env):
     a2 = e.make_assignment(e.emp_b, D2, e.shift_day)
     a1.covering_for = e.emp_c
     a1.save(update_fields=["covering_for"])
+    a2.covering_for = e.emp_c
+    a2.save(update_fields=["covering_for"])
     req = _request(e, a1, a2)
 
     execute_swap(swap_request=req, actor_id=e.user_mgr.id)
 
     a1.refresh_from_db()
+    a2.refresh_from_db()
     assert a1.covering_for_id is None
+    assert a2.covering_for_id is None
     assert "covering_for" in req.decision_note
 
 
