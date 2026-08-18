@@ -7,11 +7,16 @@ import { MySwapRequests } from "./MySwapRequests"
 const mocks = vi.hoisted(() => ({
 	listMySwapRequests: vi.fn(),
 	cancelSwapRequest: vi.fn(),
+	toastError: vi.fn(),
 }))
 
 vi.mock("../swap-api", () => ({
 	listMySwapRequests: mocks.listMySwapRequests,
 	cancelSwapRequest: mocks.cancelSwapRequest,
+}))
+
+vi.mock("sonner", () => ({
+	toast: { error: mocks.toastError },
 }))
 
 const PENDING = {
@@ -36,6 +41,7 @@ describe("MySwapRequests", () => {
 	beforeEach(() => {
 		mocks.listMySwapRequests.mockReset().mockResolvedValue([PENDING])
 		mocks.cancelSwapRequest.mockReset().mockResolvedValue(undefined)
+		mocks.toastError.mockReset()
 	})
 
 	it("renders nothing when there are no requests", async () => {
@@ -60,10 +66,24 @@ describe("MySwapRequests", () => {
 		expect(onChanged).toHaveBeenCalled()
 	})
 
-	it("offers no cancel action on a decided request", async () => {
-		mocks.listMySwapRequests.mockResolvedValue([{ ...PENDING, status: "approved" }])
+	it.each(["approved", "rejected", "cancelled"] as const)(
+		"offers no cancel action on a decided request (%s)",
+		async (status) => {
+			mocks.listMySwapRequests.mockResolvedValue([{ ...PENDING, status }])
+			render(<MySwapRequests refreshKey={0} onChanged={vi.fn()} />)
+			await screen.findByText(/Esther Bala/)
+			expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument()
+		},
+	)
+
+	it("shows a toast when cancel fails", async () => {
+		mocks.cancelSwapRequest.mockRejectedValue(
+			new Error("Only a pending swap can be cancelled."),
+		)
 		render(<MySwapRequests refreshKey={0} onChanged={vi.fn()} />)
-		await screen.findByText(/Esther Bala/)
-		expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument()
+		await userEvent.click(await screen.findByRole("button", { name: /cancel/i }))
+		await waitFor(() =>
+			expect(mocks.toastError).toHaveBeenCalledWith("Only a pending swap can be cancelled."),
+		)
 	})
 })

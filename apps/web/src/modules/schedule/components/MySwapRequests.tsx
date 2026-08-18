@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { StatusPill } from "@/components/hrms";
 
@@ -29,11 +30,18 @@ export function MySwapRequests({
 }) {
 	const [rows, setRows] = useState<SwapRequest[]>([]);
 	const [busy, setBusy] = useState<string | null>(null);
+	const [loadError, setLoadError] = useState<string | null>(null);
 
 	const load = useCallback(() => {
 		listMySwapRequests()
-			.then(setRows)
-			.catch(() => setRows([]));
+			.then((data) => {
+				setRows(data);
+				setLoadError(null);
+			})
+			.catch((e: unknown) => {
+				console.error("Failed to load swap requests", e);
+				setLoadError("Couldn't load your swap requests.");
+			});
 	}, []);
 
 	useEffect(() => {
@@ -46,9 +54,19 @@ export function MySwapRequests({
 			await cancelSwapRequest(id);
 			onChanged();
 			load();
+		} catch (e: unknown) {
+			toast.error(e instanceof Error ? e.message : String(e));
 		} finally {
 			setBusy(null);
 		}
+	}
+
+	if (loadError !== null) {
+		return (
+			<p role="alert" className="text-small text-text-secondary">
+				{loadError}
+			</p>
+		);
 	}
 
 	if (rows.length === 0) return null;
