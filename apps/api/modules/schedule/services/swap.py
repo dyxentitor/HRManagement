@@ -38,7 +38,9 @@ def _conflict(employee, target_date, exclude_assignment_id):
     )
 
 
-def validate_pair(*, requester_assignment, counterparty_assignment, requester) -> None:
+def validate_pair(
+    *, requester_assignment, counterparty_assignment, requester, exclude_request_id=None
+) -> None:
     """Raise SwapValidationError unless this swap is legal. Spec §6."""
     a1 = requester_assignment
     a2 = counterparty_assignment
@@ -82,12 +84,69 @@ def validate_pair(*, requester_assignment, counterparty_assignment, requester) -
             )
 
     # no existing pending request touching either row
-    exists = ShiftSwapRequest.all_objects.filter(
+    qs = ShiftSwapRequest.all_objects.filter(
         status="pending",
         deleted_at__isnull=True,
     ).filter(
         Q(requester_assignment_id__in=(a1.id, a2.id))
         | Q(counterparty_assignment_id__in=(a1.id, a2.id))
-    ).exists()
-    if exists:
+    )
+    if exclude_request_id is not None:
+        qs = qs.exclude(id=exclude_request_id)
+    if qs.exists():
         raise SwapValidationError("There is already a pending swap for one of these shifts.")
+
+
+def execute_swap(*, swap_request, actor_id, note: str = ""):
+    """Approve and apply a pending swap. Atomic; re-validates under lock."""
+    from django.db import transaction
+
+    if swap_request.status != "pending":
+        raise SwapValidationError("Only a pending swap can be approved.")
+
+    with transaction.atomic():
+        rows = {
+            r.id: r
+            for r in ShiftAssignment.all_objects.select_for_update()
+            .filter(
+                id__in=(
+                    swap_request.requester_assignment_id,
+                    swap_request.counterparty_assignment_id,
+                )
+            )
+            .select_related("shift", "employee")
+        }
+        a1 = rows[swap_request.requester_assignment_id]
+        a2 = rows[swap_request.counterparty_assignment_id]
+
+        # The roster can change between submit and approve — re-check.
+        validate_pair(
+            requester_assignment=a1,
+            counterparty_assignment=a2,
+            requester=a1.employee,
+            exclude_request_id=swap_request.id,
+        )
+
+        cleared = a1.covering_for_id is not None or a2.covering_for_id is not None
+
+        # Exchange the (work_date, shift_id) pair. Employee stays put, so no
+        # ordering constraint and no transient unique violation in any shape.
+        a1.work_date, a2.work_date = a2.work_date, a1.work_date
+        a1.shift_id, a2.shift_id = a2.shift_id, a1.shift_id
+        a1.covering_for_id = None
+        a2.covering_for_id = None
+        a1.save(update_fields=["work_date", "shift", "covering_for", "updated_at"])
+        a2.save(update_fields=["work_date", "shift", "covering_for", "updated_at"])
+
+        parts = [note] if note else []
+        if cleared:
+            parts.append("covering_for cleared on both rows by the swap.")
+        swap_request.status = "approved"
+        swap_request.decided_by = actor_id
+        swap_request.decided_at = timezone.now()
+        swap_request.decision_note = " ".join(parts)
+        swap_request.save(
+            update_fields=["status", "decided_by", "decided_at", "decision_note", "updated_at"]
+        )
+
+    return swap_request
