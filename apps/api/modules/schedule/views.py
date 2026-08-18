@@ -21,6 +21,7 @@ from .serializers import (
     PublishSerializer,
     ShiftAssignmentSerializer,
     ShiftSerializer,
+    ShiftSwapAssignmentBriefSerializer,
     ShiftSwapCreateSerializer,
     ShiftSwapRequestSerializer,
     WorkScheduleSerializer,
@@ -431,3 +432,33 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
         req.status = "cancelled"
         req.save(update_fields=["status", "updated_at"])
         return Response(self.get_serializer(req).data)
+
+    @action(detail=False, methods=["get"])
+    def candidates(self, request):
+        """Teammates' future published shifts, for the swap picker.
+
+        Deliberately NOT pre-filtered for conflicts (spec §8) — an impossible
+        pair is refused at submit with a message naming the blocker, so the
+        user learns why rather than silently seeing fewer options.
+        """
+        me = self._me()
+        if me is None:
+            return Response([])
+        assignment_id = request.query_params.get("assignment_id")
+        if not assignment_id:
+            raise ValidationError({"assignment_id": "This query parameter is required."})
+
+        qs = (
+            ShiftAssignment.all_objects.filter(
+                org_id=request.user.org_id,
+                deleted_at__isnull=True,
+                published_at__isnull=False,
+                status="scheduled",
+                work_date__gt=timezone.localdate(),
+                employee__status="active",
+            )
+            .exclude(employee_id=me.id)
+            .select_related("employee", "shift")
+            .order_by("work_date", "employee__employee_code")
+        )
+        return Response(ShiftSwapAssignmentBriefSerializer(qs, many=True).data)
