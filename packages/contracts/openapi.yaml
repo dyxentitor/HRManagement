@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.75.0
+  version: 1.80.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -7317,6 +7317,135 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/schedule/swap-requests/:
+    get:
+      operationId: schedule_swap_requests_list
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShiftSwapRequest'
+          description: ''
+    post:
+      operationId: schedule_swap_requests_create
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftSwapRequest'
+          description: ''
+  /api/v1/schedule/swap-requests/{id}/:
+    get:
+      operationId: schedule_swap_requests_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftSwapRequest'
+          description: ''
+  /api/v1/schedule/swap-requests/{id}/approve/:
+    post:
+      operationId: schedule_swap_requests_approve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftSwapRequest'
+          description: ''
+  /api/v1/schedule/swap-requests/{id}/cancel/:
+    post:
+      operationId: schedule_swap_requests_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftSwapRequest'
+          description: ''
+  /api/v1/schedule/swap-requests/{id}/reject/:
+    post:
+      operationId: schedule_swap_requests_reject_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftSwapRequest'
+          description: ''
+  /api/v1/schedule/swap-requests/candidates/:
+    get:
+      operationId: schedule_swap_requests_candidates_retrieve
+      description: |-
+        Teammates' future published shifts, for the swap picker.
+
+        Deliberately NOT pre-filtered for conflicts (spec §8) — an impossible
+        pair is refused at submit with a message naming the blocker, so the
+        user learns why rather than silently seeing fewer options.
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftSwapRequest'
+          description: ''
   /api/v1/schedule/work-schedules/:
     get:
       operationId: schedule_work_schedules_list
@@ -8877,7 +9006,7 @@ components:
           type: string
         status:
           allOf:
-          - $ref: '#/components/schemas/ClaimStatusEnum'
+          - $ref: '#/components/schemas/StatusCcfEnum'
           readOnly: true
         reviewed_by:
           type: string
@@ -9300,14 +9429,20 @@ components:
       - expense_date
     ClaimStatusEnum:
       enum:
-      - pending
-      - approved
+      - draft
+      - submitted
+      - manager_approved
+      - finance_approved
+      - reimbursed
       - rejected
       - cancelled
       type: string
       description: |-
-        * `pending` - Pending
-        * `approved` - Approved
+        * `draft` - Draft
+        * `submitted` - Submitted
+        * `manager_approved` - Manager approved
+        * `finance_approved` - Finance approved
+        * `reimbursed` - Reimbursed
         * `rejected` - Rejected
         * `cancelled` - Cancelled
     Customer:
@@ -10012,6 +10147,7 @@ components:
           maxLength: 200
         description:
           type: string
+          maxLength: 10000
         affected_module:
           type: string
           default: ''
@@ -10052,6 +10188,7 @@ components:
         description:
           type: string
           minLength: 1
+          maxLength: 10000
         affected_module:
           type: string
           minLength: 1
@@ -12828,6 +12965,126 @@ components:
       - end_time
       - name
       - start_time
+    ShiftSwapAssignmentBrief:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        employee:
+          type: string
+          format: uuid
+        employee_code:
+          type: string
+          readOnly: true
+        employee_name:
+          type: string
+          readOnly: true
+        shift:
+          type: string
+          format: uuid
+        shift_name:
+          type: string
+          readOnly: true
+        shift_code:
+          type: string
+          readOnly: true
+        work_date:
+          type: string
+          format: date
+      required:
+      - employee
+      - employee_code
+      - employee_name
+      - id
+      - shift
+      - shift_code
+      - shift_name
+      - work_date
+    ShiftSwapAssignmentBriefRequest:
+      type: object
+      properties:
+        employee:
+          type: string
+          format: uuid
+        shift:
+          type: string
+          format: uuid
+        work_date:
+          type: string
+          format: date
+      required:
+      - employee
+      - shift
+      - work_date
+    ShiftSwapRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        requester_assignment:
+          allOf:
+          - $ref: '#/components/schemas/ShiftSwapAssignmentBrief'
+          readOnly: true
+        counterparty_assignment:
+          allOf:
+          - $ref: '#/components/schemas/ShiftSwapAssignmentBrief'
+          readOnly: true
+        requester:
+          type: string
+          format: uuid
+          readOnly: true
+        requester_name:
+          type: string
+          readOnly: true
+        counterparty:
+          type: string
+          format: uuid
+          readOnly: true
+        counterparty_name:
+          type: string
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusCcfEnum'
+          readOnly: true
+        decided_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        decision_note:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - counterparty
+      - counterparty_assignment
+      - counterparty_name
+      - created_at
+      - decided_at
+      - decided_by
+      - decision_note
+      - id
+      - reason
+      - requester
+      - requester_assignment
+      - requester_name
+      - status
     Status872Enum:
       enum:
       - pending
@@ -12842,6 +13099,18 @@ components:
         * `rejected` - Rejected
         * `delegated` - Delegated
         * `skipped` - Skipped
+    StatusCcfEnum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      - cancelled
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `cancelled` - Cancelled
     StatusEe8Enum:
       enum:
       - active

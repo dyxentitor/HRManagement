@@ -4086,6 +4086,109 @@ export interface paths {
         patch: operations["schedule_shifts_partial_update"];
         trace?: never;
     };
+    "/api/v1/schedule/swap-requests/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_swap_requests_list"];
+        put?: never;
+        post: operations["schedule_swap_requests_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/swap-requests/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["schedule_swap_requests_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/swap-requests/{id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["schedule_swap_requests_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/swap-requests/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["schedule_swap_requests_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/swap-requests/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["schedule_swap_requests_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/swap-requests/candidates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Teammates' future published shifts, for the swap picker.
+         *
+         *     Deliberately NOT pre-filtered for conflicts (spec §8) — an impossible
+         *     pair is refused at submit with a message naming the blocker, so the
+         *     user learns why rather than silently seeing fewer options.
+         */
+        get: operations["schedule_swap_requests_candidates_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/schedule/work-schedules/": {
         parameters: {
             query?: never;
@@ -4809,7 +4912,7 @@ export interface components {
             /** Format: decimal */
             mandays: string;
             note?: string;
-            readonly status: components["schemas"]["ClaimStatusEnum"];
+            readonly status: components["schemas"]["StatusCcfEnum"];
             /** Format: uuid */
             readonly reviewed_by: string | null;
             /** Format: date-time */
@@ -4960,13 +5063,16 @@ export interface components {
             business_justification?: string;
         };
         /**
-         * @description * `pending` - Pending
-         *     * `approved` - Approved
+         * @description * `draft` - Draft
+         *     * `submitted` - Submitted
+         *     * `manager_approved` - Manager approved
+         *     * `finance_approved` - Finance approved
+         *     * `reimbursed` - Reimbursed
          *     * `rejected` - Rejected
          *     * `cancelled` - Cancelled
          * @enum {string}
          */
-        ClaimStatusEnum: "pending" | "approved" | "rejected" | "cancelled";
+        ClaimStatusEnum: "draft" | "submitted" | "manager_approved" | "finance_approved" | "reimbursed" | "rejected" | "cancelled";
         Customer: {
             /** Format: uuid */
             readonly id: string;
@@ -6470,6 +6576,49 @@ export interface components {
             crosses_midnight?: boolean;
             color?: string;
         };
+        ShiftSwapAssignmentBrief: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            employee: string;
+            readonly employee_code: string;
+            readonly employee_name: string;
+            /** Format: uuid */
+            shift: string;
+            readonly shift_name: string;
+            readonly shift_code: string;
+            /** Format: date */
+            work_date: string;
+        };
+        ShiftSwapAssignmentBriefRequest: {
+            /** Format: uuid */
+            employee: string;
+            /** Format: uuid */
+            shift: string;
+            /** Format: date */
+            work_date: string;
+        };
+        ShiftSwapRequest: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly requester_assignment: components["schemas"]["ShiftSwapAssignmentBrief"];
+            readonly counterparty_assignment: components["schemas"]["ShiftSwapAssignmentBrief"];
+            /** Format: uuid */
+            readonly requester: string;
+            readonly requester_name: string;
+            /** Format: uuid */
+            readonly counterparty: string;
+            readonly counterparty_name: string;
+            readonly reason: string;
+            readonly status: components["schemas"]["StatusCcfEnum"];
+            /** Format: uuid */
+            readonly decided_by: string | null;
+            /** Format: date-time */
+            readonly decided_at: string | null;
+            readonly decision_note: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
         /**
          * @description * `pending` - Pending
          *     * `approved` - Approved
@@ -6479,6 +6628,14 @@ export interface components {
          * @enum {string}
          */
         Status872Enum: "pending" | "approved" | "rejected" | "delegated" | "skipped";
+        /**
+         * @description * `pending` - Pending
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        StatusCcfEnum: "pending" | "approved" | "rejected" | "cancelled";
         /**
          * @description * `active` - Active
          *     * `suspended` - Suspended
@@ -14298,6 +14455,147 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Shift"];
+                };
+            };
+        };
+    };
+    schedule_swap_requests_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftSwapRequest"][];
+                };
+            };
+        };
+    };
+    schedule_swap_requests_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftSwapRequest"];
+                };
+            };
+        };
+    };
+    schedule_swap_requests_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftSwapRequest"];
+                };
+            };
+        };
+    };
+    schedule_swap_requests_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftSwapRequest"];
+                };
+            };
+        };
+    };
+    schedule_swap_requests_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftSwapRequest"];
+                };
+            };
+        };
+    };
+    schedule_swap_requests_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftSwapRequest"];
+                };
+            };
+        };
+    };
+    schedule_swap_requests_candidates_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftSwapRequest"];
                 };
             };
         };
