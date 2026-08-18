@@ -18,7 +18,7 @@ from modules.schedule.models import Shift, ShiftAssignment
 def _make_employee(org, dept, **overrides):
     defaults = dict(
         org_id=org.id,
-        employee_code="E1",
+        employee_code="UNSET",
         first_name="A",
         last_name="B",
         email="a@b.com",
