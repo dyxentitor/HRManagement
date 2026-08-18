@@ -141,6 +141,55 @@ class ShiftAssignment(TenantBaseModel):
         return f"{self.employee.employee_code}/{self.work_date}/{self.shift.name}"
 
 
+SWAP_STATUSES: ClassVar[tuple] = (
+    ("pending", "Pending"),
+    ("approved", "Approved"),
+    ("rejected", "Rejected"),
+    ("cancelled", "Cancelled"),
+)
+
+
+class ShiftSwapRequest(TenantBaseModel):
+    """An employee's request to swap one of their shifts with a teammate's.
+
+    The swap exchanges the (work_date, shift) pair between the two assignment
+    rows — each employee keeps their own row. See
+    docs/superpowers/specs/2026-08-18-shift-swap-design.md §5.
+    """
+
+    requester_assignment = models.ForeignKey(
+        ShiftAssignment, on_delete=models.PROTECT, related_name="swap_requests_made"
+    )
+    counterparty_assignment = models.ForeignKey(
+        ShiftAssignment, on_delete=models.PROTECT, related_name="swap_requests_received"
+    )
+    requester = models.ForeignKey(
+        "employee.Employee", on_delete=models.PROTECT, related_name="swap_requests_made"
+    )
+    counterparty = models.ForeignKey(
+        "employee.Employee", on_delete=models.PROTECT, related_name="swap_requests_received"
+    )
+    reason = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=16, choices=SWAP_STATUSES, default="pending")
+    decided_by = models.UUIDField(null=True, blank=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True, default="")
+
+    class Meta:
+        db_table = "schedule_shift_swap_request"
+        indexes: ClassVar[list] = [
+            models.Index(fields=["org_id", "status"]),
+            models.Index(fields=["requester", "-created_at"]),
+            models.Index(fields=["counterparty", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"{self.requester.employee_code} <-> "
+            f"{self.counterparty.employee_code} ({self.status})"
+        )
+
+
 class Holiday(TenantBaseModel):
     """Org's effective holiday list. Populated from country_holidays + company adds."""
 
