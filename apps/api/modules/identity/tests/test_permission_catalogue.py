@@ -14,15 +14,13 @@ def test_user_create_permission_seeded():
 
 
 @pytest.mark.django_db
-def test_permission_catalogue_total_is_129():
+def test_permission_catalogue_total_is_131():
     call_command("seed_permission_catalogue")
-    # The committed permissions_*.yaml fixtures define 129 codes in total
-    # (sum of all fixture files). The prior constant (126) was stale — it
-    # predated the feedback (3) and incentive (3) fixtures and never counted
-    # the full set. v1.71.0 adds NO new permission codes (it reuses
-    # org:email_config:read/write); this corrects the count to match the
-    # fixtures already on master.
-    assert Permission.objects.count() == 129
+    # The committed permissions_*.yaml fixtures define 131 codes in total
+    # (sum of all fixture files). Was 129 before the shift-swap feature added
+    # permissions_shift_swap.yaml with schedule:swap:request:self and
+    # schedule:swap:approve:team.
+    assert Permission.objects.count() == 131
 
 
 @pytest.mark.django_db
