@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import ClassVar
 
 from django.utils import timezone
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -441,12 +442,29 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
         pair is refused at submit with a message naming the blocker, so the
         user learns why rather than silently seeing fewer options.
         """
-        me = self._me()
-        if me is None:
-            return Response([])
         assignment_id = request.query_params.get("assignment_id")
         if not assignment_id:
             raise ValidationError({"assignment_id": "This query parameter is required."})
+
+        me = self._me()
+        if me is None:
+            return Response([])
+
+        try:
+            own = (
+                ShiftAssignment.all_objects.filter(
+                    id=assignment_id,
+                    org_id=request.user.org_id,
+                    employee_id=me.id,
+                    deleted_at__isnull=True,
+                )
+                .select_related("shift")
+                .first()
+            )
+        except DjangoValidationError:
+            raise ValidationError({"assignment_id": "Not one of your shift assignments."})
+        if own is None:
+            raise ValidationError({"assignment_id": "Not one of your shift assignments."})
 
         qs = (
             ShiftAssignment.all_objects.filter(

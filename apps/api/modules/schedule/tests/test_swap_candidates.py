@@ -61,3 +61,29 @@ def test_does_not_pre_filter_conflicting_candidates(swap_env):
     resp = _client(e.user_a).get(f"{URL}?assignment_id={mine.id}")
 
     assert str(theirs.id) in [r["id"] for r in resp.data]
+
+
+def test_rejects_an_assignment_that_is_not_mine(swap_env):
+    """Passing another employee's assignment_id must return 400, not a candidates list."""
+    e = swap_env
+    not_mine = e.make_assignment(e.emp_b, D1, e.shift_day)
+
+    resp = _client(e.user_a).get(f"{URL}?assignment_id={not_mine.id}")
+
+    assert resp.status_code == 400
+    body = resp.json()
+    fields = (
+        list(body.keys())
+        if "assignment_id" in body
+        else [err.get("field") for err in body.get("errors", [])]
+    )
+    assert "assignment_id" in fields
+
+
+def test_rejects_a_malformed_assignment_id(swap_env):
+    """A non-UUID assignment_id must return 400, not 500."""
+    e = swap_env
+
+    resp = _client(e.user_a).get(f"{URL}?assignment_id=not-a-uuid")
+
+    assert resp.status_code == 400
