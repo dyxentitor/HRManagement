@@ -259,6 +259,8 @@ def get_inbox(*, user: User) -> list[InboxItem]:
             deleted_at__isnull=True,
         ).select_related(
             "requester__department",
+            "requester__manager",
+            "requester__manager__user",
             "counterparty",
             "requester_assignment__shift",
             "counterparty_assignment__shift",

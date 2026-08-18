@@ -80,7 +80,7 @@ def _grant_swap(org, user, codes):
 
 @pytest.fixture
 def swap_env(db):
-    from common.managers import set_current_org_id
+    from common.managers import clear_current_org_id, set_current_org_id
     from modules.identity.models import User
     from modules.organization.models import Department, Organization
     from modules.schedule.models import Shift, ShiftAssignment
@@ -146,10 +146,13 @@ def swap_env(db):
             published_at=timezone.now() if published else None,
         )
 
-    return SimpleNamespace(
-        org=org, dept=dept,
-        shift_day=shift_day, shift_night=shift_night,
-        emp_a=emp_a, emp_b=emp_b, emp_c=emp_c, mgr_emp=mgr_emp,
-        user_a=user_a, user_b=user_b, user_mgr=user_mgr,
-        make_assignment=make_assignment,
-    )
+    try:
+        yield SimpleNamespace(
+            org=org, dept=dept,
+            shift_day=shift_day, shift_night=shift_night,
+            emp_a=emp_a, emp_b=emp_b, emp_c=emp_c, mgr_emp=mgr_emp,
+            user_a=user_a, user_b=user_b, user_mgr=user_mgr,
+            make_assignment=make_assignment,
+        )
+    finally:
+        clear_current_org_id()
