@@ -34,15 +34,22 @@ export function SwapRequestDrawer({
 	const [reason, setReason] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		let cancelled = false;
 		listSwapCandidates(assignmentId)
 			.then((rows) => {
-				if (!cancelled) setCandidates(rows);
+				if (!cancelled) {
+					setCandidates(rows);
+					setLoading(false);
+				}
 			})
 			.catch((e) => {
-				if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+				if (!cancelled) {
+					setError(e instanceof Error ? e.message : String(e));
+					setLoading(false);
+				}
 			});
 		return () => {
 			cancelled = true;
@@ -87,7 +94,12 @@ export function SwapRequestDrawer({
 				<legend className="text-label uppercase text-text-tertiary mb-1">
 					Swap with
 				</legend>
-				{candidates.length === 0 && (
+				{loading && (
+					<p className="text-small text-text-tertiary">
+						Loading teammate shifts…
+					</p>
+				)}
+				{!loading && candidates.length === 0 && (
 					<p className="text-small text-text-tertiary">
 						No teammate shifts available to swap with.
 					</p>
@@ -102,7 +114,7 @@ export function SwapRequestDrawer({
 							name="swap-candidate"
 							value={c.id}
 							checked={selected === c.id}
-							onChange={() => setSelected(c.id)}
+							onChange={() => { setSelected(c.id); setError(null); }}
 							aria-label={`${c.employee_name} — ${formatDate(c.work_date)} ${c.shift_name}`}
 						/>
 						<span className="text-small text-text-primary">

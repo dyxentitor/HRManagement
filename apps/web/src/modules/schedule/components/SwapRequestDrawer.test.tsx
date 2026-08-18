@@ -46,6 +46,27 @@ describe("SwapRequestDrawer", () => {
 	it("lists teammate shifts to swap with", async () => {
 		renderDrawer()
 		expect(await screen.findByText(/Esther Bala/)).toBeInTheDocument()
+		expect(screen.getByText(/Day/)).toBeInTheDocument()
+		const expectedDate = new Date(`${CANDIDATE.work_date}T00:00:00Z`).toLocaleDateString("en-MY", {
+			day: "numeric",
+			month: "short",
+			year: "numeric",
+			timeZone: "UTC",
+		})
+		expect(screen.getByText(new RegExp(expectedDate))).toBeInTheDocument()
+	})
+
+	it("shows a loading placeholder before fetch resolves and empty state after resolving empty", async () => {
+		let resolve!: (value: never[]) => void;
+		mocks.listSwapCandidates.mockReturnValue(new Promise<never[]>((res) => { resolve = res; }))
+		renderDrawer()
+		expect(screen.queryByText(/No teammate shifts available/)).not.toBeInTheDocument()
+		expect(screen.getByText(/Loading teammate shifts/)).toBeInTheDocument()
+		resolve([])
+		await waitFor(() =>
+			expect(screen.getByText(/No teammate shifts available/)).toBeInTheDocument(),
+		)
+		expect(screen.queryByText(/Loading teammate shifts/)).not.toBeInTheDocument()
 	})
 
 	it("submits the selected pair", async () => {
