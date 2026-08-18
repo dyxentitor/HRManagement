@@ -4,21 +4,25 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from common.feature_flags.decorators import requires_feature
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
 
-from .models import Holiday, Shift, ShiftAssignment, WorkSchedule
+from .models import Holiday, Shift, ShiftAssignment, ShiftSwapRequest, WorkSchedule
 from .serializers import (
     BulkAssignSerializer,
     HolidaySerializer,
     PublishSerializer,
     ShiftAssignmentSerializer,
     ShiftSerializer,
+    ShiftSwapCreateSerializer,
+    ShiftSwapRequestSerializer,
     WorkScheduleSerializer,
 )
 from .services.calendar import build_calendar
@@ -281,3 +285,147 @@ class HolidayViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(org_id=self.request.user.org_id)
+
+
+@requires_feature("schedule")
+class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
+    permission_classes: ClassVar[list] = [HRMSPermission]
+    http_method_names: ClassVar[list[str]] = ["get", "post", "head", "options"]
+    serializer_class = ShiftSwapRequestSerializer
+
+    @property
+    def required_perms(self):
+        if self.action in ("approve", "reject"):
+            return ["schedule:swap:approve:team"]
+        if self.action == "list" and self.request.query_params.get("scope") == "team":
+            return ["schedule:swap:approve:team"]
+        return ["schedule:swap:request:self"]
+
+    def _me(self):
+        return Employee.all_objects.filter(
+            user_id=self.request.user.id, deleted_at__isnull=True
+        ).first()
+
+    def get_queryset(self):
+        qs = ShiftSwapRequest.all_objects.filter(
+            org_id=self.request.user.org_id, deleted_at__isnull=True
+        ).select_related(
+            "requester", "counterparty",
+            "requester_assignment__shift", "requester_assignment__employee",
+            "counterparty_assignment__shift", "counterparty_assignment__employee",
+        )
+        if self.request.query_params.get("scope") == "team":
+            return qs.filter(status="pending").order_by("-created_at")
+        me = self._me()
+        if me is None:
+            return qs.none()
+        return qs.filter(requester=me).order_by("-created_at")
+
+    def get_object(self):
+        if self.action in ("approve", "reject", "cancel"):
+            obj = ShiftSwapRequest.all_objects.filter(
+                org_id=self.request.user.org_id,
+                pk=self.kwargs["pk"],
+                deleted_at__isnull=True,
+            ).select_related(
+                "requester", "counterparty",
+                "requester_assignment__shift", "requester_assignment__employee",
+                "counterparty_assignment__shift", "counterparty_assignment__employee",
+            ).first()
+            if obj is None:
+                raise NotFound("Swap request not found.")
+            return obj
+        return super().get_object()
+
+    def create(self, request, *args, **kwargs):
+        from .services.swap import SwapValidationError, validate_pair
+
+        ser = ShiftSwapCreateSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        me = self._me()
+        if me is None:
+            raise ValidationError({"detail": "Your user is not linked to an employee record."})
+
+        org_id = request.user.org_id
+        rows = ShiftAssignment.all_objects.filter(
+            org_id=org_id, deleted_at__isnull=True,
+            id__in=(
+                ser.validated_data["requester_assignment"],
+                ser.validated_data["counterparty_assignment"],
+            ),
+        ).select_related("shift", "employee")
+        by_id = {str(r.id): r for r in rows}
+        a1 = by_id.get(str(ser.validated_data["requester_assignment"]))
+        a2 = by_id.get(str(ser.validated_data["counterparty_assignment"]))
+        if a1 is None or a2 is None:
+            raise ValidationError({"detail": "Shift assignment not found."})
+
+        try:
+            validate_pair(requester_assignment=a1, counterparty_assignment=a2, requester=me)
+        except SwapValidationError as exc:
+            raise ValidationError({"detail": exc.message}) from exc
+
+        req = ShiftSwapRequest.all_objects.create(
+            org_id=org_id,
+            requester_assignment=a1,
+            counterparty_assignment=a2,
+            requester=me,
+            counterparty=a2.employee,
+            reason=ser.validated_data.get("reason", ""),
+        )
+        return Response(
+            self.get_serializer(req).data, status=status.HTTP_201_CREATED
+        )
+
+    def _assert_is_approver(self, req):
+        """Holding the perm is not enough — the actor must be THIS requester's
+        approver. resolve_approvers excludes the requester, so this also blocks
+        self-approval (CLAUDE.md §3.11, the v1.10.1 guard)."""
+        from .services.swap import resolve_approvers
+
+        allowed = {u.id for u in resolve_approvers(requester=req.requester)}
+        if self.request.user.id not in allowed:
+            raise PermissionDenied("You are not an approver for this request.")
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        from .services.swap import SwapValidationError, execute_swap
+
+        req = self.get_object()
+        self._assert_is_approver(req)
+        try:
+            execute_swap(
+                swap_request=req,
+                actor_id=request.user.id,
+                note=request.data.get("note", ""),
+            )
+        except SwapValidationError as exc:
+            raise ValidationError({"detail": exc.message}) from exc
+        return Response(self.get_serializer(req).data)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        req = self.get_object()
+        self._assert_is_approver(req)
+        if req.status != "pending":
+            raise ValidationError({"detail": "Only a pending swap can be rejected."})
+        req.status = "rejected"
+        req.decided_by = request.user.id
+        req.decided_at = timezone.now()
+        req.decision_note = request.data.get("note", "")
+        req.save(
+            update_fields=["status", "decided_by", "decided_at", "decision_note", "updated_at"]
+        )
+        return Response(self.get_serializer(req).data)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        req = self.get_object()
+        me = self._me()
+        if me is None or req.requester_id != me.id:
+            raise PermissionDenied("You can only cancel your own swap request.")
+        if req.status != "pending":
+            raise ValidationError({"detail": "Only a pending swap can be cancelled."})
+        req.status = "cancelled"
+        req.save(update_fields=["status", "updated_at"])
+        return Response(self.get_serializer(req).data)

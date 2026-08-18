@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from .models import Holiday, Shift, ShiftAssignment, WorkSchedule
+from .models import Holiday, Shift, ShiftAssignment, ShiftSwapRequest, WorkSchedule
 
 
 class WorkScheduleSerializer(serializers.ModelSerializer):
@@ -81,6 +81,43 @@ class BulkAssignSerializer(serializers.Serializer):
     date_from = serializers.DateField()
     date_to = serializers.DateField()
     notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class ShiftSwapAssignmentBriefSerializer(serializers.ModelSerializer):
+    employee_code = serializers.CharField(source="employee.employee_code", read_only=True)
+    employee_name = serializers.CharField(source="employee.full_name", read_only=True)
+    shift_name = serializers.CharField(source="shift.name", read_only=True)
+    shift_code = serializers.CharField(source="shift.code", read_only=True)
+
+    class Meta:
+        model = ShiftAssignment
+        fields = (
+            "id", "employee", "employee_code", "employee_name",
+            "shift", "shift_name", "shift_code", "work_date",
+        )
+
+
+class ShiftSwapRequestSerializer(serializers.ModelSerializer):
+    requester_assignment = ShiftSwapAssignmentBriefSerializer(read_only=True)
+    counterparty_assignment = ShiftSwapAssignmentBriefSerializer(read_only=True)
+    requester_name = serializers.CharField(source="requester.full_name", read_only=True)
+    counterparty_name = serializers.CharField(source="counterparty.full_name", read_only=True)
+
+    class Meta:
+        model = ShiftSwapRequest
+        fields = (
+            "id", "requester_assignment", "counterparty_assignment",
+            "requester", "requester_name", "counterparty", "counterparty_name",
+            "reason", "status", "decided_by", "decided_at", "decision_note",
+            "created_at",
+        )
+        read_only_fields = fields
+
+
+class ShiftSwapCreateSerializer(serializers.Serializer):
+    requester_assignment = serializers.UUIDField()
+    counterparty_assignment = serializers.UUIDField()
+    reason = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 class PublishSerializer(serializers.Serializer):
