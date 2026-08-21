@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { todayIsoLocal } from "../lib/local-date"
+import { addDaysIso, todayIsoLocal } from "../lib/local-date"
+import { addMonthsIso } from "../lib/schedule-range"
 
 const mocks = vi.hoisted(() => ({
   myAssignments: vi.fn(),
@@ -53,6 +54,25 @@ vi.mock("sonner", () => ({ toast: { error: mocks.toastError, success: vi.fn() } 
 import MySchedulePage from "./MySchedulePage"
 
 const today = todayIsoLocal()
+
+function assignment(over: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: "a1",
+    employee: "e1",
+    employee_code: "E1",
+    shift: "s1",
+    shift_name: "Day Shift",
+    shift_code: "D",
+    covering_for: null,
+    covering_for_name: null,
+    work_date: today,
+    status: "scheduled",
+    published_at: "2026-01-01T00:00:00Z",
+    is_published: true,
+    notes: "",
+    ...over,
+  }
+}
 
 function renderPage() {
   render(
@@ -152,5 +172,67 @@ describe("MySchedulePage", () => {
     expect(await screen.findByText("Upcoming holidays")).toBeInTheDocument()
     expect(screen.getByText("Quick actions")).toBeInTheDocument()
     expect(screen.getByText("Next 5 shifts")).toBeInTheDocument()
+  })
+
+  it("keeps headlining today's shift after the anchor moves to a different month", async () => {
+    // Every myAssignments call (range fetch AND the horizon fetch) sees the
+    // same today-dated shift, so navigating away must not lose it from the
+    // hero — the hero reads from the horizon model, not the range-scoped one.
+    mocks.myAssignments.mockResolvedValue([assignment()])
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+    expect(await screen.findByRole("heading", { name: /Day Shift/i })).toBeInTheDocument()
+    const callsBefore = mocks.myAssignments.mock.calls.length
+    await user.click(screen.getByRole("button", { name: /next month/i }))
+    await waitFor(() => expect(mocks.myAssignments.mock.calls.length).toBeGreaterThan(callsBefore))
+    expect(screen.getByRole("heading", { name: /Day Shift/i })).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it("keeps listing upcoming shifts after the anchor moves to a different month", async () => {
+    const future = addDaysIso(today, 3)
+    mocks.myAssignments.mockResolvedValue([assignment({ id: "a2", work_date: future })])
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+    await waitFor(() =>
+      expect(screen.getAllByTestId("upcoming-shift-row").length).toBeGreaterThan(0),
+    )
+    const callsBefore = mocks.myAssignments.mock.calls.length
+    await user.click(screen.getByRole("button", { name: /next month/i }))
+    await waitFor(() => expect(mocks.myAssignments.mock.calls.length).toBeGreaterThan(callsBefore))
+    expect(screen.getAllByTestId("upcoming-shift-row").length).toBeGreaterThan(0)
+    vi.useRealTimers()
+  })
+
+  it("renders the calendar when the forward-looking horizon fetch fails (decoupled fetch)", async () => {
+    // The required range fetch (called first, on mount) succeeds; the
+    // horizon fetch (called second, from its own independent effect) fails.
+    mocks.myAssignments.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("boom"))
+    renderPage()
+    expect(await screen.findByRole("tab", { name: /month/i })).toBeInTheDocument()
+    expect((await screen.findAllByTestId("month-cell")).length).toBeGreaterThan(0)
+  })
+
+  it("keeps the KPI row range-scoped when the anchor changes", async () => {
+    // A shift that only exists on the 1st of *next* calendar month must not
+    // show up in this month's KPI count, and the KPI row must change once
+    // that month comes into view — guards against over-correcting the KPI
+    // row onto the horizon model too.
+    const future = addMonthsIso(today, 1)
+    mocks.myAssignments.mockImplementation((from: string, to: string) =>
+      Promise.resolve(
+        from <= future && future <= to ? [assignment({ id: "a3", work_date: future })] : [],
+      ),
+    )
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+    await waitFor(() => expect(mocks.myAssignments).toHaveBeenCalled())
+    const before = screen.getByTestId("kpi-shifts").textContent
+    await user.click(screen.getByRole("button", { name: /next month/i }))
+    await waitFor(() => expect(screen.getByTestId("kpi-shifts").textContent).not.toBe(before))
+    vi.useRealTimers()
   })
 })

@@ -55,6 +55,11 @@ function humanDate(iso: string): string {
   })
 }
 
+/** How far ahead of today the hero / rail cards look, independent of the
+ * calendar's own view/anchor. Forward-looking widgets must survive
+ * navigation — see the horizon-fetch block in `refreshHorizon` below. */
+const HORIZON_DAYS = 45
+
 export default function MySchedulePage() {
   const { perms } = useAuth()
   const canClock = perms.has("attendance:clock:self")
@@ -63,6 +68,7 @@ export default function MySchedulePage() {
   const [anchor, setAnchor] = useState<string>(() => todayIsoLocal())
 
   const [assignments, setAssignments] = useState<ShiftAssignment[]>([])
+  const [horizonAssignments, setHorizonAssignments] = useState<ShiftAssignment[]>([])
   const [shifts, setShifts] = useState<Shift[]>([])
   const [holidays, setHolidays] = useState<{ date: string; name: string }[]>([])
   const [leaves, setLeaves] = useState<LeaveRequest[]>([])
@@ -131,6 +137,27 @@ export default function MySchedulePage() {
     refresh()
   }, [refresh, swapVersion])
 
+  // Decoupled from `range`/`view`/`anchor` on purpose: the hero and rail cards
+  // are forward-looking widgets anchored on *today*, not on whatever period
+  // the calendar happens to be showing (CLAUDE.md §3.7 — this is its own
+  // failure-isolated fetch, not folded into `refresh` above, precisely so it
+  // never re-runs — and never blanks — on a "Next month" click). Both bounds
+  // are computed fresh inside the callback from pure functions, so there is
+  // no stale-closure risk in keeping this effect mount-only.
+  const refreshHorizon = useCallback(async () => {
+    try {
+      const from = todayIsoLocal()
+      const to = addDaysIso(from, HORIZON_DAYS)
+      setHorizonAssignments(await scheduleApi.myAssignments(from, to))
+    } catch {
+      setHorizonAssignments([])
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshHorizon()
+  }, [refreshHorizon])
+
   async function clock(action: "in" | "out") {
     setBusy(true)
     try {
@@ -162,15 +189,37 @@ export default function MySchedulePage() {
     })
   }, [view, anchor, todayIso, assignments, shifts, holidays, leaves, swaps])
 
-  // Forward-looking lists are independent of the visible range.
-  const upcoming = useMemo(() => days.filter((d) => d.date > todayIso), [days, todayIso])
+  // Forward-looking widgets (hero, "next 5 shifts", quick-action swap) are
+  // built from their own today-anchored model, not from `days` — `days` is
+  // scoped to whatever the calendar happens to be showing (§ScheduleKpis
+  // stays range-scoped on purpose), but these must survive navigation.
+  const horizonDays = useMemo(() => {
+    const to = addDaysIso(todayIso, HORIZON_DAYS)
+    const dates: string[] = []
+    for (let d = todayIso; d <= to; d = addDaysIso(d, 1)) dates.push(d)
+    return buildDayModels({
+      dates,
+      anchorMonth: todayIso.slice(0, 7),
+      todayIso,
+      assignments: horizonAssignments,
+      shifts,
+      holidays,
+      leaves,
+      swaps,
+    })
+  }, [todayIso, horizonAssignments, shifts, holidays, leaves, swaps])
+
+  const upcoming = useMemo(
+    () => horizonDays.filter((d) => d.date > todayIso),
+    [horizonDays, todayIso],
+  )
   const nextSwappable = upcoming.find((d) => d.swapEligibility.canSwap)?.shift?.assignmentId ?? null
   const nextHoliday =
     holidays.filter((h) => h.date >= todayIso).sort((a, b) => a.date.localeCompare(b.date))[0] ??
     null
   const pendingSwaps = swaps.filter((s) => s.status === "pending").length
 
-  const todayModel = days.find((d) => d.isToday) ?? null
+  const todayModel = horizonDays.find((d) => d.isToday) ?? null
   const clockState: ClockState = !todayRec?.clock_in
     ? { status: "off" }
     : todayRec.clock_out
@@ -190,13 +239,18 @@ export default function MySchedulePage() {
     )
   }
 
-  const swapDay = days.find((d) => d.shift?.assignmentId === swapFor) ?? null
+  // `swapFor` can originate from the range-scoped calendar (`days`) or from
+  // the horizon-based rail cards (`horizonDays`) — check both.
+  const swapDay =
+    days.find((d) => d.shift?.assignmentId === swapFor) ??
+    horizonDays.find((d) => d.shift?.assignmentId === swapFor) ??
+    null
 
   return (
     <div className="space-y-4">
       <PageHeader breadcrumb="Schedule" title="My Schedule" />
 
-      {loading && assignments.length === 0 ? (
+      {loading ? (
         <Skeleton className="h-36 rounded-2xl" />
       ) : (
         <ScheduleHero
