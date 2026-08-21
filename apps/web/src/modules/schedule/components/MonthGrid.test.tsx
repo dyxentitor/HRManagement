@@ -90,6 +90,29 @@ describe("MonthGrid", () => {
     expect(screen.getByText("Maulidur Rasul")).toBeInTheDocument()
   })
 
+  it("shows BOTH the leave tag and the holiday name when leave falls on a holiday, no shift", () => {
+    renderGrid([day("2026-08-26", { holidayName: "Maulidur Rasul", leaveTypeCode: "AL" })])
+    expect(screen.getByText(/On leave/)).toBeInTheDocument()
+    expect(screen.getByText("Maulidur Rasul")).toBeInTheDocument()
+  })
+
+  it("shows BOTH the shift and the holiday name when a shift is worked on a holiday", () => {
+    renderGrid([day("2026-08-26", { shift: SHIFT, holidayName: "Maulidur Rasul" })])
+    const cell = screen.getByTestId("month-cell")
+    expect(within(cell).getByText(/09:00–18:00/)).toBeInTheDocument()
+    expect(within(cell).getByText("Maulidur Rasul")).toBeInTheDocument()
+  })
+
+  it("shows the shift, the leave tag, AND the holiday name when all three collide", () => {
+    renderGrid([
+      day("2026-08-26", { shift: SHIFT, leaveTypeCode: "AL", holidayName: "Maulidur Rasul" }),
+    ])
+    const cell = screen.getByTestId("month-cell")
+    expect(within(cell).getByText(/09:00–18:00/)).toBeInTheDocument()
+    expect(within(cell).getByText("AL")).toBeInTheDocument()
+    expect(within(cell).getByText("Maulidur Rasul")).toBeInTheDocument()
+  })
+
   it("shows Off for an empty working day", () => {
     renderGrid([day("2026-08-03")])
     expect(screen.getByText("Off")).toBeInTheDocument()

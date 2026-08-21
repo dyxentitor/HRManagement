@@ -106,18 +106,28 @@ function MonthCell({
       ) : day.leaveTypeCode ? (
         <span className="text-small text-lavender truncate">On leave · {day.leaveTypeCode}</span>
       ) : day.holidayName ? (
-        <span className="text-small text-peach truncate" title={day.holidayName}>
-          {day.holidayName}
-        </span>
+        <HolidayLine name={day.holidayName} />
       ) : (
         <span className="text-small text-text-tertiary">Off</span>
       )}
 
-      {day.shift && day.holidayName && (
-        <span className="text-[10px] text-peach truncate" title={day.holidayName}>
-          {day.holidayName}
-        </span>
+      {/*
+       * Additive, not exclusive: a shift or an approved leave can land on a
+       * public holiday. The branch above already shows the holiday when it's
+       * the ONLY thing on the day — this covers every other combination so
+       * the holiday name is never silently dropped.
+       */}
+      {day.holidayName && (day.shift || day.leaveTypeCode) && (
+        <HolidayLine name={day.holidayName} />
       )}
     </div>
+  )
+}
+
+function HolidayLine({ name }: { name: string }) {
+  return (
+    <span className="text-[10px] text-peach truncate" title={name}>
+      {name}
+    </span>
   )
 }
