@@ -73,11 +73,14 @@ export function MySwapRequests({
   if (rows.length === 0) return null
 
   return (
-    <section className="bg-surface-hover border border-border-subtle rounded-lg p-4">
-      <h2 className="text-h2 text-text-primary mb-3">My swap requests</h2>
+    <section className="glass-surface rounded-2xl p-4">
+      <h2 className="text-label uppercase text-text-tertiary mb-2">My swap requests</h2>
       <ul className="space-y-2">
         {rows.map((r) => (
-          <li key={r.id} className="flex items-center gap-3 text-small text-text-secondary">
+          <li
+            key={r.id}
+            className="flex flex-wrap items-center gap-2 text-small text-text-secondary py-1.5 border-b border-border-subtle last:border-0"
+          >
             <StatusPill tone={TONE[r.status]} label={r.status} />
             <span className="text-text-primary">
               {slot(r.requester_assignment)} → {slot(r.counterparty_assignment)}
