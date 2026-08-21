@@ -27,6 +27,21 @@ Spec: `docs/superpowers/specs/2026-08-21-schedule-workspace-redesign-design.md`.
   `ShiftAssignment.covering_for` already shipped in the API payload but were
   never shown here.
 - **`/leave/apply?start=YYYY-MM-DD`** deep link, used by the `⋯` menu.
+- **Responsive layout (spec §11), partial.** Agenda defaults below `sm`
+  (read once at mount via `matchMedia`, not a lock — Month/Week stay
+  reachable); the right rail becomes a 2-column grid at `md` and returns to
+  1-column at `lg`; the Week grid stays 7-column from `md` up; on `<sm` the
+  rail reorders to swap requests → next shifts → holidays → quick actions
+  via CSS `order`, without duplicating any card in the DOM.
+
+### Deferred
+
+- **Mobile `⋯` bottom sheet.** Spec §11 calls for the shift action menu to
+  open as a `Sheet` below `sm`; it is still the same dropdown at every
+  width. Feature work, not polish — own change.
+- **Mobile Month dot-grid.** Spec §11 calls for Month to render as a compact
+  dot-grid below `sm`; it still renders the same 7-column grid at ~39px
+  cells carrying a mono time range. Feature work, not polish — own change.
 
 ### Changed
 
