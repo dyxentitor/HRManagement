@@ -109,6 +109,11 @@ describe("WeekStrip", () => {
     expect(screen.getByTestId("week-legend")).toBeInTheDocument()
   })
 
+  it("documents the Swap pending pill in the legend", () => {
+    renderStrip([day("2026-08-25")])
+    expect(within(screen.getByTestId("week-legend")).getByText(/Swap pending/)).toBeInTheDocument()
+  })
+
   // Overlay combinations the brief's list above doesn't cover — see
   // CLAUDE.md-style overlay rule: states are additive, never exclusive.
   // MonthGrid (Task 4) shipped a ternary chain that silently dropped the

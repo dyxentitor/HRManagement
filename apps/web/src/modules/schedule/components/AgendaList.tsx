@@ -111,7 +111,12 @@ function AgendaRow({
       className={cn(
         "flex items-center gap-3 rounded-xl border px-3 py-2 bg-surface-hover",
         day.isToday ? "border-accent-500" : "border-border-subtle",
-        bare && "opacity-60",
+        // Out-of-anchor-month rows dim the same way MonthGrid's leading/
+        // trailing cells do (opacity-40 there), regardless of what they
+        // carry — Agenda shares Month's range so the KPI row (which excludes
+        // these dates) and the list must not disagree about what "this
+        // month" means.
+        (bare || !day.inAnchorMonth) && "opacity-60",
       )}
     >
       <span
@@ -126,6 +131,11 @@ function AgendaRow({
         <span className="block text-label uppercase text-text-tertiary">
           {weekdayLabel(day.date, "short")}
         </span>
+        {day.isToday && (
+          <span className="block text-label uppercase font-semibold text-accent-200 bg-accent-500/15 px-1 rounded mt-0.5">
+            Today
+          </span>
+        )}
       </div>
 
       <div className="min-w-0 flex-1">

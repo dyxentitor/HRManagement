@@ -44,6 +44,11 @@ export function QuickActionsCard({ nextSwappableAssignmentId, onRequestSwap }: P
                 ? "No upcoming shift is eligible for a swap"
                 : undefined
             }
+            aria-label={
+              nextSwappableAssignmentId === null
+                ? "Request a shift swap — no upcoming shift is eligible for a swap"
+                : "Request a shift swap"
+            }
             onClick={() => nextSwappableAssignmentId && onRequestSwap(nextSwappableAssignmentId)}
             className={ITEM}
           >

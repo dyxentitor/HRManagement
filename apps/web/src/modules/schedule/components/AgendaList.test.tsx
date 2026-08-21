@@ -145,4 +145,28 @@ describe("AgendaList", () => {
     expect(screen.getByText("Off")).toBeInTheDocument()
     expect(row.className).toMatch(/opacity-60/)
   })
+
+  // Agenda shares Month's range, which includes leading/trailing days from
+  // adjacent months. Month dims those (opacity-40); the range-scoped KPI row
+  // excludes them from "Shifts this month" — Agenda must dim them too, even
+  // when they carry a real shift, or a user counting rows against the KPI
+  // finds a mismatch.
+
+  it("dims an out-of-anchor-month row even when it carries a shift", () => {
+    renderList([day("2026-07-27", { shift: SHIFT, inAnchorMonth: false })])
+    const row = screen.getByTestId("agenda-row")
+    expect(row.className).toMatch(/opacity-60/)
+    expect(screen.getByText("Day Shift")).toBeInTheDocument()
+  })
+
+  it("does not dim an in-anchor-month row with a shift", () => {
+    renderList([day("2026-08-21", { shift: SHIFT, inAnchorMonth: true })])
+    const row = screen.getByTestId("agenda-row")
+    expect(row.className).not.toMatch(/opacity-60/)
+  })
+
+  it("shows a Today badge, matching Week's badge treatment", () => {
+    renderList([day("2026-08-21", { isToday: true, shift: SHIFT })])
+    expect(screen.getByText("Today")).toBeInTheDocument()
+  })
 })

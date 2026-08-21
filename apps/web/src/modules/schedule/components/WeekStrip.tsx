@@ -32,7 +32,7 @@ function shortDay(iso: string): string {
 export function WeekStrip({ days, onRequestSwap }: Props) {
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-1.5">
         {days.map((d) => (
           <WeekCell key={d.date} day={d} onRequestSwap={onRequestSwap} />
         ))}
@@ -45,6 +45,7 @@ export function WeekStrip({ days, onRequestSwap }: Props) {
         <span>Leave — approved leave</span>
         <span>Overnight — crosses midnight</span>
         <span>Cover — covering a teammate</span>
+        <span>Swap pending — awaiting a swap decision</span>
       </div>
     </div>
   )

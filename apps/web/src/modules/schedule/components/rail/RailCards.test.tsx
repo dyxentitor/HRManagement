@@ -144,4 +144,18 @@ describe("QuickActionsCard", () => {
     )
     expect(screen.getByRole("button", { name: /request a shift swap/i })).toBeDisabled()
   })
+
+  it("conveys the disabled reason via aria-label, not title alone", () => {
+    // `title` is surfaced inconsistently by screen readers — the reason must
+    // also be reachable through the accessible name.
+    mocks.perms = new Set(["schedule:swap:request:self"])
+    render(
+      <MemoryRouter>
+        <QuickActionsCard nextSwappableAssignmentId={null} onRequestSwap={vi.fn()} />
+      </MemoryRouter>,
+    )
+    expect(
+      screen.getByRole("button", { name: /no upcoming shift is eligible for a swap/i }),
+    ).toBeInTheDocument()
+  })
 })
