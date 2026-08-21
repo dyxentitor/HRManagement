@@ -92,6 +92,22 @@ describe("UpcomingHolidaysCard", () => {
     render(<UpcomingHolidaysCard todayIso="2026-12-31" holidays={[]} />)
     expect(screen.getByText(/No upcoming public holidays/i)).toBeInTheDocument()
   })
+
+  it("keeps a long holiday name inside a shrinkable, truncating wrapper", () => {
+    const longName = "Yang di-Pertuan Agong's Birthday"
+    render(
+      <UpcomingHolidaysCard
+        todayIso="2026-08-21"
+        holidays={[{ date: "2026-08-26", name: longName }]}
+      />,
+    )
+    const nameEl = screen.getByText(longName)
+    expect(nameEl).toBeInTheDocument()
+    expect(nameEl).toHaveClass("truncate")
+    // The truncating span's parent must be able to shrink below its content's
+    // natural width for the ellipsis to ever engage in a flex row.
+    expect(nameEl.parentElement).toHaveClass("min-w-0", "flex-1")
+  })
 })
 
 describe("QuickActionsCard", () => {

@@ -25,7 +25,7 @@ export function UpcomingHolidaysCard({ holidays, todayIso }: Props) {
                 data-testid="upcoming-holiday-row"
                 className="flex items-center gap-3 py-2 border-b border-border-subtle last:border-0"
               >
-                <span className="text-center min-w-[2.25rem] rounded-lg bg-peach/10 px-1.5 py-1">
+                <span className="text-center min-w-9 rounded-lg bg-peach/10 px-1.5 py-1">
                   <span className="block text-body font-bold leading-none text-peach">
                     {d.getUTCDate()}
                   </span>
@@ -33,7 +33,9 @@ export function UpcomingHolidaysCard({ holidays, todayIso }: Props) {
                     {d.toLocaleDateString("en-MY", { month: "short", timeZone: "UTC" })}
                   </span>
                 </span>
-                <span className="text-small text-text-primary truncate">{h.name}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-small text-text-primary truncate">{h.name}</span>
+                </span>
               </li>
             )
           })}

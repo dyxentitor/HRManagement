@@ -29,7 +29,7 @@ export function UpcomingShiftsCard({ days, onRequestSwap }: Props) {
               data-testid="upcoming-shift-row"
               className="flex items-center gap-3 py-2 border-b border-border-subtle last:border-0"
             >
-              <span className="text-center min-w-[2.25rem] rounded-lg bg-surface-hover px-1.5 py-1">
+              <span className="text-center min-w-9 rounded-lg bg-surface-hover px-1.5 py-1">
                 <span className="block text-body font-bold leading-none text-text-primary">
                   {new Date(`${day.date}T00:00:00Z`).getUTCDate()}
                 </span>
