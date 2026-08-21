@@ -229,10 +229,71 @@ describe("MySchedulePage", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     renderPage()
-    await waitFor(() => expect(mocks.myAssignments).toHaveBeenCalled())
-    const before = screen.getByTestId("kpi-shifts").textContent
+    // The KPI row is skeleton-gated until the first load completes (item 3
+    // of the fix wave) — wait for the real tile, not the skeleton, before
+    // reading its baseline text.
+    const before = (await screen.findByTestId("kpi-shifts")).textContent
     await user.click(screen.getByRole("button", { name: /next month/i }))
     await waitFor(() => expect(screen.getByTestId("kpi-shifts").textContent).not.toBe(before))
     vi.useRealTimers()
+  })
+
+  it("prefers the range model over the horizon when the horizon fetch blips but the range fetch has today's shift", async () => {
+    // The required range fetch (called first, on mount) succeeds with a
+    // today-dated shift; the horizon fetch (called second, from its own
+    // independent effect) fails. The hero must show the shift, not
+    // contradict the calendar by claiming "No shift scheduled".
+    mocks.myAssignments
+      .mockResolvedValueOnce([assignment()])
+      .mockRejectedValueOnce(new Error("blip"))
+    renderPage()
+    expect(await screen.findByRole("heading", { name: /Day Shift/i })).toBeInTheDocument()
+    expect(screen.queryByText(/No shift scheduled/i)).not.toBeInTheDocument()
+  })
+
+  it("shows skeleton placeholders for the KPI row and rail until the first load completes", async () => {
+    mocks.myAssignments.mockImplementation(() => new Promise(() => {})) // never resolves
+    const { container } = render(
+      <MemoryRouter>
+        <MySchedulePage />
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(mocks.myAssignments).toHaveBeenCalled())
+    // hero (1) + 5 KPI tiles + rail (1) = 7 skeleton blocks while nothing has loaded.
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThanOrEqual(7)
+    expect(screen.queryByText("No upcoming shifts in this range.")).not.toBeInTheDocument()
+    expect(screen.queryByText(/No upcoming shift is eligible for a swap/i)).not.toBeInTheDocument()
+  })
+
+  it("defaults to Agenda when the viewport is narrower than sm (spec §11)", async () => {
+    const original = window.matchMedia
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("639"),
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia
+    try {
+      renderPage()
+      expect(await screen.findByRole("tab", { name: /agenda/i })).toHaveAttribute(
+        "data-state",
+        "active",
+      )
+    } finally {
+      window.matchMedia = original
+    }
+  })
+
+  it("always fetches holidays for the current and next year, even without navigating", async () => {
+    renderPage()
+    await waitFor(() => expect(mocks.listHolidays).toHaveBeenCalled())
+    const years = mocks.listHolidays.mock.calls.map((c) => c[0])
+    const currentYear = Number(today.slice(0, 4))
+    expect(years).toContain(currentYear)
+    expect(years).toContain(currentYear + 1)
   })
 })

@@ -60,11 +60,27 @@ function humanDate(iso: string): string {
  * navigation — see the horizon-fetch block in `refreshHorizon` below. */
 const HORIZON_DAYS = 45
 
+/**
+ * Spec §11: Agenda is the *default* tab below `sm` (640px), not a lock — the
+ * user can still switch to Month or Week. Read once at mount via
+ * `useState(initializer)`, matching the design's "default", not "controlled
+ * by a live resize listener" — a resize mid-session shouldn't yank the user
+ * off a tab they picked on purpose.
+ */
+function initialView(): ScheduleView {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return "month"
+  return window.matchMedia("(max-width: 639px)").matches ? "agenda" : "month"
+}
+
+/** Stable keys for the 5 KPI skeleton tiles — index-as-key would be fine
+ * here too (the list never reorders), but named keys read better in the DOM. */
+const KPI_SKELETON_KEYS = ["shifts", "hours", "daysoff", "holiday", "swaps"] as const
+
 export default function MySchedulePage() {
   const { perms } = useAuth()
   const canClock = perms.has("attendance:clock:self")
 
-  const [view, setView] = useState<ScheduleView>("month")
+  const [view, setView] = useState<ScheduleView>(initialView)
   const [anchor, setAnchor] = useState<string>(() => todayIsoLocal())
 
   const [assignments, setAssignments] = useState<ShiftAssignment[]>([])
@@ -76,6 +92,13 @@ export default function MySchedulePage() {
   const [todayRec, setTodayRec] = useState<AttendanceRecord | null>(null)
 
   const [loading, setLoading] = useState(true)
+  const [horizonLoading, setHorizonLoading] = useState(true)
+  // True only until BOTH fetches have completed once. Deliberately distinct
+  // from `loading`/`horizonLoading` themselves, which flip true again on
+  // every subsequent nav/mutation — the KPI row and rail must show a
+  // skeleton on first paint (spec §12, §2.2) but must never re-blank on a
+  // "Next month" click once real data exists (see refreshHorizon's comment).
+  const [firstLoadDone, setFirstLoadDone] = useState(false)
   const [noEmployee, setNoEmployee] = useState(false)
   const [busy, setBusy] = useState(false)
   const [swapFor, setSwapFor] = useState<string | null>(null)
@@ -112,7 +135,20 @@ export default function MySchedulePage() {
       setShifts([])
     }
     try {
-      const years = [...new Set([range.from.slice(0, 4), range.to.slice(0, 4)])].map(Number)
+      // Always union the current year and next year on top of the visible
+      // range's years — the rail's "Upcoming holidays" and the "Next
+      // holiday" KPI are today-anchored (§ refreshHorizon below), so late in
+      // December, navigating the *calendar* back to October must not drop
+      // next year's holidays out from under those forward-looking widgets.
+      const currentYear = Number(todayIsoLocal().slice(0, 4))
+      const years = [
+        ...new Set([
+          range.from.slice(0, 4),
+          range.to.slice(0, 4),
+          String(currentYear),
+          String(currentYear + 1),
+        ]),
+      ].map(Number)
       const lists = await Promise.all(years.map((y) => scheduleApi.listHolidays(y).catch(() => [])))
       setHolidays(lists.flat().map((h) => ({ date: h.date, name: h.name })))
     } catch {
@@ -145,18 +181,25 @@ export default function MySchedulePage() {
   // are computed fresh inside the callback from pure functions, so there is
   // no stale-closure risk in keeping this effect mount-only.
   const refreshHorizon = useCallback(async () => {
+    setHorizonLoading(true)
     try {
       const from = todayIsoLocal()
       const to = addDaysIso(from, HORIZON_DAYS)
       setHorizonAssignments(await scheduleApi.myAssignments(from, to))
     } catch {
       setHorizonAssignments([])
+    } finally {
+      setHorizonLoading(false)
     }
   }, [])
 
   useEffect(() => {
     refreshHorizon()
   }, [refreshHorizon])
+
+  useEffect(() => {
+    if (!loading && !horizonLoading) setFirstLoadDone(true)
+  }, [loading, horizonLoading])
 
   async function clock(action: "in" | "out") {
     setBusy(true)
@@ -219,7 +262,17 @@ export default function MySchedulePage() {
     null
   const pendingSwaps = swaps.filter((s) => s.status === "pending").length
 
-  const todayModel = horizonDays.find((d) => d.isToday) ?? null
+  // The hero must never contradict the calendar. `horizonDays` is its own
+  // independently-failing fetch (`refreshHorizon` swallows every error into
+  // an empty `horizonAssignments`) — if it blips while the range fetch
+  // (`days`) succeeded, prefer whichever model actually has today's shift so
+  // the hero and the grid never disagree about the same day. Only fall back
+  // to a shift-less horizon/null model when neither source has one.
+  const todayFromHorizon = horizonDays.find((d) => d.isToday) ?? null
+  const todayFromRange = days.find((d) => d.isToday) ?? null
+  const todayModel = todayFromHorizon?.shift
+    ? todayFromHorizon
+    : (todayFromRange ?? todayFromHorizon)
   const clockState: ClockState = !todayRec?.clock_in
     ? { status: "off" }
     : todayRec.clock_out
@@ -264,7 +317,20 @@ export default function MySchedulePage() {
         />
       )}
 
-      <ScheduleKpis view={view} days={days} nextHoliday={nextHoliday} pendingSwaps={pendingSwaps} />
+      {firstLoadDone ? (
+        <ScheduleKpis
+          view={view}
+          days={days}
+          nextHoliday={nextHoliday}
+          pendingSwaps={pendingSwaps}
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {KPI_SKELETON_KEYS.map((k) => (
+            <Skeleton key={k} className="h-20 rounded-2xl" />
+          ))}
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-[1.7fr_1fr] gap-4 items-start">
         <div className="space-y-4">
@@ -293,12 +359,35 @@ export default function MySchedulePage() {
           )}
         </div>
 
-        <div className="space-y-4">
-          <UpcomingShiftsCard days={upcoming} onRequestSwap={setSwapFor} />
-          <MySwapRequests refreshKey={swapVersion} onChanged={() => setSwapVersion((v) => v + 1)} />
-          <UpcomingHolidaysCard holidays={holidays} todayIso={todayIso} />
-          <QuickActionsCard nextSwappableAssignmentId={nextSwappable} onRequestSwap={setSwapFor} />
-        </div>
+        {firstLoadDone ? (
+          // 1-col by default, 2-col at `md` (spec §11: rail stacks below the
+          // main panel there), back to 1-col at `lg` once it returns to being
+          // the narrow side column. `order-*` reshuffles the mobile (<sm)
+          // stack to swap requests → next shifts → holidays → quick actions
+          // (spec §11) without duplicating any card in the DOM.
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+            <div className="order-2 sm:order-1">
+              <UpcomingShiftsCard days={upcoming} onRequestSwap={setSwapFor} />
+            </div>
+            <div className="order-1 sm:order-2">
+              <MySwapRequests
+                refreshKey={swapVersion}
+                onChanged={() => setSwapVersion((v) => v + 1)}
+              />
+            </div>
+            <div className="order-3">
+              <UpcomingHolidaysCard holidays={holidays} todayIso={todayIso} />
+            </div>
+            <div className="order-4">
+              <QuickActionsCard
+                nextSwappableAssignmentId={nextSwappable}
+                onRequestSwap={setSwapFor}
+              />
+            </div>
+          </div>
+        ) : (
+          <Skeleton className="h-72 rounded-2xl" />
+        )}
       </div>
     </div>
   )
