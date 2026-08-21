@@ -86,7 +86,7 @@ describe("buildDayModels", () => {
     expect(day?.shift?.hours).toBe(8)
   })
 
-  it("leaves the shift null when the shift catalogue failed to load", () => {
+  it("keeps the shift but degrades time and hours when the catalogue failed to load", () => {
     const day = build({ shifts: [] }).find((d) => d.date === "2026-08-25")
     // The assignment still renders — only the time range is unknown.
     expect(day?.shift?.name).toBe("Day Shift")
@@ -303,5 +303,81 @@ describe("swapEligibility", () => {
       ],
     })
     expect(days.find((d) => d.date === "2026-08-25")?.hasPendingSwap).toBe(false)
+  })
+
+  // The check order (no-shift → past → unpublished → not-scheduled →
+  // pending-swap) is load-bearing: the UI must not promise a rule the
+  // server does not enforce. Each case below violates two conditions at
+  // once, so a reorder of the `if`s would change which reason wins and
+  // break the assertion.
+  describe("precedence when multiple conditions are violated", () => {
+    it("past wins over unpublished", () => {
+      const days = build({
+        todayIso: "2026-08-30",
+        assignments: [assignment({ is_published: false, published_at: null })],
+      })
+      expect(days.find((d) => d.date === "2026-08-25")?.swapEligibility).toEqual({
+        canSwap: false,
+        reason: "Only future shifts can be swapped.",
+      })
+    })
+
+    it("past wins over not-scheduled", () => {
+      const days = build({
+        todayIso: "2026-08-30",
+        assignments: [assignment({ status: "cancelled" })],
+      })
+      expect(days.find((d) => d.date === "2026-08-25")?.swapEligibility).toEqual({
+        canSwap: false,
+        reason: "Only future shifts can be swapped.",
+      })
+    })
+
+    it("unpublished wins over not-scheduled", () => {
+      const days = build({
+        assignments: [assignment({ is_published: false, published_at: null, status: "cancelled" })],
+      })
+      expect(days.find((d) => d.date === "2026-08-25")?.swapEligibility).toEqual({
+        canSwap: false,
+        reason: "Only published shifts can be swapped.",
+      })
+    })
+
+    it("unpublished wins over pending-swap", () => {
+      const days = build({
+        assignments: [assignment({ is_published: false, published_at: null })],
+        swaps: [
+          {
+            id: "sw1",
+            status: "pending",
+            requester_assignment: { id: "a1" },
+            counterparty_assignment: { id: "zzz" },
+          },
+        ],
+      })
+      expect(days.find((d) => d.date === "2026-08-25")?.swapEligibility).toEqual({
+        canSwap: false,
+        reason: "Only published shifts can be swapped.",
+      })
+    })
+
+    it("no-shift wins over everything, even a pending swap elsewhere", () => {
+      const days = build({
+        swaps: [
+          {
+            id: "sw1",
+            status: "pending",
+            requester_assignment: { id: "a1" },
+            counterparty_assignment: { id: "zzz" },
+          },
+        ],
+      })
+      // 2026-08-24 has no assignment in the default fixture; the pending
+      // swap above belongs to "a1", which is scheduled on 2026-08-25.
+      expect(days.find((d) => d.date === "2026-08-24")?.swapEligibility).toEqual({
+        canSwap: false,
+        reason: null,
+      })
+    })
   })
 })
