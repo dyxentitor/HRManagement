@@ -2,6 +2,73 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.81.0] — 2026-08-21 — Employee-initiated shift swap
+
+Closes prod feedback `8b527968` ("As a SOC L1 unable to use the swap shift
+feature"). It was filed as a bug, but the capability did not exist: the only
+related feature was manager-side cover-up, gated on
+`schedule:assignment:write:team`, and `MySchedulePage` had no actions at all.
+
+### Added
+- **Shift swap requests** — an employee picks one of their future published
+  shifts and a teammate's shift, optionally gives a reason, and submits. Their
+  manager approves or rejects it from the existing Approvals workspace. New
+  `ShiftSwapRequest` model (migration `schedule.0004`, additive) and
+  `/api/v1/schedule/swap-requests/` with `list`, `create`, `candidates/`,
+  `approve/`, `reject/` and `cancel/`.
+- **The swap mechanic exchanges the `(work_date, shift_id)` pair** between the
+  two assignment rows, so each employee keeps their own row. This covers
+  same-date trades (day ↔ night) and cross-date swaps through one code path,
+  and — because the `employee` column never moves — no swap shape can produce a
+  transient violation of the `(employee, work_date)` partial unique index.
+  Conflicts are refused at submit with a message naming the blocking date and
+  shift, rather than silently hiding candidates.
+- **`My swap requests`** strip on My Schedule showing pending/decided requests,
+  with cancel on pending ones.
+- **`shift_swap` kind in the unified approvals inbox** + a review drawer,
+  following the `incentive` precedent from `2ce9b8e`.
+- Notifications `schedule.swap.approved` (both parties) and
+  `schedule.swap.rejected` (requester), registered in the notification registry.
+- Two permission codes, catalogue **129 → 131**:
+  `schedule:swap:request:self` (all seven shift-holding roles) and
+  `schedule:swap:approve:team` (org_admin, hr_manager, manager, team_lead).
+
+### Security
+- Holding `schedule:swap:approve:team` is never sufficient to decide a swap —
+  the actor must also be in `resolve_approvers(requester)`, which excludes the
+  requester and so doubles as the self-approval guard (CLAUDE.md §3.11).
+- `?scope=team` is gated on the action, not just the query parameter. Keying
+  the queryset off the parameter alone let a `request:self` holder read any
+  pending swap in the org via `retrieve`.
+- Approval is atomic and re-validates under `select_for_update` on both the
+  request row and the two assignment rows, so a double-click or two concurrent
+  approvers cannot apply the exchange twice (which would silently revert it).
+  `reject` and `cancel` take the same lock, so a cancel racing a committed
+  approve can no longer leave the roster swapped while the request reads
+  cancelled.
+- Soft-deleted assignments are rejected at both submit and approve — otherwise
+  deleting one shift mid-flight left the counterparty's original date uncovered.
+
+### Deferred
+- `candidates/` is org-wide within a 60-day window, matching the manager-side
+  cover-up picker which deliberately offers other teams. It is a new roster
+  disclosure to the `employee` role; scoping it to team or manager is an open
+  product question.
+- `?scope=team` list is not filtered by `resolve_approvers` (approve still
+  403s correctly; the frontend does not call it).
+
+### Test counts
+- Backend **1327 passed**, 1 pre-existing unrelated failure
+  (`attendance/test_clock_flow.py::test_clock_out_completes_record`, fails
+  identically on master).
+- Frontend **727 passed** across 187 files.
+
+### Deploy
+Requires, in order: `migrate` → `seed_permission_catalogue` →
+`grant_default_perms`. Skipping the seed steps leaves every role without
+`schedule:swap:request:self`, which surfaces as a permanent error banner on My
+Schedule for all users.
+
 ## [1.80.0] — 2026-08-08 — Approvals select-all + receipt attachment fix
 
 Two production-reported frontend issues. No backend or schema changes.
