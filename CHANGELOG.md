@@ -2,6 +2,90 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.82.0] — 2026-08-21 — Schedule workspace redesign
+
+**`/schedule/me` rebuilt as a full-width scheduling workspace.** The last
+employee page still on the pre-v1.12.0 layout moves to the command-center
+system. Frontend only — **zero backend changes, zero new permission codes**.
+Spec: `docs/superpowers/specs/2026-08-21-schedule-workspace-redesign-design.md`.
+
+### Added
+
+- **Three views.** Month calendar, detailed Week strip, and a grouped Agenda
+  list, sharing one anchored range so `‹ ›` means the same thing on every tab.
+  Agenda is the default below `sm`.
+- **Aurora hero** with today's shift, live clock, and clock in/out.
+- **Range-scoped KPI row** — shifts, hours, days off, next holiday, pending swaps.
+  Labels follow the active tab.
+- **Right rail** — next 5 shifts, my swap requests, upcoming holidays, quick actions.
+- **`⋯` action menu** per shift, replacing the "REQUEST SWAP" text that sat on
+  every eligible day card. Ineligible swaps are shown **disabled with the reason**
+  instead of being hidden.
+- **Own approved leave on the schedule** via `GET /leave/requests/?scope=self` —
+  a permission every role already holds. Days now distinguish "Off" from "On leave".
+- **Overnight and cover-up surfaced to employees.** `Shift.crosses_midnight` and
+  `ShiftAssignment.covering_for` already shipped in the API payload but were
+  never shown here.
+- **`/leave/apply?start=YYYY-MM-DD`** deep link, used by the `⋯` menu.
+
+### Changed
+
+- Dropped the `max-w-5xl` clamp — the page now uses the full viewport.
+- Errors move from a bare `<p role="alert">` to sonner toasts.
+- Skeleton loading states throughout.
+- `MySwapRequests` restyled as a rail card. Logic unchanged.
+
+### Removed
+
+- `ScheduleTodayHero`, `ScheduleDayCard`, `HolidayCard` — superseded.
+- The `isDraft` flag on the day model: `/shift-assignments/me/` filters to
+  published rows, so it was always `false`.
+
+### Deferred
+
+- Shift Swap candidate-discovery redesign → **Spec B**. The `candidates`
+  endpoint returns 1,005 unpaginated rows at 29 employees today and needs
+  backend work; see spec §14.
+- Employee timesheet page — "View Timesheet" was deliberately **not** added,
+  because no attendance page exists to link to.
+
+### Verification
+
+- **Per-role API smoke check (CLAUDE.md §3.16)** — all 7 default roles
+  (`org_admin`, `hr_manager`, `manager`, `team_lead`, `finance`, `auditor`,
+  `employee`) logged in against the dev stack and hit every endpoint this page
+  depends on. `leave/requests?scope=self`, `schedule/holidays`, and
+  `schedule/swap-requests` returned 200 for all 7. `shift-assignments/me` and
+  `schedule/shifts` returned 200 for 6/7 — **`finance` gets 403 on both**,
+  because that role's fixture never granted `schedule:assignment:read:self` /
+  `schedule:shift:read` (confirmed pre-existing: the same required fetch
+  existed on the pre-redesign page, and the finance role's permission grants
+  are untouched by this branch — zero backend files changed). The page
+  degrades gracefully (toast + empty calendar, not a crash) but the gap is
+  real and should be filed as its own fixture fix, in the style of v1.4.3 /
+  v1.5.0. `org_admin` gets 404 on `attendance/today` because that demo
+  account has no linked `Employee` row — pre-existing, triggers the existing
+  `NotLinkedEmptyState`, not a regression.
+- **NOT performed:** the browser walk of the `⋯` menu per role and the
+  1920/1280/1024/768/375px responsive check called for in the design spec —
+  no browser was available this session. `ShiftActionsMenu.test.tsx` covers
+  the per-role menu-item gating at the unit level, but nobody has watched it
+  render. Do this before a production deploy.
+
+### Tests
+
+- Frontend: **854 passed** (+127 vs v1.81.0's 727; 194 files, +7).
+- Backend: **unchanged — zero backend files touched on this branch.**
+  1327 passed, 2 failed, 3 skipped. The 2 failures pre-date this branch and
+  originate in v1.81.0: `modules/notification/tests/test_registry.py::
+  test_registry_covers_every_type_with_label` and
+  `::test_default_preferences_unchanged_after_merge` — that test's
+  `_EXPECTED` set was never updated when `schedule.swap.approved` /
+  `schedule.swap.rejected` were registered in v1.81.0. The attendance flake
+  named in CLAUDE.md §2.3 (`test_clock_out_completes_record`) did **not**
+  reproduce this run.
+- Permission codes: **131 (unchanged since v1.81.0)**.
+
 ## [1.81.0] — 2026-08-21 — Employee-initiated shift swap
 
 Closes prod feedback `8b527968` ("As a SOC L1 unable to use the swap shift
