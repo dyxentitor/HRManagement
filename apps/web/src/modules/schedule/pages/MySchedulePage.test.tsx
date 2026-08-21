@@ -296,4 +296,47 @@ describe("MySchedulePage", () => {
     expect(years).toContain(currentYear)
     expect(years).toContain(currentYear + 1)
   })
+
+  it("does not let a slow, superseded range response overwrite a newer one after rapid nav clicks", async () => {
+    // The first two calls (initial mount's range fetch + horizon fetch)
+    // resolve immediately and empty. Every call after that (triggered by the
+    // two "Next month" clicks below) hangs until this test resolves it by
+    // hand, so the test controls resolution order independent of request
+    // order — simulating two responses landing out of sequence.
+    let callCount = 0
+    const pending: Array<(v: unknown[]) => void> = []
+    mocks.myAssignments.mockImplementation(() => {
+      callCount += 1
+      if (callCount <= 2) return Promise.resolve([])
+      return new Promise((resolve) => pending.push(resolve))
+    })
+
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+    await waitFor(() => expect(mocks.myAssignments).toHaveBeenCalledTimes(2))
+
+    await user.click(screen.getByRole("button", { name: /next month/i }))
+    await waitFor(() => expect(pending.length).toBe(1))
+    await user.click(screen.getByRole("button", { name: /next month/i }))
+    await waitFor(() => expect(pending.length).toBe(2))
+
+    const staleAssignment = assignment({ id: "stale", work_date: addMonthsIso(today, 1) })
+    const newestAssignment = assignment({ id: "newest", work_date: addMonthsIso(today, 2) })
+
+    // Resolve the NEWER request (2nd click, index 1) first, then the STALE
+    // one (1st click, index 0) — out of order, as a slow network can do.
+    pending[1]([newestAssignment])
+    await waitFor(() => expect(screen.getByTestId("kpi-shifts").textContent).toMatch(/1/))
+    pending[0]([staleAssignment])
+
+    // The late-arriving stale response must be a no-op: the KPI row must
+    // keep reflecting the newest (currently-anchored) month's data, not
+    // silently drop to 0 because September's assignment got applied under
+    // October's already-rendered label.
+    await waitFor(() => expect(mocks.myAssignments).toHaveBeenCalledTimes(4))
+    expect(screen.getByTestId("kpi-shifts").textContent).toMatch(/1/)
+
+    vi.useRealTimers()
+  })
 })

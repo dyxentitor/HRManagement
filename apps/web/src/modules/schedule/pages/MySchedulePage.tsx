@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import type { ClockState } from "@/components/hrms/ClockInOutWidget"
@@ -106,7 +106,18 @@ export default function MySchedulePage() {
 
   const range = useMemo(() => rangeFor(view, anchor), [view, anchor])
 
+  // Monotonic guard against out-of-order responses: `refresh` does
+  // sequential/parallel awaits with no abort controller, so two rapid `›`
+  // clicks can have their responses land in either order. Each call to
+  // `refresh` claims the next sequence number; every setter below checks it
+  // still owns the latest one before writing, so a slow, now-superseded
+  // response can never overwrite what a newer one already committed.
+  const requestSeqRef = useRef(0)
+
   const refresh = useCallback(async () => {
+    const seq = ++requestSeqRef.current
+    const current = () => seq === requestSeqRef.current
+
     setLoading(true)
     setNoEmployee(false)
 
@@ -116,9 +127,11 @@ export default function MySchedulePage() {
         scheduleApi.myAssignments(range.from, range.to),
         attendanceApi.today(),
       ])
+      if (!current()) return
       setAssignments(a)
       setTodayRec(t)
     } catch (e) {
+      if (!current()) return
       if (e instanceof ApiError && e.status === 404) {
         setNoEmployee(true)
         setLoading(false)
@@ -130,9 +143,10 @@ export default function MySchedulePage() {
     // Decoupled (CLAUDE.md §3.7): each of these degrades on its own without
     // taking the calendar down with it.
     try {
-      setShifts(await scheduleApi.listShifts())
+      const s = await scheduleApi.listShifts()
+      if (current()) setShifts(s)
     } catch {
-      setShifts([])
+      if (current()) setShifts([])
     }
     try {
       // Always union the current year and next year on top of the visible
@@ -150,22 +164,24 @@ export default function MySchedulePage() {
         ]),
       ].map(Number)
       const lists = await Promise.all(years.map((y) => scheduleApi.listHolidays(y).catch(() => [])))
-      setHolidays(lists.flat().map((h) => ({ date: h.date, name: h.name })))
+      if (current()) setHolidays(lists.flat().map((h) => ({ date: h.date, name: h.name })))
     } catch {
-      setHolidays([])
+      if (current()) setHolidays([])
     }
     try {
-      setLeaves(await leaveApi.listMyRequests())
+      const l = await leaveApi.listMyRequests()
+      if (current()) setLeaves(l)
     } catch {
-      setLeaves([])
+      if (current()) setLeaves([])
     }
     try {
-      setSwaps(await listMySwapRequests())
+      const sw = await listMySwapRequests()
+      if (current()) setSwaps(sw)
     } catch {
-      setSwaps([])
+      if (current()) setSwaps([])
     }
 
-    setLoading(false)
+    if (current()) setLoading(false)
   }, [range.from, range.to])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: swapVersion is a counter that intentionally re-triggers the fetch
