@@ -46,11 +46,11 @@ function renderHero(over: Partial<Parameters<typeof ScheduleHero>[0]> = {}) {
 }
 
 beforeEach(() => {
-  // `shouldAdvanceTime` is required alongside `advanceTimers` on userEvent.setup() below —
-  // without it, happy-dom + user-event's internal pointer-event wait() never resolves and
-  // every interacting test times out (verified empirically against this repo's vitest 2.1.9 +
-  // happy-dom combination; `advanceTimers` alone, as the brief describes, is not sufficient here).
-  vi.useFakeTimers({ shouldAdvanceTime: true })
+  // Plain fake timers here — the clock stays frozen at exactly 14:30 for the 8 tests below
+  // that assert on time-derived strings (the live clock, the 5h 38m elapsed text). The two
+  // tests that drive userEvent opt into `shouldAdvanceTime: true` locally (see below) instead
+  // of it applying file-wide, so those 8 never risk a minute-boundary flake under CI contention.
+  vi.useFakeTimers()
   vi.setSystemTime(new Date(2026, 7, 21, 14, 30, 0))
 })
 afterEach(() => {
@@ -84,6 +84,15 @@ describe("ScheduleHero", () => {
   })
 
   it("offers Clock in when off", async () => {
+    // `shouldAdvanceTime` scoped to this test only — required for happy-dom + user-event's
+    // internal pointer-event wait() to resolve at all (plain fake timers hang it). See
+    // EmailTemplatesTab.test.tsx for the same repo-established pattern. Re-installing fake
+    // timers requires a full reset first — switching modes on an already-fake clock silently
+    // fails to enable the real-time-follow ticker (verified empirically) — so we drop back to
+    // real timers, then re-fake with shouldAdvanceTime, then re-pin the system time.
+    vi.useRealTimers()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date(2026, 7, 21, 14, 30, 0))
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     const props = renderHero()
     await user.click(screen.getByRole("button", { name: /clock in/i }))
@@ -91,6 +100,12 @@ describe("ScheduleHero", () => {
   })
 
   it("offers Clock out and shows elapsed time when clocked in", async () => {
+    // Scoped for the same reason as above. This test also asserts a time-derived string
+    // (5h 38m), but only immediately after render, before any real time has had a chance
+    // to elapse — safe under `shouldAdvanceTime`.
+    vi.useRealTimers()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date(2026, 7, 21, 14, 30, 0))
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     const props = renderHero({
       clockState: { status: "in", since: new Date(2026, 7, 21, 8, 52, 0).toISOString() },
