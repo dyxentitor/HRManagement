@@ -1,200 +1,156 @@
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { MemoryRouter } from "react-router-dom"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { addDaysIso, startOfWeekIsoLocal, todayIsoLocal } from "../lib/local-date";
+import { todayIsoLocal } from "../lib/local-date"
 
 const mocks = vi.hoisted(() => ({
-	myAssignments: vi.fn(),
-	listShifts: vi.fn(),
-	listHolidays: vi.fn(),
-	today: vi.fn(),
-	clockIn: vi.fn(),
-	clockOut: vi.fn(),
-}));
+  myAssignments: vi.fn(),
+  listShifts: vi.fn(),
+  listHolidays: vi.fn(),
+  today: vi.fn(),
+  clockIn: vi.fn(),
+  clockOut: vi.fn(),
+  listMyLeave: vi.fn(),
+  listMySwaps: vi.fn(),
+  toastError: vi.fn(),
+}))
 
 vi.mock("@/modules/attendance/api", () => ({
-	ApiError: class ApiError extends Error {
-		status = 0;
-	},
-	attendanceApi: {
-		today: mocks.today,
-		clockIn: mocks.clockIn,
-		clockOut: mocks.clockOut,
-	},
-}));
+  ApiError: class ApiError extends Error {
+    status = 0
+  },
+  attendanceApi: { today: mocks.today, clockIn: mocks.clockIn, clockOut: mocks.clockOut },
+}))
 vi.mock("../api", () => ({
-	scheduleApi: {
-		myAssignments: mocks.myAssignments,
-		listShifts: mocks.listShifts,
-		listHolidays: mocks.listHolidays,
-	},
-}));
-vi.mock("@/lib/auth", () => ({
-	useAuth: () => ({ perms: new Set(["attendance:clock:self"]) }),
-}));
+  scheduleApi: {
+    myAssignments: mocks.myAssignments,
+    listShifts: mocks.listShifts,
+    listHolidays: mocks.listHolidays,
+  },
+}))
+vi.mock("@/modules/leave/api", () => ({
+  leaveApi: { listMyRequests: mocks.listMyLeave },
+}))
 vi.mock("../swap-api", () => ({
-	listSwapCandidates: vi.fn().mockResolvedValue([]),
-	createSwapRequest: vi.fn(),
-	listMySwapRequests: vi.fn().mockResolvedValue([]),
-	cancelSwapRequest: vi.fn(),
-}));
+  listMySwapRequests: mocks.listMySwaps,
+  listSwapCandidates: vi.fn().mockResolvedValue([]),
+  createSwapRequest: vi.fn(),
+  cancelSwapRequest: vi.fn(),
+}))
+vi.mock("@/lib/auth", () => ({
+  useAuth: () => ({
+    perms: new Set([
+      "attendance:clock:self",
+      "schedule:swap:request:self",
+      "leave:request:create:self",
+    ]),
+  }),
+}))
+vi.mock("sonner", () => ({ toast: { error: mocks.toastError, success: vi.fn() } }))
 
-import MySchedulePage from "./MySchedulePage";
+import MySchedulePage from "./MySchedulePage"
 
-// Place the holiday inside the week the page will actually render — but NOT on
-// today: today's card renders as the hero (no title= attr), so a holiday landing
-// on the current day made this test fail every Wednesday (weekStart+2 == today).
-const weekStart = startOfWeekIsoLocal(new Date());
-const holidayDate =
-	addDaysIso(weekStart, 2) === todayIsoLocal()
-		? addDaysIso(weekStart, 3)
-		: addDaysIso(weekStart, 2);
-// ~2 months out — guaranteed a different calendar month than the viewed week.
-const outOfMonthDate = addDaysIso(weekStart, 60);
-
-beforeEach(() => {
-	mocks.myAssignments.mockReset();
-	mocks.listShifts.mockReset();
-	mocks.listHolidays.mockReset();
-	mocks.today.mockReset();
-	mocks.myAssignments.mockResolvedValue([]);
-	mocks.listShifts.mockResolvedValue([
-		{
-			id: "sh1",
-			code: "M",
-			name: "Morning",
-			start_time: "09:00:00",
-			end_time: "17:00:00",
-			crosses_midnight: false,
-			color: "#7c5cff",
-		},
-	]);
-	mocks.today.mockResolvedValue(null);
-	mocks.listHolidays.mockResolvedValue([
-		{ id: "h1", date: holidayDate, name: "Test Holiday", type: "company" },
-	]);
-});
+const today = todayIsoLocal()
 
 function renderPage() {
-	return render(
-		<MemoryRouter>
-			<MySchedulePage />
-		</MemoryRouter>,
-	);
+  render(
+    <MemoryRouter>
+      <MySchedulePage />
+    </MemoryRouter>,
+  )
 }
 
-describe("MySchedulePage holidays", () => {
-	it("shows this-month holidays as cards and marks the day", async () => {
-		renderPage();
-		expect(await screen.findByTitle("Test Holiday")).toBeInTheDocument(); // day-card dot
-		expect(screen.getByText(/Test Holiday/)).toBeInTheDocument(); // month card
-		expect(screen.getByText(/Holidays in/)).toBeInTheDocument(); // heading
-	});
+beforeEach(() => {
+  for (const m of Object.values(mocks)) m.mockReset?.()
+  mocks.myAssignments.mockResolvedValue([])
+  mocks.listShifts.mockResolvedValue([])
+  mocks.listHolidays.mockResolvedValue([])
+  mocks.listMyLeave.mockResolvedValue([])
+  mocks.listMySwaps.mockResolvedValue([])
+  mocks.today.mockResolvedValue(null)
+})
 
-	it("excludes holidays from other months", async () => {
-		mocks.listHolidays.mockResolvedValue([
-			{ id: "in", date: holidayDate, name: "In Month", type: "federal" },
-			{ id: "out", date: outOfMonthDate, name: "Other Month", type: "federal" },
-		]);
-		renderPage();
-		expect(await screen.findByText("In Month")).toBeInTheDocument();
-		expect(screen.queryByText("Other Month")).not.toBeInTheDocument();
-	});
+describe("MySchedulePage", () => {
+  it("defaults to the month view and shows the hero", async () => {
+    renderPage()
+    expect(await screen.findByRole("tab", { name: /month/i })).toHaveAttribute(
+      "data-state",
+      "active",
+    )
+    expect(screen.getByTestId("hero-clock")).toBeInTheDocument()
+  })
 
-	it("shows an empty state when the visible month has no holidays", async () => {
-		mocks.listHolidays.mockResolvedValue([
-			{ id: "out", date: outOfMonthDate, name: "Other Month", type: "federal" },
-		]);
-		renderPage();
-		expect(
-			await screen.findByText(/No public holidays in/),
-		).toBeInTheDocument();
-	});
-});
+  it("fetches assignments for the visible range", async () => {
+    renderPage()
+    await waitFor(() => expect(mocks.myAssignments).toHaveBeenCalled())
+    const [from, to] = mocks.myAssignments.mock.calls[0]
+    expect(from <= today).toBe(true)
+    expect(to >= today).toBe(true)
+  })
 
-describe("MySchedulePage week summary", () => {
-	it("renders the KPI strip and a shift card with its time range", async () => {
-		mocks.myAssignments.mockResolvedValue([
-			{
-				id: "a1",
-				employee: "self",
-				employee_code: "",
-				shift: "sh1",
-				shift_name: "Morning",
-				shift_code: "M",
-				covering_for: null,
-				covering_for_name: null,
-				work_date: addDaysIso(weekStart, 0),
-				status: "scheduled",
-				published_at: null,
-				is_published: true,
-				notes: "",
-			},
-		]);
-		renderPage();
-		expect(await screen.findByText("Shifts")).toBeInTheDocument();
-		expect(screen.getByText("Hours")).toBeInTheDocument();
-		expect(screen.getByText("Days off")).toBeInTheDocument();
-		expect(await screen.findByText("09:00–17:00")).toBeInTheDocument();
-	});
-});
+  it("refetches when the view changes to week", async () => {
+    // Fake timers with shouldAdvanceTime scoped to this test only — plain real
+    // timers make userEvent clicks hang under this repo's happy-dom + vitest
+    // combination, and leaving a lingering real timer behind bleeds into later
+    // tests' microtask timing. Reset back to real timers before returning.
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+    await waitFor(() => expect(mocks.myAssignments).toHaveBeenCalled())
+    mocks.myAssignments.mockClear()
+    await user.click(screen.getByRole("tab", { name: /week/i }))
+    await waitFor(() => expect(mocks.myAssignments).toHaveBeenCalled())
+    vi.useRealTimers()
+  })
 
-describe("MySchedulePage swap action", () => {
-	it("shows Request swap button for a future published scheduled assignment", async () => {
-		// A future date strictly after today.
-		const futureDate = addDaysIso(todayIsoLocal(), 2);
-		mocks.myAssignments.mockResolvedValue([
-			{
-				id: "a-future",
-				employee: "self",
-				employee_code: "",
-				shift: "sh1",
-				shift_name: "Morning",
-				shift_code: "M",
-				covering_for: null,
-				covering_for_name: null,
-				work_date: futureDate,
-				status: "scheduled",
-				published_at: "2026-08-01T00:00:00Z",
-				is_published: true,
-				notes: "",
-			},
-		]);
-		renderPage();
-		// The button must appear on the future card.
-		expect(
-			await screen.findByRole("button", { name: /request swap/i }),
-		).toBeInTheDocument();
-	});
+  it("renders the calendar when holidays fail (decoupled fetch)", async () => {
+    mocks.listHolidays.mockRejectedValue(new Error("boom"))
+    renderPage()
+    expect(await screen.findByRole("tab", { name: /month/i })).toBeInTheDocument()
+    // findAllByTestId (not a synchronous getAllByTestId right after an unrelated
+    // findByRole) — the calendar body only swaps out of its loading skeleton once
+    // React commits the post-fetch state, which is not guaranteed to land within
+    // the same microtask tick as the tab query above resolving.
+    expect((await screen.findAllByTestId("month-cell")).length).toBeGreaterThan(0)
+  })
 
-	it("does NOT show Request swap for today's assignment (not strictly future)", async () => {
-		// Today is not strictly in the future (iso > todayIso is false for today).
-		const todayDate = todayIsoLocal();
-		mocks.myAssignments.mockResolvedValue([
-			{
-				id: "a-today",
-				employee: "self",
-				employee_code: "",
-				shift: "sh1",
-				shift_name: "Morning",
-				shift_code: "M",
-				covering_for: null,
-				covering_for_name: null,
-				work_date: todayDate,
-				status: "scheduled",
-				published_at: "2026-08-01T00:00:00Z",
-				is_published: true,
-				notes: "",
-			},
-		]);
-		renderPage();
-		// Wait for the page to render the shift name in the week grid.
-		// (Today's shift also shows in the hero, so "Morning" will appear.)
-		expect(await screen.findByText("Shifts")).toBeInTheDocument();
-		// No swap button — today is not strictly future.
-		expect(
-			screen.queryByRole("button", { name: /request swap/i }),
-		).not.toBeInTheDocument();
-	});
-});
+  it("renders the calendar when own leave fails (decoupled fetch)", async () => {
+    mocks.listMyLeave.mockRejectedValue(new Error("403"))
+    renderPage()
+    expect(await screen.findByRole("tab", { name: /month/i })).toBeInTheDocument()
+    expect((await screen.findAllByTestId("month-cell")).length).toBeGreaterThan(0)
+  })
+
+  it("renders the calendar when swap requests fail (decoupled fetch)", async () => {
+    mocks.listMySwaps.mockRejectedValue(new Error("boom"))
+    renderPage()
+    expect(await screen.findByRole("tab", { name: /month/i })).toBeInTheDocument()
+  })
+
+  it("toasts when the required assignments fetch fails", async () => {
+    mocks.myAssignments.mockRejectedValue(new Error("Server exploded"))
+    renderPage()
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalled())
+  })
+
+  it("shows the not-linked empty state on a 404", async () => {
+    const { ApiError } = await import("@/modules/attendance/api")
+    const err = new ApiError("nope", 404)
+    // The mocked ApiError above only declares `status = 0` as a field
+    // initializer (no custom constructor), so the constructor arg above is
+    // for TS's benefit only — set it explicitly for the mock to carry 404.
+    err.status = 404
+    mocks.myAssignments.mockRejectedValue(err)
+    renderPage()
+    expect(await screen.findByText(/isn't linked to an employee record/i)).toBeInTheDocument()
+  })
+
+  it("renders the rail cards", async () => {
+    renderPage()
+    expect(await screen.findByText("Upcoming holidays")).toBeInTheDocument()
+    expect(screen.getByText("Quick actions")).toBeInTheDocument()
+    expect(screen.getByText("Next 5 shifts")).toBeInTheDocument()
+  })
+})
