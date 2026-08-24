@@ -87,3 +87,35 @@ def test_run_connection_test_records_failure():
     cfg = EmailConfiguration.objects.get(org_id=org_id)
     assert cfg.last_failure_at is not None
     assert "connection refused" in cfg.last_failure_message
+
+
+@pytest.mark.django_db
+def test_send_attaches_cc_recipients():
+    org_id = uuid.uuid4()
+    EmailConfiguration.objects.create(org_id=org_id, smtp_host="", enabled=True)
+    service.send(
+        org_id=org_id,
+        subject="Subject",
+        body="Body",
+        to=["emp@provintell.com"],
+        cc=["hr@provintell.com", "boss@provintell.com"],
+    )
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["emp@provintell.com"]
+    assert mail.outbox[0].cc == ["hr@provintell.com", "boss@provintell.com"]
+
+
+@pytest.mark.django_db
+def test_send_without_cc_leaves_cc_empty():
+    org_id = uuid.uuid4()
+    EmailConfiguration.objects.create(org_id=org_id, smtp_host="", enabled=True)
+    service.send(org_id=org_id, subject="Subject", body="Body", to=["emp@provintell.com"])
+    assert mail.outbox[0].cc == []
+
+
+@pytest.mark.django_db
+def test_send_with_empty_cc_list_leaves_cc_empty():
+    org_id = uuid.uuid4()
+    EmailConfiguration.objects.create(org_id=org_id, smtp_host="", enabled=True)
+    service.send(org_id=org_id, subject="Subject", body="Body", to=["emp@provintell.com"], cc=[])
+    assert mail.outbox[0].cc == []

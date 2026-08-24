@@ -74,6 +74,7 @@ def send(
     subject,
     body,
     to,
+    cc=None,
     html_body=None,
     from_email=None,
     reply_to=None,
@@ -95,6 +96,7 @@ def send(
         body=text,
         from_email=_from_email(config, from_email),
         to=list(to),
+        cc=list(cc) if cc else None,
         reply_to=[reply] if reply else None,
         connection=build_connection(config),
     )
