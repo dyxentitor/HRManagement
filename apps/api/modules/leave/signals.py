@@ -21,7 +21,11 @@ _log = logging.getLogger(__name__)
 
 
 def _notify_for_leave(
-    user, notif_type: str, subject: LeaveRequest, priority: str = "normal"
+    user,
+    notif_type: str,
+    subject: LeaveRequest,
+    priority: str = "normal",
+    cc_context: dict | None = None,
 ) -> None:
     """Best-effort notify() call -- errors must not break the workflow."""
     try:
@@ -33,9 +37,23 @@ def _notify_for_leave(
             payload={"leave_request_id": str(subject.id)},
             deep_link="/leave/me",
             priority=priority,
+            cc_context=cc_context or {},
         )
     except Exception:
         _log.exception("Failed to send %s notification for leave %s", notif_type, subject.id)
+
+
+def _final_approver_id(subject: LeaveRequest):
+    """The approver who granted terminal approval, as a string, or None.
+
+    workflow_approved carries no actor, so recover it from the approval trail.
+    """
+    appr = (
+        LeaveApproval.objects.filter(leave_request=subject, status="approved")
+        .order_by("-acted_at")
+        .first()
+    )
+    return str(appr.approver_id) if appr and appr.approver_id else None
 
 
 @receiver(workflow_submitted)
@@ -54,7 +72,9 @@ def _on_submitted(sender, subject, chain, **kwargs):
         leave_request=subject, level=1, approver_id=approver.id, status="pending"
     )
     # Notify the approver about the new submission (action required)
-    _notify_for_leave(approver, "leave.submitted", subject, priority="high")
+    requester = getattr(subject.employee, "user", None)
+    cc_context = {"requester": str(requester.id)} if requester is not None else {}
+    _notify_for_leave(approver, "leave.submitted", subject, priority="high", cc_context=cc_context)
 
 
 @receiver(workflow_step_approved)
@@ -79,7 +99,9 @@ def _on_approved(sender, subject, chain, **kwargs):
     except Exception:
         emp_user = None
     if emp_user is not None:
-        _notify_for_leave(emp_user, "leave.approved", subject)
+        approver_id = _final_approver_id(subject)
+        cc_context = {"approver": approver_id} if approver_id else {}
+        _notify_for_leave(emp_user, "leave.approved", subject, cc_context=cc_context)
 
 
 @receiver(workflow_step_rejected)
@@ -104,4 +126,5 @@ def _on_rejected(sender, subject, chain, actor, comment, **kwargs):
     except Exception:
         emp_user = None
     if emp_user is not None:
-        _notify_for_leave(emp_user, "leave.rejected", subject)
+        cc_context = {"approver": str(actor.id)} if actor is not None else {}
+        _notify_for_leave(emp_user, "leave.rejected", subject, cc_context=cc_context)
