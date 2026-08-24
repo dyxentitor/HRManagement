@@ -82,3 +82,23 @@ def test_non_empty_cc_forces_immediate_under_auto():
         org_id=ORG, type="leave.approved", delivery="auto", cc_entries=["hr@provintell.com"]
     )
     assert routing_for(ORG, "leave.approved").is_immediate("normal") is True
+
+
+def test_security_type_email_stays_enabled_against_a_persisted_off_row():
+    """The override must beat a stored value, not just the field default."""
+    from modules.notification.models import NotificationRouting
+
+    NotificationRouting.objects.create(
+        org_id=ORG, type="auth.password_changed", email_enabled=False
+    )
+    routing = routing_for(ORG, "auth.password_changed")
+    assert routing.email_enabled is False  # the stored value is untouched
+    assert routing.channel_enabled("email") is True  # ...and the override wins
+
+
+def test_non_security_type_honours_a_persisted_off_row():
+    """Contrast case: without the security override, the stored value governs."""
+    from modules.notification.models import NotificationRouting
+
+    NotificationRouting.objects.create(org_id=ORG, type="leave.approved", email_enabled=False)
+    assert routing_for(ORG, "leave.approved").channel_enabled("email") is False
