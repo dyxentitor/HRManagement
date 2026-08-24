@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -15,11 +16,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
+from common.audit.service import append as audit_append
 from common.feature_flags.decorators import requires_feature
+from modules.identity.permissions import HRMSPermission
 
-from .models import Notification, NotificationPreference
+from .models import Notification, NotificationPreference, NotificationRouting
 from .serializers import (
     NotificationPreferenceSerializer,
+    NotificationRoutingRowSerializer,
+    NotificationRoutingWriteSerializer,
     NotificationSerializer,
     PreferenceBulkUpdateItemSerializer,
 )
@@ -135,3 +140,77 @@ class NotificationPreferencesView(APIView):
             NotificationPreferenceSerializer(updated, many=True).data,
             status=status.HTTP_200_OK,
         )
+
+
+class NotificationRoutingView(APIView):
+    """Org-level notification routing — enablement, delivery lane, CC recipients."""
+
+    permission_classes: ClassVar[list] = [HRMSPermission]
+
+    @property
+    def required_perms(self):
+        if self.request.method == "GET":
+            return ["org:email_config:read"]
+        return ["org:email_config:write"]
+
+    def _rows(self, org_id):
+        from .registry import REGISTRY, domain_label, domain_of
+        from .services.routing import available_tokens, routing_for
+
+        out = []
+        for n in REGISTRY:
+            r = routing_for(org_id, n.type)
+            out.append(
+                {
+                    "type": n.type,
+                    "label": n.label,
+                    "domain": domain_of(n.type),
+                    "domain_label": domain_label(n.type),
+                    "security": n.security,
+                    "sensitive_content": n.sensitive_content,
+                    "in_app_enabled": r.in_app_enabled,
+                    "email_enabled": r.email_enabled,
+                    "delivery": r.delivery,
+                    "cc_entries": list(r.cc_entries or []),
+                    "available_tokens": available_tokens(n.type),
+                }
+            )
+        return out
+
+    @extend_schema(responses=NotificationRoutingRowSerializer(many=True))
+    def get(self, request: Request) -> Response:
+        return Response(
+            NotificationRoutingRowSerializer(self._rows(request.user.org_id), many=True).data
+        )
+
+    @extend_schema(
+        request=NotificationRoutingWriteSerializer(many=True),
+        responses=NotificationRoutingRowSerializer(many=True),
+    )
+    def put(self, request: Request) -> Response:
+        ser = NotificationRoutingWriteSerializer(data=request.data, many=True)
+        ser.is_valid(raise_exception=True)
+        org_id = request.user.org_id
+
+        with transaction.atomic():
+            for item in ser.validated_data:
+                NotificationRouting.objects.update_or_create(
+                    org_id=org_id,
+                    type=item["type"],
+                    defaults={
+                        "in_app_enabled": item["in_app_enabled"],
+                        "email_enabled": item["email_enabled"],
+                        "delivery": item["delivery"],
+                        "cc_entries": item["cc_entries"],
+                        "updated_by": request.user,
+                    },
+                )
+
+        audit_append(
+            org_id=org_id,
+            action="notification_routing.updated",
+            entity="notification_routing",
+            entity_id=org_id,
+            after={"types": [i["type"] for i in ser.validated_data]},
+        )
+        return Response(NotificationRoutingRowSerializer(self._rows(org_id), many=True).data)

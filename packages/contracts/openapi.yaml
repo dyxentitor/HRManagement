@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.80.0
+  version: 1.82.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -5853,6 +5853,54 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/org/notification-routing/:
+    get:
+      operationId: org_notification_routing_list
+      description: Org-level notification routing — enablement, delivery lane, CC
+        recipients.
+      tags:
+      - org
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationRoutingRow'
+          description: ''
+    put:
+      operationId: org_notification_routing_update
+      description: Org-level notification routing — enablement, delivery lane, CC
+        recipients.
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/NotificationRoutingWriteRequest'
+          multipart/form-data:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/NotificationRoutingWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationRoutingRow'
+          description: ''
   /api/v1/org/settings:
     get:
       operationId: org_settings_retrieve
@@ -9492,6 +9540,16 @@ components:
           type: string
       required:
       - name
+    DeliveryEnum:
+      enum:
+      - auto
+      - immediate
+      - digest
+      type: string
+      description: |-
+        * `auto` - auto
+        * `immediate` - immediate
+        * `digest` - digest
     DeliveryStatusEnum:
       enum:
       - pending
@@ -11214,6 +11272,73 @@ components:
         * `normal` - Normal
         * `high` - High
         * `urgent` - Urgent
+    NotificationRoutingRow:
+      type: object
+      description: Read-only merged view of one type's routing.
+      properties:
+        type:
+          type: string
+        label:
+          type: string
+        domain:
+          type: string
+        domain_label:
+          type: string
+        security:
+          type: boolean
+        sensitive_content:
+          type: boolean
+        in_app_enabled:
+          type: boolean
+        email_enabled:
+          type: boolean
+        delivery:
+          type: string
+        cc_entries:
+          type: array
+          items:
+            type: string
+        available_tokens:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - available_tokens
+      - cc_entries
+      - delivery
+      - domain
+      - domain_label
+      - email_enabled
+      - in_app_enabled
+      - label
+      - security
+      - sensitive_content
+      - type
+    NotificationRoutingWriteRequest:
+      type: object
+      description: One row of a bulk upsert.
+      properties:
+        type:
+          type: string
+          minLength: 1
+        in_app_enabled:
+          type: boolean
+        email_enabled:
+          type: boolean
+        delivery:
+          $ref: '#/components/schemas/DeliveryEnum'
+        cc_entries:
+          type: array
+          items:
+            type: string
+            minLength: 1
+      required:
+      - cc_entries
+      - delivery
+      - email_enabled
+      - in_app_enabled
+      - type
     NullEnum:
       enum:
       - null

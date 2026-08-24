@@ -3270,6 +3270,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/org/notification-routing/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Org-level notification routing — enablement, delivery lane, CC recipients. */
+        get: operations["org_notification_routing_list"];
+        /** @description Org-level notification routing — enablement, delivery lane, CC recipients. */
+        put: operations["org_notification_routing_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/org/settings": {
         parameters: {
             query?: never;
@@ -5095,6 +5113,13 @@ export interface components {
             notes?: string;
         };
         /**
+         * @description * `auto` - auto
+         *     * `immediate` - immediate
+         *     * `digest` - digest
+         * @enum {string}
+         */
+        DeliveryEnum: "auto" | "immediate" | "digest";
+        /**
          * @description * `pending` - Pending
          *     * `sent` - Sent
          *     * `failed` - Failed
@@ -5811,6 +5836,30 @@ export interface components {
          * @enum {string}
          */
         NotificationPriorityEnum: "low" | "normal" | "high" | "urgent";
+        /** @description Read-only merged view of one type's routing. */
+        NotificationRoutingRow: {
+            type: string;
+            label: string;
+            domain: string;
+            domain_label: string;
+            security: boolean;
+            sensitive_content: boolean;
+            in_app_enabled: boolean;
+            email_enabled: boolean;
+            delivery: string;
+            cc_entries: string[];
+            available_tokens: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** @description One row of a bulk upsert. */
+        NotificationRoutingWriteRequest: {
+            type: string;
+            in_app_enabled: boolean;
+            email_enabled: boolean;
+            delivery: components["schemas"]["DeliveryEnum"];
+            cc_entries: string[];
+        };
         /** @enum {unknown} */
         NullEnum: null;
         OnboardingChecklist: {
@@ -12915,6 +12964,49 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    org_notification_routing_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationRoutingRow"][];
+                };
+            };
+        };
+    };
+    org_notification_routing_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationRoutingWriteRequest"][];
+                "multipart/form-data": components["schemas"]["NotificationRoutingWriteRequest"][];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationRoutingRow"][];
+                };
             };
         };
     };
