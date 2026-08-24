@@ -15,6 +15,7 @@ const OrganizationSettingsPage = lazy(() => import("./settings/OrganizationSetti
 const EmailConfigurationPage = lazy(() => import("./settings/email/EmailConfigurationPage"))
 const EmailServerConfigTab = lazy(() => import("./settings/email/EmailServerConfigTab"))
 const EmailTemplatesTab = lazy(() => import("./settings/email/EmailTemplatesTab"))
+const NotificationRoutingTab = lazy(() => import("./settings/email/NotificationRoutingTab"))
 const DepartmentsAdminPage = lazy(() => import("./settings/DepartmentsAdminPage"))
 const AccountsPage = lazy(() =>
   import("./people/AccountsPage").then((m) => ({
@@ -72,6 +73,7 @@ export const adminRoutes: RouteObject[] = [
           { index: true, element: <EmailTabIndexRedirect /> },
           { path: "server", element: <EmailServerConfigTab /> },
           { path: "templates", element: <EmailTemplatesTab /> },
+          { path: "routing", element: <NotificationRoutingTab /> },
         ],
       },
       {

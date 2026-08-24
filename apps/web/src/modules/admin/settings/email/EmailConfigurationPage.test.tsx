@@ -59,6 +59,10 @@ describe("EmailConfigurationPage", () => {
       "active",
     )
   })
+  it("renders the Notification Routing trigger", async () => {
+    shell("/admin/settings/email/server")
+    expect(screen.getByRole("tab", { name: /Notification Routing/i })).toBeInTheDocument()
+  })
   it("clicking Email Templates navigates and remembers the tab", async () => {
     shell("/admin/settings/email/server")
     await userEvent.click(screen.getByRole("tab", { name: /Email Templates/i }))

@@ -5,15 +5,17 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCan } from "@/lib/perm"
 
 const STORAGE_KEY = "email-settings-tab"
-type EmailTab = "server" | "templates"
+type EmailTab = "server" | "templates" | "routing"
 
 function currentTab(pathname: string): EmailTab {
-  return pathname.endsWith("/templates") ? "templates" : "server"
+  if (pathname.endsWith("/templates")) return "templates"
+  if (pathname.endsWith("/routing")) return "routing"
+  return "server"
 }
 
 export function EmailTabIndexRedirect() {
   const stored = localStorage.getItem(STORAGE_KEY)
-  const tab: EmailTab = stored === "templates" ? "templates" : "server"
+  const tab: EmailTab = stored === "templates" || stored === "routing" ? stored : "server"
   return <Navigate to={`/admin/settings/email/${tab}`} replace />
 }
 
@@ -47,6 +49,7 @@ export default function EmailConfigurationPage() {
         <TabsList>
           <TabsTrigger value="server">Email Server Configuration</TabsTrigger>
           <TabsTrigger value="templates">Email Templates</TabsTrigger>
+          <TabsTrigger value="routing">Notification Routing</TabsTrigger>
         </TabsList>
       </Tabs>
       <Outlet />
