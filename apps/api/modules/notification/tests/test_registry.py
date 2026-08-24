@@ -31,6 +31,8 @@ _EXPECTED = {
     ("kpi.review_submitted_manager", True, True, False),
     ("cert.expiring_soon", True, True, False),
     ("schedule.roster_published", True, True, False),
+    ("schedule.swap.approved", True, True, False),
+    ("schedule.swap.rejected", True, True, False),
     ("assignment.assigned", True, True, False),
     ("assignment.reminder", True, True, False),
     ("assignment.overdue", True, True, False),
