@@ -116,6 +116,18 @@ def test_context_token_pointing_at_missing_user_is_dropped(org_id):
     assert resolve_cc(n) == []
 
 
+def test_context_token_pointing_at_another_orgs_user_is_dropped(org_id):
+    """cc_context must never resolve across a tenant boundary."""
+    import uuid
+
+    other_org = uuid.uuid4()
+    emp = _user(org_id, "emp@provintell.com")
+    outsider = _user(other_org, "outsider@elsewhere.com")
+    _route(org_id, "leave.approved", ["{approver}"])
+    n = _notification(org_id, emp, cc_context={"approver": str(outsider.id)})
+    assert resolve_cc(n) == []
+
+
 def test_dedupes_against_the_to_address(org_id):
     emp = _user(org_id, "emp@provintell.com")
     _route(org_id, "leave.approved", ["emp@provintell.com", "a@provintell.com"])

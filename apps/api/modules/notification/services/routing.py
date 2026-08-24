@@ -75,7 +75,7 @@ def _resolve_entry(entry: str, n: Notification) -> list[str]:
         if not user_id:
             logger.debug("CC token %s unbound on notification %s", entry, n.id)
             return []
-        u = User.objects.filter(id=user_id).first()
+        u = User.objects.filter(id=user_id, org_id=n.org_id).first()
         if u is None or not u.email:
             logger.debug("CC token %s resolved to no address on notification %s", entry, n.id)
             return []
