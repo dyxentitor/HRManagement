@@ -11288,6 +11288,8 @@ components:
           type: boolean
         sensitive_content:
           type: boolean
+        email_default:
+          type: boolean
         in_app_enabled:
           type: boolean
         email_enabled:
@@ -11309,6 +11311,7 @@ components:
       - delivery
       - domain
       - domain_label
+      - email_default
       - email_enabled
       - in_app_enabled
       - label

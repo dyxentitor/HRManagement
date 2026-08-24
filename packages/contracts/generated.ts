@@ -5844,6 +5844,7 @@ export interface components {
             domain_label: string;
             security: boolean;
             sensitive_content: boolean;
+            email_default: boolean;
             in_app_enabled: boolean;
             email_enabled: boolean;
             delivery: string;
