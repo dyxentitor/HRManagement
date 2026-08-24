@@ -46,12 +46,21 @@ describe("notificationRoutingApi", () => {
     expect(rows[0].cc_entries).toEqual(["hr@provintell.com"])
   })
 
-  it("throws a readable error when listing fails", async () => {
+  // A 403 really does come back as a bare `detail` (see the PermissionDenied
+  // branch of common/exception_handler.py), so this shape stays.
+  it("throws a readable error when listing fails with a 403", async () => {
     mockedApi.GET.mockResolvedValueOnce({
       data: undefined,
-      error: { detail: "Permission denied" },
+      error: {
+        type: "about:blank",
+        title: "Permission denied",
+        status: 403,
+        detail: "You do not have permission to perform this action.",
+      },
     })
-    await expect(notificationRoutingApi.list()).rejects.toThrow("Permission denied")
+    await expect(notificationRoutingApi.list()).rejects.toThrow(
+      "You do not have permission to perform this action.",
+    )
   })
 
   it("saves rows and returns the merged list", async () => {
@@ -82,11 +91,59 @@ describe("notificationRoutingApi", () => {
     expect(rows[0].type).toBe("leave.approved")
   })
 
-  it("surfaces a validation message when saving fails", async () => {
+  // The 400 envelope the server actually produces: `detail` is a fixed
+  // constant, the real sentence lives in errors[0].message. Reading `detail`
+  // first would render every message this module writes as boilerplate.
+  it("prefers errors[0].message over the constant detail on a 400", async () => {
     mockedApi.PUT.mockResolvedValueOnce({
       data: undefined,
-      error: { detail: "Invalid CC entry" },
+      error: {
+        type: "about:blank",
+        title: "Validation failed",
+        status: 400,
+        detail: "One or more fields failed validation.",
+        errors: [
+          {
+            field: "delivery",
+            code: "invalid",
+            message:
+              "A digest bundles unrelated notifications, so it cannot carry a CC. " +
+              "Use Auto or Immediate, or clear the CC list.",
+          },
+        ],
+      },
     })
-    await expect(notificationRoutingApi.save([])).rejects.toThrow("Invalid CC entry")
+    await expect(notificationRoutingApi.save([])).rejects.toThrow(
+      /A digest bundles unrelated notifications/,
+    )
+  })
+
+  it("surfaces a per-entry CC validation message", async () => {
+    mockedApi.PUT.mockResolvedValueOnce({
+      data: undefined,
+      error: {
+        type: "about:blank",
+        title: "Validation failed",
+        status: 400,
+        detail: "One or more fields failed validation.",
+        errors: [
+          {
+            field: "cc_entries",
+            code: "invalid",
+            message: "not-an-email: Enter a valid email address.",
+          },
+        ],
+      },
+    })
+    await expect(notificationRoutingApi.save([])).rejects.toThrow(
+      "not-an-email: Enter a valid email address.",
+    )
+  })
+
+  it("falls back to the supplied message when the error carries neither field", async () => {
+    mockedApi.PUT.mockResolvedValueOnce({ data: undefined, error: {} })
+    await expect(notificationRoutingApi.save([])).rejects.toThrow(
+      "Failed to save notification routing",
+    )
   })
 })

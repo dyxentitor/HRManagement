@@ -106,3 +106,62 @@ describe("CcRecipientsInput", () => {
     expect(screen.getByRole("button", { name: /remove hr@provintell.com/i })).toBeDisabled()
   })
 })
+
+describe("CcRecipientsInput — blur commit", () => {
+  it("commits a typed address on blur instead of discarding it", async () => {
+    const onChange = vi.fn()
+    render(
+      <>
+        <CcRecipientsInput value={[]} tokens={TOKENS} onChange={onChange} />
+        <button type="button">Save</button>
+      </>,
+    )
+    await userEvent.type(screen.getByRole("textbox"), "hr@provintell.com")
+    // Clicking Save without pressing Enter first is the exact path that used
+    // to lose the entry.
+    await userEvent.click(screen.getByRole("button", { name: "Save" }))
+    expect(onChange).toHaveBeenCalledWith(["hr@provintell.com"])
+  })
+
+  it("still reports a malformed address on blur", async () => {
+    const onChange = vi.fn()
+    render(
+      <>
+        <CcRecipientsInput value={[]} tokens={TOKENS} onChange={onChange} />
+        <button type="button">Save</button>
+      </>,
+    )
+    await userEvent.type(screen.getByRole("textbox"), "not-an-email")
+    await userEvent.click(screen.getByRole("button", { name: "Save" }))
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByText(/valid email address/i)).toBeInTheDocument()
+  })
+
+  it("is a no-op when blurring an empty draft", async () => {
+    const onChange = vi.fn()
+    render(
+      <>
+        <CcRecipientsInput value={[]} tokens={TOKENS} onChange={onChange} />
+        <button type="button">Save</button>
+      </>,
+    )
+    await userEvent.click(screen.getByRole("textbox"))
+    await userEvent.click(screen.getByRole("button", { name: "Save" }))
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.queryByText(/valid email address/i)).not.toBeInTheDocument()
+  })
+
+  it("is a no-op when blurring a whitespace-only draft", async () => {
+    const onChange = vi.fn()
+    render(
+      <>
+        <CcRecipientsInput value={[]} tokens={TOKENS} onChange={onChange} />
+        <button type="button">Save</button>
+      </>,
+    )
+    await userEvent.type(screen.getByRole("textbox"), "   ")
+    await userEvent.click(screen.getByRole("button", { name: "Save" }))
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.queryByText(/valid email address/i)).not.toBeInTheDocument()
+  })
+})

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useCan } from "@/lib/perm"
 
 import {
   type DeliveryMode,
@@ -22,10 +23,14 @@ import {
 import { CcRecipientsInput } from "./CcRecipientsInput"
 import { Section } from "./Section"
 
-// A row carries one transient, UI-only field beyond the server contract:
-// whether the digest guard (below) just overrode its delivery. It is never
+// A row carries two transient, UI-only fields beyond the server contract:
+// whether the digest guard (below) just overrode its delivery, and the
+// delivery it held before that override so it can be restored. Neither is
 // sent to the backend — toWriteRow() only ever reads the five write fields.
-type WorkingRow = RoutingRow & { deliveryFlipped?: boolean }
+type WorkingRow = RoutingRow & {
+  deliveryFlipped?: boolean
+  deliveryBeforeFlip?: DeliveryMode
+}
 
 // ---------------------------------------------------------------------------
 // Grouping + diffing helpers
@@ -62,15 +67,34 @@ function rowChanged(row: RoutingRow, original: RoutingRow | undefined): boolean 
 }
 
 // Digest delivery is incompatible with a non-empty CC list (the backend
-// rejects the combination outright). Whenever a patch would leave a row in
+// rejects the combination outright). Whenever a CC edit would leave a row in
 // that state, fall back to "auto" rather than let a guaranteed-400 combo
 // sit in state waiting for Save. `deliveryFlipped` records that this guard
-// — not the user — made the change, so the row can surface it inline.
-function withDigestGuard(row: WorkingRow): WorkingRow {
-  if (row.delivery === "digest" && row.cc_entries.length > 0) {
-    return { ...row, delivery: "auto", deliveryFlipped: true }
+// — not the user — made the change, so the row can surface it inline, and
+// `deliveryBeforeFlip` remembers what to put back.
+function applyCcWithDigestGuard(row: WorkingRow, next: string[]): WorkingRow {
+  if (row.delivery === "digest" && next.length > 0) {
+    return {
+      ...row,
+      cc_entries: next,
+      delivery: "auto",
+      deliveryFlipped: true,
+      deliveryBeforeFlip: "digest",
+    }
   }
-  return row
+  // Emptying the CC list removes the reason for the flip, so restore the lane
+  // the row actually had. Leaving it on "auto" would make the row a genuine
+  // diff and Save would persist a delivery change nobody asked for.
+  if (next.length === 0 && row.deliveryBeforeFlip) {
+    return {
+      ...row,
+      cc_entries: next,
+      delivery: row.deliveryBeforeFlip,
+      deliveryFlipped: false,
+      deliveryBeforeFlip: undefined,
+    }
+  }
+  return { ...row, cc_entries: next }
 }
 
 function toWriteRow(row: RoutingRow): RoutingWriteRow {
@@ -88,6 +112,9 @@ function toWriteRow(row: RoutingRow): RoutingWriteRow {
 // ---------------------------------------------------------------------------
 
 export default function NotificationRoutingTab() {
+  // Matches both sibling tabs. Without it a read-only admin gets a fully
+  // editable grid and a Save that 403s.
+  const canWrite = useCan("org:email_config:write")
   const [rows, setRows] = useState<WorkingRow[] | null>(null)
   const [snapshot, setSnapshot] = useState<RoutingRow[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -135,23 +162,20 @@ export default function NotificationRoutingTab() {
   }
 
   // Manual delivery choice is an explicit user decision — it always wins,
-  // and clears any earlier auto-flip note (the row is no longer in that
-  // state; the user picked this delivery on purpose).
+  // clears any earlier auto-flip note, and forfeits the restore (the user
+  // picked this lane on purpose, so emptying the CC later must not undo it).
   function changeDelivery(type: string, delivery: DeliveryMode) {
-    updateRow(type, (r) => ({ ...r, delivery, deliveryFlipped: false }))
+    updateRow(type, (r) => ({
+      ...r,
+      delivery,
+      deliveryFlipped: false,
+      deliveryBeforeFlip: undefined,
+    }))
   }
 
-  // CC edits are the one path that can trigger the digest guard. Clearing
-  // the CC list back to empty also clears the flip note — it's no longer
-  // relevant once there's nothing to conflict with Digest.
+  // CC edits are the one path that can trigger the digest guard.
   function changeCc(type: string, next: string[]) {
-    updateRow(type, (r) =>
-      withDigestGuard({
-        ...r,
-        cc_entries: next,
-        deliveryFlipped: next.length === 0 ? false : r.deliveryFlipped,
-      }),
-    )
+    updateRow(type, (r) => applyCcWithDigestGuard(r, next))
   }
 
   function toggleSelected(type: string, isSelected: boolean) {
@@ -166,15 +190,7 @@ export default function NotificationRoutingTab() {
   function applyBulk() {
     setRows((prev) =>
       prev
-        ? prev.map((r) =>
-            selected.has(r.type)
-              ? withDigestGuard({
-                  ...r,
-                  cc_entries: [...bulkCc],
-                  deliveryFlipped: bulkCc.length === 0 ? false : r.deliveryFlipped,
-                })
-              : r,
-          )
+        ? prev.map((r) => (selected.has(r.type) ? applyCcWithDigestGuard(r, [...bulkCc]) : r))
         : prev,
     )
   }
@@ -215,9 +231,15 @@ export default function NotificationRoutingTab() {
             <label htmlFor="bulk-cc" className="mb-1 block text-label uppercase text-text-tertiary">
               Bulk CC
             </label>
-            <CcRecipientsInput id="bulk-cc" value={bulkCc} tokens={[]} onChange={setBulkCc} />
+            <CcRecipientsInput
+              id="bulk-cc"
+              value={bulkCc}
+              tokens={[]}
+              onChange={setBulkCc}
+              disabled={!canWrite}
+            />
           </div>
-          <Button type="button" onClick={applyBulk} disabled={selected.size === 0}>
+          <Button type="button" onClick={applyBulk} disabled={!canWrite || selected.size === 0}>
             Apply to {selected.size} selected
           </Button>
         </div>
@@ -230,6 +252,7 @@ export default function NotificationRoutingTab() {
                 <RoutingRowView
                   key={row.type}
                   row={row}
+                  canWrite={canWrite}
                   selected={selected.has(row.type)}
                   onToggleSelected={(isSelected) => toggleSelected(row.type, isSelected)}
                   onChange={(patch) => patchRow(row.type, patch)}
@@ -244,7 +267,11 @@ export default function NotificationRoutingTab() {
         {saveError && <p className="text-coral text-small">{saveError}</p>}
 
         <div className="flex justify-end border-t border-border-subtle pt-3">
-          <Button type="button" onClick={onSave} disabled={saving || changed.length === 0}>
+          <Button
+            type="button"
+            onClick={onSave}
+            disabled={!canWrite || saving || changed.length === 0}
+          >
             {saving ? "Saving…" : "Save"}
           </Button>
         </div>
@@ -259,6 +286,7 @@ export default function NotificationRoutingTab() {
 
 function RoutingRowView({
   row,
+  canWrite,
   selected,
   onToggleSelected,
   onChange,
@@ -266,13 +294,20 @@ function RoutingRowView({
   onCcChange,
 }: {
   row: WorkingRow
+  canWrite: boolean
   selected: boolean
   onToggleSelected: (isSelected: boolean) => void
   onChange: (patch: Partial<RoutingRow>) => void
   onDeliveryChange: (value: DeliveryMode) => void
   onCcChange: (next: string[]) => void
 }) {
-  const showCaution = row.sensitive_content && row.cc_entries.length > 0
+  const hasCc = row.cc_entries.length > 0
+  const showCaution = row.sensitive_content && hasCc
+  // A CC only sends when the To-recipient's own email row exists, and for a
+  // default-off type every user is seeded with an explicit opt-out. Configuring
+  // a CC here therefore usually produces silence, which the grid would
+  // otherwise present as a working setting.
+  const showDefaultOffCaution = !row.email_default && hasCc
 
   return (
     <div
@@ -283,6 +318,7 @@ function RoutingRowView({
         <Checkbox
           aria-label={`Select ${row.label}`}
           checked={selected}
+          disabled={!canWrite}
           onCheckedChange={(checked) => onToggleSelected(checked === true)}
         />
         <span className="flex-1 text-body text-text-primary">{row.label}</span>
@@ -291,11 +327,26 @@ function RoutingRowView({
           <span aria-hidden className="text-small text-text-tertiary">
             In-app
           </span>
-          <Switch
-            aria-label="In-app"
-            checked={row.in_app_enabled}
-            onCheckedChange={(checked) => onChange({ in_app_enabled: checked })}
-          />
+          {/* Security types are force-enabled on BOTH channels at send time
+              and rejected by the serializer if disabled, so the in-app switch
+              locks exactly as the email one does. */}
+          {row.security ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Switch aria-label="In-app" checked={row.in_app_enabled} disabled />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Security notifications can&apos;t be turned off.</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Switch
+              aria-label="In-app"
+              checked={row.in_app_enabled}
+              disabled={!canWrite}
+              onCheckedChange={(checked) => onChange({ in_app_enabled: checked })}
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -315,6 +366,7 @@ function RoutingRowView({
             <Switch
               aria-label="Email"
               checked={row.email_enabled}
+              disabled={!canWrite}
               onCheckedChange={(checked) => onChange({ email_enabled: checked })}
             />
           )}
@@ -322,6 +374,7 @@ function RoutingRowView({
 
         <Select
           value={row.delivery}
+          disabled={!canWrite}
           onValueChange={(value) => onDeliveryChange(value as DeliveryMode)}
         >
           <SelectTrigger aria-label={`Delivery for ${row.label}`} className="w-[140px]">
@@ -348,8 +401,19 @@ function RoutingRowView({
         id={`cc-${row.type}`}
         value={row.cc_entries}
         tokens={row.available_tokens}
+        disabled={!canWrite}
         onChange={onCcChange}
       />
+
+      {showDefaultOffCaution && (
+        <p className="flex items-start gap-1 text-small text-yellow">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          <span>
+            Most users have email off for this notification by default, so this CC may not send. Ask
+            them to enable it in their notification preferences.
+          </span>
+        </p>
+      )}
 
       {showCaution && (
         <p className="flex items-start gap-1 text-small text-yellow">

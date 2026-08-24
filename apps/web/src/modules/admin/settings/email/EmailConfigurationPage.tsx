@@ -43,7 +43,7 @@ export default function EmailConfigurationPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Email Configuration"
-        subtitle="SMTP server and email templates for your organization."
+        subtitle="SMTP server, email templates, and notification routing for your organization."
       />
       <Tabs value={tab} onValueChange={onValueChange}>
         <TabsList>

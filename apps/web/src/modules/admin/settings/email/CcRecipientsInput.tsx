@@ -101,6 +101,11 @@ export function CcRecipientsInput(props: {
               commit()
             }
           }}
+          // Committing on blur too. Without it a user types an address, clicks
+          // Save, and the draft is silently discarded. `commit()` no-ops on an
+          // empty/whitespace draft, so merely tabbing through never raises a
+          // validation error.
+          onBlur={commit}
           placeholder="Add email address"
           className="h-7 min-w-[10rem] flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
         />

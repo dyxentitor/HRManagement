@@ -22,6 +22,11 @@ vi.mock("../notification-routing-api", () => ({
   },
 }))
 
+// Same shape as EmailTemplatesTab.test.tsx, but through a mutable flag so the
+// permission-gating block below can render without :write.
+const perms = vi.hoisted(() => ({ canWrite: true }))
+vi.mock("@/lib/perm", () => ({ useCan: () => perms.canWrite }))
+
 import NotificationRoutingTab from "./NotificationRoutingTab"
 
 const LEAVE_APPROVED = {
@@ -31,6 +36,7 @@ const LEAVE_APPROVED = {
   domain_label: "Leave",
   security: false,
   sensitive_content: true,
+  email_default: true,
   in_app_enabled: true,
   email_enabled: true,
   delivery: "auto",
@@ -41,13 +47,31 @@ const LEAVE_APPROVED = {
   ],
 }
 
+// `email_default: false` — seed_for_user() writes an explicit opt-out for every
+// user on this type, so a CC configured here would usually never send.
+const LEAVE_CANCELLED = {
+  type: "leave.cancelled",
+  label: "Leave request cancelled",
+  domain: "leave",
+  domain_label: "Leave",
+  security: false,
+  sensitive_content: false,
+  email_default: false,
+  in_app_enabled: true,
+  email_enabled: true,
+  delivery: "auto",
+  cc_entries: [],
+  available_tokens: [{ token: "{hr_managers}", label: "HR managers" }],
+}
+
 const PASSWORD_CHANGED = {
   type: "auth.password_changed",
   label: "Password changed",
   domain: "auth",
   domain_label: "Account & security",
   security: true,
-  sensitive_content: false,
+  sensitive_content: true,
+  email_default: true,
   in_app_enabled: true,
   email_enabled: true,
   delivery: "auto",
@@ -58,6 +82,7 @@ const PASSWORD_CHANGED = {
 const ROWS = [LEAVE_APPROVED, PASSWORD_CHANGED]
 
 beforeEach(() => {
+  perms.canWrite = true
   mocks.list.mockReset()
   mocks.save.mockReset()
   mocks.list.mockResolvedValue(ROWS.map((r) => ({ ...r })))
@@ -214,6 +239,51 @@ describe("NotificationRoutingTab — digest/CC guard", () => {
     ])
   })
 
+  it("restores the original digest lane when the CC is removed again", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, delivery: "digest" }])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    const row = screen.getByTestId("routing-row-leave.approved")
+
+    await userEvent.type(within(row).getByRole("textbox"), "hr@provintell.com{Enter}")
+    expect(within(row).getByText(/switched to auto/i)).toBeInTheDocument()
+    expect(within(row).getByLabelText(/delivery for/i)).toHaveTextContent("Auto")
+
+    await userEvent.click(within(row).getByLabelText("Remove hr@provintell.com"))
+
+    expect(within(row).queryByText(/switched to auto/i)).not.toBeInTheDocument()
+    expect(within(row).getByLabelText(/delivery for/i)).toHaveTextContent("Digest")
+
+    // Back to the stored state, so the row is no longer a diff and Save is
+    // inert — it must not persist a lane change the user never asked for.
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled()
+    expect(mocks.save).not.toHaveBeenCalled()
+  })
+
+  it("keeps an explicit delivery choice when the CC is removed", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, delivery: "digest" }])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    const row = screen.getByTestId("routing-row-leave.approved")
+
+    await userEvent.type(within(row).getByRole("textbox"), "hr@provintell.com{Enter}")
+    expect(within(row).getByLabelText(/delivery for/i)).toHaveTextContent("Auto")
+
+    // Radix's Select trigger is pointer-driven; keyboard activation avoids the
+    // pointer-capture APIs happy-dom does not implement.
+    within(row)
+      .getByLabelText(/delivery for/i)
+      .focus()
+    await userEvent.keyboard("{Enter}")
+    await userEvent.click(await screen.findByRole("option", { name: "Immediate" }))
+    expect(within(row).getByLabelText(/delivery for/i)).toHaveTextContent("Immediate")
+
+    await userEvent.click(within(row).getByLabelText("Remove hr@provintell.com"))
+
+    // The user picked Immediate on purpose; clearing the CC must not undo it.
+    expect(within(row).getByLabelText(/delivery for/i)).toHaveTextContent("Immediate")
+  })
+
   it("flips a selected digest row via bulk-apply CC too", async () => {
     mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, delivery: "digest" }])
     mocks.save.mockResolvedValue([
@@ -239,5 +309,69 @@ describe("NotificationRoutingTab — digest/CC guard", () => {
         cc_entries: ["hr@provintell.com"],
       },
     ])
+  })
+})
+
+describe("NotificationRoutingTab — email_default caution", () => {
+  it("warns when a CC sits on a type most users have email off for", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_CANCELLED, cc_entries: ["hr@provintell.com"] }])
+    render(<NotificationRoutingTab />)
+    expect(await screen.findByText(/may not send/i)).toBeInTheDocument()
+  })
+
+  it("stays silent when that type has no CC configured", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_CANCELLED }])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request cancelled")
+    expect(screen.queryByText(/may not send/i)).not.toBeInTheDocument()
+  })
+
+  it("stays silent on an email_default: true type that has a CC", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, cc_entries: ["hr@provintell.com"] }])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    expect(screen.queryByText(/may not send/i)).not.toBeInTheDocument()
+  })
+
+  it("appears as soon as the admin adds the CC, not only on reload", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_CANCELLED }])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request cancelled")
+    const row = screen.getByTestId("routing-row-leave.cancelled")
+    await userEvent.type(within(row).getByRole("textbox"), "hr@provintell.com{Enter}")
+    expect(within(row).getByText(/may not send/i)).toBeInTheDocument()
+  })
+})
+
+describe("NotificationRoutingTab — write permission", () => {
+  it("disables every control without org:email_config:write", async () => {
+    perms.canWrite = false
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, cc_entries: ["hr@provintell.com"] }])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    const row = screen.getByTestId("routing-row-leave.approved")
+
+    expect(within(row).getByLabelText(/select Leave request approved/i)).toBeDisabled()
+    expect(within(row).getByLabelText("In-app")).toBeDisabled()
+    expect(within(row).getByLabelText("Email")).toBeDisabled()
+    expect(within(row).getByLabelText(/delivery for/i)).toBeDisabled()
+    // Both the CC text input and its chip-removal button.
+    expect(within(row).getByRole("textbox")).toBeDisabled()
+    expect(within(row).getByLabelText("Remove hr@provintell.com")).toBeDisabled()
+    expect(within(row).getByLabelText("Add recipient token")).toBeDisabled()
+
+    expect(screen.getByLabelText(/bulk cc/i)).toBeDisabled()
+    expect(screen.getByRole("button", { name: /apply to 0 selected/i })).toBeDisabled()
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeDisabled()
+  })
+
+  it("leaves the controls editable with :write", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, cc_entries: ["hr@provintell.com"] }])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    const row = screen.getByTestId("routing-row-leave.approved")
+    expect(within(row).getByLabelText("In-app")).toBeEnabled()
+    expect(within(row).getByRole("textbox")).toBeEnabled()
+    expect(screen.getByLabelText(/bulk cc/i)).toBeEnabled()
   })
 })
