@@ -69,15 +69,15 @@ describe("notificationRoutingApi", () => {
       },
     ])
     expect(mockedApi.PUT).toHaveBeenCalledWith("/api/v1/org/notification-routing/", {
-      body: expect.arrayContaining([
-        expect.objectContaining({
+      body: [
+        {
           type: "leave.approved",
           in_app_enabled: true,
           email_enabled: true,
           delivery: "auto",
           cc_entries: ["hr@provintell.com"],
-        }),
-      ]),
+        },
+      ],
     })
     expect(rows[0].type).toBe("leave.approved")
   })
