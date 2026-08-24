@@ -28,9 +28,30 @@ class NotificationType:
 
 # (type, label, in_app_default, email_default, security)
 REGISTRY: tuple[NotificationType, ...] = (
-    NotificationType("auth.password_changed", "Password changed", True, True, True),
-    NotificationType("auth.mfa_enabled", "Two-step verification enabled", True, True, True),
-    NotificationType("auth.mfa_disabled", "Two-step verification disabled", True, True, True),
+    NotificationType(
+        "auth.password_changed",
+        "Password changed",
+        True,
+        True,
+        True,
+        sensitive_content=True,
+    ),
+    NotificationType(
+        "auth.mfa_enabled",
+        "Two-step verification enabled",
+        True,
+        True,
+        True,
+        sensitive_content=True,
+    ),
+    NotificationType(
+        "auth.mfa_disabled",
+        "Two-step verification disabled",
+        True,
+        True,
+        True,
+        sensitive_content=True,
+    ),
     NotificationType(
         "employee.bank_changed_self",
         "Bank details changed",
@@ -177,7 +198,14 @@ REGISTRY: tuple[NotificationType, ...] = (
         False,
         sensitive_content=True,
     ),
-    NotificationType("user.role_changed", "Your role was updated", True, True, True),
+    NotificationType(
+        "user.role_changed",
+        "Your role was updated",
+        True,
+        True,
+        True,
+        sensitive_content=True,
+    ),
     NotificationType("onboarding.activated", "New account activated", True, False, False),
     NotificationType(
         "incentive.claim_submitted",

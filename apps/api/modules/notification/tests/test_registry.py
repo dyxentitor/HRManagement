@@ -118,10 +118,16 @@ def test_sensitive_content_flags():
         "payslip.published",
         "employee.bank_changed_self",
         "kpi.review_submitted_self",
+        # Security types whose card discloses password-change / MFA-disable
+        # timing or a role change for a named user. CC is permitted on them
+        # (spec §7.4), so the advisory caution has to follow.
+        "auth.password_changed",
+        "auth.mfa_enabled",
+        "auth.mfa_disabled",
+        "user.role_changed",
     ):
         assert BY_TYPE[type_code].sensitive_content is True
     for type_code in (
-        "auth.password_changed",
         "announcement.published",
         "schedule.roster_published",
         "kpi.cycle_opens_self_review",

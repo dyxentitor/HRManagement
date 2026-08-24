@@ -165,10 +165,16 @@ class NotificationRouting(models.Model):
         return f"Routing(org={self.org_id}, type={self.type})"
 
     def channel_enabled(self, channel: str) -> bool:
-        """Org-level gate. Security types can never be email-disabled."""
-        if channel == "email":
-            return True if _is_security(self.type) else self.email_enabled
-        return self.in_app_enabled
+        """Org-level gate. Security types can never be disabled on any channel.
+
+        Mirrors `services.preferences.is_enabled`, which refuses to let a *user*
+        opt out of a security type on either channel — the org gate must be no
+        weaker, or an admin could silence a password-change notice entirely by
+        clearing the in-app flag.
+        """
+        if _is_security(self.type):
+            return True
+        return self.email_enabled if channel == "email" else self.in_app_enabled
 
     def is_immediate(self, priority: str) -> bool:
         """True when this notification sends standalone rather than via digest."""

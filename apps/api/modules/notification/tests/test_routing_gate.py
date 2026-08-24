@@ -60,6 +60,27 @@ def test_security_type_email_cannot_be_killed_even_by_a_hostile_row(user, org_id
     assert "email" in _channels(user, "auth.password_changed")
 
 
+def test_security_type_in_app_cannot_be_killed_even_by_a_hostile_row(user, org_id):
+    # Same hostile-row shape as the email case: an admin (or a stray script)
+    # must not be able to silence a security notice on the in-app channel.
+    NotificationRouting.objects.create(
+        org_id=org_id, type="auth.password_changed", in_app_enabled=False
+    )
+    notify(user=user, type="auth.password_changed")
+    assert "in_app" in _channels(user, "auth.password_changed")
+
+
+def test_security_type_survives_both_kill_switches_off(user, org_id):
+    NotificationRouting.objects.create(
+        org_id=org_id,
+        type="auth.password_changed",
+        in_app_enabled=False,
+        email_enabled=False,
+    )
+    notify(user=user, type="auth.password_changed")
+    assert _channels(user, "auth.password_changed") == {"in_app", "email"}
+
+
 def test_cc_context_is_persisted_on_the_row(user):
     approver_id = str(uuid.uuid4())
     notify(user=user, type="leave.approved", cc_context={"approver": approver_id})

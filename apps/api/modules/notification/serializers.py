@@ -57,6 +57,11 @@ class NotificationRoutingRowSerializer(serializers.Serializer):
     domain_label = serializers.CharField()
     security = serializers.BooleanField()
     sensitive_content = serializers.BooleanField()
+    # The registry's per-user email default. Surfaced so the admin UI can warn
+    # that a CC on a default-off type will usually never send: the CC rides the
+    # To-recipient's email row, which is not created when they have that type
+    # switched off.
+    email_default = serializers.BooleanField()
     in_app_enabled = serializers.BooleanField()
     email_enabled = serializers.BooleanField()
     delivery = serializers.CharField()
@@ -108,8 +113,13 @@ class NotificationRoutingWriteSerializer(serializers.Serializer):
             )
 
         n = BY_TYPE[type_code]
-        if n.security and not attrs["email_enabled"]:
-            raise serializers.ValidationError(
-                {"email_enabled": "Security notifications cannot be disabled."}
-            )
+        if n.security:
+            # Both channels are force-enabled at send time (see
+            # NotificationRouting.channel_enabled), so refuse the write rather
+            # than store a flag that would silently have no effect.
+            for field in ("email_enabled", "in_app_enabled"):
+                if not attrs[field]:
+                    raise serializers.ValidationError(
+                        {field: ("Security notifications cannot be disabled on either channel.")}
+                    )
         return attrs

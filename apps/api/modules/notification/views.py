@@ -10,6 +10,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -32,6 +33,33 @@ from .services.preferences import SECURITY_TYPES
 
 if TYPE_CHECKING:
     from modules.identity.models import User
+
+
+def _routing_snapshot(row: NotificationRouting) -> dict:
+    """The audit-relevant stored state of one routing row."""
+    return {
+        "type": row.type,
+        "in_app_enabled": row.in_app_enabled,
+        "email_enabled": row.email_enabled,
+        "delivery": row.delivery,
+        "cc_entries": list(row.cc_entries or []),
+    }
+
+
+def _first_item_errors(errors) -> dict | list:
+    """Unwrap a `many=True` error list down to the first failing item's dict.
+
+    DRF's ListSerializer nests per-item errors one level deeper than the
+    RFC 7807 handler flattens (`common/exception_handler.py` only walks one
+    level), so re-raising the list verbatim renders the real message as a
+    Python repr inside a single `non_field` entry. Handing the handler a plain
+    field->messages dict makes it emit a usable `errors[0].message`.
+    """
+    if isinstance(errors, list):
+        for item in errors:
+            if item:
+                return item
+    return errors
 
 
 @requires_feature("notifications")
@@ -162,11 +190,14 @@ class NotificationRoutingView(APIView):
 
     def _rows(self, org_id):
         from .registry import REGISTRY, domain_label, domain_of
-        from .services.routing import available_tokens, routing_for
+        from .services.routing import available_tokens, default_routing, routing_map
 
+        # One query for the whole org, then default-fill the misses. Looping
+        # routing_for() here would issue one SELECT per registry type.
+        stored = routing_map(org_id)
         out = []
         for n in REGISTRY:
-            r = routing_for(org_id, n.type)
+            r = stored.get(n.type) or default_routing(org_id, n.type)
             out.append(
                 {
                     "type": n.type,
@@ -175,6 +206,7 @@ class NotificationRoutingView(APIView):
                     "domain_label": domain_label(n.type),
                     "security": n.security,
                     "sensitive_content": n.sensitive_content,
+                    "email_default": n.email_default,
                     "in_app_enabled": r.in_app_enabled,
                     "email_enabled": r.email_enabled,
                     "delivery": r.delivery,
@@ -198,11 +230,25 @@ class NotificationRoutingView(APIView):
     )
     def put(self, request: Request) -> Response:
         ser = NotificationRoutingWriteSerializer(data=request.data, many=True)
-        ser.is_valid(raise_exception=True)
+        if not ser.is_valid():
+            raise ValidationError(_first_item_errors(ser.errors))
         org_id = self._caller_org_id(request)
+        submitted = [dict(i) for i in ser.validated_data]
+        types = [i["type"] for i in submitted]
+
+        # Snapshot what is on disk before the upsert. This is a control over who
+        # receives leave and payslip email, so "what was the CC before?" has to
+        # be answerable from the audit row alone. Rows with no stored value yet
+        # are absent from `before` — that absence is itself the answer.
+        before_rows = [
+            _routing_snapshot(r)
+            for r in NotificationRouting.objects.filter(org_id=org_id, type__in=types).order_by(
+                "type"
+            )
+        ]
 
         with transaction.atomic():
-            for item in ser.validated_data:
+            for item in submitted:
                 NotificationRouting.objects.update_or_create(
                     org_id=org_id,
                     type=item["type"],
@@ -220,6 +266,7 @@ class NotificationRoutingView(APIView):
             action="notification_routing.updated",
             entity="notification_routing",
             entity_id=org_id,
-            after={"types": [i["type"] for i in ser.validated_data]},
+            before={"rows": before_rows},
+            after={"types": types, "rows": submitted},
         )
         return Response(NotificationRoutingRowSerializer(self._rows(org_id), many=True).data)

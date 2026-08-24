@@ -15,16 +15,33 @@ from .recipients import role_users
 logger = logging.getLogger(__name__)
 
 
+def default_routing(org_id, type_code: str) -> NotificationRouting:
+    """An unsaved instance carrying the model defaults for (org, type).
+
+    Both kill-switches default open — the registry's `*_default` flags govern
+    personal preferences, not this gate.
+    """
+    return NotificationRouting(org_id=org_id, type=type_code)
+
+
 def routing_for(org_id, type_code: str) -> NotificationRouting:
     """The stored routing row, or an unsaved instance carrying the defaults.
 
-    Never returns None and never writes. Both kill-switches default open — the
-    registry's `*_default` flags govern personal preferences, not this gate.
+    Never returns None and never writes.
     """
     row = NotificationRouting.objects.filter(org_id=org_id, type=type_code).first()
     if row is not None:
         return row
-    return NotificationRouting(org_id=org_id, type=type_code)
+    return default_routing(org_id, type_code)
+
+
+def routing_map(org_id) -> dict[str, NotificationRouting]:
+    """Every stored routing row for *org_id*, keyed by type. One query.
+
+    Callers that need all 35 registry types should pair this with
+    `default_routing()` for the misses rather than looping `routing_for()`.
+    """
+    return {r.type: r for r in NotificationRouting.objects.filter(org_id=org_id)}
 
 
 # Braced token -> (role code, display label). Available on every type.
