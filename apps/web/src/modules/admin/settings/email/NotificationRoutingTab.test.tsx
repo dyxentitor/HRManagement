@@ -153,3 +153,91 @@ describe("NotificationRoutingTab", () => {
     expect(await screen.findByText("Permission denied")).toBeInTheDocument()
   })
 })
+
+describe("NotificationRoutingTab — digest/CC guard", () => {
+  it("flips a digest row to Auto when a CC is added, and shows an inline note", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, delivery: "digest" }])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    const row = screen.getByTestId("routing-row-leave.approved")
+    expect(within(row).queryByText(/switched to auto/i)).not.toBeInTheDocument()
+
+    await userEvent.type(within(row).getByRole("textbox"), "hr@provintell.com{Enter}")
+
+    expect(within(row).getByText(/switched to auto/i)).toBeInTheDocument()
+  })
+
+  it("saves the flipped delivery value, not the original digest value", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, delivery: "digest" }])
+    mocks.save.mockResolvedValue([
+      { ...LEAVE_APPROVED, delivery: "auto", cc_entries: ["hr@provintell.com"] },
+    ])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    const row = screen.getByTestId("routing-row-leave.approved")
+    await userEvent.type(within(row).getByRole("textbox"), "hr@provintell.com{Enter}")
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }))
+    await waitFor(() => expect(mocks.save).toHaveBeenCalled())
+    expect(mocks.save).toHaveBeenCalledWith([
+      {
+        type: "leave.approved",
+        in_app_enabled: true,
+        email_enabled: true,
+        delivery: "auto",
+        cc_entries: ["hr@provintell.com"],
+      },
+    ])
+  })
+
+  it("does not flip delivery or show the note when the row is already Auto/Immediate", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, delivery: "immediate" }])
+    mocks.save.mockResolvedValue([
+      { ...LEAVE_APPROVED, delivery: "immediate", cc_entries: ["hr@provintell.com"] },
+    ])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    const row = screen.getByTestId("routing-row-leave.approved")
+    await userEvent.type(within(row).getByRole("textbox"), "hr@provintell.com{Enter}")
+
+    expect(within(row).queryByText(/switched to auto/i)).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }))
+    await waitFor(() => expect(mocks.save).toHaveBeenCalled())
+    expect(mocks.save).toHaveBeenCalledWith([
+      {
+        type: "leave.approved",
+        in_app_enabled: true,
+        email_enabled: true,
+        delivery: "immediate",
+        cc_entries: ["hr@provintell.com"],
+      },
+    ])
+  })
+
+  it("flips a selected digest row via bulk-apply CC too", async () => {
+    mocks.list.mockResolvedValue([{ ...LEAVE_APPROVED, delivery: "digest" }])
+    mocks.save.mockResolvedValue([
+      { ...LEAVE_APPROVED, delivery: "auto", cc_entries: ["hr@provintell.com"] },
+    ])
+    render(<NotificationRoutingTab />)
+    await screen.findByText("Leave request approved")
+    await userEvent.click(screen.getByLabelText(/select Leave request approved/i))
+    await userEvent.type(screen.getByLabelText(/bulk cc/i), "hr@provintell.com{Enter}")
+    await userEvent.click(screen.getByRole("button", { name: /apply to 1 selected/i }))
+
+    const row = screen.getByTestId("routing-row-leave.approved")
+    expect(within(row).getByText(/switched to auto/i)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole("button", { name: /^save$/i }))
+    await waitFor(() => expect(mocks.save).toHaveBeenCalled())
+    expect(mocks.save).toHaveBeenCalledWith([
+      {
+        type: "leave.approved",
+        in_app_enabled: true,
+        email_enabled: true,
+        delivery: "auto",
+        cc_entries: ["hr@provintell.com"],
+      },
+    ])
+  })
+})

@@ -22,16 +22,21 @@ import {
 import { CcRecipientsInput } from "./CcRecipientsInput"
 import { Section } from "./Section"
 
+// A row carries one transient, UI-only field beyond the server contract:
+// whether the digest guard (below) just overrode its delivery. It is never
+// sent to the backend — toWriteRow() only ever reads the five write fields.
+type WorkingRow = RoutingRow & { deliveryFlipped?: boolean }
+
 // ---------------------------------------------------------------------------
 // Grouping + diffing helpers
 // ---------------------------------------------------------------------------
 
 interface DomainGroup {
   domain_label: string
-  rows: RoutingRow[]
+  rows: WorkingRow[]
 }
 
-function groupByDomain(rows: RoutingRow[]): DomainGroup[] {
+function groupByDomain(rows: WorkingRow[]): DomainGroup[] {
   const groups: DomainGroup[] = []
   for (const row of rows) {
     const existing = groups.find((g) => g.domain_label === row.domain_label)
@@ -59,10 +64,11 @@ function rowChanged(row: RoutingRow, original: RoutingRow | undefined): boolean 
 // Digest delivery is incompatible with a non-empty CC list (the backend
 // rejects the combination outright). Whenever a patch would leave a row in
 // that state, fall back to "auto" rather than let a guaranteed-400 combo
-// sit in state waiting for Save.
-function withDigestGuard(row: RoutingRow): RoutingRow {
+// sit in state waiting for Save. `deliveryFlipped` records that this guard
+// — not the user — made the change, so the row can surface it inline.
+function withDigestGuard(row: WorkingRow): WorkingRow {
   if (row.delivery === "digest" && row.cc_entries.length > 0) {
-    return { ...row, delivery: "auto" }
+    return { ...row, delivery: "auto", deliveryFlipped: true }
   }
   return row
 }
@@ -82,7 +88,7 @@ function toWriteRow(row: RoutingRow): RoutingWriteRow {
 // ---------------------------------------------------------------------------
 
 export default function NotificationRoutingTab() {
-  const [rows, setRows] = useState<RoutingRow[] | null>(null)
+  const [rows, setRows] = useState<WorkingRow[] | null>(null)
   const [snapshot, setSnapshot] = useState<RoutingRow[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -120,9 +126,31 @@ export default function NotificationRoutingTab() {
     )
   }, [rows, snapshot])
 
-  function updateRow(type: string, patch: Partial<RoutingRow>) {
-    setRows((prev) =>
-      prev ? prev.map((r) => (r.type === type ? withDigestGuard({ ...r, ...patch }) : r)) : prev,
+  function updateRow(type: string, transform: (row: WorkingRow) => WorkingRow) {
+    setRows((prev) => (prev ? prev.map((r) => (r.type === type ? transform(r) : r)) : prev))
+  }
+
+  function patchRow(type: string, patch: Partial<RoutingRow>) {
+    updateRow(type, (r) => ({ ...r, ...patch }))
+  }
+
+  // Manual delivery choice is an explicit user decision — it always wins,
+  // and clears any earlier auto-flip note (the row is no longer in that
+  // state; the user picked this delivery on purpose).
+  function changeDelivery(type: string, delivery: DeliveryMode) {
+    updateRow(type, (r) => ({ ...r, delivery, deliveryFlipped: false }))
+  }
+
+  // CC edits are the one path that can trigger the digest guard. Clearing
+  // the CC list back to empty also clears the flip note — it's no longer
+  // relevant once there's nothing to conflict with Digest.
+  function changeCc(type: string, next: string[]) {
+    updateRow(type, (r) =>
+      withDigestGuard({
+        ...r,
+        cc_entries: next,
+        deliveryFlipped: next.length === 0 ? false : r.deliveryFlipped,
+      }),
     )
   }
 
@@ -139,7 +167,13 @@ export default function NotificationRoutingTab() {
     setRows((prev) =>
       prev
         ? prev.map((r) =>
-            selected.has(r.type) ? withDigestGuard({ ...r, cc_entries: [...bulkCc] }) : r,
+            selected.has(r.type)
+              ? withDigestGuard({
+                  ...r,
+                  cc_entries: [...bulkCc],
+                  deliveryFlipped: bulkCc.length === 0 ? false : r.deliveryFlipped,
+                })
+              : r,
           )
         : prev,
     )
@@ -198,7 +232,9 @@ export default function NotificationRoutingTab() {
                   row={row}
                   selected={selected.has(row.type)}
                   onToggleSelected={(isSelected) => toggleSelected(row.type, isSelected)}
-                  onChange={(patch) => updateRow(row.type, patch)}
+                  onChange={(patch) => patchRow(row.type, patch)}
+                  onDeliveryChange={(value) => changeDelivery(row.type, value)}
+                  onCcChange={(next) => changeCc(row.type, next)}
                 />
               ))}
             </div>
@@ -226,11 +262,15 @@ function RoutingRowView({
   selected,
   onToggleSelected,
   onChange,
+  onDeliveryChange,
+  onCcChange,
 }: {
-  row: RoutingRow
+  row: WorkingRow
   selected: boolean
   onToggleSelected: (isSelected: boolean) => void
   onChange: (patch: Partial<RoutingRow>) => void
+  onDeliveryChange: (value: DeliveryMode) => void
+  onCcChange: (next: string[]) => void
 }) {
   const showCaution = row.sensitive_content && row.cc_entries.length > 0
 
@@ -282,7 +322,7 @@ function RoutingRowView({
 
         <Select
           value={row.delivery}
-          onValueChange={(value) => onChange({ delivery: value as DeliveryMode })}
+          onValueChange={(value) => onDeliveryChange(value as DeliveryMode)}
         >
           <SelectTrigger aria-label={`Delivery for ${row.label}`} className="w-[140px]">
             <SelectValue />
@@ -297,11 +337,18 @@ function RoutingRowView({
         </Select>
       </div>
 
+      {row.deliveryFlipped && (
+        <p className="flex items-start gap-1 text-small text-yellow">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          <span>Digest can&apos;t carry a CC, so delivery switched to Auto.</span>
+        </p>
+      )}
+
       <CcRecipientsInput
         id={`cc-${row.type}`}
         value={row.cc_entries}
         tokens={row.available_tokens}
-        onChange={(next) => onChange({ cc_entries: next })}
+        onChange={onCcChange}
       />
 
       {showCaution && (
