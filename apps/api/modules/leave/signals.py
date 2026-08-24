@@ -47,12 +47,18 @@ def _final_approver_id(subject: LeaveRequest):
     """The approver who granted terminal approval, as a string, or None.
 
     workflow_approved carries no actor, so recover it from the approval trail.
+    Best-effort like the notify() call it feeds: a lookup failure must never
+    propagate into the workflow transaction.
     """
-    appr = (
-        LeaveApproval.objects.filter(leave_request=subject, status="approved")
-        .order_by("-acted_at")
-        .first()
-    )
+    try:
+        appr = (
+            LeaveApproval.objects.filter(leave_request=subject, status="approved")
+            .order_by("-acted_at")
+            .first()
+        )
+    except Exception:
+        _log.exception("Failed to resolve final approver for leave %s", subject.id)
+        return None
     return str(appr.approver_id) if appr and appr.approver_id else None
 
 

@@ -190,3 +190,29 @@ def test_approved_binds_the_approver(approved_claim_request, employee_user, _sta
 
 def test_rejected_binds_the_acting_approver(rejected_claim_request, approver_user, employee_user):
     assert _cc_context(employee_user, "claim.rejected") == {"approver": str(approver_user.id)}
+
+
+def test_approved_survives_a_failing_approver_lookup(monkeypatch, _stack):
+    """_final_approver_id's own approval-trail query must be best-effort: a
+    lookup failure has to degrade to an empty cc_context, not propagate out of
+    the workflow_approved receiver and into the approval transaction.
+    """
+    from modules.claims.models import ClaimApproval
+
+    original_filter = ClaimApproval.objects.filter
+
+    def _filter(*args, **kwargs):
+        if kwargs.get("status") == "approved":
+            raise RuntimeError("db exploded")
+        return original_filter(*args, **kwargs)
+
+    monkeypatch.setattr(ClaimApproval.objects, "filter", _filter)
+
+    _org, mgr_user, fin_user, employee_user, _emp_emp, _cat = _stack
+    claim = _new_claim(_stack)
+    ClaimRequestService.submit(claim, actor=employee_user)
+    # Must not raise despite the failing approval-trail lookup at either stage.
+    ClaimRequestService.act(claim, actor=mgr_user, decision=Decision.APPROVE, comment="ok")
+    ClaimRequestService.act(claim, actor=fin_user, decision=Decision.APPROVE, comment="will pay")
+
+    assert _cc_context(employee_user, "claim.approved") == {}

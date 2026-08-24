@@ -173,3 +173,28 @@ def test_approved_binds_the_approver(approved_leave_request, approver_user, empl
 
 def test_rejected_binds_the_acting_approver(rejected_leave_request, approver_user, employee_user):
     assert _cc_context(employee_user, "leave.rejected") == {"approver": str(approver_user.id)}
+
+
+def test_approved_survives_a_failing_approver_lookup(monkeypatch, _stack):
+    """_final_approver_id's own approval-trail query must be best-effort: a
+    lookup failure has to degrade to an empty cc_context, not propagate out of
+    the workflow_approved receiver and into the approval transaction.
+    """
+    from modules.leave.models import LeaveApproval
+
+    original_filter = LeaveApproval.objects.filter
+
+    def _filter(*args, **kwargs):
+        if kwargs.get("status") == "approved":
+            raise RuntimeError("db exploded")
+        return original_filter(*args, **kwargs)
+
+    monkeypatch.setattr(LeaveApproval.objects, "filter", _filter)
+
+    _org, _lt, approver_user, employee_user, _emp_emp = _stack
+    req = _new_request(_stack)
+    LeaveRequestService.submit(req, actor=employee_user)
+    # Must not raise despite the failing approval-trail lookup.
+    LeaveRequestService.act(req, actor=approver_user, decision=Decision.APPROVE, comment="ok")
+
+    assert _cc_context(employee_user, "leave.approved") == {}
