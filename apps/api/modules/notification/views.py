@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from django.db import transaction
 from django.utils import timezone
@@ -29,6 +29,9 @@ from .serializers import (
     PreferenceBulkUpdateItemSerializer,
 )
 from .services.preferences import SECURITY_TYPES
+
+if TYPE_CHECKING:
+    from modules.identity.models import User
 
 
 @requires_feature("notifications")
@@ -145,13 +148,17 @@ class NotificationPreferencesView(APIView):
 class NotificationRoutingView(APIView):
     """Org-level notification routing — enablement, delivery lane, CC recipients."""
 
-    permission_classes: ClassVar[list] = [HRMSPermission]
+    permission_classes: ClassVar = [HRMSPermission]
 
     @property
     def required_perms(self):
         if self.request.method == "GET":
             return ["org:email_config:read"]
         return ["org:email_config:write"]
+
+    def _caller_org_id(self, request: Request):
+        """The caller's org. HRMSPermission guarantees an authenticated User."""
+        return cast("User", request.user).org_id
 
     def _rows(self, org_id):
         from .registry import REGISTRY, domain_label, domain_of
@@ -180,7 +187,9 @@ class NotificationRoutingView(APIView):
     @extend_schema(responses=NotificationRoutingRowSerializer(many=True))
     def get(self, request: Request) -> Response:
         return Response(
-            NotificationRoutingRowSerializer(self._rows(request.user.org_id), many=True).data
+            NotificationRoutingRowSerializer(
+                self._rows(self._caller_org_id(request)), many=True
+            ).data
         )
 
     @extend_schema(
@@ -190,7 +199,7 @@ class NotificationRoutingView(APIView):
     def put(self, request: Request) -> Response:
         ser = NotificationRoutingWriteSerializer(data=request.data, many=True)
         ser.is_valid(raise_exception=True)
-        org_id = request.user.org_id
+        org_id = self._caller_org_id(request)
 
         with transaction.atomic():
             for item in ser.validated_data:
