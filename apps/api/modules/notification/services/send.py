@@ -7,6 +7,7 @@ from common.mail import send as mail_send
 from ..models import Notification
 from .immediate import render_notification_email
 from .preferences import SECURITY_TYPES
+from .routing import resolve_cc
 
 
 def render_and_send(n: Notification) -> str:
@@ -21,6 +22,7 @@ def render_and_send(n: Notification) -> str:
         body=text,
         html_body=html,
         to=[n.user.email],
+        cc=resolve_cc(n),
         category=category,
         append_signature=True,
         fail_silently=False,

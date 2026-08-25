@@ -191,3 +191,54 @@ def test_task_marks_failed_after_max_retries(user, monkeypatch):
     assert result == "failed"
     n.refresh_from_db()
     assert n.delivery_status == "failed"
+
+
+def test_render_and_send_attaches_resolved_cc(db, mailoutbox):
+    """A configured CC list reaches the outgoing message."""
+    import uuid
+
+    from modules.identity.models import User
+    from modules.notification.models import Notification, NotificationRouting
+    from modules.notification.services.send import render_and_send
+
+    org_id = uuid.uuid4()
+    emp = User.objects.create(org_id=org_id, email="emp@provintell.com", is_active=True)
+    NotificationRouting.objects.create(
+        org_id=org_id, type="leave.approved", cc_entries=["hr@provintell.com"]
+    )
+    n = Notification.objects.create(
+        org_id=org_id, user=emp, type="leave.approved", channel="email", payload={}
+    )
+    render_and_send(n)
+    assert mailoutbox[-1].cc == ["hr@provintell.com"]
+
+
+def test_digest_never_sets_cc(db, mailoutbox):
+    """A digest bundles unrelated items, so it must never carry a CC."""
+    import uuid
+
+    from modules.identity.models import User
+    from modules.notification.models import Notification, NotificationRouting
+    from modules.notification.services.digest import send_digests
+
+    org_id = uuid.uuid4()
+    emp = User.objects.create(org_id=org_id, email="emp@provintell.com", is_active=True)
+    # A CC list configured on a type that is nevertheless pinned to the digest
+    # lane cannot happen through the API, but prove the digest ignores it.
+    NotificationRouting.objects.create(
+        org_id=org_id,
+        type="leave.approved",
+        cc_entries=["hr@provintell.com"],
+        delivery="digest",
+    )
+    Notification.objects.create(
+        org_id=org_id,
+        user=emp,
+        type="leave.approved",
+        channel="email",
+        payload={},
+        delivery_status="pending",
+    )
+    send_digests()
+    assert mailoutbox
+    assert all(m.cc == [] for m in mailoutbox)

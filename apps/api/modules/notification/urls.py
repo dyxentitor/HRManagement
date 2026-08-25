@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from django.urls import path
 
-from .views import NotificationPreferencesView, NotificationViewSet
+from .views import NotificationPreferencesView, NotificationRoutingView, NotificationViewSet
 
 notification_list = NotificationViewSet.as_view({"get": "list"})
 notification_read = NotificationViewSet.as_view({"patch": "mark_read"})
@@ -44,5 +44,10 @@ urlpatterns = [
         "notifications/preferences",
         NotificationPreferencesView.as_view(),
         name="notification-preferences",
+    ),
+    path(
+        "org/notification-routing/",
+        NotificationRoutingView.as_view(),
+        name="notification-routing",
     ),
 ]

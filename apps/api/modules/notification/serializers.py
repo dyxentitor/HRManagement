@@ -46,3 +46,80 @@ class PreferenceBulkUpdateItemSerializer(serializers.Serializer):
     type = serializers.CharField(max_length=64)
     channel = serializers.ChoiceField(choices=["in_app", "email"])
     enabled = serializers.BooleanField()
+
+
+class NotificationRoutingRowSerializer(serializers.Serializer):
+    """Read-only merged view of one type's routing."""
+
+    type = serializers.CharField()
+    label = serializers.CharField()
+    domain = serializers.CharField()
+    domain_label = serializers.CharField()
+    security = serializers.BooleanField()
+    sensitive_content = serializers.BooleanField()
+    # The registry's per-user email default. Surfaced so the admin UI can warn
+    # that a CC on a default-off type will usually never send: the CC rides the
+    # To-recipient's email row, which is not created when they have that type
+    # switched off.
+    email_default = serializers.BooleanField()
+    in_app_enabled = serializers.BooleanField()
+    email_enabled = serializers.BooleanField()
+    delivery = serializers.CharField()
+    cc_entries = serializers.ListField(child=serializers.CharField())
+    available_tokens = serializers.ListField(child=serializers.DictField())
+
+
+class NotificationRoutingWriteSerializer(serializers.Serializer):
+    """One row of a bulk upsert."""
+
+    type = serializers.CharField()
+    in_app_enabled = serializers.BooleanField()
+    email_enabled = serializers.BooleanField()
+    delivery = serializers.ChoiceField(choices=["auto", "immediate", "digest"])
+    cc_entries = serializers.ListField(child=serializers.CharField(), allow_empty=True)
+
+    def validate_type(self, value):
+        from .registry import BY_TYPE
+
+        if value not in BY_TYPE:
+            raise serializers.ValidationError(f"Unknown notification type: {value}")
+        return value
+
+    def validate(self, attrs):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        from .registry import BY_TYPE
+        from .services.routing import validate_entry
+
+        type_code = attrs["type"]
+        entries = attrs["cc_entries"]
+
+        for entry in entries:
+            try:
+                validate_entry(type_code, entry)
+            except DjangoValidationError as exc:
+                raise serializers.ValidationError(
+                    {"cc_entries": f"{entry}: {exc.messages[0]}"}
+                ) from exc
+
+        if entries and attrs["delivery"] == "digest":
+            raise serializers.ValidationError(
+                {
+                    "delivery": (
+                        "A digest bundles unrelated notifications, so it cannot carry a "
+                        "CC. Use Auto or Immediate, or clear the CC list."
+                    )
+                }
+            )
+
+        n = BY_TYPE[type_code]
+        if n.security:
+            # Both channels are force-enabled at send time (see
+            # NotificationRouting.channel_enabled), so refuse the write rather
+            # than store a flag that would silently have no effect.
+            for field in ("email_enabled", "in_app_enabled"):
+                if not attrs[field]:
+                    raise serializers.ValidationError(
+                        {field: ("Security notifications cannot be disabled on either channel.")}
+                    )
+        return attrs

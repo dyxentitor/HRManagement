@@ -10,7 +10,7 @@ def role_users(org_id, code):
     ids = UserRole.objects.filter(role__org_id=org_id, role__code=code).values_list(
         "user_id", flat=True
     )
-    return User.objects.filter(id__in=list(ids), is_active=True)
+    return User.objects.filter(id__in=list(ids), org_id=org_id, is_active=True)
 
 
 def hr_manager_users(org_id):

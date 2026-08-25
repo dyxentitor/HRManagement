@@ -6,6 +6,7 @@ from modules.identity.models import Role, User, UserRole
 from modules.notification.services.recipients import (
     active_employee_users,
     hr_manager_users,
+    role_users,
 )
 
 
@@ -14,13 +15,17 @@ def test_hr_manager_users_scoped_to_org():
     org = uuid.uuid4()
     other = uuid.uuid4()
     hr = User.objects.create_user(
-        email="hr@x.com", password="x", org_id=org  # pragma: allowlist secret
+        email="hr@x.com",
+        password="x",
+        org_id=org,  # pragma: allowlist secret
     )
     role = Role.objects.create(org_id=org, code="hr_manager", name="HR", is_system=True)
     UserRole.objects.create(user=hr, role=role, granted_by=None)
     # a different-org hr_manager must not leak in
     hr2 = User.objects.create_user(
-        email="hr@y.com", password="x", org_id=other  # pragma: allowlist secret
+        email="hr@y.com",
+        password="x",
+        org_id=other,  # pragma: allowlist secret
     )
     role2 = Role.objects.create(org_id=other, code="hr_manager", name="HR", is_system=True)
     UserRole.objects.create(user=hr2, role=role2, granted_by=None)
@@ -29,10 +34,40 @@ def test_hr_manager_users_scoped_to_org():
 
 
 @pytest.mark.django_db
+def test_role_users_excludes_a_foreign_org_user_holding_an_in_org_role():
+    """The role is org-scoped; the User lookup must be too.
+
+    A UserRole row can point a foreign-org user at an in-org role (nothing at
+    the DB level forbids it), and role tokens resolve straight to email
+    addresses — so an unscoped User filter would leak a CC across tenants.
+    """
+    org = uuid.uuid4()
+    other = uuid.uuid4()
+    role = Role.objects.create(org_id=org, code="finance", name="Fin", is_system=True)
+    mine = User.objects.create_user(
+        email="fin@x.com",
+        password="x",
+        org_id=org,  # pragma: allowlist secret
+    )
+    intruder = User.objects.create_user(
+        email="fin@y.com",
+        password="x",
+        org_id=other,  # pragma: allowlist secret
+    )
+    UserRole.objects.create(user=mine, role=role, granted_by=None)
+    UserRole.objects.create(user=intruder, role=role, granted_by=None)
+
+    ids = set(role_users(org, "finance").values_list("id", flat=True))
+    assert ids == {mine.id}
+
+
+@pytest.mark.django_db
 def test_active_employee_users_excludes_inactive():
     org = uuid.uuid4()
     a = User.objects.create_user(
-        email="a@x.com", password="x", org_id=org  # pragma: allowlist secret
+        email="a@x.com",
+        password="x",
+        org_id=org,  # pragma: allowlist secret
     )
     b = User.objects.create_user(
         email="b@x.com",
