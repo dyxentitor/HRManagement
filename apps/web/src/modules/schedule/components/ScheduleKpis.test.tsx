@@ -31,17 +31,19 @@ const SHIFT = {
   coveringForName: null,
 }
 
+const ANCHOR = "2026-08-24"
+
 describe("ScheduleKpis", () => {
   it("counts shifts, hours and days off across the range", () => {
     render(
       <ScheduleKpis
         view="week"
+        anchor={ANCHOR}
         days={[
           day("2026-08-24", { shift: SHIFT }),
           day("2026-08-25", { shift: { ...SHIFT, hours: 8 } }),
           day("2026-08-26"),
         ]}
-        nextHoliday={null}
         pendingSwaps={0}
       />,
     )
@@ -54,8 +56,8 @@ describe("ScheduleKpis", () => {
     render(
       <ScheduleKpis
         view="week"
+        anchor={ANCHOR}
         days={[day("2026-08-26"), day("2026-08-27", { leaveTypeCode: "AL" })]}
-        nextHoliday={null}
         pendingSwaps={0}
       />,
     )
@@ -66,11 +68,11 @@ describe("ScheduleKpis", () => {
     render(
       <ScheduleKpis
         view="month"
+        anchor={ANCHOR}
         days={[
           day("2026-07-31", { inAnchorMonth: false, shift: SHIFT }),
           day("2026-08-01", { shift: SHIFT }),
         ]}
-        nextHoliday={null}
         pendingSwaps={0}
       />,
     )
@@ -79,32 +81,37 @@ describe("ScheduleKpis", () => {
 
   it("labels tiles for the active view", () => {
     const { rerender } = render(
-      <ScheduleKpis view="week" days={[]} nextHoliday={null} pendingSwaps={0} />,
+      <ScheduleKpis view="week" anchor={ANCHOR} days={[]} pendingSwaps={0} />,
     )
     expect(screen.getByText("Shifts this week")).toBeInTheDocument()
-    rerender(<ScheduleKpis view="month" days={[]} nextHoliday={null} pendingSwaps={0} />)
+    rerender(<ScheduleKpis view="month" anchor={ANCHOR} days={[]} pendingSwaps={0} />)
     expect(screen.getByText("Shifts this month")).toBeInTheDocument()
   })
 
-  it("shows the next holiday", () => {
-    render(
-      <ScheduleKpis
-        view="week"
-        days={[]}
-        nextHoliday={{ date: "2026-08-26", name: "Maulidur Rasul" }}
-        pendingSwaps={0}
-      />,
+  it("renders exactly four tiles, with no duplicate of the holidays panel", () => {
+    render(<ScheduleKpis view="month" anchor={ANCHOR} days={[]} pendingSwaps={0} />)
+
+    for (const id of ["kpi-shifts", "kpi-hours", "kpi-daysoff", "kpi-swaps"]) {
+      expect(screen.getByTestId(id)).toBeInTheDocument()
+    }
+    expect(screen.queryByTestId("kpi-holiday")).toBeNull()
+    expect(screen.queryByText(/next holiday/i)).toBeNull()
+  })
+
+  it("anchors the supporting text to the visible range, not to today", () => {
+    render(<ScheduleKpis view="month" anchor="2026-08-24" days={[]} pendingSwaps={0} />)
+    // Three range-scoped tiles share the range caption.
+    expect(screen.getAllByText("August 2026")).toHaveLength(3)
+  })
+
+  it("tells the employee when no request needs attention", () => {
+    const { rerender } = render(
+      <ScheduleKpis view="week" anchor={ANCHOR} days={[]} pendingSwaps={0} />,
     )
-    expect(screen.getByTestId("kpi-holiday")).toHaveTextContent("26 Aug")
-  })
+    expect(screen.getByTestId("kpi-swaps")).toHaveTextContent("No action required")
 
-  it("falls back to an em dash with no upcoming holiday", () => {
-    render(<ScheduleKpis view="week" days={[]} nextHoliday={null} pendingSwaps={0} />)
-    expect(screen.getByTestId("kpi-holiday")).toHaveTextContent("—")
-  })
-
-  it("shows the pending swap count", () => {
-    render(<ScheduleKpis view="week" days={[]} nextHoliday={null} pendingSwaps={3} />)
+    rerender(<ScheduleKpis view="week" anchor={ANCHOR} days={[]} pendingSwaps={3} />)
     expect(screen.getByTestId("kpi-swaps")).toHaveTextContent("3")
+    expect(screen.getByTestId("kpi-swaps")).toHaveTextContent("Awaiting a decision")
   })
 })

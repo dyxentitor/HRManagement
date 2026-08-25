@@ -56,11 +56,37 @@ describe("MonthGrid", () => {
     expect(screen.getAllByTestId("month-cell")).toHaveLength(3)
   })
 
-  it("shows the shift code and time range", () => {
+  it("spells the shift type out instead of showing a bare letter", () => {
     renderGrid([day("2026-08-03", { shift: SHIFT })])
     const cell = screen.getByTestId("month-cell")
-    expect(within(cell).getByText(/D/)).toBeInTheDocument()
+    // "DAY", not "D" — a single letter is unreadable without the legend.
+    expect(within(cell).getByText("DAY")).toBeInTheDocument()
     expect(within(cell).getByText(/09:00–18:00/)).toBeInTheDocument()
+  })
+
+  it("labels a night shift as NIGHT", () => {
+    renderGrid([day("2026-08-03", { shift: { ...SHIFT, code: "N", name: "Night Shift" } })])
+    expect(within(screen.getByTestId("month-cell")).getByText("NIGHT")).toBeInTheDocument()
+  })
+
+  it("exposes the full detail for anything the narrow cell truncates", () => {
+    renderGrid([
+      day("2026-08-03", {
+        shift: { ...SHIFT, coveringForName: "Nurul" },
+        holidayName: "Maulidur Rasul",
+      }),
+    ])
+    const detail = within(screen.getByTestId("month-cell")).getByTitle(/Day Shift/)
+    expect(detail.getAttribute("title")).toContain("09:00–18:00")
+    expect(detail.getAttribute("title")).toContain("covering Nurul")
+    expect(detail.getAttribute("title")).toContain("Maulidur Rasul")
+  })
+
+  it("defines the symbols it uses in a legend", () => {
+    renderGrid([day("2026-08-03", { shift: SHIFT })])
+    const legend = screen.getByTestId("month-legend")
+    expect(within(legend).getByText(/DAY \/ NIGHT \/ EVE/)).toBeInTheDocument()
+    expect(within(legend).getByText(/Crosses midnight/)).toBeInTheDocument()
   })
 
   it("marks an overnight shift", () => {

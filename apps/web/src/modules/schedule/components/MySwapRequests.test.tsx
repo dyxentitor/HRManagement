@@ -88,6 +88,20 @@ describe("MySwapRequests", () => {
     },
   )
 
+  it.each([
+    ["pending", "Awaiting manager approval"],
+    ["approved", "Approved"],
+    ["rejected", "Declined"],
+    ["cancelled", "Cancelled"],
+  ] as const)("shows plain-language wording for %s, not the raw code", async (status, label) => {
+    mocks.listMySwapRequests.mockResolvedValue([{ ...PENDING, status }])
+    render(<MySwapRequests refreshKey={0} onChanged={vi.fn()} />)
+
+    expect(await screen.findByText(label)).toBeInTheDocument()
+    // The raw backend code is never shown on its own.
+    expect(screen.queryByText(status)).toBeNull()
+  })
+
   it("shows a toast when cancel fails", async () => {
     mocks.cancelSwapRequest.mockRejectedValue(new Error("Only a pending swap can be cancelled."))
     render(<MySwapRequests refreshKey={0} onChanged={vi.fn()} />)

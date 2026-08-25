@@ -3,13 +3,17 @@ import { useEffect, useState } from "react"
 import { StatusPill } from "@/components/hrms"
 import type { ClockState } from "@/components/hrms/ClockInOutWidget"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 import type { DayModel } from "../lib/day-model"
 
 interface Props {
   today: DayModel | null
   clockState: ClockState
-  statusLabel: string
+  /** Attendance classification ("Present", "Late", …), or null when there is no
+   * record yet. Null renders nothing: "No record" merely restated what the
+   * clock status already says — the duplication this hero used to show. */
+  statusLabel: string | null
   canClock: boolean
   busy: boolean
   onClockIn: () => void
@@ -20,6 +24,50 @@ function fmtElapsed(sinceIso: string): string {
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(sinceIso).getTime()) / 60000))
   if (minutes < 60) return `${minutes} min`
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+}
+
+function hhmm(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+}
+
+/**
+ * The one clock status. Derived only from the clock state, so this pill and the
+ * supporting line beneath it can never say the same thing twice.
+ */
+function clockStatus(state: ClockState): { label: string; tone: "mint" | "sky" | "lavender" } {
+  if (state.status === "in") return { label: `Clocked in at ${hhmm(state.since)}`, tone: "mint" }
+  if (state.status === "out") return { label: `Clocked out at ${state.clockedOut}`, tone: "sky" }
+  return { label: "Not clocked in", tone: "lavender" }
+}
+
+/** Worked duration between two "HH:MM" stamps, wrapping past midnight. */
+function fmtWorked(from: string, to: string): string {
+  const [fh, fm] = from.split(":").map(Number)
+  const [th, tm] = to.split(":").map(Number)
+  let minutes = th * 60 + tm - (fh * 60 + fm)
+  if (minutes < 0) minutes += 24 * 60
+  if (minutes < 60) return `${minutes} min`
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+}
+
+/** Supporting line — what happens next, never a restatement of the pill. */
+function clockDetail(state: ClockState, today: DayModel | null): string {
+  if (state.status === "in") return `${fmtElapsed(state.since)} elapsed`
+  // The pill already names the clock-out time, so this adds the start and the
+  // total instead of repeating it.
+  if (state.status === "out") {
+    return `Started ${state.clockedIn} · ${fmtWorked(state.clockedIn, state.clockedOut)} worked`
+  }
+  if (today?.shift) {
+    return today.shift.timeRange
+      ? `Scheduled ${today.shift.timeRange}`
+      : `Scheduled · ${today.shift.name}`
+  }
+  return "Nothing scheduled today"
 }
 
 function headline(today: DayModel | null): string {
@@ -51,6 +99,7 @@ export function ScheduleHero({
     return () => clearInterval(t)
   }, [])
 
+  const status = clockStatus(clockState)
   const now = new Date()
   const dateLabel = now.toLocaleDateString("en-MY", {
     weekday: "long",
@@ -75,7 +124,10 @@ export function ScheduleHero({
               {headline(today)}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <StatusPill tone="sky" label={statusLabel} />
+              <StatusPill tone={status.tone} label={status.label} />
+              {/* Only when it adds something the clock status doesn't already
+               * say — see `statusLabel` on Props. */}
+              {statusLabel && <StatusPill tone="sky" label={statusLabel} />}
               {today?.holidayName && <StatusPill tone="peach" label={today.holidayName} />}
               {today?.shift && today.leaveTypeCode && (
                 <StatusPill tone="lavender" label={`On leave · ${today.leaveTypeCode}`} />
@@ -106,16 +158,14 @@ export function ScheduleHero({
           </div>
         </div>
 
-        <p className="text-small text-text-secondary mt-4">
-          {clockState.status === "in" ? (
-            <span className="text-mint">● Clocked in · {fmtElapsed(clockState.since)} elapsed</span>
-          ) : clockState.status === "out" ? (
-            <span>
-              Clocked in {clockState.clockedIn} · clocked out {clockState.clockedOut}
-            </span>
-          ) : (
-            <span>Not clocked in yet today.</span>
+        <p
+          data-testid="hero-clock-detail"
+          className={cn(
+            "text-small mt-4",
+            clockState.status === "in" ? "text-mint" : "text-text-secondary",
           )}
+        >
+          {clockDetail(clockState, today)}
         </p>
       </div>
     </section>
