@@ -2,6 +2,75 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.83.0] — 2026-08-25 — Notification routing
+
+**Notification types and recipients are no longer hardcoded.** A per-org
+admin page controls, for each of the 35 registry types, whether it is enabled
+per channel, which email lane it uses, and an unlimited CC list mixing literal
+addresses with tokens resolved at send time. Spec:
+`docs/superpowers/specs/2026-08-24-notification-routing-design.md`.
+**No new permission codes** — reuses `org:email_config:read` / `:write`.
+
+### Added
+
+- **`NotificationRouting`** (migration `notification.0004`) — one lazily-created
+  row per `(org, type)`: `in_app_enabled`, `email_enabled`, `delivery`
+  (`auto` | `immediate` | `digest`), `cc_entries`. Nothing is seeded; a missing
+  row resolves to registry defaults via `routing_for()`.
+- **CC recipients.** `common.mail.send()` gains an optional `cc`. Entries are
+  literal addresses or tokens. Role tokens (`{hr_managers}`, `{org_admins}`,
+  `{finance}`) resolve from the DB at send time; context tokens (`{approver}`,
+  `{requester}`) resolve from the new `Notification.cc_context`, populated by
+  the emitting call site so the notification module never imports Leave's or
+  Claims' approval models. Unresolvable tokens drop silently; output is deduped
+  case-insensitively against the To address.
+- **`GET`/`PUT /api/v1/org/notification-routing/`** — merged read view over all
+  35 types (self-describing: label, domain, security, `sensitive_content`,
+  `email_default`, `available_tokens`) and a bulk upsert writing one audit row
+  with full `before`/`after`.
+- **Notification Routing tab** at `/admin/settings/email/routing`, third beside
+  Email Server Configuration and Templates. Rows grouped by domain, with an
+  "Apply CC to selected" bulk action.
+- **`NotificationType.context_tokens` / `.sensitive_content`** on the registry.
+
+### Changed
+
+- **`notify()`** gains an optional trailing `cc_context` and now checks the org
+  kill-switch before the user's personal preference. Org OFF suppresses a
+  channel for everyone; org ON defers to the user — `/me/preferences` unchanged.
+- **Security types can no longer be disabled org-wide on either channel**,
+  matching the existing rule that users cannot opt out of them. CC on them is
+  permitted.
+- **Leave and claims signals** bind `{approver}` / `{requester}`. The
+  approval-trail lookup is best-effort, so it can never break an approval.
+- **`role_users()` is now org-scoped on the User lookup**, not only the role.
+
+### Fixed
+
+- Routing validation messages now reach the UI. The RFC 7807 handler puts the
+  real text in `errors[0].message` while `detail` is a constant; the client read
+  `detail`. Same class as the v1.10.1 leave-apply fix.
+
+### Notes
+
+- **Backward compatible by construction.** An org with zero routing rows behaves
+  bit-identically to 1.82.0 — both kill-switches default open, `delivery="auto"`
+  restates the previous lane rule verbatim, and an empty `cc_entries` builds the
+  same message object. Pinned by `test_routing_defaults.py` across all 35 types
+  × 4 priorities.
+- **A digest can never carry a CC** — it bundles unrelated notifications for one
+  person. Rejected at save time, and `send_digests()` has no `cc` argument.
+- **Known limitation.** A CC rides on the recipient's email notification, so if
+  that employee has the type's email off in their personal preferences, no email
+  exists to CC. That is the default for the 7 types whose registry
+  `email_default` is `False`; the UI warns on those rows.
+
+### Tests
+
+- Backend **447 passed** (`modules/notification modules/leave common/mail modules/claims`)
+- Frontend **111 passed** / 16 files (`src/modules/admin/settings`)
+- Permission codes unchanged.
+
 ## [1.82.0] — 2026-08-21 — Schedule workspace redesign
 
 **`/schedule/me` rebuilt as a full-width scheduling workspace.** The last
