@@ -4194,9 +4194,18 @@ export interface paths {
         /**
          * @description Teammates' future published shifts, for the swap picker.
          *
-         *     Deliberately NOT pre-filtered for conflicts (spec §8) — an impossible
-         *     pair is refused at submit with a message naming the blocker, so the
-         *     user learns why rather than silently seeing fewer options.
+         *     Paged and server-filtered: the browser never receives the whole
+         *     workforce roster. Rows that could never be swapped (already tied to a
+         *     pending request, identical slot, unpublished, cancelled, past,
+         *     inactive employee, another tenant) are excluded outright. Rows that
+         *     merely *conflict* with the requester's roster are still returned but
+         *     flagged `compatible: false` with the blocking reason — spec §8: an
+         *     impossible pair should teach the user why rather than silently
+         *     vanishing. Either way the submit path re-runs `validate_pair`, so this
+         *     list is a convenience, never an authorisation.
+         *
+         *     Query params: q, date_from, date_to, shift, team, department,
+         *     page, page_size.
          */
         get: operations["schedule_swap_requests_candidates_retrieve"];
         put?: never;
@@ -6637,6 +6646,11 @@ export interface components {
             shift: string;
             readonly shift_name: string;
             readonly shift_code: string;
+            /** Format: time */
+            readonly shift_start: string;
+            /** Format: time */
+            readonly shift_end: string;
+            readonly shift_crosses_midnight: boolean;
             /** Format: date */
             work_date: string;
         };

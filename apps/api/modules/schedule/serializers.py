@@ -88,6 +88,13 @@ class ShiftSwapAssignmentBriefSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
     shift_name = serializers.CharField(source="shift.name", read_only=True)
     shift_code = serializers.CharField(source="shift.code", read_only=True)
+    # Times let the swap drawer's review step compare both sides (and the
+    # request list show a time range) without a second round-trip.
+    shift_start = serializers.TimeField(source="shift.start_time", read_only=True)
+    shift_end = serializers.TimeField(source="shift.end_time", read_only=True)
+    shift_crosses_midnight = serializers.BooleanField(
+        source="shift.crosses_midnight", read_only=True
+    )
 
     class Meta:
         model = ShiftAssignment
@@ -99,8 +106,45 @@ class ShiftSwapAssignmentBriefSerializer(serializers.ModelSerializer):
             "shift",
             "shift_name",
             "shift_code",
+            "shift_start",
+            "shift_end",
+            "shift_crosses_midnight",
             "work_date",
         )
+
+
+class SwapCandidateSerializer(ShiftSwapAssignmentBriefSerializer):
+    """A teammate's shift as shown in the swap picker.
+
+    Only the fields a candidate card renders — never a whole roster row, and
+    never anything from outside the requester's org (the queryset is org-scoped
+    before this serializer ever sees a row).
+    """
+
+    department_name = serializers.CharField(source="employee.department.name", read_only=True)
+    team_name = serializers.CharField(source="employee.team.name", default=None, read_only=True)
+    compatible = serializers.SerializerMethodField()
+    incompatible_reason = serializers.SerializerMethodField()
+    warnings = serializers.SerializerMethodField()
+
+    class Meta(ShiftSwapAssignmentBriefSerializer.Meta):
+        fields = (
+            *ShiftSwapAssignmentBriefSerializer.Meta.fields,
+            "department_name",
+            "team_name",
+            "compatible",
+            "incompatible_reason",
+            "warnings",
+        )
+
+    def get_compatible(self, obj) -> bool:
+        return self.context.get("reasons", {}).get(obj.id) is None
+
+    def get_incompatible_reason(self, obj) -> str | None:
+        return self.context.get("reasons", {}).get(obj.id)
+
+    def get_warnings(self, obj) -> list:
+        return self.context.get("warnings", {}).get(obj.id, [])
 
 
 class ShiftSwapRequestSerializer(serializers.ModelSerializer):

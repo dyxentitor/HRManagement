@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HRMS API
-  version: 1.82.0
+  version: 1.83.0
   description: HR Management System — Phase 1
 paths:
   /api/v1/admin/leave/accrue/:
@@ -7480,9 +7480,18 @@ paths:
       description: |-
         Teammates' future published shifts, for the swap picker.
 
-        Deliberately NOT pre-filtered for conflicts (spec §8) — an impossible
-        pair is refused at submit with a message naming the blocker, so the
-        user learns why rather than silently seeing fewer options.
+        Paged and server-filtered: the browser never receives the whole
+        workforce roster. Rows that could never be swapped (already tied to a
+        pending request, identical slot, unpublished, cancelled, past,
+        inactive employee, another tenant) are excluded outright. Rows that
+        merely *conflict* with the requester's roster are still returned but
+        flagged `compatible: false` with the blocking reason — spec §8: an
+        impossible pair should teach the user why rather than silently
+        vanishing. Either way the submit path re-runs `validate_pair`, so this
+        list is a convenience, never an authorisation.
+
+        Query params: q, date_from, date_to, shift, team, department,
+        page, page_size.
       tags:
       - schedule
       security:
@@ -13118,6 +13127,17 @@ components:
         shift_code:
           type: string
           readOnly: true
+        shift_start:
+          type: string
+          format: time
+          readOnly: true
+        shift_end:
+          type: string
+          format: time
+          readOnly: true
+        shift_crosses_midnight:
+          type: boolean
+          readOnly: true
         work_date:
           type: string
           format: date
@@ -13128,7 +13148,10 @@ components:
       - id
       - shift
       - shift_code
+      - shift_crosses_midnight
+      - shift_end
       - shift_name
+      - shift_start
       - work_date
     ShiftSwapAssignmentBriefRequest:
       type: object

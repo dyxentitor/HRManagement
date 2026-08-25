@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import datetime
+import uuid
 from typing import ClassVar
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Case, IntegerField, Q, Value, When
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -24,14 +27,61 @@ from .serializers import (
     PublishSerializer,
     ShiftAssignmentSerializer,
     ShiftSerializer,
-    ShiftSwapAssignmentBriefSerializer,
     ShiftSwapCreateSerializer,
     ShiftSwapRequestSerializer,
+    SwapCandidateSerializer,
     WorkScheduleSerializer,
 )
 from .services.calendar import build_calendar
 from .services.schedule import ScheduleService
+from .services.swap import batch_pair_reasons
 from .services.warnings import compute_warnings
+
+# Swap-candidate search tuning. The page size matches the drawer's "show 6-10
+# initially" design; the horizon stops a year-ahead roster becoming an
+# unbounded scan.
+_CANDIDATE_HORIZON_DAYS = 60
+_CANDIDATE_PAGE_SIZE = 8
+_CANDIDATE_MAX_PAGE_SIZE = 50
+_CANDIDATE_SEARCH_MIN_CHARS = 2
+
+
+def _pending_assignment_ids_for_org(org_id) -> set:
+    """Every assignment id tied to a pending swap request in this org.
+
+    Bounded by the number of *pending requests*, not by the roster size, so
+    this stays cheap however large the org's schedule grows.
+    """
+    pairs = ShiftSwapRequest.all_objects.filter(
+        org_id=org_id, status="pending", deleted_at__isnull=True
+    ).values_list("requester_assignment_id", "counterparty_assignment_id")
+    return {aid for pair in pairs for aid in pair}
+
+
+def _shift_hours(shift) -> float:
+    """Paid length of a shift template, in hours."""
+    start = datetime.datetime.combine(datetime.date.min, shift.start_time)
+    end = datetime.datetime.combine(datetime.date.min, shift.end_time)
+    if shift.crosses_midnight or end <= start:
+        end += datetime.timedelta(days=1)
+    return (end - start).total_seconds() / 3600
+
+
+def _candidate_warnings(own, other) -> list:
+    """Soft, non-blocking flags shown on a candidate card.
+
+    Never a reason to hide a row — these are things the employee should notice
+    before trading, not rules the backend enforces.
+    """
+    out = []
+    if other.shift.crosses_midnight and not own.shift.crosses_midnight:
+        out.append("Overnight shift — ends the following morning.")
+    delta = round(_shift_hours(other.shift) - _shift_hours(own.shift), 1)
+    if delta > 0:
+        out.append(f"{delta:g}h longer than your shift.")
+    elif delta < 0:
+        out.append(f"{abs(delta):g}h shorter than your shift.")
+    return out
 
 
 @requires_feature("schedule")
@@ -469,18 +519,118 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
     def candidates(self, request):
         """Teammates' future published shifts, for the swap picker.
 
-        Deliberately NOT pre-filtered for conflicts (spec §8) — an impossible
-        pair is refused at submit with a message naming the blocker, so the
-        user learns why rather than silently seeing fewer options.
+        Paged and server-filtered: the browser never receives the whole
+        workforce roster. Rows that could never be swapped (already tied to a
+        pending request, identical slot, unpublished, cancelled, past,
+        inactive employee, another tenant) are excluded outright. Rows that
+        merely *conflict* with the requester's roster are still returned but
+        flagged `compatible: false` with the blocking reason — spec §8: an
+        impossible pair should teach the user why rather than silently
+        vanishing. Either way the submit path re-runs `validate_pair`, so this
+        list is a convenience, never an authorisation.
+
+        Query params: q, date_from, date_to, shift, team, department,
+        page, page_size.
         """
+        me = self._me()
+        own = self._own_assignment(request, me)
+
+        org_id = request.user.org_id
+        today = timezone.localdate()
+        # Cap the horizon so an org that publishes a year ahead can't be asked
+        # for an unbounded scan; date_from/date_to narrow it further.
+        window_start, window_end = self._candidate_window(request, today)
+
+        qs = (
+            ShiftAssignment.all_objects.filter(
+                org_id=org_id,
+                deleted_at__isnull=True,
+                published_at__isnull=False,
+                status="scheduled",
+                work_date__gte=window_start,
+                work_date__lte=window_end,
+                employee__status="active",
+                employee__deleted_at__isnull=True,
+            )
+            .exclude(employee_id=me.id)
+            # Same date AND same shift is a no-op swap.
+            .exclude(work_date=own.work_date, shift_id=own.shift_id)
+            .select_related("employee", "employee__department", "employee__team", "shift")
+        )
+        qs = self._apply_candidate_filters(qs, request)
+
+        # Rows already spoken for by a pending request can never be swapped —
+        # drop them rather than paging the user past dead options.
+        blocked = _pending_assignment_ids_for_org(org_id)
+        if blocked:
+            qs = qs.exclude(id__in=blocked)
+
+        # Rank compatible rows first *in SQL* so page 1 is useful without
+        # having to pull every row into memory to sort it. The two conflict
+        # sets are small and cheap; the authoritative per-row reason is still
+        # computed below, for the page only.
+        my_busy_dates = set(
+            ShiftAssignment.all_objects.filter(
+                employee_id=me.id,
+                work_date__gte=window_start,
+                work_date__lte=window_end,
+                deleted_at__isnull=True,
+            )
+            .exclude(id=own.id)
+            .values_list("work_date", flat=True)
+        )
+        busy_on_my_date = set(
+            ShiftAssignment.all_objects.filter(
+                org_id=org_id,
+                work_date=own.work_date,
+                deleted_at__isnull=True,
+            )
+            .exclude(employee_id=me.id)
+            .values_list("employee_id", flat=True)
+        )
+        conflict_q = Q(work_date__in=my_busy_dates) | (
+            Q(employee_id__in=busy_on_my_date) & ~Q(work_date=own.work_date)
+        )
+        qs = qs.annotate(
+            _rank=Case(
+                When(conflict_q, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by("_rank", "work_date", "employee__employee_code")
+
+        page, page_size = self._candidate_page(request)
+        count = qs.count()
+        rows = list(qs[(page - 1) * page_size : page * page_size])
+
+        # One batched evaluation for the page — same rule list as submit.
+        reasons = batch_pair_reasons(own=own, rows=rows, requester=me, org_id=org_id)
+        warnings = {r.id: _candidate_warnings(own, r) for r in rows}
+
+        ser = SwapCandidateSerializer(
+            rows, many=True, context={"reasons": reasons, "warnings": warnings}
+        )
+        return Response(
+            {
+                "results": ser.data,
+                "count": count,
+                "page": page,
+                "page_size": page_size,
+                # Non-null when the requester's OWN shift is unswappable, so the
+                # empty state can explain itself instead of just saying "none".
+                "blocked_reason": (
+                    "There is already a pending swap for this shift." if own.id in blocked else None
+                ),
+            }
+        )
+
+    def _own_assignment(self, request, me):
+        """The requester's own assignment named by `assignment_id`, or 400."""
         assignment_id = request.query_params.get("assignment_id")
         if not assignment_id:
             raise ValidationError({"assignment_id": "This query parameter is required."})
-
-        me = self._me()
         if me is None:
-            return Response([])
-
+            raise ValidationError({"assignment_id": "Not one of your shift assignments."})
         try:
             own = (
                 ShiftAssignment.all_objects.filter(
@@ -489,32 +639,70 @@ class ShiftSwapRequestViewSet(viewsets.ModelViewSet):
                     employee_id=me.id,
                     deleted_at__isnull=True,
                 )
-                .select_related("shift")
+                .select_related("shift", "employee")
                 .first()
             )
         except DjangoValidationError as exc:
             raise ValidationError({"assignment_id": "Not one of your shift assignments."}) from exc
         if own is None:
             raise ValidationError({"assignment_id": "Not one of your shift assignments."})
+        return own
 
-        # Cap at 60 days ahead to avoid returning an unbounded list when the
-        # roster has been published months in advance.
-        window_end = timezone.localdate() + datetime.timedelta(days=60)
-        qs = (
-            ShiftAssignment.all_objects.filter(
-                org_id=request.user.org_id,
-                deleted_at__isnull=True,
-                published_at__isnull=False,
-                status="scheduled",
-                work_date__gt=timezone.localdate(),
-                work_date__lte=window_end,
-                employee__status="active",
+    @staticmethod
+    def _candidate_window(request, today):
+        """[start, end] to scan, clamped to (today, today + 60d]."""
+        horizon_end = today + datetime.timedelta(days=_CANDIDATE_HORIZON_DAYS)
+        start = today + datetime.timedelta(days=1)
+        end = horizon_end
+        raw_from = request.query_params.get("date_from")
+        raw_to = request.query_params.get("date_to")
+        if raw_from:
+            parsed = parse_date(raw_from)
+            if parsed is None:
+                raise ValidationError({"date_from": "Expected a YYYY-MM-DD date."})
+            start = max(start, parsed)
+        if raw_to:
+            parsed = parse_date(raw_to)
+            if parsed is None:
+                raise ValidationError({"date_to": "Expected a YYYY-MM-DD date."})
+            end = min(end, parsed)
+        return start, end
+
+    @staticmethod
+    def _apply_candidate_filters(qs, request):
+        """Name search + shift / team / department narrowing, all server-side."""
+        q = (request.query_params.get("q") or "").strip()
+        if len(q) >= _CANDIDATE_SEARCH_MIN_CHARS:
+            qs = qs.filter(
+                Q(employee__first_name__icontains=q)
+                | Q(employee__last_name__icontains=q)
+                | Q(employee__employee_code__icontains=q)
             )
-            .exclude(employee_id=me.id)
-            .select_related("employee", "shift")
-            .order_by("work_date", "employee__employee_code")
-        )
-        return Response(ShiftSwapAssignmentBriefSerializer(qs, many=True).data)
+        for param, field in (
+            ("shift", "shift_id"),
+            ("team", "employee__team_id"),
+            ("department", "employee__department_id"),
+        ):
+            raw = (request.query_params.get(param) or "").strip()
+            if not raw:
+                continue
+            try:
+                qs = qs.filter(**{field: uuid.UUID(raw)})
+            except (ValueError, AttributeError) as exc:
+                raise ValidationError({param: "Expected a UUID."}) from exc
+        return qs
+
+    @staticmethod
+    def _candidate_page(request):
+        try:
+            page = max(1, int(request.query_params.get("page", 1)))
+            page_size = min(
+                _CANDIDATE_MAX_PAGE_SIZE,
+                max(1, int(request.query_params.get("page_size", _CANDIDATE_PAGE_SIZE))),
+            )
+        except (TypeError, ValueError):
+            page, page_size = 1, _CANDIDATE_PAGE_SIZE
+        return page, page_size
 
 
 def _notify_swap(swap_request, *, type_code: str, users) -> None:
