@@ -15,7 +15,7 @@ from django.db.models import Q
 
 from modules.employee.models import Employee, Team
 from modules.leave.models import LeaveRequest
-from modules.schedule.models import Holiday, Shift, ShiftAssignment
+from modules.schedule.models import Shift, ShiftAssignment, published_holidays
 from modules.schedule.services.warnings import calendar_warnings
 
 
@@ -163,10 +163,10 @@ def build_calendar(
             )
             cur += dt.timedelta(days=1)
 
+    # Employee-facing: excluded and unconfirmed-provisional days must not appear.
     holidays = list(
-        Holiday.all_objects.filter(
+        published_holidays(
             org_id=org_id,
-            deleted_at__isnull=True,
             date__gte=date_from,
             date__lte=date_to,
         ).values("date", "name", "type")

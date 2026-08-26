@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 
+import { useFeature } from "@/lib/feature-flags";
 import { useCan } from "@/lib/perm";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +56,9 @@ function NavItemRow({
 	badge: number | null;
 }) {
 	const allowed = useCan(item.perm);
+	const moduleEnabled = useFeature(item.module ?? "");
 	if (!allowed) return null;
+	if (item.module && !moduleEnabled) return null;
 	return (
 		<NavLink
 			to={item.to}

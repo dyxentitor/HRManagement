@@ -190,13 +190,60 @@ class ShiftSwapRequest(TenantBaseModel):
 
 
 class Holiday(TenantBaseModel):
-    """Org's effective holiday list. Populated from country_holidays + company adds."""
+    """Org's effective holiday list. Populated from country_holidays + company adds.
+
+    `source` records who put the row here, which is what makes reconcile safe:
+    an import may only touch rows it owns (`SOURCE_IMPORT`). Company-authored
+    rows, company exclusions and confirmed overrides are never overwritten —
+    a disagreement is reported as a conflict instead.
+    """
+
+    SOURCE_COMPANY = "company"
+    SOURCE_OVERRIDE = "override"
+    SOURCE_IMPORT = "import"
+    SOURCE_LEGACY = "legacy"
+    SOURCES: ClassVar[tuple] = (
+        (SOURCE_COMPANY, "Company-created"),
+        (SOURCE_OVERRIDE, "Organization override"),
+        (SOURCE_IMPORT, "Imported from provider"),
+        (SOURCE_LEGACY, "Legacy fixture"),
+    )
+    # Rows an automated import is forbidden to modify or withdraw.
+    PROTECTED_SOURCES: ClassVar[frozenset] = frozenset({SOURCE_COMPANY, SOURCE_OVERRIDE})
 
     date = models.DateField()
     name = models.CharField(max_length=128)
     type = models.CharField(max_length=8, choices=HOLIDAY_TYPES)
     applies_to_country_code = models.CharField(max_length=2, blank=True)
     applies_to_state_code = models.CharField(max_length=8, blank=True)
+
+    # --- provenance (v1.84.0) -------------------------------------------
+    source = models.CharField(max_length=16, choices=SOURCES, default=SOURCE_LEGACY)
+    # Internal CANONICAL identity (see common/holidays/canonical.py). Stable
+    # across renames, languages, provider swaps and date corrections. Blank for
+    # company-created rows, which have no upstream identity by definition.
+    source_key = models.CharField(max_length=200, blank=True, db_index=True)
+    # The upstream provider's OWN identity, kept verbatim for audit. Never used
+    # for matching — that is source_key's job.
+    external_id = models.CharField(max_length=200, blank=True)
+    # Which day of a multi-day festival this is (1-based).
+    occurrence = models.PositiveSmallIntegerField(default=1)
+    source_provider = models.CharField(max_length=64, blank=True)
+    source_version = models.CharField(max_length=32, blank=True)
+    imported_at = models.DateTimeField(null=True, blank=True)
+    # Full ISO 3166-2 (e.g. "MY-10"); blank means national scope.
+    applies_to_subdivision_code = models.CharField(max_length=16, blank=True)
+    observed = models.BooleanField(default=False)
+    # An unconfirmed date (provider-estimated, or gazetted "tertakluk kepada
+    # perubahan"). Provisional rows are INVISIBLE to employees until an
+    # administrator confirms them — see `published`.
+    provisional = models.BooleanField(default=False)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_by = models.UUIDField(null=True, blank=True)
+    # A company exclusion: "this imported day is NOT a holiday for us."
+    # Kept as a row so a re-import cannot silently resurrect the day.
+    excluded = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
 
     class Meta:
         db_table = "schedule_holiday"
@@ -206,6 +253,12 @@ class Holiday(TenantBaseModel):
                 condition=models.Q(deleted_at__isnull=True),
                 name="holiday_unique_org_date_name",
             ),
+            # The identity that survives a date change.
+            models.UniqueConstraint(
+                fields=["org_id", "source_key"],
+                condition=models.Q(deleted_at__isnull=True) & ~models.Q(source_key=""),
+                name="holiday_unique_org_source_key",
+            ),
         ]
         indexes: ClassVar[list] = [
             models.Index(fields=["org_id", "date"]),
@@ -213,3 +266,39 @@ class Holiday(TenantBaseModel):
 
     def __str__(self) -> str:
         return f"{self.date}: {self.name}"
+
+    @property
+    def is_protected(self) -> bool:
+        """True when an automated import must leave this row alone.
+
+        `type == "company"` counts even when `source` says otherwise: rows that
+        predate provenance all carry `source="legacy"`, so the type column is
+        the only surviving evidence that a human authored them.
+        """
+        return self.source in self.PROTECTED_SOURCES or self.type == "company" or self.excluded
+
+    @property
+    def published(self) -> bool:
+        """True when this day is visible to employees.
+
+        An excluded day is not a holiday for this org, and a provisional day
+        is not yet a fact — neither may reach attendance, leave or an
+        employee-facing calendar.
+        """
+        return not self.excluded and not self.provisional
+
+
+def published_holidays(*, org_id, **extra):
+    """The single queryset every employee-facing surface must use.
+
+    Centralised deliberately: the provisional/excluded gate is a correctness
+    rule, and duplicating the filter across calendar / attendance / dashboard
+    is how one of them eventually forgets it.
+    """
+    return Holiday.all_objects.filter(
+        org_id=org_id,
+        deleted_at__isnull=True,
+        excluded=False,
+        provisional=False,
+        **extra,
+    )

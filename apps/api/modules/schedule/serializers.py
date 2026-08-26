@@ -61,6 +61,9 @@ class ShiftAssignmentSerializer(serializers.ModelSerializer):
 
 
 class HolidaySerializer(serializers.ModelSerializer):
+    is_protected = serializers.BooleanField(read_only=True)
+    published = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = Holiday
         fields = (
@@ -70,8 +73,41 @@ class HolidaySerializer(serializers.ModelSerializer):
             "type",
             "applies_to_country_code",
             "applies_to_state_code",
+            "applies_to_subdivision_code",
+            # Provenance — read-only. Written by the import pipeline, surfaced
+            # so the admin UI can show where a row came from and whether it is
+            # safe to overwrite.
+            "source",
+            "source_provider",
+            "source_version",
+            "imported_at",
+            "observed",
+            "provisional",
+            "published",
+            "confirmed_at",
+            "confirmed_by",
+            "is_protected",
+            "external_id",
+            "occurrence",
+            # Tenant-editable.
+            "excluded",
+            "notes",
         )
-        read_only_fields = ("id",)
+        read_only_fields = (
+            "id",
+            "source",
+            "source_provider",
+            "source_version",
+            "imported_at",
+            "observed",
+            "provisional",
+            "published",
+            "confirmed_at",
+            "confirmed_by",
+            "is_protected",
+            "external_id",
+            "occurrence",
+        )
 
 
 class BulkAssignSerializer(serializers.Serializer):

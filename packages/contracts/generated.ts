@@ -3944,6 +3944,45 @@ export interface paths {
         patch: operations["schedule_holidays_partial_update"];
         trace?: never;
     };
+    "/api/v1/schedule/holidays/{id}/confirm/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Publish a provisional holiday. The explicit administrator step. */
+        post: operations["schedule_holidays_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schedule/holidays/sync-preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Dry-run reconcile for the admin UI. Never writes, never calls out.
+         *
+         *     The provider is only ever reached by the management command; this
+         *     reads the already-imported local reference table.
+         */
+        get: operations["schedule_holidays_sync_preview_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/schedule/shift-assignments/": {
         parameters: {
             query?: never;
@@ -5453,6 +5492,24 @@ export interface components {
             type: components["schemas"]["HolidayTypeEnum"];
             applies_to_country_code?: string;
             applies_to_state_code?: string;
+            applies_to_subdivision_code?: string;
+            readonly source: components["schemas"]["HolidaySourceEnum"];
+            readonly source_provider: string;
+            readonly source_version: string;
+            /** Format: date-time */
+            readonly imported_at: string | null;
+            readonly observed: boolean;
+            readonly provisional: boolean;
+            readonly published: boolean;
+            /** Format: date-time */
+            readonly confirmed_at: string | null;
+            /** Format: uuid */
+            readonly confirmed_by: string | null;
+            readonly is_protected: boolean;
+            readonly external_id: string;
+            readonly occurrence: number;
+            excluded?: boolean;
+            notes?: string;
         };
         HolidayRequest: {
             /** Format: date */
@@ -5461,7 +5518,18 @@ export interface components {
             type: components["schemas"]["HolidayTypeEnum"];
             applies_to_country_code?: string;
             applies_to_state_code?: string;
+            applies_to_subdivision_code?: string;
+            excluded?: boolean;
+            notes?: string;
         };
+        /**
+         * @description * `company` - Company-created
+         *     * `override` - Organization override
+         *     * `import` - Imported from provider
+         *     * `legacy` - Legacy fixture
+         * @enum {string}
+         */
+        HolidaySourceEnum: "company" | "override" | "import" | "legacy";
         /**
          * @description * `federal` - Federal
          *     * `state` - State
@@ -5914,6 +5982,7 @@ export interface components {
             name: string;
             readonly slug: string;
             country_code: string;
+            default_subdivision_code?: string;
             default_currency: string;
             default_timezone: string;
             default_locale: string;
@@ -6146,6 +6215,9 @@ export interface components {
             type?: components["schemas"]["HolidayTypeEnum"];
             applies_to_country_code?: string;
             applies_to_state_code?: string;
+            applies_to_subdivision_code?: string;
+            excluded?: boolean;
+            notes?: string;
         };
         PatchedKpiCycleRequest: {
             name?: string;
@@ -6223,6 +6295,7 @@ export interface components {
         PatchedOrgSettingsRequest: {
             name?: string;
             country_code?: string;
+            default_subdivision_code?: string;
             default_currency?: string;
             default_timezone?: string;
             default_locale?: string;
@@ -14147,6 +14220,51 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["PatchedHolidayRequest"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Holiday"];
+                };
+            };
+        };
+    };
+    schedule_holidays_confirm_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HolidayRequest"];
+                "multipart/form-data": components["schemas"]["HolidayRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Holiday"];
+                };
+            };
+        };
+    };
+    schedule_holidays_sync_preview_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

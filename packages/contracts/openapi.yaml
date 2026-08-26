@@ -6984,6 +6984,55 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/schedule/holidays/{id}/confirm/:
+    post:
+      operationId: schedule_holidays_confirm_create
+      description: Publish a provisional holiday. The explicit administrator step.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - schedule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HolidayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HolidayRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+          description: ''
+  /api/v1/schedule/holidays/sync-preview/:
+    get:
+      operationId: schedule_holidays_sync_preview_retrieve
+      description: |-
+        Dry-run reconcile for the admin UI. Never writes, never calls out.
+
+        The provider is only ever reached by the management command; this
+        reads the already-imported local reference table.
+      tags:
+      - schedule
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holiday'
+          description: ''
   /api/v1/schedule/shift-assignments/:
     get:
       operationId: schedule_shift_assignments_list
@@ -10337,10 +10386,72 @@ components:
         applies_to_state_code:
           type: string
           maxLength: 8
+        applies_to_subdivision_code:
+          type: string
+          maxLength: 16
+        source:
+          allOf:
+          - $ref: '#/components/schemas/HolidaySourceEnum'
+          readOnly: true
+        source_provider:
+          type: string
+          readOnly: true
+        source_version:
+          type: string
+          readOnly: true
+        imported_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        observed:
+          type: boolean
+          readOnly: true
+        provisional:
+          type: boolean
+          readOnly: true
+        published:
+          type: boolean
+          readOnly: true
+        confirmed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        confirmed_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        is_protected:
+          type: boolean
+          readOnly: true
+        external_id:
+          type: string
+          readOnly: true
+        occurrence:
+          type: integer
+          readOnly: true
+        excluded:
+          type: boolean
+        notes:
+          type: string
       required:
+      - confirmed_at
+      - confirmed_by
       - date
+      - external_id
       - id
+      - imported_at
+      - is_protected
       - name
+      - observed
+      - occurrence
+      - provisional
+      - published
+      - source
+      - source_provider
+      - source_version
       - type
     HolidayRequest:
       type: object
@@ -10360,10 +10471,29 @@ components:
         applies_to_state_code:
           type: string
           maxLength: 8
+        applies_to_subdivision_code:
+          type: string
+          maxLength: 16
+        excluded:
+          type: boolean
+        notes:
+          type: string
       required:
       - date
       - name
       - type
+    HolidaySourceEnum:
+      enum:
+      - company
+      - override
+      - import
+      - legacy
+      type: string
+      description: |-
+        * `company` - Company-created
+        * `override` - Organization override
+        * `import` - Imported from provider
+        * `legacy` - Legacy fixture
     HolidayTypeEnum:
       enum:
       - federal
@@ -11461,6 +11591,9 @@ components:
         country_code:
           type: string
           maxLength: 2
+        default_subdivision_code:
+          type: string
+          maxLength: 16
         default_currency:
           type: string
           maxLength: 3
@@ -12031,6 +12164,13 @@ components:
         applies_to_state_code:
           type: string
           maxLength: 8
+        applies_to_subdivision_code:
+          type: string
+          maxLength: 16
+        excluded:
+          type: boolean
+        notes:
+          type: string
     PatchedKpiCycleRequest:
       type: object
       properties:
@@ -12196,6 +12336,9 @@ components:
           type: string
           minLength: 1
           maxLength: 2
+        default_subdivision_code:
+          type: string
+          maxLength: 16
         default_currency:
           type: string
           minLength: 1

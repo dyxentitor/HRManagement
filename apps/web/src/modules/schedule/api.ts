@@ -24,7 +24,68 @@ export type ShiftAssignment = {
 	is_published: boolean;
 	notes: string;
 };
-export type Holiday = { id: string; date: string; name: string; type: string };
+export type HolidayType = "federal" | "state" | "company";
+
+/** Where a holiday row came from. Server-owned — see HolidaySerializer. */
+export type HolidaySource = "company" | "override" | "import" | "legacy";
+
+export interface Holiday {
+	id: string;
+	/** Date-only YYYY-MM-DD. Never parse without the `T00:00:00Z` suffix (CLAUDE.md §3.9). */
+	date: string;
+	name: string;
+	type: HolidayType;
+	applies_to_country_code: string;
+	applies_to_state_code: string;
+	applies_to_subdivision_code: string;
+	// Provenance — read-only, written by the import pipeline.
+	source: HolidaySource;
+	source_provider: string;
+	source_version: string;
+	imported_at: string | null;
+	observed: boolean;
+	provisional: boolean;
+	is_protected: boolean;
+	/** Provider row identity — read-only, used by the reconcile to match rows. */
+	external_id: string;
+	occurrence: number;
+	/**
+	 * False = the day is hidden from employees. The server derives it: a row is
+	 * unpublished while `excluded` or `provisional` is true.
+	 */
+	published: boolean;
+	/** Instant (not a date-only key) the row was confirmed, or null. */
+	confirmed_at: string | null;
+	confirmed_by: string | null;
+	// Tenant-editable.
+	excluded: boolean;
+	notes: string;
+}
+
+export interface HolidayWritePayload {
+	date: string;
+	name: string;
+	type: HolidayType;
+	applies_to_country_code?: string;
+	applies_to_state_code?: string;
+	applies_to_subdivision_code?: string;
+	excluded?: boolean;
+	notes?: string;
+}
+
+export interface HolidaySyncPreview {
+	year: number;
+	counts: {
+		added: number;
+		updated: number;
+		unchanged: number;
+		withdrawn: number;
+		skipped: number;
+		conflicted: number;
+	};
+	changes: string[];
+	conflicts: string[];
+}
 
 export interface CalendarEmployee {
 	id: string;
@@ -229,6 +290,47 @@ export const scheduleApi = {
 		});
 		if (error) throw new Error(`DELETE shift-assignment ${id} failed`);
 	},
+};
+
+// Holiday admin CRUD. The generated contract for these paths predates the
+// provenance fields (source / observed / provisional / is_protected …), so the
+// bodies are cast at the call site and responses decoded via the local
+// `Holiday` type above — same escape hatch the legacy endpoints use.
+export const holidayApi = {
+	list: (year: number) =>
+		_get<{ results?: Holiday[] } | Holiday[]>(`/api/v1/schedule/holidays/?year=${year}`).then(
+			_unwrap,
+		),
+	create: async (payload: HolidayWritePayload): Promise<Holiday> => {
+		const { data, error } = await api.POST("/api/v1/schedule/holidays/", {
+			body: payload as never,
+		});
+		if (error) throw new Error("Could not create the holiday");
+		return data as unknown as Holiday;
+	},
+	update: async (id: string, payload: Partial<HolidayWritePayload>): Promise<Holiday> => {
+		const { data, error } = await api.PATCH("/api/v1/schedule/holidays/{id}/", {
+			params: { path: { id } },
+			body: payload as never,
+		});
+		if (error) throw new Error("Could not update the holiday");
+		return data as unknown as Holiday;
+	},
+	remove: async (id: string): Promise<void> => {
+		const { error } = await api.DELETE("/api/v1/schedule/holidays/{id}/", {
+			params: { path: { id } },
+		});
+		if (error) throw new Error("Could not delete the holiday");
+	},
+	/**
+	 * Publish a provisional holiday. Explicit administrator step — until it runs
+	 * the date stays hidden from employees.
+	 */
+	confirm: (id: string): Promise<Holiday> =>
+		_post<Holiday>(`/api/v1/schedule/holidays/${id}/confirm/`),
+	/** Read-only dry run — never writes and never calls the upstream provider. */
+	syncPreview: (year: number) =>
+		_get<HolidaySyncPreview>(`/api/v1/schedule/holidays/sync-preview/?year=${year}`),
 };
 
 export const teamApi = {

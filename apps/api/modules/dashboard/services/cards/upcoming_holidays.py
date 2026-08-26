@@ -16,15 +16,12 @@ class UpcomingHolidays(Card):
 
     @classmethod
     def fetch(cls, user: User) -> dict[str, Any]:
-        from modules.schedule.models import Holiday
+        from modules.schedule.models import published_holidays
 
         today = datetime.date.today()
+        # Employee-facing: excluded and unconfirmed-provisional days are hidden.
         holidays = list(
-            Holiday.all_objects.filter(
-                org_id=user.org_id,
-                date__gte=today,
-                deleted_at__isnull=True,
-            ).order_by("date")[:5]
+            published_holidays(org_id=user.org_id, date__gte=today).order_by("date")[:5]
         )
         return {
             "type": cls.type,

@@ -1,0 +1,116 @@
+# Verified official Malaysian public holidays (Hari Kelepasan Am).
+#
+# PRECEDENCE: rows here load with source="official", which outranks imported
+# provider data and the legacy fixture. Only an org-level override beats it.
+#
+# PROVENANCE — transcribed from the Cabinet Division (Bahagian Kabinet,
+# Perlembagaan dan Perhubungan Antara Kerajaan, Jabatan Perdana Menteri) PDFs
+# linked from https://www.kabinet.gov.my/hari-kelepasan-am/ :
+#   2026 — "JADUAL HARI KELEPASAN AM PERSEKUTUAN 2026" (HKA-2026.pdf)
+#   2027 — "JADUAL HARI KELEPASAN AM PERSEKUTUAN 2027" (HKA_2027.pdf)
+# Cross-checked against https://jtksm.mohr.gov.my/en/kalendar and, as a
+# secondary comparison only, https://publicholidays.com.my/.
+# Retrieved 2026-08-25.
+#
+# SCOPE DISCIPLINE
+#   * Only holidays the federal schedule marks for ALL 16 states/territories
+#     are entered as nationwide (no `subdivision_code`).
+#   * Holidays the schedule grants to a SUBSET are entered as one row per
+#     state, using full ISO 3166-2 codes. They are deliberately NOT flattened
+#     into nationwide rows.
+#   * `New Year's Day` (1 Jan) and `Federal Territory Day` (1 Feb) are NOT in
+#     the federal schedule at all — they are state/FT holidays and are handled
+#     as such. The legacy fixture wrongly marked both `federal`.
+#
+# PROVISIONAL
+#   `provisional: true` mirrors the gazette's own "* Tertakluk kepada
+#   perubahan" (subject to change) marker. Those dates are official but not
+#   yet settled, so they are held back from employee-facing calendars until an
+#   administrator confirms them.
+#
+#   The marker is FORWARD-LOOKING, so it is applied to 2027 only. Every 2026
+#   date below has already been observed (retrieved 2026-08-25) and is
+#   corroborated by the JTKSM calendar and publicholidays.com.my, so a 2026
+#   date can no longer "change" and is recorded as confirmed. Marking settled
+#   history provisional would hold correct dates back from employees and leave
+#   the wrong legacy date in place — the exact bug this work exists to fix.
+#
+# ISO 3166-2:MY reference — MY-01 Johor, MY-02 Kedah, MY-03 Kelantan,
+# MY-04 Melaka, MY-05 Negeri Sembilan, MY-06 Pahang, MY-07 Pulau Pinang,
+# MY-08 Perak, MY-09 Perlis, MY-10 Selangor, MY-11 Terengganu, MY-12 Sabah,
+# MY-13 Sarawak, MY-14 W.P. Kuala Lumpur, MY-15 W.P. Labuan,
+# MY-16 W.P. Putrajaya.
+
+_reference: &kabinet https://www.kabinet.gov.my/hari-kelepasan-am/
+
+holidays:
+  # ===================== 2026 — FEDERAL, ALL 16 STATES =====================
+  - {country_code: MY, date: 2026-02-17, name: Chinese New Year, type: federal, reference: *kabinet, note: "Legacy fixture had 2026-01-29 (a 2025 date)."}
+  - {country_code: MY, date: 2026-02-18, name: Chinese New Year (Second Day), type: federal, reference: *kabinet, note: "Legacy fixture had 2026-01-30."}
+  - {country_code: MY, date: 2026-03-21, name: Hari Raya Aidilfitri, type: federal, reference: *kabinet, note: "Gazetted with *; already observed, so recorded as confirmed."}
+  - {country_code: MY, date: 2026-03-22, name: Hari Raya Aidilfitri (Second Day), type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2026-05-01, name: Labour Day, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2026-05-27, name: Hari Raya Aidiladha, type: federal, reference: *kabinet, note: "Legacy fixture had 2026-05-28; that is the second day and it is not nationwide."}
+  - {country_code: MY, date: 2026-05-31, name: Wesak Day, type: federal, reference: *kabinet, note: "Legacy fixture had 2026-05-27."}
+  - {country_code: MY, date: 2026-06-01, name: Yang di-Pertuan Agong's Birthday, type: federal, reference: *kabinet, note: "Legacy fixture had 2026-06-04."}
+  - {country_code: MY, date: 2026-06-17, name: Awal Muharram, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2026-08-25, name: Maulidur Rasul, type: federal, reference: *kabinet, note: "Legacy fixture had 2026-08-26 — the originally reported bug."}
+  - {country_code: MY, date: 2026-08-31, name: National Day, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2026-09-16, name: Malaysia Day, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2026-12-25, name: Christmas Day, type: federal, reference: *kabinet}
+
+  # ---- 2026 — Deepavali: federal schedule EXCLUDES Sarawak (MY-13) ----
+  - {country_code: MY, subdivision_code: MY-01, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-02, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-03, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-04, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-05, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-06, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-07, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-08, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-09, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-10, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-11, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-12, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-14, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-15, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-16, date: 2026-11-08, name: Deepavali, type: state, reference: *kabinet}
+
+  # ---- 2026 — Hari Raya Aidiladha 2nd day: Kedah + Perlis only ----
+  - {country_code: MY, subdivision_code: MY-02, date: 2026-05-28, name: Hari Raya Aidiladha (Second Day), type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-09, date: 2026-05-28, name: Hari Raya Aidiladha (Second Day), type: state, reference: *kabinet}
+
+  # ---- 2026 — New Year's Day: NOT nationwide (excludes JHR/KDH/KTN/PLS/TRG) ----
+  - {country_code: MY, subdivision_code: MY-04, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-05, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-06, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-07, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-08, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-10, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-12, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-13, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-14, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-15, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-16, date: 2026-01-01, name: New Year's Day, type: state, reference: *kabinet}
+
+  # ---- 2026 — Federal Territory Day: KL / Labuan / Putrajaya only ----
+  - {country_code: MY, subdivision_code: MY-14, date: 2026-02-01, name: Federal Territory Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-15, date: 2026-02-01, name: Federal Territory Day, type: state, reference: *kabinet}
+  - {country_code: MY, subdivision_code: MY-16, date: 2026-02-01, name: Federal Territory Day, type: state, reference: *kabinet}
+
+  # ===================== 2027 — FEDERAL (HKA_2027.pdf) =====================
+  # Unstarred gazette entries are confirmed; starred ones carry provisional: true.
+  - {country_code: MY, date: 2027-02-06, name: Chinese New Year, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2027-02-07, name: Chinese New Year (Second Day), type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2027-03-10, name: Hari Raya Aidilfitri, type: federal, provisional: true, reference: *kabinet, note: "python-holidays predicts 2027-03-09; gazette says 10 Mac."}
+  - {country_code: MY, date: 2027-03-11, name: Hari Raya Aidilfitri (Second Day), type: federal, provisional: true, reference: *kabinet}
+  - {country_code: MY, date: 2027-05-01, name: Labour Day, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2027-05-17, name: Hari Raya Aidiladha, type: federal, provisional: true, reference: *kabinet, note: "python-holidays predicts 2027-05-16; gazette says 17 Mei."}
+  - {country_code: MY, date: 2027-05-20, name: Wesak Day, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2027-06-06, name: Awal Muharram, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2027-06-07, name: Yang di-Pertuan Agong's Birthday, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2027-08-15, name: Maulidur Rasul, type: federal, reference: *kabinet, note: "python-holidays predicts 2027-08-14; gazette says 15 Ogos."}
+  - {country_code: MY, date: 2027-08-31, name: National Day, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2027-09-16, name: Malaysia Day, type: federal, reference: *kabinet}
+  - {country_code: MY, date: 2027-10-28, name: Deepavali, type: federal, provisional: true, reference: *kabinet}
+  - {country_code: MY, date: 2027-12-25, name: Christmas Day, type: federal, reference: *kabinet}

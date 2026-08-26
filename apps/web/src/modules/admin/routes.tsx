@@ -1,6 +1,8 @@
 import { lazy } from "react"
 import { Navigate, type RouteObject, useParams } from "react-router-dom"
 
+import { RequireFeature } from "@/lib/feature-flags"
+
 import { EmailTabIndexRedirect } from "./settings/email/EmailConfigurationPage"
 
 const AdminRolesPage = lazy(() => import("./pages/AdminRolesPage"))
@@ -28,6 +30,7 @@ const UserCreatePage = lazy(() =>
   })),
 )
 const ArchivedEmployeesPage = lazy(() => import("./settings/ArchivedEmployeesPage"))
+const AdminHolidaysPage = lazy(() => import("@/modules/schedule/pages/AdminHolidaysPage"))
 const PeopleShell = lazy(() => import("./people/PeopleShell"))
 const EmployeesPage = lazy(() => import("@/modules/employee/pages/EmployeesPage"))
 const OrgChartPage = lazy(() => import("@/modules/employee/org-chart/OrgChartPage"))
@@ -95,6 +98,16 @@ export const adminRoutes: RouteObject[] = [
       { path: "roles", element: <AdminRolesPage /> },
       { path: "roles/:code", element: <AdminRolesPage /> },
       { path: "leave-types", element: <AdminLeaveTypesPage /> },
+      {
+        // Backend gates HolidayViewSet with @requires_feature("schedule") —
+        // the flag key here must match (CLAUDE.md §3.17).
+        path: "holidays",
+        element: (
+          <RequireFeature flag="schedule">
+            <AdminHolidaysPage />
+          </RequireFeature>
+        ),
+      },
       { path: "announcements", element: <Navigate to="/announcements/manage" replace /> },
       { path: "audit", element: <AdminAuditLogPage /> },
     ],

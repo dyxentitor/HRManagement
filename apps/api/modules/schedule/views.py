@@ -19,6 +19,7 @@ from rest_framework.response import Response
 from common.feature_flags.decorators import requires_feature
 from modules.employee.models import Employee
 from modules.identity.permissions import HRMSPermission
+from modules.organization.models import Organization
 
 from .models import Holiday, Shift, ShiftAssignment, ShiftSwapRequest, WorkSchedule
 from .serializers import (
@@ -33,6 +34,7 @@ from .serializers import (
     WorkScheduleSerializer,
 )
 from .services.calendar import build_calendar
+from .services.holiday import HolidayService, reconcile_org_holidays
 from .services.schedule import ScheduleService
 from .services.swap import batch_pair_reasons
 from .services.warnings import compute_warnings
@@ -338,7 +340,59 @@ class HolidayViewSet(viewsets.ModelViewSet):
         return ["schedule:holiday:write"]
 
     def perform_create(self, serializer):
-        serializer.save(org_id=self.request.user.org_id)
+        # Anything a human adds here is tenant-owned by definition, so it is
+        # marked protected and a later provider import will not touch it.
+        serializer.save(
+            org_id=self.request.user.org_id,
+            source=Holiday.SOURCE_COMPANY,
+            source_key="",
+        )
+
+    def perform_update(self, serializer):
+        # Editing an imported row promotes it to an organization override, so
+        # the next reconcile reports a conflict instead of silently reverting
+        # the human's decision.
+        instance = serializer.instance
+        if instance.source == Holiday.SOURCE_IMPORT:
+            serializer.save(source=Holiday.SOURCE_OVERRIDE)
+        else:
+            serializer.save()
+
+    @action(detail=True, methods=["post"], url_path="confirm")
+    def confirm(self, request, pk=None):
+        """Publish a provisional holiday. The explicit administrator step."""
+        row = HolidayService.confirm(
+            org_id=request.user.org_id, holiday_id=pk, actor_id=request.user.id
+        )
+        return Response(self.get_serializer(row).data)
+
+    @action(detail=False, methods=["get"], url_path="sync-preview")
+    def sync_preview(self, request):
+        """Dry-run reconcile for the admin UI. Never writes, never calls out.
+
+        The provider is only ever reached by the management command; this
+        reads the already-imported local reference table.
+        """
+        self.required_perms  # noqa: B018 — permission check runs in HRMSPermission
+        try:
+            year = int(request.query_params.get("year", ""))
+        except ValueError:
+            return Response(
+                {"detail": "A numeric `year` query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        org = Organization.objects.filter(id=request.user.org_id).first()
+        if org is None:
+            return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
+        stats = reconcile_org_holidays(org=org, year=year, dry_run=True)
+        return Response(
+            {
+                "year": year,
+                "counts": stats.as_dict(),
+                "changes": stats.changes,
+                "conflicts": stats.conflicts,
+            }
+        )
 
 
 @requires_feature("schedule")

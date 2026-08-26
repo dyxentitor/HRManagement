@@ -1,6 +1,7 @@
 import {
   Archive,
   Building2,
+  CalendarDays,
   KeyRound,
   Landmark,
   LayoutGrid,
@@ -19,6 +20,12 @@ export interface SettingsNavItem {
   label: string
   icon: ComponentType<{ className?: string }>
   perm: string
+  /**
+   * Feature-flag key — if set, the item is hidden when the module is disabled.
+   * Must match the backend `@requires_feature("…")` for the endpoints the page
+   * hits (CLAUDE.md §3.17).
+   */
+  module?: string
   isNewInV190?: boolean
   badge?: SettingsNavBadge
 }
@@ -80,6 +87,13 @@ export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
     label: "Leave Types",
     icon: Palmtree,
     perm: "leave:type:write",
+  },
+  {
+    to: "/admin/settings/holidays",
+    label: "Holidays",
+    icon: CalendarDays,
+    perm: "schedule:holiday:read",
+    module: "schedule",
   },
   {
     to: "/admin/settings/audit",
