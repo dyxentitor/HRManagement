@@ -2,6 +2,39 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.84.1] — 2026-08-26 — Deploy seeds the permission catalogue
+
+**v1.84.0 shipped the shift-swap feature with no usable swap button — for every
+role, org_admin included.** The two new permission codes existed in the fixtures
+but never reached the prod database (129 perms present, 131 expected), so the
+UI gate `perms.has("schedule:swap:request:self")` was false for everyone and the
+endpoint would have 403'd.
+
+### Fixed
+- `deploy/deploy.sh` now runs `seed_permission_catalogue` and
+  `grant_default_perms` after the smoke check. Permission codes live in
+  fixtures, not migrations, so `migrate` alone never creates them, and
+  `seed_default_roles` is deliberately create-if-absent so it will not add new
+  codes to pre-existing roles. Both commands are idempotent and add-only, and
+  neither touches admin-created custom roles. A failure exits non-zero without
+  rolling back — the app is already verified healthy at that point.
+
+### Ops (applied to production, not code)
+- Ran both commands against prod: 2 permissions created, 11 role links added
+  across employee / manager / team_lead / org_admin / hr_manager / finance /
+  auditor.
+- Granted `schedule:swap:request:self` and `schedule:swap:approve:team` to the
+  admin-created `cyberlab_level_2` role (65 → 67 perms) via
+  `set_role_permissions`, so the change is audit-logged. That role already
+  approves team leave and claims and publishes team rosters, so it is
+  team_lead-shaped; swap approval is consistent with what it already does.
+
+### Known issue (not fixed here)
+- `set_role_permissions` does **not** invalidate the permission cache, unlike
+  `grant_default_perms`. A role edited through the admin UI keeps serving stale
+  permissions for the cache TTL. Worked around manually with
+  `invalidate_role_users`; needs its own fix.
+
 ## [1.84.0] — 2026-08-26 — Global holiday foundation + Malaysia date correction
 
 **The Malaysia holiday dataset was a hand-authored fixture with no provenance,
