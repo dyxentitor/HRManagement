@@ -2,6 +2,36 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.84.2] — 2026-08-26 — Permission cache invalidation on bulk grants
+
+**A role edited through `/admin/roles` could stay stale for five minutes.** Found
+while granting the shift-swap perms to a custom role in production: the DB
+showed 67 permissions, `get_user_perms` kept returning 65.
+
+### Fixed
+- `set_role_permissions` and `reset_role_to_defaults` now call
+  `invalidate_role_users()` explicitly.
+
+  Invalidation is wired through `post_save`/`post_delete` receivers on
+  `RolePermission`/`UserRole` (`identity/signals.py`), but **`bulk_create`
+  bypasses signals**. Both services add permissions with `bulk_create`, so:
+  - `set_role_permissions` leaked only on a **pure grant**. Any edit that also
+    removed a permission fired `post_delete` and busted the cache as a side
+    effect, which is why this survived since the role-admin feature shipped.
+  - `reset_role_to_defaults` was safe only by accident — its `delete()` fires
+    the signal, but resetting a role holding **zero** permissions is a no-op
+    delete followed by a signal-free `bulk_create`.
+- `clone_role` also uses `bulk_create` and is deliberately left alone: it writes
+  into a role created moments earlier that has no members, so no cached set can
+  be stale.
+
+### Tests
+`modules/identity/tests/test_perm_cache_invalidation.py` (+7): grant, revoke,
+reset, reset-from-empty, role assign, role removal — plus a source-level guard
+asserting no `bulk_create` of permissions ships without an explicit
+invalidation, since a behavioural test only covers the paths someone remembered
+to write one for. Each new test was verified to fail with the fix removed.
+
 ## [1.84.1] — 2026-08-26 — Deploy seeds the permission catalogue
 
 **v1.84.0 shipped the shift-swap feature with no usable swap button — for every

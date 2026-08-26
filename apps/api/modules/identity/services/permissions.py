@@ -312,6 +312,14 @@ def set_role_permissions(
             ignore_conflicts=True,
         )
 
+    # The perm cache is normally busted by the post_save/post_delete receivers
+    # in identity/signals.py, but `bulk_create` bypasses signals. A pure grant
+    # (to_add only, nothing removed) therefore left every holder of this role on
+    # a stale set for the 300s TTL — correct in the DB, invisible to the app.
+    # Invalidating unconditionally keeps the guarantee independent of which of
+    # the branches above happened to run.
+    invalidate_role_users(role.id)
+
     audit.append(
         org_id=actor.org_id,
         action="role.permissions_changed",
@@ -358,6 +366,12 @@ def reset_role_to_defaults(*, actor, role_code: str):
         [RolePermission(role=role, permission_id=pid) for pid in perm_ids],
         ignore_conflicts=True,
     )
+
+    # The delete above fires post_delete and busts the cache — but only when
+    # there was something to delete. Resetting a role that currently holds no
+    # permissions is a no-op delete followed by a signal-free bulk_create, so
+    # the defaults would land in the DB and stay invisible. Do it explicitly.
+    invalidate_role_users(role.id)
 
     audit.append(
         org_id=actor.org_id,
