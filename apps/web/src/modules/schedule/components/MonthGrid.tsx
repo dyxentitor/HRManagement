@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 
 import type { DayModel } from "../lib/day-model"
+import { semanticLabel } from "../lib/shift-semantic"
 import { TONE_DOT } from "../lib/shift-tone"
 import { ShiftActionsMenu } from "./ShiftActionsMenu"
 
@@ -34,6 +35,21 @@ export function MonthGrid({ days, onRequestSwap }: Props) {
         {days.map((d) => (
           <MonthCell key={d.date} day={d} onRequestSwap={onRequestSwap} />
         ))}
+      </div>
+
+      {/* Month cells are too narrow to spell every state out, so the symbols
+       * they do use are defined here rather than left to be guessed. */}
+      <div
+        data-testid="month-legend"
+        className="flex flex-wrap gap-x-4 gap-y-1 mt-3 pt-3 border-t border-border-subtle text-small text-text-tertiary"
+      >
+        <span>DAY / NIGHT / EVE — shift type</span>
+        <span className="flex items-center gap-1">
+          <span className="size-1.5 rounded-full bg-yellow" aria-hidden /> Swap pending
+        </span>
+        <span>↷ Crosses midnight</span>
+        <span className="text-lavender">Leave code — approved leave</span>
+        <span className="text-peach">Coloured date — public holiday</span>
       </div>
     </div>
   )
@@ -79,14 +95,19 @@ function MonthCell({
       </div>
 
       {day.shift ? (
-        <div className="flex flex-col gap-0.5 min-w-0">
+        // The block carries the unabbreviated detail, so whatever the narrow
+        // cell truncates stays reachable on hover — and the ⋯ menu repeats it
+        // for keyboard and touch users.
+        <div className="flex flex-col gap-0.5 min-w-0" title={shiftTitle(day)}>
           <span className="flex items-center gap-1 min-w-0">
             <span
               className={cn("size-2 rounded-full shrink-0", TONE_DOT[day.shift.tone])}
               aria-hidden
             />
             <span className="text-small font-semibold text-text-primary truncate">
-              {day.shift.code}
+              {/* DAY / NIGHT, not D / N — a bare letter means nothing without
+               * the legend, and the cell has room for the word. */}
+              {semanticLabel(day.shift.code, day.shift.name)}
             </span>
             {day.shift.crossesMidnight && (
               <span title="Crosses midnight" className="text-yellow text-small" aria-hidden>
@@ -95,12 +116,14 @@ function MonthCell({
             )}
           </span>
           {day.shift.timeRange && (
-            <span className="font-mono text-[10px] text-text-secondary truncate">
+            <span className="font-mono text-small text-text-secondary truncate">
               {day.shift.timeRange}
             </span>
           )}
           {day.leaveTypeCode && (
-            <span className="text-[10px] text-lavender font-semibold">{day.leaveTypeCode}</span>
+            <span className="text-small text-lavender font-semibold truncate">
+              {day.leaveTypeCode}
+            </span>
           )}
         </div>
       ) : day.leaveTypeCode ? (
@@ -124,9 +147,22 @@ function MonthCell({
   )
 }
 
+/** Everything the cell knows about the day, for the hover/focus tooltip. */
+function shiftTitle(day: DayModel): string {
+  if (!day.shift) return ""
+  const parts = [day.shift.name]
+  if (day.shift.timeRange) parts.push(day.shift.timeRange)
+  if (day.shift.hours > 0) parts.push(`${day.shift.hours}h`)
+  if (day.shift.crossesMidnight) parts.push("crosses midnight")
+  if (day.shift.coveringForName) parts.push(`covering ${day.shift.coveringForName}`)
+  if (day.leaveTypeCode) parts.push(`on leave · ${day.leaveTypeCode}`)
+  if (day.holidayName) parts.push(day.holidayName)
+  return parts.join(" · ")
+}
+
 function HolidayLine({ name }: { name: string }) {
   return (
-    <span className="text-[10px] text-peach truncate" title={name}>
+    <span className="text-small text-peach truncate" title={name}>
       {name}
     </span>
   )

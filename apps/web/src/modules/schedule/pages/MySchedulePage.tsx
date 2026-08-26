@@ -14,7 +14,7 @@ import { MySwapRequests } from "../components/MySwapRequests"
 import { ScheduleCalendarCard } from "../components/ScheduleCalendarCard"
 import { ScheduleHero } from "../components/ScheduleHero"
 import { ScheduleKpis } from "../components/ScheduleKpis"
-import { SwapRequestDrawer } from "../components/SwapRequestDrawer"
+import { SwapRequestDrawer, type SwapSourceShift } from "../components/SwapRequestDrawer"
 import { QuickActionsCard } from "../components/rail/QuickActionsCard"
 import { UpcomingHolidaysCard } from "../components/rail/UpcomingHolidaysCard"
 import { UpcomingShiftsCard } from "../components/rail/UpcomingShiftsCard"
@@ -37,22 +37,11 @@ function hhmm(iso: string): string {
   })
 }
 
-function attendanceLabel(status: string | null | undefined): string {
-  if (!status) return "No record"
+/** The attendance classification, or null when there is no record yet — the
+ * hero renders the clock status itself, so "No record" would only restate it. */
+function attendanceLabel(status: string | null | undefined): string | null {
+  if (!status) return null
   return status.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())
-}
-
-/** Human label for the swap drawer's "Giving up <label>" line — the drawer
- * expects a formatted date (it formats candidate dates the same way), not a
- * raw YYYY-MM-DD key. */
-function humanDate(iso: string): string {
-  if (!iso) return ""
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-MY", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  })
 }
 
 /** How far ahead of today the hero / rail cards look, independent of the
@@ -72,9 +61,10 @@ function initialView(): ScheduleView {
   return window.matchMedia("(max-width: 639px)").matches ? "agenda" : "month"
 }
 
-/** Stable keys for the 5 KPI skeleton tiles — index-as-key would be fine
- * here too (the list never reorders), but named keys read better in the DOM. */
-const KPI_SKELETON_KEYS = ["shifts", "hours", "daysoff", "holiday", "swaps"] as const
+/** Stable keys for the 4 KPI skeleton tiles — index-as-key would be fine
+ * here too (the list never reorders), but named keys read better in the DOM.
+ * Must stay in step with the tiles ScheduleKpis renders. */
+const KPI_SKELETON_KEYS = ["shifts", "hours", "daysoff", "swaps"] as const
 
 export default function MySchedulePage() {
   const { perms } = useAuth()
@@ -150,10 +140,10 @@ export default function MySchedulePage() {
     }
     try {
       // Always union the current year and next year on top of the visible
-      // range's years — the rail's "Upcoming holidays" and the "Next
-      // holiday" KPI are today-anchored (§ refreshHorizon below), so late in
-      // December, navigating the *calendar* back to October must not drop
-      // next year's holidays out from under those forward-looking widgets.
+      // range's years — the rail's "Upcoming holidays" panel is today-anchored
+      // (§ refreshHorizon below), so late in December, navigating the
+      // *calendar* back to October must not drop next year's holidays out
+      // from under it.
       const currentYear = Number(todayIsoLocal().slice(0, 4))
       const years = [
         ...new Set([
@@ -273,10 +263,32 @@ export default function MySchedulePage() {
     [horizonDays, todayIso],
   )
   const nextSwappable = upcoming.find((d) => d.swapEligibility.canSwap)?.shift?.assignmentId ?? null
-  const nextHoliday =
-    holidays.filter((h) => h.date >= todayIso).sort((a, b) => a.date.localeCompare(b.date))[0] ??
-    null
   const pendingSwaps = swaps.filter((s) => s.status === "pending").length
+
+  /**
+   * The employee's own swappable shifts, offered as the drawer's step 1.
+   *
+   * Unions both day models on purpose: a swap can be launched from the
+   * range-scoped calendar (`days` — which may sit months away from today) or
+   * from the today-anchored rail cards (`horizonDays`). Taking only one would
+   * leave the source unresolvable for requests started from the other.
+   * Eligibility mirrors the server's rules via `swapEligibility`.
+   */
+  const swapSources = useMemo(() => {
+    const byId = new Map<string, SwapSourceShift>()
+    for (const d of [...horizonDays, ...days]) {
+      if (!d.shift || !d.swapEligibility.canSwap || byId.has(d.shift.assignmentId)) continue
+      byId.set(d.shift.assignmentId, {
+        assignmentId: d.shift.assignmentId,
+        date: d.date,
+        shiftName: d.shift.name,
+        shiftCode: d.shift.code,
+        timeRange: d.shift.timeRange,
+        hours: d.shift.hours,
+      })
+    }
+    return [...byId.values()].sort((a, b) => a.date.localeCompare(b.date))
+  }, [horizonDays, days])
 
   // The hero must never contradict the calendar. `horizonDays` is its own
   // independently-failing fetch (`refreshHorizon` swallows every error into
@@ -308,13 +320,6 @@ export default function MySchedulePage() {
     )
   }
 
-  // `swapFor` can originate from the range-scoped calendar (`days`) or from
-  // the horizon-based rail cards (`horizonDays`) — check both.
-  const swapDay =
-    days.find((d) => d.shift?.assignmentId === swapFor) ??
-    horizonDays.find((d) => d.shift?.assignmentId === swapFor) ??
-    null
-
   return (
     <div className="space-y-4">
       <PageHeader breadcrumb="Schedule" title="My Schedule" />
@@ -334,16 +339,11 @@ export default function MySchedulePage() {
       )}
 
       {firstLoadDone ? (
-        <ScheduleKpis
-          view={view}
-          days={days}
-          nextHoliday={nextHoliday}
-          pendingSwaps={pendingSwaps}
-        />
+        <ScheduleKpis view={view} anchor={anchor} days={days} pendingSwaps={pendingSwaps} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {KPI_SKELETON_KEYS.map((k) => (
-            <Skeleton key={k} className="h-20 rounded-2xl" />
+            <Skeleton key={k} className="h-[84px] rounded-lg" />
           ))}
         </div>
       )}
@@ -360,19 +360,6 @@ export default function MySchedulePage() {
             onToday={() => setAnchor(todayIsoLocal())}
             onRequestSwap={setSwapFor}
           />
-
-          {swapFor && (
-            <SwapRequestDrawer
-              assignmentId={swapFor}
-              myDateLabel={humanDate(swapDay?.date ?? "")}
-              myShiftLabel={swapDay?.shift?.name ?? ""}
-              onClose={() => setSwapFor(null)}
-              onCreated={() => {
-                setSwapFor(null)
-                setSwapVersion((v) => v + 1)
-              }}
-            />
-          )}
         </div>
 
         {firstLoadDone ? (
@@ -405,6 +392,25 @@ export default function MySchedulePage() {
           <Skeleton className="h-72 rounded-2xl" />
         )}
       </div>
+
+      {/*
+       * Rendered at page level, in a portal, rather than inside the calendar
+       * column — an overlay must not participate in the page's layout. The old
+       * inline card grew the page and pushed the rail down every time someone
+       * opened it.
+       */}
+      <SwapRequestDrawer
+        open={swapFor !== null}
+        assignmentId={swapFor}
+        sources={swapSources}
+        shifts={shifts}
+        onClose={() => setSwapFor(null)}
+        onCreated={() => {
+          setSwapFor(null)
+          setSwapVersion((v) => v + 1)
+          toast.success("Swap request sent to your manager.")
+        }}
+      />
     </div>
   )
 }

@@ -1,0 +1,141 @@
+# Canonical holiday identity aliases for Malaysia (ISO 3166-1: MY).
+#
+# WHY THIS FILE EXISTS
+#   A display name is NOT an identity. The same holiday is called
+#   "Prophet Muhammad's Birthday" by python-holidays, "Maulidur Rasul" by the
+#   Cabinet gazette, and "Hari Keputeraan Nabi Muhammad S.A.W." in Malay.
+#   Without this mapping each spelling would mint its own `source_key`, so an
+#   official override would sit *beside* the provider row instead of
+#   outranking it, and precedence would silently never fire.
+#
+# FORMAT
+#   <canonical-code>:
+#     - <alias slug>
+#     - <alias slug>
+#   Slugs are the output of `slugify_holiday_name()` (lowercased, accents
+#   folded, apostrophes removed, punctuation collapsed to "-").
+#
+# RULES
+#   * A slug may appear under exactly ONE canonical code. A duplicate is a
+#     hard error at load time — silently merging two distinct holidays is far
+#     worse than failing loudly.
+#   * Multi-day festivals get DISTINCT canonical codes (…-day-2, …-day-3),
+#     never an alias of day 1. Merging them would collapse two real days off.
+#   * An unknown name falls back to its own slug, so a newly-added holiday is
+#     never mis-merged into an existing one.
+
+chinese-new-year:
+  - chinese-new-year
+  - tahun-baharu-cina
+  - cny
+
+chinese-new-year-day-2:
+  - chinese-new-year-second-day
+  - chinese-new-year-2nd-day
+  - tahun-baharu-cina-hari-kedua
+  - chinese-new-year-day-two
+
+hari-raya-aidilfitri:
+  - hari-raya-aidilfitri
+  - hari-raya-puasa
+  - eid-al-fitr
+  - aidilfitri
+  - hari-raya-puasa-pergantian-hari
+
+hari-raya-aidilfitri-day-2:
+  - hari-raya-aidilfitri-2nd-day
+  - hari-raya-aidilfitri-second-day
+  - hari-raya-puasa-hari-kedua
+  - eid-al-fitr-second-day
+  - cuti-hari-raya-puasa-hari-kedua
+
+hari-raya-aidilfitri-day-3:
+  - hari-raya-puasa-hari-ketiga
+  - hari-raya-aidilfitri-third-day
+
+hari-raya-aidiladha:
+  - hari-raya-aidiladha
+  - hari-raya-qurban
+  - hari-raya-haji
+  - eid-al-adha
+
+hari-raya-aidiladha-day-2:
+  - hari-raya-qurban-hari-kedua
+  - hari-raya-aidiladha-second-day
+  - eid-al-adha-second-day
+
+wesak-day:
+  - wesak-day
+  - hari-wesak
+  - vesak-day
+
+awal-muharram:
+  - awal-muharram
+  - awal-muharam
+  - awal-muharam-maal-hijrah
+  - maal-hijrah
+  - islamic-new-year
+
+maulidur-rasul:
+  - maulidur-rasul
+  - prophet-muhammads-birthday
+  - hari-keputeraan-nabi-muhammad-saw
+  - hari-keputeraan-nabi-muhammad-s-a-w
+  - hari-keputeraan-nabi-muhammad-saw-maulidur-rasul
+  - maulid-nabi
+  - birthday-of-prophet-muhammad
+
+agong-birthday:
+  - hari-keputeraan-rasmi-seri-paduka-baginda-yang-di-pertuan-agong
+  - yang-di-pertuan-agongs-birthday
+  - birthday-of-hm-yang-di-pertuan-agong
+  - agongs-birthday
+
+national-day:
+  - national-day
+  - hari-kebangsaan
+  - merdeka-day
+  - independence-day
+
+malaysia-day:
+  - malaysia-day
+  - hari-malaysia
+
+deepavali:
+  - deepavali
+  - hari-deepavali
+  - diwali
+
+christmas-day:
+  - christmas-day
+  - hari-krismas
+  - krismas
+
+new-year-day:
+  - new-years-day
+  - tahun-baharu
+  - tahun-baharu-2026
+  - tahun-baharu-2027
+
+labour-day:
+  - labour-day
+  - labor-day
+  - hari-pekerja
+
+nuzul-al-quran:
+  - nuzul-al-quran
+  - hari-nuzul-al-quran
+  - nuzul-al-quran-day
+
+thaipusam:
+  - thaipusam
+  - hari-thaipusam
+
+federal-territory-day:
+  - federal-territory-day
+  - hari-wilayah-persekutuan
+
+sultan-of-selangor-birthday:
+  - hari-keputeraan-sultan-selangor
+  - birthday-of-the-sultan-of-selangor
+  - sultan-of-selangors-birthday

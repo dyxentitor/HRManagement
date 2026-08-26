@@ -5,11 +5,23 @@ import { StatusPill } from "@/components/hrms"
 
 import { type SwapRequest, cancelSwapRequest, listMySwapRequests } from "../swap-api"
 
-const TONE: Record<SwapRequest["status"], "yellow" | "mint" | "coral" | "sky"> = {
-  pending: "yellow",
-  approved: "mint",
-  rejected: "coral",
-  cancelled: "sky",
+/**
+ * Employee-facing wording for each backend status. Raw codes never reach the
+ * UI — "pending" doesn't tell an employee who they are waiting on.
+ *
+ * Only these four exist. A swap goes straight to the requester's manager for
+ * approval: there is no colleague-acceptance step ("awaiting colleague") and
+ * requests do not expire, so neither status is offered here. Inventing them
+ * would promise a workflow the backend does not run.
+ */
+const STATUS: Record<
+  SwapRequest["status"],
+  { label: string; tone: "yellow" | "mint" | "coral" | "sky" }
+> = {
+  pending: { label: "Awaiting manager approval", tone: "yellow" },
+  approved: { label: "Approved", tone: "mint" },
+  rejected: { label: "Declined", tone: "coral" },
+  cancelled: { label: "Cancelled", tone: "sky" },
 }
 
 function slot(a: SwapRequest["requester_assignment"]): string {
@@ -81,11 +93,13 @@ export function MySwapRequests({
             key={r.id}
             className="flex flex-wrap items-center gap-2 text-small text-text-secondary py-1.5 border-b border-border-subtle last:border-0"
           >
-            <StatusPill tone={TONE[r.status]} label={r.status} />
+            <StatusPill tone={STATUS[r.status].tone} label={STATUS[r.status].label} />
             <span className="text-text-primary">
               {slot(r.requester_assignment)} → {slot(r.counterparty_assignment)}
             </span>
             <span>with {r.counterparty_name}</span>
+            {/* Cancellation is only ever offered while the request is still
+             * pending — the server refuses it in any other state. */}
             {r.status === "pending" && (
               <button
                 type="button"

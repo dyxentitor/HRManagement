@@ -166,6 +166,14 @@ const PAGES = [
 		module: "leave",
 	},
 	{
+		label: "Settings · Holidays",
+		to: "/admin/settings/holidays",
+		icon: Calendar,
+		perm: "schedule:holiday:read",
+		// Backend gates HolidayViewSet with @requires_feature("schedule").
+		module: "schedule",
+	},
+	{
 		label: "Reports",
 		to: "/reports",
 		icon: FileSpreadsheet,

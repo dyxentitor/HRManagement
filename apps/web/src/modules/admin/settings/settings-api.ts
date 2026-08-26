@@ -73,6 +73,8 @@ export interface OrgSettings {
 	name: string;
 	slug: string;
 	country_code: string;
+	/** Full ISO 3166-2 code (e.g. "MY-10"), or "" for national-only. */
+	default_subdivision_code: string;
 	default_currency: string;
 	default_timezone: string;
 	default_locale: string;
@@ -86,6 +88,40 @@ export interface OrgBranding {
 	name: string;
 	logo_url: string | null;
 	logo_mode: "landscape" | "legacy";
+}
+
+/**
+ * An org-settings save that failed field validation. `fields` carries the
+ * per-field message so a caller can render it next to the input instead of
+ * dumping the generic "One or more fields failed validation." detail.
+ */
+export interface OrgSettingsError extends Error {
+	fields?: Record<string, string>;
+}
+
+/** Pull per-field messages out of a 400 body, or null when there are none. */
+function fieldErrorsFrom(error: unknown): Record<string, string> | null {
+	if (!error || typeof error !== "object") return null;
+	const out: Record<string, string> = {};
+	// RFC 7807 shape emitted by common/exception_handler.py.
+	const { errors } = error as { errors?: unknown };
+	if (Array.isArray(errors)) {
+		for (const entry of errors) {
+			const { field, message } = (entry ?? {}) as {
+				field?: unknown;
+				message?: unknown;
+			};
+			if (typeof field === "string" && typeof message === "string" && !(field in out)) {
+				out[field] = message;
+			}
+		}
+	}
+	// Plain DRF `{field: ["msg"]}` shape, in case the handler is bypassed.
+	for (const [key, value] of Object.entries(error as Record<string, unknown>)) {
+		if (key in out) continue;
+		if (Array.isArray(value) && typeof value[0] === "string") out[key] = value[0];
+	}
+	return Object.keys(out).length > 0 ? out : null;
 }
 
 function unwrapErr(error: unknown, fallback: string): never {
@@ -120,7 +156,18 @@ export const settingsApi = {
 		const { data, error } = await api.PATCH("/api/v1/org/settings", {
 			body: payload as never,
 		});
-		if (error) unwrapErr(error, "Failed to update org settings");
+		if (error) {
+			const fields = fieldErrorsFrom(error);
+			if (fields) {
+				const { detail } = error as { detail?: unknown };
+				const err: OrgSettingsError = new Error(
+					typeof detail === "string" ? detail : Object.values(fields)[0],
+				);
+				err.fields = fields;
+				throw err;
+			}
+			unwrapErr(error, "Failed to update org settings");
+		}
 		return data as unknown as OrgSettings;
 	},
 

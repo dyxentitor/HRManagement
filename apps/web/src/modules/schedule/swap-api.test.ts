@@ -24,13 +24,52 @@ afterEach(() => vi.clearAllMocks())
 
 describe("swap-api", () => {
   it("passes assignment_id when listing candidates", async () => {
-    mocks.authedFetch.mockResolvedValueOnce(jsonResp([{ id: "c1", work_date: "2026-09-03" }]))
+    mocks.authedFetch.mockResolvedValueOnce(
+      jsonResp({ results: [{ id: "c1" }], count: 1, page: 1, page_size: 8, blocked_reason: null }),
+    )
 
-    const rows = await listSwapCandidates("a1")
+    const data = await listSwapCandidates({ assignmentId: "a1" })
 
     const calledUrl = String(mocks.authedFetch.mock.calls[0][0])
     expect(calledUrl).toContain("assignment_id=a1")
-    expect(rows).toHaveLength(1)
+    expect(data.results).toHaveLength(1)
+    expect(data.count).toBe(1)
+  })
+
+  it("forwards search, filters and paging to the server", async () => {
+    mocks.authedFetch.mockResolvedValueOnce(
+      jsonResp({ results: [], count: 0, page: 2, page_size: 8, blocked_reason: null }),
+    )
+
+    await listSwapCandidates({
+      assignmentId: "a1",
+      q: "Esther",
+      dateFrom: "2026-09-01",
+      dateTo: "2026-09-30",
+      shift: "s-day",
+      page: 2,
+      pageSize: 8,
+    })
+
+    const url = String(mocks.authedFetch.mock.calls[0][0])
+    expect(url).toContain("q=Esther")
+    expect(url).toContain("date_from=2026-09-01")
+    expect(url).toContain("date_to=2026-09-30")
+    expect(url).toContain("shift=s-day")
+    expect(url).toContain("page=2")
+    expect(url).toContain("page_size=8")
+  })
+
+  it("omits filters that are unset, rather than sending empty values", async () => {
+    mocks.authedFetch.mockResolvedValueOnce(
+      jsonResp({ results: [], count: 0, page: 1, page_size: 8, blocked_reason: null }),
+    )
+
+    await listSwapCandidates({ assignmentId: "a1", q: "", dateFrom: undefined })
+
+    const url = String(mocks.authedFetch.mock.calls[0][0])
+    expect(url).not.toContain("q=")
+    expect(url).not.toContain("date_from=")
   })
 
   it("surfaces the RFC 7807 detail message on a rejected swap", async () => {

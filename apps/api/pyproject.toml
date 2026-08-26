@@ -1,6 +1,6 @@
 [project]
 name = "hrms-api"
-version = "1.83.0"
+version = "1.84.0"
 description = "HRMS Phase 1 backend (Django + DRF)"
 requires-python = ">=3.12"
 dependencies = [
@@ -27,6 +27,10 @@ dependencies = [
   "openpyxl>=3.1,<4.0",
   "sentry-sdk>=2.64.0",
   "django-prometheus>=2.4.1",
+  # Holiday reference data provider (MIT licence — commercial-SaaS safe).
+  # Pinned to a single minor: upstream ships holiday *data* corrections in
+  # minor releases, so an unpinned float would move dates under us silently.
+  "holidays>=0.103,<0.104",
 ]
 
 [dependency-groups]

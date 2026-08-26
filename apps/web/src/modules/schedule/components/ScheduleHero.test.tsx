@@ -34,7 +34,9 @@ function renderHero(over: Partial<Parameters<typeof ScheduleHero>[0]> = {}) {
   const props = {
     today: day(),
     clockState: { status: "off" } as const,
-    statusLabel: "No record",
+    // Null is the realistic default: before the first clock-in there is no
+    // attendance record, and the hero renders the clock status itself.
+    statusLabel: null as string | null,
     canClock: true,
     busy: false,
     onClockIn: vi.fn(),
@@ -113,6 +115,44 @@ describe("ScheduleHero", () => {
     expect(screen.getByText(/5h 38m/)).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: /clock out/i }))
     expect(props.onClockOut).toHaveBeenCalled()
+  })
+
+  it("states the clock status once, without a redundant 'No record' pill", () => {
+    renderHero({ clockState: { status: "off" }, statusLabel: null })
+
+    expect(screen.getByText("Not clocked in")).toBeInTheDocument()
+    expect(screen.queryByText(/No record/)).toBeNull()
+    expect(screen.queryByText(/Not clocked in yet today/)).toBeNull()
+  })
+
+  it("shows the scheduled shift time before clocking in", () => {
+    renderHero({ clockState: { status: "off" } })
+    expect(screen.getByTestId("hero-clock-detail")).toHaveTextContent("Scheduled 09:00–18:00")
+  })
+
+  it("says so plainly when nothing is scheduled", () => {
+    renderHero({ clockState: { status: "off" }, today: day({ shift: null }) })
+    expect(screen.getByTestId("hero-clock-detail")).toHaveTextContent("Nothing scheduled today")
+  })
+
+  it("names the clock-in time once clocked in", () => {
+    renderHero({
+      clockState: { status: "in", since: new Date(2026, 7, 21, 8, 52, 0).toISOString() },
+    })
+    expect(screen.getByText("Clocked in at 08:52")).toBeInTheDocument()
+  })
+
+  it("keeps a meaningful attendance classification alongside the clock status", () => {
+    renderHero({ statusLabel: "Late" })
+    expect(screen.getByText("Late")).toBeInTheDocument()
+    expect(screen.getByText("Not clocked in")).toBeInTheDocument()
+  })
+
+  it("reports total worked time instead of repeating the clock-out stamp", () => {
+    renderHero({ clockState: { status: "out", clockedIn: "08:52", clockedOut: "18:03" } })
+
+    expect(screen.getByText("Clocked out at 18:03")).toBeInTheDocument()
+    expect(screen.getByTestId("hero-clock-detail")).toHaveTextContent("Started 08:52 · 9h 11m")
   })
 
   it("shows both times when already clocked out", () => {

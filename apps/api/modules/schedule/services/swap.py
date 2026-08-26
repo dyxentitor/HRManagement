@@ -38,54 +38,8 @@ def _conflict(employee, target_date, exclude_assignment_id):
     )
 
 
-def validate_pair(
-    *, requester_assignment, counterparty_assignment, requester, exclude_request_id=None
-) -> None:
-    """Raise SwapValidationError unless this swap is legal. Spec §6."""
-    a1 = requester_assignment
-    a2 = counterparty_assignment
-
-    # ownership + distinct parties
-    if a1.employee_id != requester.id:
-        raise SwapValidationError("You can only swap your own shift.")
-    if a2.employee_id == requester.id:
-        raise SwapValidationError("You cannot swap with yourself.")
-
-    # not the same slot
-    if a1.work_date == a2.work_date and a1.shift_id == a2.shift_id:
-        raise SwapValidationError("Both shifts are already the same date and shift.")
-
-    # future dates, KL-local
-    today = timezone.localdate()
-    for a in (a1, a2):
-        if a.work_date <= today:
-            raise SwapValidationError("Only future shifts can be swapped.")
-
-    # published + scheduled + not soft-deleted
-    for a in (a1, a2):
-        if a.published_at is None:
-            raise SwapValidationError("Only published shifts can be swapped.")
-        if a.status != "scheduled":
-            raise SwapValidationError("Only scheduled shifts can be swapped.")
-        if a.deleted_at is not None:
-            raise SwapValidationError("Only active shifts can be swapped.")
-
-    # no date conflict — same-date swaps are exempt because neither date changes
-    if a1.work_date != a2.work_date:
-        blocker = _conflict(a1.employee, a2.work_date, a2.id)
-        if blocker is not None:
-            raise SwapValidationError(
-                f"{a1.employee.employee_code} is already rostered on "
-                f"{a2.work_date} ({blocker.shift.name}). Swap not possible."
-            )
-        blocker = _conflict(a2.employee, a1.work_date, a2.id)
-        if blocker is not None:
-            raise SwapValidationError(
-                f"{a2.employee.employee_code} is already rostered on "
-                f"{a1.work_date} ({blocker.shift.name}). Swap not possible."
-            )
-
-    # no existing pending request touching either row
+def _pending_exists(a1, a2, exclude_request_id):
+    """True when a pending request already touches either row."""
     qs = ShiftSwapRequest.all_objects.filter(
         status="pending",
         deleted_at__isnull=True,
@@ -95,8 +49,170 @@ def validate_pair(
     )
     if exclude_request_id is not None:
         qs = qs.exclude(id=exclude_request_id)
-    if qs.exists():
-        raise SwapValidationError("There is already a pending swap for one of these shifts.")
+    return qs.exists()
+
+
+def pair_reason(a1, a2, requester, *, today, find_conflict, has_pending) -> str | None:
+    """The single source of truth for "is this swap legal?" — spec §6.
+
+    Returns the blocking reason, or None when the pair is legal. The two
+    lookups it needs are injected so the same rule list can run against live
+    DB queries (`validate_pair`, authoritative at submit) or against
+    pre-fetched dicts (`batch_pair_reasons`, the candidate picker). Keeping
+    one rule list is the point: the picker can never advertise a pair the
+    submit path would refuse, or hide one it would accept.
+
+    `find_conflict(employee, target_date, exclude_assignment_id)` returns the
+    assignment blocking that employee from that date, or None.
+    `has_pending(a1, a2)` returns True when a pending request touches either row.
+    """
+    # ownership + distinct parties
+    if a1.employee_id != requester.id:
+        return "You can only swap your own shift."
+    if a2.employee_id == requester.id:
+        return "You cannot swap with yourself."
+
+    # not the same slot
+    if a1.work_date == a2.work_date and a1.shift_id == a2.shift_id:
+        return "Both shifts are already the same date and shift."
+
+    # future dates, KL-local
+    for a in (a1, a2):
+        if a.work_date <= today:
+            return "Only future shifts can be swapped."
+
+    # published + scheduled + not soft-deleted
+    for a in (a1, a2):
+        if a.published_at is None:
+            return "Only published shifts can be swapped."
+        if a.status != "scheduled":
+            return "Only scheduled shifts can be swapped."
+        if a.deleted_at is not None:
+            return "Only active shifts can be swapped."
+
+    # no date conflict — same-date swaps are exempt because neither date changes
+    if a1.work_date != a2.work_date:
+        blocker = find_conflict(a1.employee, a2.work_date, a2.id)
+        if blocker is not None:
+            return (
+                f"{a1.employee.employee_code} is already rostered on "
+                f"{a2.work_date} ({blocker.shift.name}). Swap not possible."
+            )
+        blocker = find_conflict(a2.employee, a1.work_date, a2.id)
+        if blocker is not None:
+            return (
+                f"{a2.employee.employee_code} is already rostered on "
+                f"{a1.work_date} ({blocker.shift.name}). Swap not possible."
+            )
+
+    # no existing pending request touching either row
+    if has_pending(a1, a2):
+        return "There is already a pending swap for one of these shifts."
+
+    return None
+
+
+def validate_pair(
+    *, requester_assignment, counterparty_assignment, requester, exclude_request_id=None
+) -> None:
+    """Raise SwapValidationError unless this swap is legal. Spec §6.
+
+    Authoritative: every submit and every approval runs through here against
+    live rows, regardless of what the candidate picker showed.
+    """
+    reason = pair_reason(
+        requester_assignment,
+        counterparty_assignment,
+        requester,
+        today=timezone.localdate(),
+        find_conflict=_conflict,
+        has_pending=lambda a1, a2: _pending_exists(a1, a2, exclude_request_id),
+    )
+    if reason is not None:
+        raise SwapValidationError(reason)
+
+
+def pending_assignment_ids(org_id, assignment_ids) -> set:
+    """Assignment ids already tied to a pending swap request. One query."""
+    if not assignment_ids:
+        return set()
+    rows = ShiftSwapRequest.all_objects.filter(
+        org_id=org_id,
+        status="pending",
+        deleted_at__isnull=True,
+    ).filter(
+        Q(requester_assignment_id__in=assignment_ids)
+        | Q(counterparty_assignment_id__in=assignment_ids)
+    )
+    found = set()
+    for req_id, cp_id in rows.values_list("requester_assignment_id", "counterparty_assignment_id"):
+        found.add(req_id)
+        found.add(cp_id)
+    return found & set(assignment_ids)
+
+
+def batch_pair_reasons(*, own, rows, requester, org_id) -> dict:
+    """Compatibility reason per candidate row, in a constant number of queries.
+
+    Runs the exact same `pair_reason` rule list the submit path uses, but backed
+    by three pre-fetched lookups instead of per-row queries — otherwise a page
+    of candidates would issue 3 queries each (the N+1 this avoids).
+
+    Returns {assignment_id: reason_or_None}.
+    """
+    rows = list(rows)
+    if not rows:
+        return {}
+
+    candidate_dates = {r.work_date for r in rows}
+    candidate_employee_ids = {r.employee_id for r in rows}
+
+    # (1) The requester's own roster across every candidate date — answers
+    #     "is the requester already working the day they'd take?".
+    mine_by_date = {
+        a.work_date: a
+        for a in ShiftAssignment.all_objects.filter(
+            employee_id=requester.id,
+            work_date__in=candidate_dates,
+            deleted_at__isnull=True,
+        ).select_related("shift")
+    }
+    # (2) Every candidate employee's roster on the requester's date — answers
+    #     "is the candidate already working the day they'd take?".
+    theirs_on_my_date = {
+        a.employee_id: a
+        for a in ShiftAssignment.all_objects.filter(
+            employee_id__in=candidate_employee_ids,
+            work_date=own.work_date,
+            deleted_at__isnull=True,
+        ).select_related("shift")
+    }
+    # (3) Pending requests touching the requester's row or any candidate row.
+    pending = pending_assignment_ids(org_id, [own.id, *(r.id for r in rows)])
+
+    def find_conflict(employee, target_date, exclude_assignment_id):
+        row = (
+            mine_by_date.get(target_date)
+            if employee.id == requester.id
+            else theirs_on_my_date.get(employee.id)
+        )
+        # Mirror _conflict's own exclusion so both paths agree exactly.
+        if row is not None and row.id != exclude_assignment_id and row.work_date == target_date:
+            return row
+        return None
+
+    today = timezone.localdate()
+    return {
+        r.id: pair_reason(
+            own,
+            r,
+            requester,
+            today=today,
+            find_conflict=find_conflict,
+            has_pending=lambda a1, a2: a1.id in pending or a2.id in pending,
+        )
+        for r in rows
+    }
 
 
 def execute_swap(*, swap_request, actor_id, note: str = ""):

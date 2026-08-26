@@ -2,6 +2,79 @@
 
 All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.84.0] — 2026-08-26 — Global holiday foundation + Malaysia date correction
+
+**The Malaysia holiday dataset was a hand-authored fixture with no provenance,
+covering 2026 only — and six of its sixteen dates were wrong.** Maulidur Rasul
+showing a day late was the visible symptom; the fixture was the cause.
+Timezone handling was exonerated by tracing the value at every stage (the
+column is `date`; the frontend already parses `T00:00:00Z` and reads `getUTC*`).
+
+### Added
+- **Provider framework** (`common/holidays/`, country-neutral). `HolidayProvider`
+  protocol → `NormalizedHoliday`. Calendar/leave/attendance/payroll never import
+  a provider SDK. Adding Calendarific/Nager.Date later is one adapter + one
+  registry line.
+- **python-holidays 0.103** (MIT, commercial-SaaS safe) as the first provider,
+  pinned to a single minor because upstream ships holiday *data* corrections in
+  minor releases.
+- **Four-part identity**: `source_key` (internal canonical, resolved via a
+  per-country alias map), `external_id` (provider's own, audit only),
+  `name` (display only), `occurrence` (multi-day festivals). The date is
+  deliberately absent from the key.
+- **Commands**: `sync_country_holidays` (dry-run by default, six counters,
+  `--sync-orgs`) and `load_official_holidays` (gazette overrides; every row must
+  cite a government reference).
+- **Verified Malaysia data** transcribed from the Cabinet Division gazette PDFs
+  (HKA-2026.pdf, HKA_2027.pdf) behind kabinet.gov.my, cross-checked against
+  JTKSM. 58 official entries covering 2026 and 2027.
+- `Organization.default_subdivision_code` (ISO 3166-2, blank = national-only)
+  with validation.
+- Holiday admin page at **`/admin/settings/holidays`**; `GET sync-preview` and
+  `POST {id}/confirm` endpoints.
+
+### Fixed
+- **Six wrong 2026 dates**: Chinese New Year 29 Jan → **17 Feb** (a 2025 date),
+  CNY 2nd day 30 Jan → **18 Feb**, Wesak 27 May → **31 May**, Hari Raya
+  Aidiladha 28 May → **27 May**, Agong's Birthday 4 Jun → **1 Jun**, Maulidur
+  Rasul 26 Aug → **25 Aug**.
+- **The 2027 cliff**: the dataset previously ended 2026-12-25.
+- **Scope was flattened**: New Year's Day and Federal Territory Day were marked
+  `federal`. The gazette's 16-column state matrix was decoded and validated
+  against 14 known state holidays — Deepavali is 15 per-state rows (Sarawak
+  excluded), New Year's Day 11 states, Federal Territory Day KL/Labuan/Putrajaya.
+- The 2027 gazette disagrees with the package on three lunar dates, including
+  **Maulidur Rasul 15 Aug (not 14)**. The gazette wins.
+
+### Changed
+- **Precedence**: org override > verified official > provider > legacy fixture.
+  An import may only touch rows it owns. Company holidays, exclusions, confirmed
+  overrides and dates already consumed by attendance are reported as conflicts,
+  never overwritten. Withdrawn, never deleted.
+- **Reconcile adopts legacy rows** by canonical code, so a wrong legacy date is
+  corrected in place rather than duplicated. Unmatched legacy rows are ambiguous
+  and are left alone with a conflict report.
+- **Provisional gate**: estimated/`tertakluk kepada perubahan` dates are stored
+  but held back. `published_holidays()` is the single queryset every
+  employee-facing surface uses, so an unconfirmed date cannot reach attendance,
+  leave or a calendar. Publishing needs an explicit admin confirmation, and a
+  re-import cannot revoke one.
+
+### Deferred
+- Work-location model (`default_subdivision_code` is the fallback leg).
+- "National except X" cannot be expressed when a lower-precedence source claims
+  national — a Sarawak org would wrongly inherit Deepavali from the provider.
+- Legacy fixture fallback retained until a prod dry-run shows a clean diff.
+
+### Tests
+Backend **+90** holiday tests (provider normalization, ISO handling, MY
+subdivision, SG, stable identity across rename/language/provider/date-change,
+idempotency, precedence, org-holiday preservation, cross-tenant isolation,
+date-only storage under three server timezones). Frontend **+21**.
+Pre-existing unrelated failure carried forward:
+`modules/attendance/tests/test_clock_flow.py::test_clock_out_completes_record`
+(verified failing identically on a clean tree). No new permission codes.
+
 ## [1.83.0] — 2026-08-25 — Notification routing
 
 **Notification types and recipients are no longer hardcoded.** A per-org
